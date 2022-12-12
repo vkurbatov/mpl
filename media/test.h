@@ -1,0 +1,6 @@
+namespace mpl
+{
+
+void test();
+
+}
