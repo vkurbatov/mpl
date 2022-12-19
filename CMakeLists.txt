@@ -81,9 +81,9 @@ set(TEST_PRIVATE_HEADERS
 
 
 add_executable(${TEST_PROJECT_NAME}
-    ${SOURCES}
-    ${PRIVATE_HEADERS}
-    ${PUBLIC_HEADERS}
+    ${TEST_SOURCES}
+    ${TEST_PUBLIC_HEADERS}
+    ${TEST_PRIVATE_HEADERS}
 )
 
 target_link_libraries(${TEST_PROJECT_NAME}
