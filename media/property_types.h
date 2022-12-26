@@ -17,9 +17,9 @@ enum class property_type_t
     u16,
     u32,
     u64,
-    real32,
-    real64,
-    real96,
+    r32,
+    r64,
+    r96,
     boolean,
     string,
     octet_string

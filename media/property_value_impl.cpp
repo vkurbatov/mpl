@@ -1,6 +1,6 @@
 #include "property_value_impl.h"
 #include "common_types.h"
-#include "convert.h"
+#include "convert_utils.h"
 #include "utils.h"
 
 #include <string>
@@ -147,8 +147,8 @@ i_property::u_ptr_t property_value<T>::clone() const
 template<typename T>
 bool property_value<T>::merge(const i_property &property)
 {
-    return convert(property
-                   , m_value);
+    return utils::convert(property
+                          , m_value);
 }
 
 template<typename T>

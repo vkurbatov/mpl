@@ -2,6 +2,9 @@
 #define MPL_I_MEDIA_FORMAT_H
 
 #include "media_types.h"
+#include "i_buffer.h"
+#include "i_property.h"
+
 #include <memory>
 
 namespace mpl
@@ -16,7 +19,11 @@ public:
     virtual media_type_t media_type() const = 0;
     virtual bool is_encoded() const = 0;
     virtual bool is_convertable() const = 0;
-    virtual u_ptr_t clone() const() = 0;
+    virtual u_ptr_t clone() const = 0;
+    virtual bool is_equal(const i_media_format& other) const = 0;
+    virtual bool is_compatible(const i_media_format& other) const = 0;
+    virtual const i_property* params() const = 0;
+    virtual bool is_valid() const = 0;
 };
 
 }

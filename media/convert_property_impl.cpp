@@ -1,40 +1,15 @@
-#include "convert.h"
+#include "convert_utils.h"
 
 #include "common_types.h"
 #include "i_property_value.h"
 
-#include <cstring>
-#include <sstream>
+#include <string>
 
-namespace mpl
+namespace mpl::utils
 {
 
 namespace detail
 {
-
-bool convert(const std::string& in_value, std::string& out_value)
-{
-    out_value = in_value;
-    return true;
-}
-
-bool convert(const octet_string_t& in_value, octet_string_t& out_value)
-{
-    out_value = in_value;
-    return true;
-}
-
-bool convert(const octet_string_t& in_value, std::string &out_value)
-{
-    out_value.reserve(in_value.size() * 2 + 1);
-    char hex[3];
-    for (const auto& v : in_value)
-    {
-        std::sprintf(hex, "%02x", v);
-        out_value.append(hex);
-    }
-    return true;
-}
 
 bool convert(const i_property::array_t& in_value, i_property::array_t& out_value)
 {
@@ -61,38 +36,6 @@ bool convert(const i_property::array_t& out_value, Tout& in_value)
     return false;
 }
 
-template<typename Tin, typename Tout>
-bool convert(const Tin& in_value, Tout &out_value)
-{
-    out_value = static_cast<Tout>(in_value);
-    return true;
-}
-
-template<typename Tin>
-bool convert(const Tin& in_value, std::string &out_value)
-{
-    std::ostringstream ss;
-    ss << in_value;
-    out_value = ss.str();
-    return true;
-}
-
-template<typename Tout>
-bool convert(const std::string& in_value, Tout &out_value)
-{
-    try
-    {
-        out_value = static_cast<Tout>(std::stoll(in_value.c_str()));
-    }
-    catch(...)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-
 bool convert(const std::string& in_value, i_property::array_t &out_value)
 {
     return false;
@@ -108,96 +51,11 @@ bool convert(const i_property::array_t &in_value, std::string& out_value)
     return false;
 }
 
-
-template<>
-bool convert(const std::string& in_value, std::uint64_t &out_value)
+template<typename Tin, typename Tout>
+bool convert(const Tin& in_value, Tout& out_value)
 {
-    try
-    {
-        out_value = std::stoull(in_value.c_str());
-    }
-    catch(...)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-template<>
-bool convert(const std::string& in_value, float &out_value)
-{
-    try
-    {
-        out_value = std::stof(in_value.c_str());
-    }
-    catch(...)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-template<>
-bool convert(const std::string& in_value, double &out_value)
-{
-    try
-    {
-        out_value = std::stod(in_value.c_str());
-    }
-    catch(...)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-template<>
-bool convert(const std::string& in_value, long double &out_value)
-{
-    try
-    {
-        out_value = std::stold(in_value.c_str());
-    }
-    catch(...)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-template<typename Tout>
-bool convert(const octet_string_t& in_value, Tout &out_value)
-{
-    if (in_value.size() == sizeof(out_value))
-    {
-        std::memcpy(&out_value, in_value.data(), sizeof(out_value));
-        return true;
-    }
-
-    return false;
-}
-
-
-template<>
-bool convert(const std::string& in_value, octet_string_t &out_value)
-{
-    try
-    {
-        for (auto i = 0u; i < in_value.size(); i += 2)
-        {
-            out_value.push_back(std::stoi(in_value.substr(i, 2), 0, 16));
-        }
-    }
-    catch(...)
-    {
-        return false;
-    }
-
-    return !out_value.empty();
+    return mpl::utils::convert(in_value
+                               , out_value);
 }
 
 template<typename Tin, typename Tout>
@@ -245,13 +103,13 @@ bool convert_from_property(const i_property &in_value, Tout &out_value)
         case property_type_t::boolean:
             return detail::convert(static_cast<const i_property_value<bool>&>(in_value).get_value(), out_value);
         break;
-        case property_type_t::real32:
+        case property_type_t::r32:
             return detail::convert(static_cast<const i_property_value<float>&>(in_value).get_value(), out_value);
         break;
-        case property_type_t::real64:
+        case property_type_t::r64:
             return detail::convert(static_cast<const i_property_value<double>&>(in_value).get_value(), out_value);
         break;
-        case property_type_t::real96:
+        case property_type_t::r96:
             return detail::convert(static_cast<const i_property_value<long double>&>(in_value).get_value(), out_value);
         break;
         case property_type_t::string:
@@ -304,13 +162,13 @@ bool convert_to_property(const Tin &in_value, i_property &out_value)
         case property_type_t::boolean:
             return detail::convert_property(in_value, static_cast<i_property_value<bool>&>(out_value));
         break;
-        case property_type_t::real32:
+        case property_type_t::r32:
             return detail::convert_property(in_value, static_cast<i_property_value<float>&>(out_value));
         break;
-        case property_type_t::real64:
+        case property_type_t::r64:
             return detail::convert_property(in_value, static_cast<i_property_value<double>&>(out_value));
         break;
-        case property_type_t::real96:
+        case property_type_t::r96:
             return detail::convert_property(in_value, static_cast<i_property_value<long double>&>(out_value));
         break;
         case property_type_t::string:

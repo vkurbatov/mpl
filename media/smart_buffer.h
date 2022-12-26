@@ -77,6 +77,7 @@ public:
     void reset();
 
     void make_store();
+    smart_buffer fork() const;
 
     const std::uint8_t& operator[](std::int32_t index) const;
 

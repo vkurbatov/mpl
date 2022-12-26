@@ -282,6 +282,13 @@ void smart_buffer::make_store()
     }
 }
 
+smart_buffer smart_buffer::fork() const
+{
+    smart_buffer foked_buffer(*this);
+    foked_buffer.make_shared();
+    return foked_buffer;
+}
+
 const uint8_t &smart_buffer::operator[](int32_t index) const
 {
     return *(static_cast<const std::uint8_t*>(data()) + index);
