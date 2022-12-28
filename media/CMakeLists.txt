@@ -46,6 +46,8 @@ set(PUBLIC_HEADERS
     i_media_frame.h
     i_audio_format.h
     i_video_format.h
+    i_audio_frame.h
+    i_video_frame.h
     )
 
 set(PRIVATE_HEADERS
