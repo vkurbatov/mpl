@@ -15,6 +15,7 @@ set(SOURCES
     bitstream_base.cpp
     random_base.cpp
     convert_base.cpp
+    any_base.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -34,6 +35,7 @@ set(PUBLIC_HEADERS
     bitstream_base.h
     random_base.h
     convert_base.h
+    any_base.h
 )
 
 set(PRIVATE_HEADERS

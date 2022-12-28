@@ -14,7 +14,7 @@ std::string to_string(timestamp_t timestamp)
             ? std::chrono::system_clock::now()
             : std::chrono::system_clock::time_point(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::nanoseconds(timestamp)));
 
-    if (timestamp == 0)
+    if (timestamp == timestamp_null)
     {
         timestamp = time_point.time_since_epoch().count();
     }

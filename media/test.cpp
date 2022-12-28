@@ -8,6 +8,9 @@
 
 #include "convert_utils.h"
 #include "audio_format_impl.h"
+#include "tools/base/any_base.h"
+
+#include <string>
 
 namespace mpl
 {
@@ -91,6 +94,38 @@ void test2()
 
 void test3()
 {
+    base::any any1, any2, any3;
+
+    any1 = 1;
+    base::any any11 = any1;
+    any2 = 4.567;
+    base::any any22(any2);
+    any3 = std::string("vasiliy");
+    auto any33(any3);
+
+
+    auto cmp1 = any1 == any2;
+    auto cmp2 = any2 == any3;
+    auto cmp3 = any3 == any1;
+
+    auto cmp4 = any1 == any11;
+    auto cmp5 = any2 == any22;
+    auto cmp6 = any3 == any33;
+
+    auto v1 = any1.cast<std::int32_t>();
+    auto v2 = any2.cast<double>();
+    auto v3 = any3.cast<std::string>();
+
+    auto pv1 = any1.cast<std::int32_t*>();
+    auto pv2 = any2.cast<double*>();
+    auto pv3 = any3.cast<std::string*>();
+
+    auto r1 = std::is_pointer<std::int32_t>::value;
+    auto r2 = std::is_pointer<std::int32_t*>::value;
+
+    return;
+
+    /*
     audio_format_impl audio_format(audio_format_id_t::opus, 48000, 2);
     auto clone_format = audio_format.clone();
     auto& a_clone = static_cast<i_audio_format&>(*clone_format);
@@ -101,13 +136,38 @@ void test3()
     auto eq = audio_format.is_equal(*clone_format);
 
     return;
+*/
+}
 
+void test4()
+{
+
+    option_impl option1;
+    option_impl option2;
+
+    option1.set(1, 123);
+    option1.set(2, 456.7);
+    option1.set(3, true);
+    option1.set(4, std::string("Vasiliy"));
+
+    option2.set(5, 321);
+    option2.set(6, 7.654);
+    option2.set(7, false);
+    option2.set(8, std::string("Kurbatov"));
+
+    auto cmp1 = option1.is_equal(option2);
+    auto c1 = option1.merge(option2);
+    auto c2 = option2.merge(option1);
+    auto cmp2 = option1.is_equal(option2);
+
+
+    return;
 }
 
 void test()
 {
     //test1();
-    test3();
+    test4();
 }
 
 }

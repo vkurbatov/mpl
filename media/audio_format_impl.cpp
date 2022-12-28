@@ -41,11 +41,21 @@ audio_format_impl &audio_format_impl::set_sample_channels(int32_t channels)
     return *this;
 }
 
-
-audio_format_impl &audio_format_impl::set_params(i_property::u_ptr_t &&params)
+audio_format_impl &audio_format_impl::set_options(const i_option &options)
 {
-    m_params = std::move(params);
+    m_options.assign(options);
     return *this;
+}
+
+audio_format_impl &audio_format_impl::set_options(option_impl &&options)
+{
+    m_options = std::move(options);
+    return *this;
+}
+
+i_option& audio_format_impl::options()
+{
+    return m_options;
 }
 
 media_type_t audio_format_impl::media_type() const
@@ -69,10 +79,7 @@ i_media_format::u_ptr_t audio_format_impl::clone() const
                                    , m_sample_rate
                                    , m_channels))
     {
-        if (m_params != nullptr)
-        {
-            clone_format->set_params(m_params->clone());
-        }
+        clone_format->m_options = m_options;
 
         return clone_format;
     }
@@ -84,12 +91,7 @@ bool audio_format_impl::is_equal(const i_media_format &other) const
 {
     if (is_compatible(other))
     {
-        auto self_params = params();
-        auto other_params = other.params();
-        return (self_params == other_params)
-                || (self_params != nullptr
-                    && other_params != nullptr
-                    && self_params->is_equal(*other_params));
+        return m_options.is_equal(other.options());
     }
 
     return false;
@@ -108,10 +110,11 @@ bool audio_format_impl::is_compatible(const i_media_format &other) const
     return false;
 }
 
-const i_property *audio_format_impl::params() const
+const i_option& audio_format_impl::options() const
 {
-    return m_params.get();
+    return m_options;
 }
+
 
 bool audio_format_impl::is_valid() const
 {

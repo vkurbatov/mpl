@@ -15,10 +15,14 @@ set(SOURCES
     string_utils_impl.cpp
     property_value_impl.cpp
     property_tree_impl.cpp
+    option_impl.cpp
+    option_helper.cpp
     convert_value_impl.cpp
     convert_property_impl.cpp
     audio_format_impl.cpp
     audio_info.cpp
+    video_format_impl.cpp
+    video_info.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -27,12 +31,14 @@ set(PUBLIC_HEADERS
     audio_types.h
     audio_info.h
     video_types.h
+    video_info.h
     stream_info.h
     property_types.h
     time_types.h
     i_property.h
     i_property_value.h
     i_property_tree.h
+    i_option.h
     i_data_object.h
     i_buffer.h
     i_dynamic_buffer.h
@@ -54,7 +60,10 @@ set(PRIVATE_HEADERS
     convert_utils.h
     property_value_impl.h
     property_tree_impl.h
+    option_impl.h
+    option_helper.h
     audio_format_impl.h
+    video_format_impl.h
 )
 
 
