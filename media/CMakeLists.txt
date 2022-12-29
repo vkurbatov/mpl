@@ -5,6 +5,7 @@ set(TARGET media)
 set(SOURCES
     test.cpp
     smart_buffer.cpp
+    smart_buffer_collection.cpp
     stream_info.cpp
     utils.cpp
     time_utils.cpp
@@ -25,6 +26,7 @@ set(SOURCES
     video_info.cpp
     channel_control.cpp
     audio_frame_impl.cpp
+    video_frame_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -62,6 +64,7 @@ set(PUBLIC_HEADERS
 set(PRIVATE_HEADERS
     test.h
     smart_buffer.h
+    smart_buffer_collection.h
     utils.h
     time_utils.h
     media_utils.h
@@ -76,6 +79,7 @@ set(PRIVATE_HEADERS
     audio_format_impl.h
     video_format_impl.h
     audio_frame_impl.h
+    video_frame_impl.h
 )
 
 
