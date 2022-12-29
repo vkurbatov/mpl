@@ -26,6 +26,8 @@ public:
                       , std::int32_t sample_rate = 0
                       , std::int32_t channels = 0);
 
+    audio_format_impl(const i_audio_format& other);
+
     audio_format_impl& set_format_id(const audio_format_id_t& format_id);
     audio_format_impl& set_sample_rate(std::int32_t sample_rate);
     audio_format_impl& set_sample_channels(std::int32_t channels);

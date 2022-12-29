@@ -23,6 +23,14 @@ audio_format_impl::audio_format_impl(const audio_format_id_t &format_id
 
 }
 
+audio_format_impl::audio_format_impl(const i_audio_format &other)
+    : m_format_id(other.format_id())
+    , m_sample_rate(other.sample_rate())
+    , m_channels(other.channels())
+{
+    m_options.merge(other.options());
+}
+
 audio_format_impl &audio_format_impl::set_format_id(const audio_format_id_t &format_id)
 {
     m_format_id = format_id;

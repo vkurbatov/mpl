@@ -1,7 +1,7 @@
 #ifndef MPL_STREAM_INFO_H
 #define MPL_STREAM_INFO_H
 
-#include "media_types.h"
+#include "stream_types.h"
 #include <cstring>
 
 namespace mpl

@@ -23,6 +23,8 @@ set(SOURCES
     audio_info.cpp
     video_format_impl.cpp
     video_info.cpp
+    channel_control.cpp
+    audio_frame_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -35,6 +37,10 @@ set(PUBLIC_HEADERS
     stream_info.h
     property_types.h
     time_types.h
+    message_types.h
+    stream_types.h
+    channel_types.h
+    channel_control.h
     i_property.h
     i_property_value.h
     i_property_tree.h
@@ -42,6 +48,9 @@ set(PUBLIC_HEADERS
     i_data_object.h
     i_buffer.h
     i_dynamic_buffer.h
+    i_channel.h
+    i_message.h
+    i_media_stream.h
     i_media_format.h
     i_media_frame.h
     i_audio_format.h
@@ -66,6 +75,7 @@ set(PRIVATE_HEADERS
     option_helper.h
     audio_format_impl.h
     video_format_impl.h
+    audio_frame_impl.h
 )
 
 

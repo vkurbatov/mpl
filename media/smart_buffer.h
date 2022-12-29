@@ -29,7 +29,7 @@ class smart_buffer : public i_dynamic_buffer
 
     std::size_t                         m_ref_size;
     i_data_object::s_ptr_t              m_storage_context;
-    smart_buffer(i_data_object::s_ptr_t storage_context
+    smart_buffer(const i_data_object::s_ptr_t& storage_context
                  , bool storage);
 public:
     using u_ptr_t = std::unique_ptr<smart_buffer>;
@@ -44,7 +44,7 @@ public:
     static u_ptr_t create(const raw_array_t* const_array);
     static u_ptr_t create(raw_array_t&& array);
     static u_ptr_t create(const i_data_object* data_object_ptr);
-    static u_ptr_t create(i_data_object::s_ptr_t data_object);
+    static u_ptr_t create(const i_data_object::s_ptr_t& data_object);
 
     smart_buffer();
     smart_buffer(const void* const_data
@@ -53,7 +53,7 @@ public:
     smart_buffer(const raw_array_t* const_array);
     smart_buffer(raw_array_t&& array);
     smart_buffer(const i_data_object* data_object_ptr);
-    smart_buffer(i_data_object::s_ptr_t data_object);
+    smart_buffer(const i_data_object::s_ptr_t& data_object);
     smart_buffer(const smart_buffer& other) = default;
     smart_buffer(smart_buffer&& other);
 
@@ -67,7 +67,7 @@ public:
     smart_buffer& assign(const raw_array_t* const_array);
     smart_buffer& assign(raw_array_t&& array);
     smart_buffer& assign(const i_data_object* data_object_ptr);
-    smart_buffer& assign(i_data_object::s_ptr_t data_object);
+    smart_buffer& assign(const i_data_object::s_ptr_t& data_object);
 
     bool operator == (const smart_buffer& other) const;
     bool operator != (const smart_buffer& other) const;

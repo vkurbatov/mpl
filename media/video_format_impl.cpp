@@ -27,6 +27,15 @@ video_format_impl::video_format_impl(const video_format_id_t &format_id
 
 }
 
+video_format_impl::video_format_impl(const i_video_format &other)
+    : video_format_impl(other.format_id()
+                        , other.width()
+                        , other.height()
+                        , other.frame_rate())
+{
+    m_options.merge(other.options());
+}
+
 video_format_impl &video_format_impl::set_format_id(const video_format_id_t &format_id)
 {
     m_format_id = format_id;

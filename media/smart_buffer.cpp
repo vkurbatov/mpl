@@ -8,12 +8,13 @@ namespace mpl
 
 struct storage_context_t : public i_data_object
 {
+    using u_ptr_t = std::unique_ptr<storage_context_t>;
     using s_ptr_t = std::shared_ptr<storage_context_t>;
     raw_array_t         m_data;
 
-    static s_ptr_t create(raw_array_t&& array)
+    static u_ptr_t create(raw_array_t&& array)
     {
-        return std::make_shared<storage_context_t>(std::move(array));
+        return std::make_unique<storage_context_t>(std::move(array));
     }
 
     storage_context_t(raw_array_t&& array)
@@ -56,7 +57,7 @@ struct storage_context_t : public i_data_object
 
 };
 
-smart_buffer::smart_buffer(i_data_object::s_ptr_t storage_context
+smart_buffer::smart_buffer(const i_data_object::s_ptr_t& storage_context
                            , bool storage)
     : m_storage_context(storage_context)
 {
@@ -97,9 +98,9 @@ smart_buffer::u_ptr_t smart_buffer::create(const i_data_object *data_object_ptr)
     return std::make_unique<smart_buffer>(data_object_ptr);
 }
 
-smart_buffer::u_ptr_t smart_buffer::create(i_data_object::s_ptr_t data_object)
+smart_buffer::u_ptr_t smart_buffer::create(const i_data_object::s_ptr_t& data_object)
 {
-    return std::make_unique<smart_buffer>(std::move(data_object));
+    return std::make_unique<smart_buffer>(data_object);
 }
 
 smart_buffer::smart_buffer()
@@ -137,10 +138,10 @@ smart_buffer::smart_buffer(const i_data_object *data_object_ptr)
     assign(data_object_ptr);
 }
 
-smart_buffer::smart_buffer(i_data_object::s_ptr_t data_object)
+smart_buffer::smart_buffer(const i_data_object::s_ptr_t& data_object)
     : smart_buffer()
 {
-    assign(std::move(data_object));
+    assign(data_object);
 }
 
 
@@ -203,7 +204,7 @@ smart_buffer &smart_buffer::assign(const i_data_object *data_object_ptr)
     return *this;
 }
 
-smart_buffer &smart_buffer::assign(i_data_object::s_ptr_t data_object)
+smart_buffer &smart_buffer::assign(const i_data_object::s_ptr_t& data_object)
 {
     reset();
     m_storage_context = data_object;

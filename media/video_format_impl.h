@@ -29,6 +29,8 @@ public:
                       , std::int32_t height = 0
                       , double frame_rate = 0.0);
 
+    video_format_impl(const i_video_format& other);
+
     video_format_impl& set_format_id(const video_format_id_t& format_id);
     video_format_impl& set_width(std::int32_t width);
     video_format_impl& set_heigth(std::int32_t height);

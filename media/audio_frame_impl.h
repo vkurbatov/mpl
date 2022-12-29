@@ -1,0 +1,117 @@
+#ifndef MPL_AUDIO_FRAME_IMPL_H
+#define MPL_AUDIO_FRAME_IMPL_H
+
+#include "i_audio_frame.h"
+#include "audio_format_impl.h"
+#include "smart_buffer.h"
+#include <unordered_map>
+
+namespace mpl
+{
+
+class audio_frame_impl;
+class audio_frame_ptr_impl;
+class audio_frame_ref_impl;
+
+class audio_frame_base_impl : public i_audio_frame
+{
+protected:
+    using buffer_map_t = std::unordered_map<std::int32_t, smart_buffer>;
+    const i_audio_format*   m_audio_format_ref;
+    buffer_map_t            m_buffers;
+    frame_id_t              m_frame_id;
+
+public:
+    using u_ptr_t = std::unique_ptr<audio_frame_base_impl>;
+    using s_ptr_t = std::shared_ptr<audio_frame_base_impl>;
+
+
+    audio_frame_base_impl(const i_audio_format* format_ref
+                         , frame_id_t frame_id = frame_id_undefined);
+
+    void set_frame_id(frame_id_t frame_id);
+    void set_buffer(std::int32_t buffer_index
+                                     , smart_buffer&& buffer);
+    bool remove_buffer(std::int32_t buffer_index);
+    void make_shared_buffers();
+
+protected:
+    void set_format(const i_audio_format* format_ref);
+    // i_media_frame interface
+public:
+    media_type_t media_type() const override;
+    const i_buffer *get_buffer(int32_t buffer_index) const override;
+    std::size_t buffers() const override;
+    frame_id_t frame_id() const override;
+
+    // i_audio_frame interface
+public:
+    const i_audio_format &format() const override;
+
+};
+
+class audio_frame_impl : public audio_frame_base_impl
+{
+    audio_format_impl   m_audio_format;
+public:
+    using u_ptr_t = std::unique_ptr<audio_frame_impl>;
+    using s_ptr_t = std::shared_ptr<audio_frame_impl>;
+
+    static u_ptr_t create(const audio_format_impl& audio_format
+                          , frame_id_t frame_id = frame_id_undefined);
+
+    static u_ptr_t create(audio_format_impl&& audio_format
+                          , frame_id_t frame_id = frame_id_undefined);
+
+    audio_frame_impl(const audio_format_impl& audio_format
+                     , frame_id_t frame_id = frame_id_undefined);
+
+    audio_frame_impl(audio_format_impl&& audio_format
+                     , frame_id_t frame_id = frame_id_undefined);
+
+    void set_format(const audio_format_impl& audio_format);
+    void set_format(audio_format_impl&& audio_format);
+
+    // i_media_frame interface
+public:
+    i_media_frame::u_ptr_t clone() const override;
+};
+
+class audio_frame_ptr_impl : public audio_frame_base_impl
+{
+    i_audio_format::s_ptr_t   m_audio_format_ptr;
+public:
+    using u_ptr_t = std::unique_ptr<audio_frame_ptr_impl>;
+    using s_ptr_t = std::shared_ptr<audio_frame_ptr_impl>;
+
+    static u_ptr_t create(const i_audio_format::s_ptr_t& audio_format
+                          , frame_id_t frame_id = frame_id_undefined);
+
+
+    audio_frame_ptr_impl(const i_audio_format::s_ptr_t& audio_format
+                     , frame_id_t frame_id = frame_id_undefined);
+
+
+    void set_format(const i_audio_format::s_ptr_t& audio_format);
+
+public:
+    i_media_frame::u_ptr_t clone() const override;
+};
+
+class audio_frame_ref_impl : public audio_frame_base_impl
+{
+public:
+    using u_ptr_t = std::unique_ptr<audio_frame_ptr_impl>;
+    using s_ptr_t = std::shared_ptr<audio_frame_ptr_impl>;
+
+    audio_frame_ref_impl(const i_audio_format& audio_format
+                        , frame_id_t frame_id = frame_id_undefined);
+
+
+public:
+    i_media_frame::u_ptr_t clone() const override;
+};
+
+}
+
+#endif // MPL_AUDIO_FRAME_IMPL_H
