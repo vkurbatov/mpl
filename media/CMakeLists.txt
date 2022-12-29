@@ -27,6 +27,7 @@ set(SOURCES
     channel_control.cpp
     audio_frame_impl.cpp
     video_frame_impl.cpp
+    message_frame_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -52,6 +53,7 @@ set(PUBLIC_HEADERS
     i_dynamic_buffer.h
     i_channel.h
     i_message.h
+    i_message_frame.h
     i_media_stream.h
     i_media_format.h
     i_media_frame.h
@@ -80,6 +82,7 @@ set(PRIVATE_HEADERS
     video_format_impl.h
     audio_frame_impl.h
     video_frame_impl.h
+    message_frame_impl.h
 )
 
 
