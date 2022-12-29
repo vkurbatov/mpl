@@ -28,6 +28,10 @@ set(SOURCES
     audio_frame_impl.cpp
     video_frame_impl.cpp
     message_frame_impl.cpp
+    message_router_impl.cpp
+    event.cpp
+    event_channel_state.cpp
+    message_event_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -43,7 +47,10 @@ set(PUBLIC_HEADERS
     message_types.h
     stream_types.h
     channel_types.h
+    event_types.h
     channel_control.h
+    event.h
+    event_channel_state.h
     i_property.h
     i_property_value.h
     i_property_tree.h
@@ -53,7 +60,10 @@ set(PUBLIC_HEADERS
     i_dynamic_buffer.h
     i_channel.h
     i_message.h
+    i_message_sink.h
+    i_message_source.h
     i_message_frame.h
+    i_message_event.h
     i_media_stream.h
     i_media_format.h
     i_media_frame.h
@@ -83,6 +93,8 @@ set(PRIVATE_HEADERS
     audio_frame_impl.h
     video_frame_impl.h
     message_frame_impl.h
+    message_router_impl.h
+    message_event_impl.h
 )
 
 
