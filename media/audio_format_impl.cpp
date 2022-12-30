@@ -61,6 +61,16 @@ audio_format_impl &audio_format_impl::set_options(option_impl &&options)
     return *this;
 }
 
+audio_format_impl &audio_format_impl::assign(const i_audio_format &other)
+{
+    m_format_id = other.format_id();
+    m_sample_rate = other.sample_rate();
+    m_channels = other.channels();
+    m_options.assign(other.options());
+
+    return *this;
+}
+
 i_option& audio_format_impl::options()
 {
     return m_options;

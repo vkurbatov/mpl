@@ -37,6 +37,7 @@ public:
     video_format_impl& set_frame_rate(double frame_rate);
     video_format_impl& set_options(option_impl&& options);
     video_format_impl& set_options(const i_option& options);
+    video_format_impl& assign(const i_video_format& other);
 
     i_option& options();
 

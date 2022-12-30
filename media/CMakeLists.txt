@@ -58,6 +58,7 @@ set(PUBLIC_HEADERS
     i_data_object.h
     i_buffer.h
     i_dynamic_buffer.h
+    i_buffer_collection.h
     i_channel.h
     i_message.h
     i_message_sink.h
@@ -84,6 +85,7 @@ set(PRIVATE_HEADERS
     property_reader.h
     property_writer.h
     convert_utils.h
+    pointer_utils.h
     property_value_impl.h
     property_tree_impl.h
     option_impl.h

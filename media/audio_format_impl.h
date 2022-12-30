@@ -34,6 +34,8 @@ public:
     audio_format_impl& set_options(const i_option& options);
     audio_format_impl& set_options(option_impl&& options);
 
+    audio_format_impl& assign(const i_audio_format& other);
+
     i_option& options();
 
     // i_media_format interface

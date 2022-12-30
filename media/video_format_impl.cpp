@@ -62,13 +62,24 @@ video_format_impl &video_format_impl::set_frame_rate(double frame_rate)
 
 video_format_impl &video_format_impl::set_options(option_impl &&options)
 {
-    m_options.assign(options);
+    m_options = std::move(options);
     return *this;
 }
 
 video_format_impl &video_format_impl::set_options(const i_option &options)
 {
-    m_options = std::move(options);
+    m_options.assign(options);
+    return *this;
+}
+
+video_format_impl &video_format_impl::assign(const i_video_format &other)
+{
+    m_format_id = other.format_id();
+    m_width = other.width();
+    m_height = other.height();
+    m_frame_rate = other.frame_rate();
+    m_options.assign(other.options());
+
     return *this;
 }
 

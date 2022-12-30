@@ -1,4 +1,5 @@
 #include "audio_frame_impl.h"
+#include "pointer_utils.h"
 
 namespace mpl
 {
@@ -26,12 +27,12 @@ void audio_frame_base_impl::set_buffers(smart_buffer_collection &&buffers)
     m_buffers = std::move(buffers);
 }
 
-smart_buffer_collection &audio_frame_base_impl::buffers()
+smart_buffer_collection &audio_frame_base_impl::smart_buffers()
 {
     return m_buffers;
 }
 
-const smart_buffer_collection &audio_frame_base_impl::buffers() const
+const smart_buffer_collection &audio_frame_base_impl::smart_buffers() const
 {
     return m_buffers;
 }
@@ -41,15 +42,6 @@ media_type_t audio_frame_base_impl::media_type() const
     return media_type_t::audio;
 }
 
-const i_buffer *audio_frame_base_impl::get_buffer(int32_t buffer_index) const
-{
-    return m_buffers.get_buffer(buffer_index);
-}
-
-std::size_t audio_frame_base_impl::buffers_count() const
-{
-    return m_buffers.count();
-}
 
 frame_id_t audio_frame_base_impl::frame_id() const
 {
@@ -59,6 +51,11 @@ frame_id_t audio_frame_base_impl::frame_id() const
 timestamp_t audio_frame_base_impl::timestamp() const
 {
     return m_timestamp;
+}
+
+const i_buffer_collection &audio_frame_base_impl::buffers() const
+{
+    return m_buffers;
 }
 
 audio_frame_impl::u_ptr_t audio_frame_impl::create(const audio_format_impl &audio_format
@@ -77,6 +74,11 @@ audio_frame_impl::u_ptr_t audio_frame_impl::create(audio_format_impl &&audio_for
     return std::make_unique<audio_frame_impl>(std::move(audio_format)
                                               , frame_id
                                               , timestamp);
+}
+
+audio_frame_impl::u_ptr_t audio_frame_impl::create(const i_audio_frame &other)
+{
+    return std::make_unique<audio_frame_impl>(other);
 }
 
 audio_frame_impl::audio_frame_impl(const audio_format_impl &audio_format
@@ -99,6 +101,14 @@ audio_frame_impl::audio_frame_impl(audio_format_impl &&audio_format
 
 }
 
+audio_frame_impl::audio_frame_impl(const i_audio_frame &other)
+    : audio_frame_impl(other.format()
+                       , other.frame_id()
+                       , other.timestamp())
+{
+    m_buffers.assign(other.buffers());
+}
+
 void audio_frame_impl::set_format(const audio_format_impl &audio_format)
 {
     m_audio_format = audio_format;
@@ -107,6 +117,19 @@ void audio_frame_impl::set_format(const audio_format_impl &audio_format)
 void audio_frame_impl::set_format(audio_format_impl &&audio_format)
 {
     m_audio_format = std::move(audio_format);
+}
+
+void audio_frame_impl::set_format(const i_audio_format &audio_format)
+{
+    m_audio_format.assign(audio_format);
+}
+
+void audio_frame_impl::assign(const i_audio_frame &other)
+{
+    m_audio_format.assign(other.format());
+    m_frame_id = other.frame_id();
+    m_timestamp = other.timestamp();
+    m_buffers.assign(other.buffers());
 }
 
 i_media_frame::u_ptr_t audio_frame_impl::clone() const
@@ -136,6 +159,11 @@ audio_frame_ptr_impl::u_ptr_t audio_frame_ptr_impl::create(const i_audio_format:
                                                   , timestamp);
 }
 
+audio_frame_ptr_impl::u_ptr_t audio_frame_ptr_impl::create(const i_audio_frame &other)
+{
+    return std::make_unique<audio_frame_ptr_impl>(other);
+}
+
 audio_frame_ptr_impl::audio_frame_ptr_impl(const i_audio_format::s_ptr_t &audio_format
                                            , frame_id_t frame_id
                                            , timestamp_t timestamp)
@@ -146,18 +174,39 @@ audio_frame_ptr_impl::audio_frame_ptr_impl(const i_audio_format::s_ptr_t &audio_
 
 }
 
+audio_frame_ptr_impl::audio_frame_ptr_impl(const i_audio_frame &other)
+    : audio_frame_ptr_impl(utils::static_pointer_cast<i_audio_format>(other.format().clone())
+                           , other.frame_id()
+                           , other.timestamp())
+{
+    m_buffers.assign(other.buffers());
+}
+
 void audio_frame_ptr_impl::set_format(const i_audio_format::s_ptr_t &audio_format)
 {
     m_audio_format_ptr = audio_format;
+}
+
+void audio_frame_ptr_impl::set_format(const i_audio_format &audio_format)
+{
+    m_audio_format_ptr = utils::static_pointer_cast<i_audio_format>(audio_format.clone());
+}
+
+void audio_frame_ptr_impl::assign(const i_audio_frame &other)
+{
+    m_audio_format_ptr = utils::static_pointer_cast<i_audio_format>(other.format().clone());
+    m_frame_id = other.frame_id();
+    m_timestamp = other.timestamp();
+    m_buffers.assign(other.buffers());
 }
 
 i_media_frame::u_ptr_t audio_frame_ptr_impl::clone() const
 {
     if (m_audio_format_ptr)
     {
-        if (i_media_format::s_ptr_t clone_format = m_audio_format_ptr->clone())
+        if (auto clone_format = utils::static_pointer_cast<i_audio_format>(m_audio_format_ptr->clone()))
         {
-            if (auto clone_frame = create(std::static_pointer_cast<i_audio_format>(clone_format)
+            if (auto clone_frame = create(std::move(clone_format)
                                           , m_frame_id
                                           , m_timestamp))
             {
@@ -187,9 +236,9 @@ audio_frame_ref_impl::audio_frame_ref_impl(const i_audio_format &audio_format
 
 i_media_frame::u_ptr_t audio_frame_ref_impl::clone() const
 {
-    if (i_media_format::s_ptr_t clone_format = format().clone())
+    if (auto clone_format = utils::static_pointer_cast<i_audio_format>(format().clone()))
     {
-        if (auto clone_frame = audio_frame_ptr_impl::create(std::static_pointer_cast<i_audio_format>(clone_format)
+        if (auto clone_frame = audio_frame_ptr_impl::create(std::move(clone_format)
                                                            , m_frame_id
                                                            , m_timestamp))
         {

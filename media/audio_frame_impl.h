@@ -27,16 +27,15 @@ public:
     void set_frame_id(frame_id_t frame_id);
     void set_timestamp(timestamp_t timestamp);
     void set_buffers(smart_buffer_collection&& buffers);
-    smart_buffer_collection& buffers();
-    const smart_buffer_collection& buffers() const;
+    smart_buffer_collection& smart_buffers();
+    const smart_buffer_collection& smart_buffers() const;
 
     // i_media_frame interface
 public:
     media_type_t media_type() const override;
-    const i_buffer *get_buffer(int32_t buffer_index) const override;
-    std::size_t buffers_count() const override;
     frame_id_t frame_id() const override;
     timestamp_t timestamp() const override;
+    const i_buffer_collection& buffers() const override;
 
 };
 
@@ -55,6 +54,8 @@ public:
                           , frame_id_t frame_id = frame_id_undefined
                           , timestamp_t timestamp = timestamp_infinite);
 
+    static u_ptr_t create(const i_audio_frame& other);
+
     audio_frame_impl(const audio_format_impl& audio_format
                      , frame_id_t frame_id = frame_id_undefined
                      , timestamp_t timestamp = timestamp_infinite);
@@ -63,8 +64,12 @@ public:
                      , frame_id_t frame_id = frame_id_undefined
                      , timestamp_t timestamp = timestamp_infinite);
 
+    audio_frame_impl(const i_audio_frame& other);
+
     void set_format(const audio_format_impl& audio_format);
     void set_format(audio_format_impl&& audio_format);
+    void set_format(const i_audio_format& audio_format);
+    void assign(const i_audio_frame& other);
 
     // i_media_frame interface
 public:
@@ -86,13 +91,18 @@ public:
                           , frame_id_t frame_id = frame_id_undefined
                           , timestamp_t timestamp = timestamp_infinite);
 
+    static u_ptr_t create(const i_audio_frame& other);
 
     audio_frame_ptr_impl(const i_audio_format::s_ptr_t& audio_format
                      , frame_id_t frame_id = frame_id_undefined
                      , timestamp_t timestamp = timestamp_infinite);
 
+    audio_frame_ptr_impl(const i_audio_frame& other);
+
 
     void set_format(const i_audio_format::s_ptr_t& audio_format);
+    void set_format(const i_audio_format& audio_format);
+    void assign(const i_audio_frame& other);
 
 
     // i_media_frame interface

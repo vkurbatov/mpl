@@ -31,16 +31,15 @@ public:
     void set_buffers(smart_buffer_collection&& buffers);
     void set_frame_type(i_video_frame::frame_type_t frame_type);
 
-    smart_buffer_collection& buffers();
-    const smart_buffer_collection& buffers() const;
+    smart_buffer_collection& smart_buffers();
+    const smart_buffer_collection& smart_buffers() const;
 
     // i_media_frame interface
 public:
     media_type_t media_type() const override;
-    const i_buffer *get_buffer(int32_t buffer_index) const override;
-    std::size_t buffers_count() const override;
     frame_id_t frame_id() const override;
     timestamp_t timestamp() const override;
+    const i_buffer_collection& buffers() const override;
 
     // i_video_frame interface
 public:
@@ -66,6 +65,8 @@ public:
                           , i_video_frame::frame_type_t frame_type
                           = i_video_frame::frame_type_t::undefined);
 
+    static u_ptr_t create(const i_video_frame& other);
+
     video_frame_impl(const video_format_impl& video_format
                      , frame_id_t frame_id = frame_id_undefined
                      , timestamp_t timestamp = timestamp_infinite
@@ -78,8 +79,13 @@ public:
                      , i_video_frame::frame_type_t frame_type
                      = i_video_frame::frame_type_t::undefined);
 
+    video_frame_impl(const i_video_frame& other);
+
     void set_format(const video_format_impl& video_format);
     void set_format(video_format_impl&& video_format);
+    void set_format(const i_video_format& video_format);
+
+    void assign(const i_video_frame& other);
 
     // i_media_frame interface
 public:
@@ -103,6 +109,8 @@ public:
                           , i_video_frame::frame_type_t frame_type
                           = i_video_frame::frame_type_t::undefined);
 
+    static u_ptr_t create(const i_video_frame& other);
+
 
     video_frame_ptr_impl(const i_video_format::s_ptr_t& video_format
                      , frame_id_t frame_id = frame_id_undefined
@@ -110,8 +118,11 @@ public:
                      , i_video_frame::frame_type_t frame_type
                          = i_video_frame::frame_type_t::undefined);
 
+    video_frame_ptr_impl(const i_video_frame& other);
+
 
     void set_format(const i_video_format::s_ptr_t& video_format);
+    void assign(const i_video_frame& other);
 
 
     // i_media_frame interface
