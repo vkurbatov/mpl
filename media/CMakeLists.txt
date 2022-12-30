@@ -32,6 +32,7 @@ set(SOURCES
     event.cpp
     event_channel_state.cpp
     message_event_impl.cpp
+    v4l2_device_factory.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -48,6 +49,7 @@ set(PUBLIC_HEADERS
     stream_types.h
     channel_types.h
     event_types.h
+    device_types.h
     channel_control.h
     event.h
     event_channel_state.h
@@ -72,6 +74,8 @@ set(PUBLIC_HEADERS
     i_video_format.h
     i_audio_frame.h
     i_video_frame.h
+    i_device.h
+    i_device_factory.h
     )
 
 set(PRIVATE_HEADERS
@@ -97,6 +101,7 @@ set(PRIVATE_HEADERS
     message_frame_impl.h
     message_router_impl.h
     message_event_impl.h
+    v4l2_device_factory.h
 )
 
 
