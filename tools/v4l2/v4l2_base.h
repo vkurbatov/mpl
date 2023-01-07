@@ -116,7 +116,7 @@ struct control_menu_item_t
                         , const std::string& name);
 };
 
-typedef std::vector<control_menu_item_t> control_menu_t;
+using control_menu_t = std::vector<control_menu_item_t>;
 
 struct control_t
 {
@@ -126,6 +126,8 @@ struct control_t
     value_type_t    default_value;
     value_type_t    current_value;
     control_range_t range;
+    control_menu_t  menu;
+
     control_t(std::uint32_t id
               , const std::string& name
               , value_type_t step
@@ -133,7 +135,7 @@ struct control_t
               , value_type_t current_value
               , value_type_t min
               , value_type_t max);
-    control_menu_t  menu;
+
     control_type_t type() const;
 };
 
@@ -155,13 +157,9 @@ struct mapped_buffer_t
     void next();
 };
 
-typedef std::function<bool(frame_t&& frame)> frame_handler_t;
+using frame_handler_t = std::function<bool(frame_t&& frame)>;
 
-
-typedef std::function<bool(const frame_info_t& frame_info
-                           , frame_data_t&& frame_data)> stream_data_handler_t;
-
-typedef std::function<void(const streaming_event_t& streaming_event)> stream_event_handler_t;
+using stream_event_handler_t = std::function<void(const streaming_event_t& streaming_event)>;
 
 }
 

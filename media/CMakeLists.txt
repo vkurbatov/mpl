@@ -33,6 +33,7 @@ set(SOURCES
     event_channel_state.cpp
     message_event_impl.cpp
     v4l2_device_factory.cpp
+    v4l2_utils.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -102,6 +103,7 @@ set(PRIVATE_HEADERS
     message_router_impl.h
     message_event_impl.h
     v4l2_device_factory.h
+    v4l2_utils.h
 )
 
 

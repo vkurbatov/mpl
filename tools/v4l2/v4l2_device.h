@@ -6,19 +6,20 @@
 namespace v4l2
 {
 
-struct v4l2_device_context_t;
-struct v4l2_device_context_deleter_t { void operator()(v4l2_device_context_t* v4l2_device_context_ptr); };
-
-typedef std::unique_ptr<v4l2_device_context_t, v4l2_device_context_deleter_t> v4l2_device_context_ptr_t;
-
 class v4l2_device
 {
-    v4l2_device_context_ptr_t           m_v4l2_device_context;
+    struct context_t;
+    using context_ptr_t = std::unique_ptr<context_t>;
+    context_ptr_t                       m_context;
+
     frame_handler_t                     m_frame_handler;
     stream_event_handler_t              m_stream_event_handler;
-public:       
+public:
+
     v4l2_device(frame_handler_t frame_handler = nullptr
-            , stream_event_handler_t stream_event_handler = nullptr);
+                , stream_event_handler_t stream_event_handler = nullptr);
+
+    ~v4l2_device();
 
     bool open(const std::string& uri
               , std::uint32_t buffer_count = 1);
@@ -27,7 +28,7 @@ public:
     bool is_established() const;
 
     format_list_t get_supported_formats() const;
-    const frame_info_t& get_format() const;
+    frame_info_t get_format() const;
     bool set_format(const frame_info_t& format);
 
     control_list_t get_control_list() const;

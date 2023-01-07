@@ -4,9 +4,12 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
-#include <mutex>
+#include <shared_mutex>
 #include <map>
 #include <future>
+
+
+#include "tools/base/sync_base.h"
 
 #define WBS_MODULE_NAME "v4l2:device"
 #include "tools/base/logger_base.h"
@@ -14,6 +17,10 @@
 
 namespace v4l2
 {
+
+using mutex_t = base::shared_spin_lock;
+using lock_t = std::lock_guard<mutex_t>;
+using shared_lock_t = std::shared_lock<mutex_t>;
 
 const std::int32_t relative_min = -0x80000000;
 const std::int32_t relative_max = 0x7fffffff;
@@ -151,13 +158,13 @@ struct command_controller_t
             return std::move(request_queue);
         }
 
-        return request_queue_t();
+        return {};
     }
 };
 
 struct v4l2_object_t
 {
-    std::int32_t handle;
+    std::int32_t    handle;
     mapped_buffer_t mapped_buffer;
 
     v4l2_object_t(const std::string& uri
@@ -212,6 +219,7 @@ struct v4l2_object_t
     {
         return std::move(v4l2::fetch_supported_format(handle));
     }
+
     bool set_frame_format(const frame_size_t& frame_size
                           , pixel_format_t pixel_format)
     {
@@ -267,15 +275,16 @@ struct v4l2_object_t
 };
 
 
-struct v4l2_device_context_t
+struct v4l2_device::context_t
 {    
-    typedef std::queue<std::pair<std::uint32_t, std::int32_t>> control_queue_t;
+    using u_ptr_t = v4l2_device::context_ptr_t;
+    using control_queue_t = std::queue<std::pair<std::uint32_t, std::int32_t>>;
 
     frame_handler_t                     m_frame_handler;
     stream_event_handler_t              m_stream_event_handler;
 
     std::thread                         m_stream_thread;
-    mutable std::mutex                  m_mutex;
+    mutable mutex_t                     m_mutex;
 
     format_list_t                       m_format_list;
     control_map_t                       m_control_list;
@@ -291,10 +300,17 @@ struct v4l2_device_context_t
 
     bool                                m_control_support;
 
-    v4l2_device_context_t(frame_handler_t frame_handler
+    static u_ptr_t create(frame_handler_t frame_handler
                           , stream_event_handler_t stream_event_handler)
-        : m_frame_handler(frame_handler)
-        , m_stream_event_handler(stream_event_handler)
+    {
+        return std::make_unique<context_t>(std::move(frame_handler)
+                                           , std::move(stream_event_handler));
+    }
+
+    context_t(frame_handler_t frame_handler
+              , stream_event_handler_t stream_event_handler)
+        : m_frame_handler(std::move(frame_handler))
+        , m_stream_event_handler(std::move(stream_event_handler))
         , m_running(false)
         , m_frame_counter(0)
         , m_control_support(false)
@@ -302,7 +318,7 @@ struct v4l2_device_context_t
 
     }
 
-    ~v4l2_device_context_t()
+    ~context_t()
     {
         close();
     }
@@ -313,7 +329,7 @@ struct v4l2_device_context_t
         close();
 
         m_running = true;
-        m_stream_thread = std::thread(&v4l2_device_context_t::stream_proc
+        m_stream_thread = std::thread(&context_t::stream_proc
                                       , this
                                       , uri
                                       , buffer_count);
@@ -348,13 +364,26 @@ struct v4l2_device_context_t
 
     format_list_t get_supported_formats() const
     {
-        std::lock_guard<std::mutex> lg(m_mutex);        
+        shared_lock_t lock(m_mutex);
         return m_format_list;
+    }
+
+    frame_info_t get_format() const
+    {
+        shared_lock_t lock(m_mutex);
+        return m_frame_info;
+    }
+
+    bool set_format(const frame_info_t& format)
+    {
+        lock_t lock(m_mutex);
+        m_frame_info = format;
+        return true;
     }
 
     control_list_t get_control_list() const
     {
-        std::lock_guard<std::mutex> lg(m_mutex);
+        shared_lock_t lock(m_mutex);
 
         control_list_t control_list;
 
@@ -363,7 +392,7 @@ struct v4l2_device_context_t
             control_list.push_back(c.second);
         }
 
-        return std::move(control_list);
+        return control_list;
     }
 
     bool open_device(std::string uri
@@ -377,7 +406,7 @@ struct v4l2_device_context_t
             uri = uri.substr(6);
         }
 
-        std::lock_guard<std::mutex> lg(m_mutex);
+        shared_lock_t lock(m_mutex);
         m_device.reset();                
         m_device.reset(new v4l2_object_t(uri
                                      , frame_info
@@ -400,6 +429,14 @@ struct v4l2_device_context_t
         return false;
     }
 
+    void process_frame(frame_t&& frame)
+    {
+        if (m_frame_handler == nullptr
+                || m_frame_handler(std::move(frame)) == false)
+        {
+            push_media_queue(std::move(frame));
+        }
+    }
 
     void stream_proc(std::string uri
                      , std::uint32_t buffer_count)
@@ -428,17 +465,13 @@ struct v4l2_device_context_t
                     command_process(*m_device);
 
                     frame_t frame(frame_info
-                                  , std::move(m_device->fetch_frame_data(frame_time * 2)));
+                                  , m_device->fetch_frame_data(frame_time * 2));
 
                     if (!frame.frame_data.empty())
                     {
                         m_frame_counter++;
                         tp = std::chrono::high_resolution_clock::now();
-                        if (m_frame_handler == nullptr
-                                || m_frame_handler(std::move(frame)) == false)
-                        {                       
-                            push_media_queue(std::move(frame));
-                        }
+                        process_frame(std::move(frame));
                     }
                     else
                     {
@@ -465,7 +498,7 @@ struct v4l2_device_context_t
         }
 
         {
-            std::lock_guard<std::mutex> lg(m_mutex);
+            shared_lock_t lock(m_mutex);
             m_device.reset();
         }
         push_event(streaming_event_t::stop);
@@ -533,7 +566,7 @@ struct v4l2_device_context_t
 
     frame_queue_t fetch_media_queue()
     {
-        std::lock_guard<std::mutex> lg(m_mutex);
+        shared_lock_t lock(m_mutex);
         return std::move(m_frame_queue);
     }
 
@@ -541,7 +574,7 @@ struct v4l2_device_context_t
     {
         if (!frame.frame_data.empty())
         {
-            std::lock_guard<std::mutex> lg(m_mutex);
+            shared_lock_t lock(m_mutex);
             m_frame_queue.emplace(std::move(frame));
 
             while (m_frame_queue.size() > max_frame_queue)
@@ -609,8 +642,11 @@ struct v4l2_device_context_t
             result &= set_relative_control(ctrl_tilt_absolute, tilt);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             result &= set_relative_control(ctrl_zoom_absolute, zoom);
+
+            return result;
         }
-        return true;
+
+        return false;
     }
 
     bool get_ptz(double& pan
@@ -627,110 +663,107 @@ struct v4l2_device_context_t
     }
 
 };
-//------------------------------------------------------------------------------------------
-void v4l2_device_context_deleter_t::operator()(v4l2_device_context_t *v4l2_device_context_ptr)
-{
-    delete v4l2_device_context_ptr;
-}
 //---------------------------------------------------------------------------------------------
 v4l2_device::v4l2_device(frame_handler_t frame_handler
         , stream_event_handler_t stream_event_handler)
-    : m_v4l2_device_context(new v4l2_device_context_t(frame_handler
-                                                      , stream_event_handler))
+    : m_context(context_t::create(frame_handler
+                                  , stream_event_handler))
 {
 
 }
+
+v4l2_device::~v4l2_device() = default;
 
 bool v4l2_device::open(const std::string &uri
                        , std::uint32_t buffer_count)
 {
-    return m_v4l2_device_context->open(uri
+    return m_context->open(uri
                                         , buffer_count);
 }
 
 bool v4l2_device::close()
 {
-    return m_v4l2_device_context->close();
+    return m_context->close();
 }
 
 bool v4l2_device::is_opened() const
 {
-    return m_v4l2_device_context->is_opened();
+    return m_context->is_opened();
 }
 
 bool v4l2_device::is_established() const
 {
-    return m_v4l2_device_context->is_established();
+    return m_context->is_established();
 }
 
 format_list_t v4l2_device::get_supported_formats() const
 {
-    return std::move(m_v4l2_device_context->get_supported_formats());
+    return m_context->get_supported_formats();
 }
 
-const frame_info_t &v4l2_device::get_format() const
+frame_info_t v4l2_device::get_format() const
 {
-    return m_v4l2_device_context->m_frame_info;
+    return m_context->m_frame_info;
 }
 
 bool v4l2_device::set_format(const frame_info_t &format)
 {
-    m_v4l2_device_context->m_frame_info = format;
+    m_context->m_frame_info = format;
     return true;
 }
 
 control_list_t v4l2_device::get_control_list() const
 {
-    return std::move(m_v4l2_device_context->get_control_list());
+    return std::move(m_context->get_control_list());
 }
 
 bool v4l2_device::set_control(uint32_t control_id
                               , int32_t value)
 {
-    return m_v4l2_device_context->set_control(control_id
+    return m_context->set_control(control_id
                                               , value);
 }
 
 int32_t v4l2_device::get_control(uint32_t control_id
                                  , int32_t default_value)
 {
-    return m_v4l2_device_context->get_control(control_id
-                                              , default_value);
+    return m_context->get_control(control_id
+                                 , default_value);
 }
 
 bool v4l2_device::set_relative_control(uint32_t control_id, double value)
 {
-    return m_v4l2_device_context->set_relative_control(control_id
-                                                      , value);
+    return m_context->set_relative_control(control_id
+                                           , value);
 }
 
 double v4l2_device::get_relatuive_control(uint32_t control_id, double default_value)
 {
-    return m_v4l2_device_context->get_relative_control(control_id
-                                                       , default_value);
+    return m_context->get_relative_control(control_id
+                                           , default_value);
 }
 
 bool v4l2_device::get_ptz(double &pan
                           , double &tilt
                           , double &zoom)
 {
-    return m_v4l2_device_context->get_ptz(pan
-                                          , tilt
-                                          , zoom);
+    return m_context->get_ptz(pan
+                              , tilt
+                              , zoom);
 }
 
 bool v4l2_device::set_ptz(double pan
                           , double tilt
                           , double zoom)
 {
-    return m_v4l2_device_context->set_ptz(pan
-                                          , tilt
-                                          , zoom);
+    return m_context->set_ptz(pan
+                              , tilt
+                              , zoom);
 }
 
 frame_queue_t v4l2_device::fetch_media_queue()
 {
-    return std::move(m_v4l2_device_context->fetch_media_queue());
+    return m_context->fetch_media_queue();
 }
 
 }

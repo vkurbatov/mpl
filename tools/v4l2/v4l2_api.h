@@ -5,6 +5,7 @@
 
 namespace v4l2
 {
+
 const std::uint32_t default_try_timeout = 100;
 
 typedef std::int32_t handle_t;

@@ -7,7 +7,12 @@ namespace mpl
 enum class device_type_t
 {
     undefined = -1,
-    v4l2
+    v4l2,
+    file,
+    http,
+    rtsp,
+    rtmp,
+    vnc
 };
 
 }

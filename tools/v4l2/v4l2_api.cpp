@@ -15,7 +15,7 @@
 namespace v4l2
 {
 
-namespace utils
+namespace detail
 {
 
     const frame_size_t frame_size_preset[] =
@@ -64,7 +64,7 @@ namespace utils
                 case V4L2_FRMIVAL_TYPE_STEPWISE:
                 case V4L2_FRMIVAL_TYPE_CONTINUOUS:
                 {
-                    std::int32_t f_max = fival.stepwise.min.denominator / fival.stepwise.min.numerator,
+                    std::uint32_t f_max = fival.stepwise.min.denominator / fival.stepwise.min.numerator,
                                  f_min = fival.stepwise.max.denominator / fival.stepwise.max.numerator;
                     while (f_max > f_min)
                     {
@@ -214,10 +214,10 @@ format_list_t fetch_supported_format(handle_t handle)
 {
     format_list_t format_list;
 
-    utils::fetch_supported_formats(handle
+    detail::fetch_supported_formats(handle
                                    , format_list);
 
-    return std::move(format_list);
+    return format_list;
 }
 
 bool fetch_frame_format(handle_t handle
@@ -306,7 +306,7 @@ control_map_t fetch_control_list(handle_t handle)
 
     }
 
-    return std::move(control_list);
+    return control_list;
 }
 
 bool set_frame_format(handle_t handle
@@ -384,7 +384,7 @@ mapped_buffer_t map(handle_t handle, std::size_t buffer_count)
         }
     }
 
-    return std::move(mapped_buffer);
+    return mapped_buffer;
 }
 
 std::size_t unmap(handle_t handle, mapped_buffer_t &mapped_buffer)
@@ -417,7 +417,7 @@ frame_data_t fetch_frame_data(handle_t handle
     if (timeout == 0
             || io_wait(handle, timeout))
     {
-        struct v4l2_buffer buffer = {0};
+        struct v4l2_buffer buffer = {};
 
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buffer.memory = V4L2_MEMORY_MMAP;
@@ -430,8 +430,8 @@ frame_data_t fetch_frame_data(handle_t handle
             if (buffer.bytesused > 0
                     && buffer.bytesused <= current.size)
             {
-                frame_data = std::move(frame_data_t(data
-                                                    , data + buffer.bytesused));
+                frame_data = frame_data_t(data
+                                          , data + buffer.bytesused);
                 mapped_buffer.next();
 
 
@@ -441,7 +441,7 @@ frame_data_t fetch_frame_data(handle_t handle
         }
     }
 
-    return std::move(frame_data);
+    return frame_data;
 }
 
 bool set_control(handle_t handle, uint32_t id, int32_t value)

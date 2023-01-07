@@ -18,6 +18,7 @@ struct video_format_info_t
     bool            convertable;
     std::int32_t    align_widht;
     std::int32_t    align_height;
+    std::uint32_t   fourcc;
 };
 
 }
