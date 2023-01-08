@@ -6,6 +6,10 @@
 #include "message_event_impl.h"
 #include "event_channel_state.h"
 #include "video_frame_impl.h"
+#include "message_frame_impl.h"
+
+#include "v4l2_utils.h"
+#include "time_utils.h"
 
 #include "tools/base/sync_base.h"
 #include "tools/v4l2/v4l2_device.h"
@@ -19,11 +23,6 @@ namespace mpl
 namespace detail
 {
 
-video_format_id_t format_from_v4l2(v4l2::pixel_format_t pixel_format)
-{
-    return video_format_id_t::undefined;
-}
-
 }
 
 class v4l2_device : public i_device
@@ -36,27 +35,74 @@ class v4l2_device : public i_device
 
     struct device_params_t
     {
-        device_type_t   device_type;
+        device_type_t   device_type = device_type_t::v4l2;
         std::string     url;
+
+        device_params_t(device_type_t device_type = device_type_t::v4l2
+                , const std::string_view& url = {})
+            : device_type(device_type)
+            , url(url)
+        {
+
+        }
+
+        device_params_t(const i_property& params)
+            : device_params_t()
+        {
+            load(params);
+        }
+
+
+        bool load(const i_property& params)
+        {
+            property_reader reader(params);
+            return reader.get("url", url);
+        }
+
+        bool save(i_property& params) const
+        {
+            property_writer writer(params);
+            return writer.set("url", url);
+        }
+
+        bool is_valid() const
+        {
+            return device_type == device_type_t::v4l2
+                    && !url.empty();
+        }
     };
 
     device_params_t             m_device_params;
     message_router_impl         m_router;
     v4l2::v4l2_device           m_native_device;
 
+    frame_id_t                  m_frame_counter;
+    timestamp_t                 m_frame_timestamp;
+
+    timestamp_t                 m_start_time;
+
     channel_state_t             m_state;
     std::atomic_bool            m_open;
 
 public:
 
-    static u_ptr_t create(const i_property &device_params)
+    static u_ptr_t create(const i_property &params)
     {
+        device_params_t v4ls_params(params);
+        if (v4ls_params.is_valid())
+        {
+            return std::make_unique<v4l2_device>(v4ls_params);
+        }
+
         return nullptr;
     }
 
-    v4l2_device()
-        : m_native_device([&](auto&& frame) { return on_native_frame(std::move(frame)); }
+    v4l2_device(const device_params_t& device_params)
+        : m_device_params(device_params)
+        , m_native_device([&](auto&& frame) { return on_native_frame(std::move(frame)); }
                           , [&](const auto& event) { on_native_device_state(event);} )
+        , m_frame_counter(0)
+        , m_frame_timestamp(0)
         , m_state(channel_state_t::ready)
         , m_open(false)
     {
@@ -82,9 +128,11 @@ public:
     {
         bool expected = false;
         if (m_open.compare_exchange_strong(expected
-                                           , false
+                                           , true
                                            , std::memory_order_acquire))
         {
+            reset();
+
             change_state(channel_state_t::opening);
             if (m_native_device.open(m_device_params.url
                                      , 2))
@@ -114,6 +162,8 @@ public:
             m_open.store(false
                          , std::memory_order_release);
 
+            change_state(channel_state_t::closed);
+
             return true;
 
         }
@@ -121,14 +171,63 @@ public:
         return false;
     }
 
+    void reset()
+    {
+        m_frame_counter = 0;
+        m_frame_timestamp = 0;
+        m_start_time = utils::now();
+    }
+
+    timestamp_t elapsed_time() const
+    {
+        return utils::now() - m_start_time;
+    }
+
+    void process_timesatamp(std::uint32_t fps)
+    {
+        if (fps == 0)
+        {
+            m_frame_timestamp += (video_sample_rate * durations::seconds(1)) / elapsed_time();
+        }
+        else
+        {
+            m_frame_timestamp += video_sample_rate / fps;
+        }
+
+    }
+
     bool on_native_frame(v4l2::frame_t&& frame)
     {
+        video_format_impl video_format(utils::format_form_v4l2(frame.frame_info.pixel_format)
+                                       , frame.frame_info.size.width
+                                       , frame.frame_info.size.height
+                                       , frame.frame_info.fps);
 
-        return false;
+        if (video_format.format_id() != video_format_id_t::undefined
+                && !frame.frame_data.empty())
+        {
+            video_frame_impl video_frame(std::move(video_format)
+                                         , m_frame_counter
+                                         , m_frame_timestamp
+                                         , i_video_frame::frame_type_t::image_frame);
+            video_frame.smart_buffers().set_buffer(0, smart_buffer(std::move(frame.frame_data)));
+
+            m_frame_counter++;
+            process_timesatamp(frame.frame_info.fps);
+
+            message_frame_ref_impl message_frame(stream_info_t{0}
+                                                 , video_frame);
+
+            m_router.send_message(message_frame);
+
+        }
+
+        return true;
     }
 
     void on_native_device_state(const v4l2::streaming_event_t& streaming_event)
     {
+        bool o = v4l2_device::is_open();
         if (v4l2_device::is_open())
         {
             switch(streaming_event)

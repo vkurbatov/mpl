@@ -7,7 +7,7 @@
 namespace mpl
 {
 
-class stream_info_t
+struct stream_info_t
 {
     stream_id_t stream_id;
     stream_info_t(stream_id_t stream_id = stream_id_undefined);

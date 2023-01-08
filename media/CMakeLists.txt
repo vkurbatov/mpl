@@ -10,6 +10,7 @@ set(SOURCES
     utils.cpp
     time_utils.cpp
     media_utils.cpp
+    format_utils.cpp
     property_helper.cpp
     property_reader.cpp
     property_writer.cpp
@@ -32,6 +33,8 @@ set(SOURCES
     event.cpp
     event_channel_state.cpp
     message_event_impl.cpp
+    message_sink_impl.cpp
+    video_transcoder_factory.cpp
     v4l2_device_factory.cpp
     v4l2_utils.cpp
 )
@@ -75,8 +78,11 @@ set(PUBLIC_HEADERS
     i_video_format.h
     i_audio_frame.h
     i_video_frame.h
+    i_message_channel.h
     i_device.h
     i_device_factory.h
+    i_media_transcoder.h
+    i_media_transcoder_factory.h
     )
 
 set(PRIVATE_HEADERS
@@ -91,6 +97,7 @@ set(PRIVATE_HEADERS
     property_writer.h
     convert_utils.h
     pointer_utils.h
+    format_utils.h
     property_value_impl.h
     property_tree_impl.h
     option_impl.h
@@ -102,6 +109,8 @@ set(PRIVATE_HEADERS
     message_frame_impl.h
     message_router_impl.h
     message_event_impl.h
+    message_sink_impl.h
+    video_transcoder_factory.h
     v4l2_device_factory.h
     v4l2_utils.h
 )

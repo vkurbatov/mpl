@@ -1,15 +1,21 @@
 #include "v4l2_utils.h"
-#include <unordered_map>
+#include "video_info.h"
 
 #include <linux/videodev2.h>
 
 namespace mpl::utils
 {
 
-namespace detail
+video_format_id_t format_form_v4l2(v4l2::pixel_format_t v4l2_format)
 {
+    return video_format_info_t::format_from_fourcc(v4l2_format);
+}
 
-using format_map_t = std::unordered_map<v4l2::pixel_format_t, video_format_id_t>;
-
+v4l2::pixel_format_t format_to_v4l2(video_format_id_t video_format)
+{
+    return video_format_info_t::get_info(video_format).fourcc;
+}
 
 }
+
+

@@ -18,6 +18,7 @@ enum class media_type_t
 using frame_id_t = std::int32_t;
 
 constexpr frame_id_t frame_id_undefined = -1;
+constexpr std::uint32_t video_sample_rate = 90000;
 
 }
 

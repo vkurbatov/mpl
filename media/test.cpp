@@ -1,6 +1,7 @@
 #include <iostream>
 #include "test.h"
 #include "convert_utils.h"
+#include "time_utils.h"
 #include "property_value_impl.h"
 #include "property_tree_impl.h"
 
@@ -9,6 +10,19 @@
 #include "convert_utils.h"
 #include "audio_format_impl.h"
 #include "tools/base/any_base.h"
+
+#include "v4l2_device_factory.h"
+#include "message_sink_impl.h"
+#include "i_buffer_collection.h"
+#include "i_video_frame.h"
+#include "i_video_format.h"
+
+
+#include "i_message_frame.h"
+#include "i_message_event.h"
+#include "i_message_source.h"
+
+#include "event_channel_state.h"
 
 #include <string>
 
@@ -164,10 +178,82 @@ void test4()
     return;
 }
 
+void test5()
+{
+    std::string v4l2_url = "/dev/video0";
+    auto v4l2_params = property_helper::create_tree();
+    property_writer writer(*v4l2_params);
+    writer.set<std::string>("url", v4l2_url);
+
+    v4l2_device_factory factory;
+
+    if (auto device = factory.create_device(*v4l2_params))
+    {
+        auto handler = [&](const i_message& message)
+        {
+            switch(message.category())
+            {
+                case message_category_t::frame:
+                {
+                    const auto& frame_message = static_cast<const i_message_frame&>(message);
+
+                    if (frame_message.frame().media_type() == media_type_t::video)
+                    {
+                        const auto& video_frame = static_cast<const i_video_frame&>(frame_message.frame());
+                        std::cout << "on_frame #" << video_frame.frame_id()
+                                  << ": format_id: " << static_cast<std::int32_t>(video_frame.format().format_id())
+                                  << ", fmt: " << video_frame.format().width()
+                                  << "x" << video_frame.format().height()
+                                  << "@" << video_frame.format().frame_rate()
+                                  << ", ts: " << video_frame.timestamp();
+
+                        if (auto buffer = video_frame.buffers().get_buffer(0))
+                        {
+                            std::cout << ", size: " << buffer->size();
+                        }
+
+                        std::cout << std::endl;
+
+                    }
+                }
+                break;
+                case message_category_t::event:
+                {
+                    const auto& event_message = static_cast<const i_message_event&>(message);
+                    if (event_message.event().event_id == event_id_t::channel_state)
+                    {
+                        const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
+                        std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
+                    }
+                }
+                break;
+                default:;
+            }
+
+            return false;
+        };
+
+        message_sink_impl sink(handler);
+        device->source()->add_sink(&sink);
+
+        if (device->control(channel_control_t::open()))
+        {
+
+            utils::sleep(durations::seconds(60));
+            device->control(channel_control_t::close());
+        }
+
+        device->source()->remove_sink(&sink);
+
+    }
+
+    return;
+}
+
 void test()
 {
     //test1();
-    test4();
+    test5();
 }
 
 }

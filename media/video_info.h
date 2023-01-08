@@ -10,6 +10,8 @@ namespace mpl
 struct video_format_info_t
 {
     static const video_format_info_t& get_info(video_format_id_t format_id);
+    static video_format_id_t format_from_fourcc(std::uint32_t fourcc);
+
 
     std::int32_t    bpp;
     bool            encoded;

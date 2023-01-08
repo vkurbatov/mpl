@@ -678,7 +678,7 @@ bool v4l2_device::open(const std::string &uri
                        , std::uint32_t buffer_count)
 {
     return m_context->open(uri
-                                        , buffer_count);
+                           , buffer_count);
 }
 
 bool v4l2_device::close()
