@@ -1,6 +1,7 @@
 #include <iostream>
 #include "test.h"
 #include "convert_utils.h"
+#include "enum_utils.h"
 #include "time_utils.h"
 #include "property_value_impl.h"
 #include "property_tree_impl.h"
@@ -250,10 +251,29 @@ void test5()
     return;
 }
 
+void test6()
+{
+    device_type_t enum_value = device_type_t::undefined;
+    std::string string_value;
+    utils::convert(device_type_t::rtsp, string_value);
+    utils::convert(string_value, enum_value);
+    auto s2 = utils::enum_to_string<device_type_t>(enum_value);
+    auto e2 = utils::string_to_enum<device_type_t>(s2);
+
+    auto tree = property_helper::create_tree();
+    property_writer writer(*tree);
+
+    writer.set("device_type", device_type_t::v4l2);
+    auto e3 = writer.get<device_type_t>("device_type");
+
+    return;
+
+}
+
 void test()
 {
     //test1();
-    test5();
+    test6();
 }
 
 }

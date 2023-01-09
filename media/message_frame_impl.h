@@ -20,6 +20,9 @@ public:
     message_frame_base_impl(const i_option& options);
     message_frame_base_impl(option_impl&& options);
 
+    option_impl& get_options();
+    const option_impl& get_options() const;
+
     void set_options(const i_option& options);
     void set_options(option_impl&& options);
 
@@ -53,7 +56,6 @@ public:
                            , option_impl&& options = {});
 
     void set_frame(const i_media_frame::s_ptr_t& media_frame);
-
 
 
     // i_message interface

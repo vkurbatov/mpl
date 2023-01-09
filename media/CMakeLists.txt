@@ -20,6 +20,8 @@ set(SOURCES
     option_impl.cpp
     option_helper.cpp
     convert_value_impl.cpp
+    enum_convert_impl.cpp
+    enum_serialize_impl.cpp
     convert_property_impl.cpp
     audio_format_impl.cpp
     audio_info.cpp
@@ -92,6 +94,7 @@ set(PRIVATE_HEADERS
     smart_buffer.h
     smart_buffer_collection.h
     utils.h
+    enum_utils.h
     time_utils.h
     media_utils.h
     property_helper.h

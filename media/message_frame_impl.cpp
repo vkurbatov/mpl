@@ -14,6 +14,16 @@ message_frame_base_impl::message_frame_base_impl(option_impl &&options)
 
 }
 
+option_impl &message_frame_base_impl::get_options()
+{
+    return m_options;
+}
+
+const option_impl &message_frame_base_impl::get_options() const
+{
+    return m_options;
+}
+
 void message_frame_base_impl::set_options(const i_option& options)
 {
     m_options.assign(options);
