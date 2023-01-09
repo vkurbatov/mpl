@@ -215,8 +215,7 @@ public:
             m_frame_counter++;
             process_timesatamp(frame.frame_info.fps);
 
-            message_frame_ref_impl message_frame(stream_info_t{0}
-                                                 , video_frame);
+            message_frame_ref_impl message_frame(video_frame);
 
             m_router.send_message(message_frame);
 
@@ -227,7 +226,6 @@ public:
 
     void on_native_device_state(const v4l2::streaming_event_t& streaming_event)
     {
-        bool o = v4l2_device::is_open();
         if (v4l2_device::is_open())
         {
             switch(streaming_event)

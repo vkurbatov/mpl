@@ -9,10 +9,16 @@ namespace base
 
 class any
 {
+public:
     using comparator_t = std::function<bool(const std::any& lhs
                                             , const std::any& rhs)>;
+    using merger_t = std::function<bool(std::any& lhs
+                                   , const std::any& rhs)>;
+private:
+
     std::any        m_value;
     comparator_t    m_comparator;
+    merger_t        m_merger;
 
 public:
 
@@ -31,6 +37,26 @@ public:
         }
     };
 
+    template<typename T>
+    struct default_merger_t
+    {
+        bool operator()(std::any& lhs
+                        , const std::any& rhs)
+        {
+            auto l = std::any_cast<T>(&lhs);
+            auto r = std::any_cast<T>(&rhs);
+
+            if (l != nullptr
+                    && r != nullptr)
+            {
+                *l = *r;
+                return true;
+            }
+
+            return false;
+        }
+    };
+
     any();
     any(const any& other) = default;
     any(any&& other) = default;
@@ -43,18 +69,22 @@ public:
 
     template <typename T, typename VT = decay_if_not_any<T>>
     any(T&& value
-        , comparator_t comporator = default_comporator_t<T>())
+        , comparator_t comporator = default_comporator_t<T>()
+        , merger_t merger = default_merger_t<T>())
         : m_value(std::move(value))
         , m_comparator(std::move(comporator))
+        , m_merger(std::move(merger))
     {
 
     }
 
     template <typename T, typename VT = decay_if_not_any<T>>
     any(const T& value
-        , comparator_t comporator = default_comporator_t<T>())
+        , comparator_t comporator = default_comporator_t<T>()
+        , merger_t merger = default_merger_t<T>())
         : m_value(value)
         , m_comparator(std::move(comporator))
+        , m_merger(std::move(merger))
     {
 
     }
@@ -87,6 +117,8 @@ public:
 
     bool operator == (const any& other) const;
     bool operator != (const any& other) const;
+
+    bool merge(const any& other);
 
     bool has_value() const;
     bool has_comparable() const;

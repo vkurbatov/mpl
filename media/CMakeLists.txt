@@ -55,6 +55,7 @@ set(PUBLIC_HEADERS
     event_types.h
     device_types.h
     channel_control.h
+    option_types.h
     event.h
     event_channel_state.h
     i_property.h
@@ -63,6 +64,7 @@ set(PUBLIC_HEADERS
     i_option.h
     i_data_object.h
     i_buffer.h
+    i_mapped_buffer.h
     i_dynamic_buffer.h
     i_buffer_collection.h
     i_channel.h

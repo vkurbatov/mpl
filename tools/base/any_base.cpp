@@ -25,6 +25,13 @@ bool any::operator !=(const any &other) const
     return !operator == (other);
 }
 
+bool any::merge(const any &other)
+{
+    return m_merger != nullptr
+            && m_merger(m_value
+                        , other.m_value);
+}
+
 bool any::has_value() const
 {
     return m_value.has_value();

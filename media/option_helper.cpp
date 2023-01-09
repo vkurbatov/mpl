@@ -16,7 +16,7 @@ option_writer::option_writer(i_option &options)
 
 }
 
-bool option_writer::remove(const i_option::option_key_t &key)
+bool option_writer::remove(const option_id_t &key)
 {
     return m_options.set(key, {});
 }

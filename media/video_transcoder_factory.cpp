@@ -62,7 +62,7 @@ public:
         }
     }
 
-    bool on_sink_video_frame(const stream_info_t& stream_info
+    bool on_sink_video_frame(const i_option& options
                              , const i_video_frame& video_frame)
     {
         if (m_input_format.is_compatible(video_frame.format()))
@@ -79,7 +79,7 @@ public:
         {
             case media_type_t::video:
             {
-                return on_sink_video_frame(message_frame.stream_info()
+                return on_sink_video_frame(message_frame.options()
                                            , static_cast<const i_video_frame&>(message_frame.frame()));
             }
             break;

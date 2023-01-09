@@ -1,12 +1,12 @@
 #ifndef MPL_I_DYNAMIC_BUFFER_H
 #define MPL_I_DYNAMIC_BUFFER_H
 
-#include "i_buffer.h"
+#include "i_mapped_buffer.h"
 
 namespace mpl
 {
 
-class i_dynamic_buffer : public i_buffer
+class i_dynamic_buffer : public i_mapped_buffer
 {
 public:
     using s_ptr_t = std::shared_ptr<i_dynamic_buffer>;

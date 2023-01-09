@@ -14,7 +14,7 @@ public:
     option_reader(const i_option& options);
 
     template<typename T>
-    bool has_type(const i_option::option_key_t& key) const
+    bool has_type(const option_id_t& key) const
     {
         auto any_option_value = m_options.get(key);
         return any_option_value.has_value()
@@ -22,7 +22,7 @@ public:
     }
 
     template<typename T>
-    bool get(const i_option::option_key_t& key, T& value) const
+    bool get(const option_id_t& key, T& value) const
     {
         if (auto any_option_value = m_options.get(key))
         {
@@ -37,7 +37,7 @@ public:
     }
 
     template<typename T>
-    std::optional<T> get(const i_option::option_key_t& key) const
+    std::optional<T> get(const option_id_t& key) const
     {
         if (auto any_option_value = m_options.get(key))
         {
@@ -59,27 +59,27 @@ public:
     option_writer(i_option& options);
 
     template<typename T>
-    bool set(const i_option::option_key_t& key, const T& value)
+    bool set(const option_id_t& key, const T& value)
     {
         return m_options.set(key
                              , value);
     }
 
     template<typename T>
-    bool set(const i_option::option_key_t& key, T&& value)
+    bool set(const option_id_t& key, T&& value)
     {
         return m_options.set(key
                              , std::move(value));
     }
 
     template<typename T, class... Args>
-    bool set(const i_option::option_key_t& key, Args&& ...args)
+    bool set(const option_id_t& key, Args&& ...args)
     {
         return m_options.set(key
                              , T(args...));
     }
 
-    bool remove(const i_option::option_key_t& key);
+    bool remove(const option_id_t& key);
 };
 
 }

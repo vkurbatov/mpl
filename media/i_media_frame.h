@@ -4,7 +4,6 @@
 #include "time_types.h"
 #include "media_types.h"
 #include "i_buffer.h"
-#include <vector>
 
 namespace mpl
 {

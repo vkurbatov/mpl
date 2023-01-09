@@ -3,15 +3,25 @@
 namespace mpl
 {
 
-message_frame_base_impl::message_frame_base_impl(const stream_info_t &stream_info)
-    : m_stream_info(stream_info)
+message_frame_base_impl::message_frame_base_impl(const i_option& options)
+{
+    m_options.merge(options);
+}
+
+message_frame_base_impl::message_frame_base_impl(option_impl &&options)
+    : m_options(std::move(options))
 {
 
 }
 
-void message_frame_base_impl::set_stream_info(const stream_info_t &stream_info)
+void message_frame_base_impl::set_options(const i_option& options)
 {
-    m_stream_info = stream_info;
+    m_options.assign(options);
+}
+
+void message_frame_base_impl::set_options(option_impl &&options)
+{
+    m_options = std::move(options);
 }
 
 message_category_t message_frame_base_impl::category() const
@@ -19,21 +29,37 @@ message_category_t message_frame_base_impl::category() const
     return message_category_t::frame;
 }
 
-const stream_info_t &message_frame_base_impl::stream_info() const
+const i_option &message_frame_base_impl::options() const
 {
-    return m_stream_info;
+    return m_options;
 }
 
-message_frame_ptr_impl::u_ptr_t message_frame_ptr_impl::create(const stream_info_t &stream_info
-                                                               , const i_media_frame::s_ptr_t &media_frame)
+
+message_frame_ptr_impl::u_ptr_t message_frame_ptr_impl::create(const i_media_frame::s_ptr_t &media_frame
+                                                               , const i_option& options)
 {
-    return std::make_unique<message_frame_ptr_impl>(stream_info
-                                                    , media_frame);
+    return std::make_unique<message_frame_ptr_impl>(media_frame
+                                                    , options);
 }
 
-message_frame_ptr_impl::message_frame_ptr_impl(const stream_info_t &stream_info
-                                               , const i_media_frame::s_ptr_t &media_frame)
-    : message_frame_base_impl(stream_info)
+message_frame_ptr_impl::u_ptr_t message_frame_ptr_impl::create(const i_media_frame::s_ptr_t &media_frame
+                                                               , option_impl &&options)
+{
+    return std::make_unique<message_frame_ptr_impl>(media_frame
+                                                    , std::move(options));
+}
+
+message_frame_ptr_impl::message_frame_ptr_impl(const i_media_frame::s_ptr_t &media_frame
+                                               , const i_option& options)
+    : message_frame_base_impl(options)
+    , m_frame(media_frame)
+{
+
+}
+
+message_frame_ptr_impl::message_frame_ptr_impl(const i_media_frame::s_ptr_t &media_frame
+                                               , option_impl &&options)
+    : message_frame_base_impl(std::move(options))
     , m_frame(media_frame)
 {
 
@@ -50,8 +76,8 @@ i_message::u_ptr_t message_frame_ptr_impl::clone() const
     {
         if (auto clone_frame = m_frame->clone())
         {
-            return create(stream_info()
-                          , std::move(clone_frame));
+            return create(std::move(clone_frame)
+                          , options());
         }
     }
 
@@ -63,9 +89,17 @@ const i_media_frame &message_frame_ptr_impl::frame() const
     return *m_frame;
 }
 
-message_frame_ref_impl::message_frame_ref_impl(const stream_info_t &stream_info
-                                               , const i_media_frame &media_frame)
-    : message_frame_base_impl(stream_info)
+message_frame_ref_impl::message_frame_ref_impl(const i_media_frame &media_frame
+                                               , const i_option& options)
+    : message_frame_base_impl(options)
+    , m_frame(media_frame)
+{
+
+}
+
+message_frame_ref_impl::message_frame_ref_impl(const i_media_frame &media_frame
+                                               , option_impl &&options)
+    : message_frame_base_impl(std::move(options))
     , m_frame(media_frame)
 {
 
@@ -73,8 +107,8 @@ message_frame_ref_impl::message_frame_ref_impl(const stream_info_t &stream_info
 
 i_message::u_ptr_t message_frame_ref_impl::clone() const
 {
-    return message_frame_ptr_impl::create(stream_info()
-                                          , m_frame.clone());
+    return message_frame_ptr_impl::create(m_frame.clone()
+                                          , options());
 }
 
 const i_media_frame &message_frame_ref_impl::frame() const

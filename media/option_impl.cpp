@@ -47,12 +47,12 @@ option_impl::option_map_t option_impl::release()
     return std::move(m_options);
 }
 
-bool option_impl::has_option(const option_key_t &key) const
+bool option_impl::has_option(const option_id_t &key) const
 {
     return m_options.find(key) != m_options.end();
 }
 
-bool option_impl::set(const option_key_t &key
+bool option_impl::set(const option_id_t &key
                       , option_value_t &&value)
 {
     if (value.has_value())
@@ -68,14 +68,14 @@ bool option_impl::set(const option_key_t &key
     return false;
 }
 
-bool option_impl::set(const option_key_t &key
+bool option_impl::set(const option_id_t &key
                       , const option_value_t &value)
 {
     return option_impl::set(key
                             , option_value_t(value));
 }
 
-i_option::option_value_t option_impl::get(const option_key_t &key) const
+option_value_t option_impl::get(const option_id_t &key) const
 {
     auto it = m_options.find(key);
     return it != m_options.end()
@@ -121,7 +121,7 @@ std::size_t option_impl::merge(const i_option &other)
     std::size_t counter = 0;
     other.foreach([&](const auto& key, const auto& value)
     {
-        if (set(key, value))
+        if (option_impl::set(key, value))
         {
             counter++;
         }

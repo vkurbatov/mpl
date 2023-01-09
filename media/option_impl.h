@@ -10,8 +10,8 @@ namespace mpl
 class option_impl : public i_option
 {
 public:
-    using option_map_t = std::unordered_map<i_option::option_key_t
-                                            , i_option::option_value_t>;
+    using option_map_t = std::unordered_map<option_id_t
+                                            , option_value_t>;
 private:
     option_map_t    m_options;
 public:
@@ -33,12 +33,12 @@ public:
 
     // i_option interface
 public:
-    bool has_option(const option_key_t &key) const override;
-    bool set(const option_key_t &key
+    bool has_option(const option_id_t &key) const override;
+    bool set(const option_id_t &key
              , option_value_t &&value) override;
-    bool set(const option_key_t &key
+    bool set(const option_id_t &key
              , const option_value_t &value) override;
-    option_value_t get(const option_key_t &key) const override;
+    option_value_t get(const option_id_t &key) const override;
     option_key_list_t keys() const override;
     void foreach(const foreach_handler_t &handler) const override;
     void clear() override;
