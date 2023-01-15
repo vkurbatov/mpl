@@ -12,6 +12,7 @@ set(SOURCES
     time_utils.cpp
     media_utils.cpp
     format_utils.cpp
+    libav_utils.cpp
     property_helper.cpp
     property_reader.cpp
     property_writer.cpp
@@ -101,6 +102,7 @@ set(PRIVATE_HEADERS
     enum_utils.h
     time_utils.h
     media_utils.h
+    libav_utils.h
     property_helper.h
     property_reader.h
     property_writer.h

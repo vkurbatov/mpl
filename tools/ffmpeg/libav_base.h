@@ -16,8 +16,9 @@ namespace ffmpeg
 {
 
 typedef std::int32_t codec_id_t;
-typedef std::int32_t pixel_format_t;
-typedef std::int32_t sample_format_t;
+typedef std::int32_t format_id_t;
+typedef format_id_t pixel_format_t;
+typedef format_id_t sample_format_t;
 typedef std::int32_t stream_parse_type_t;
 
 const std::int32_t default_frame_align = 1;
@@ -27,9 +28,10 @@ typedef std::vector<sample_format_t> sample_formats_t;
 
 extern const std::int32_t padding_size;
 
-const codec_id_t unknown_codec_id = -1;
-const pixel_format_t unknown_pixel_format = -1;
-const sample_format_t unknown_sample_format = -1;
+constexpr codec_id_t unknown_codec_id = -1;
+constexpr format_id_t unknown_format_id = -1;
+constexpr pixel_format_t unknown_pixel_format = unknown_format_id;
+constexpr sample_format_t unknown_sample_format = unknown_format_id;
 
 extern const pixel_format_t pixel_format_none;
 extern const pixel_format_t pixel_format_bgr8;
@@ -52,6 +54,33 @@ extern const pixel_format_t pixel_format_nv21;
 extern const pixel_format_t pixel_format_yuv420p;
 extern const pixel_format_t pixel_format_yuv422p;
 
+extern const pixel_format_t pixel_format_yuv444p;
+extern const pixel_format_t pixel_format_yuv411p;
+extern const pixel_format_t pixel_format_yuyv;
+extern const pixel_format_t pixel_format_uyvy;
+extern const pixel_format_t pixel_format_yuv410;
+
+extern const pixel_format_t pixel_format_nv16;
+extern const pixel_format_t pixel_format_bgr555;
+extern const pixel_format_t pixel_format_bgr555x;
+extern const pixel_format_t pixel_format_bgr565;
+extern const pixel_format_t pixel_format_bgr565x;
+extern const pixel_format_t pixel_format_rgb555;
+extern const pixel_format_t pixel_format_rgb555x;
+extern const pixel_format_t pixel_format_rgb565;
+extern const pixel_format_t pixel_format_rgb565x;
+
+extern const pixel_format_t pixel_format_abgr32;
+extern const pixel_format_t pixel_format_argb32;
+extern const pixel_format_t pixel_format_bgra32;
+extern const pixel_format_t pixel_format_rgba32;
+
+extern const pixel_format_t pixel_format_gray16;
+extern const pixel_format_t pixel_format_gray16x;
+extern const pixel_format_t pixel_format_sbggr8;
+extern const pixel_format_t pixel_format_sgbrg8;
+extern const pixel_format_t pixel_format_sgrbg8;
+extern const pixel_format_t pixel_format_srggb8;
 
 extern const sample_format_t sample_format_none;
 extern const sample_format_t sample_format_pcm8;
@@ -80,12 +109,15 @@ extern const sample_format_t default_sample_format;
 
 
 extern const codec_id_t codec_id_flv1;
+extern const codec_id_t codec_id_h261;
 extern const codec_id_t codec_id_h263;
 extern const codec_id_t codec_id_h263p;
 extern const codec_id_t codec_id_h264;
 extern const codec_id_t codec_id_h265;
 extern const codec_id_t codec_id_vp8;
 extern const codec_id_t codec_id_vp9;
+extern const codec_id_t codec_id_mpeg4;
+extern const codec_id_t codec_id_cpia;
 extern const codec_id_t codec_id_jpeg;
 extern const codec_id_t codec_id_mjpeg;
 extern const codec_id_t codec_id_gif;
@@ -495,6 +527,20 @@ struct capture_diagnostic_t
     std::size_t     errors = 0;
     std::uint64_t   total_time = 0;
     std::uint64_t   alive_time = 0;
+};
+
+struct format_info_t
+{
+    format_id_t     format_id;
+    codec_id_t      codec_id;
+
+    format_info_t(format_id_t format_id = unknown_format_id
+                  , codec_id_t codec_id = unknown_codec_id);
+
+    bool is_valid() const;
+
+    bool is_encoded() const;
+    bool is_convertable() const;
 };
 
 typedef std::vector<stream_info_t> stream_info_list_t;

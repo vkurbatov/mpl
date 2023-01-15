@@ -23,12 +23,15 @@ static bool libav_register_flag = false;
 const std::int32_t padding_size = AV_INPUT_BUFFER_PADDING_SIZE;
 
 const codec_id_t codec_id_flv1 = static_cast<codec_id_t>(AV_CODEC_ID_FLV1);
+const codec_id_t codec_id_h261 = static_cast<codec_id_t>(AV_CODEC_ID_H261);
 const codec_id_t codec_id_h263 = static_cast<codec_id_t>(AV_CODEC_ID_H263);
 const codec_id_t codec_id_h263p = static_cast<codec_id_t>(AV_CODEC_ID_H263P);
 const codec_id_t codec_id_h264 = static_cast<codec_id_t>(AV_CODEC_ID_H264);
 const codec_id_t codec_id_h265 = static_cast<codec_id_t>(AV_CODEC_ID_HEVC);
 const codec_id_t codec_id_vp8 = static_cast<codec_id_t>(AV_CODEC_ID_VP8);
 const codec_id_t codec_id_vp9 = static_cast<codec_id_t>(AV_CODEC_ID_VP9);
+const codec_id_t codec_id_mpeg4 = static_cast<codec_id_t>(AV_CODEC_ID_MPEG4);
+const codec_id_t codec_id_cpia = static_cast<codec_id_t>(AV_CODEC_ID_CPIA);
 const codec_id_t codec_id_mjpeg = static_cast<codec_id_t>(AV_CODEC_ID_MJPEG);
 const codec_id_t codec_id_jpeg = static_cast<codec_id_t>(AV_CODEC_ID_JPEG2000);
 const codec_id_t codec_id_gif = static_cast<codec_id_t>(AV_CODEC_ID_GIF);
@@ -67,6 +70,34 @@ const pixel_format_t pixel_format_nv12 = static_cast<pixel_format_t>(AV_PIX_FMT_
 const pixel_format_t pixel_format_nv21 = static_cast<pixel_format_t>(AV_PIX_FMT_NV21);
 const pixel_format_t pixel_format_yuv420p = static_cast<pixel_format_t>(AV_PIX_FMT_YUV420P);
 const pixel_format_t pixel_format_yuv422p = static_cast<pixel_format_t>(AV_PIX_FMT_YUV422P);
+
+const pixel_format_t pixel_format_yuv444p = static_cast<pixel_format_t>(AV_PIX_FMT_YUV444P);
+const pixel_format_t pixel_format_yuv411p = static_cast<pixel_format_t>(AV_PIX_FMT_YUV411P);
+const pixel_format_t pixel_format_yuyv = static_cast<pixel_format_t>(AV_PIX_FMT_YUYV422);
+const pixel_format_t pixel_format_uyvy = static_cast<pixel_format_t>(AV_PIX_FMT_UYVY422);
+const pixel_format_t pixel_format_yuv410 = static_cast<pixel_format_t>(AV_PIX_FMT_YUV410P);
+
+const pixel_format_t pixel_format_nv16 = static_cast<pixel_format_t>(AV_PIX_FMT_NV16);
+const pixel_format_t pixel_format_bgr555 = static_cast<pixel_format_t>(AV_PIX_FMT_BGR555LE);
+const pixel_format_t pixel_format_bgr555x = static_cast<pixel_format_t>(AV_PIX_FMT_BGR555BE);
+const pixel_format_t pixel_format_bgr565 = static_cast<pixel_format_t>(AV_PIX_FMT_BGR565LE);
+const pixel_format_t pixel_format_bgr565x = static_cast<pixel_format_t>(AV_PIX_FMT_BGR565BE);
+const pixel_format_t pixel_format_rgb555 = static_cast<pixel_format_t>(AV_PIX_FMT_RGB555LE);
+const pixel_format_t pixel_format_rgb555x = static_cast<pixel_format_t>(AV_PIX_FMT_RGB555BE);
+const pixel_format_t pixel_format_rgb565 = static_cast<pixel_format_t>(AV_PIX_FMT_RGB565LE);
+const pixel_format_t pixel_format_rgb565x = static_cast<pixel_format_t>(AV_PIX_FMT_RGB565BE);
+
+const pixel_format_t pixel_format_abgr32 = static_cast<pixel_format_t>(AV_PIX_FMT_ABGR);
+const pixel_format_t pixel_format_argb32 = static_cast<pixel_format_t>(AV_PIX_FMT_ARGB);
+const pixel_format_t pixel_format_bgra32 = static_cast<pixel_format_t>(AV_PIX_FMT_BGRA);
+const pixel_format_t pixel_format_rgba32 = static_cast<pixel_format_t>(AV_PIX_FMT_RGBA);
+
+const pixel_format_t pixel_format_gray16 = static_cast<pixel_format_t>(AV_PIX_FMT_GRAY16LE);
+const pixel_format_t pixel_format_gray16x = static_cast<pixel_format_t>(AV_PIX_FMT_GRAY16BE);
+const pixel_format_t pixel_format_sbggr8 = static_cast<pixel_format_t>(AV_PIX_FMT_BAYER_BGGR8);
+const pixel_format_t pixel_format_sgbrg8 = static_cast<pixel_format_t>(AV_PIX_FMT_BAYER_GBRG8);
+const pixel_format_t pixel_format_sgrbg8 = static_cast<pixel_format_t>(AV_PIX_FMT_BAYER_GRBG8);
+const pixel_format_t pixel_format_srggb8 = static_cast<pixel_format_t>(AV_PIX_FMT_BAYER_RGGB8);
 
 const sample_format_t sample_format_none = static_cast<sample_format_t>(AV_SAMPLE_FMT_NONE);
 const sample_format_t sample_format_pcm8 = static_cast<sample_format_t>(AV_SAMPLE_FMT_U8);
@@ -1113,5 +1144,29 @@ bool libav_register()
     return libav_register_flag;
 }
 
+format_info_t::format_info_t(format_id_t format_id
+                             , codec_id_t codec_id)
+    : format_id(format_id)
+    , codec_id(codec_id)
+{
+
+}
+
+bool format_info_t::is_valid() const
+{
+    return format_id == unknown_format_id
+            && codec_id == unknown_codec_id;
+}
+
+bool format_info_t::is_encoded() const
+{
+    return codec_id != unknown_codec_id;
+}
+
+bool format_info_t::is_convertable() const
+{
+    return codec_id == unknown_codec_id
+            && format_id != unknown_format_id;
+}
 
 }

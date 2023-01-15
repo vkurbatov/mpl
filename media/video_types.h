@@ -42,6 +42,7 @@ enum class video_format_id_t
     sgbrg8,
     sgrbg8,
     srggb8,
+    png,
     jpeg,
     mjpeg,
     gif,

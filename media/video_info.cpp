@@ -50,6 +50,7 @@ const video_format_info_t video_format_info_table[] =
     { 8,  false,  false,   true,   false, 1, 1, utils::to_fourcc("GBRG")   },    // sgbrg8
     { 8,  false,  false,   true,   false, 1, 1, utils::to_fourcc("GRBG")   },    // sgrbg8
     { 8,  false,  false,   true,   false, 1, 1, utils::to_fourcc("RGGB")   },    // srggb8
+    { 0,  true,   false,   false,  false, 1, 1, utils::to_fourcc("PNG ")   },    // png
     { 0,  true,   false,   false,  false, 1, 1, utils::to_fourcc("JPEG")   },    // jpeg
     { 0,  true,   false,   false,  false, 1, 1, utils::to_fourcc("MJPG")   },    // mjpeg
     { 0,  true,   false,   false,  false, 1, 1, utils::to_fourcc("GIF ")   },    // gif
