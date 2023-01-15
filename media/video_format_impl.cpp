@@ -1,6 +1,10 @@
 #include "video_format_impl.h"
 #include "video_info.h"
 
+#include "property_writer.h"
+#include "option_helper.h"
+#include "option_types.h"
+
 namespace mpl
 {
 
@@ -80,7 +84,40 @@ video_format_impl &video_format_impl::assign(const i_video_format &other)
     m_frame_rate = other.frame_rate();
     m_options.assign(other.options());
 
+
+
     return *this;
+}
+
+bool video_format_impl::set_params(const i_property &property)
+{
+    property_reader reader(property);
+    if (reader.get("media_type", media_type_t::video) == media_type_t::video)
+    {
+        return reader.get("format", m_format_id)
+                | reader.get("width", m_width)
+                | reader.get("height", m_height)
+                | reader.get("frame_rate", m_frame_rate)
+                | utils::convert<i_property, i_option>(property, m_options);
+    }
+    return false;
+}
+
+bool video_format_impl::get_params(i_property &property) const
+{
+    property_writer writer(property);
+
+    if (writer.set("media_type", media_type_t::video)
+            && writer.set("format", m_format_id)
+            && writer.set("width", m_width)
+            && writer.set("height", m_height)
+            && writer.set("frame_rate", m_frame_rate))
+    {
+        utils::convert<i_option, i_property>(m_options, property);
+        return true;
+    }
+
+    return false;
 }
 
 i_option &video_format_impl::options()

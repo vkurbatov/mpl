@@ -15,6 +15,7 @@ constexpr option_id_t opt_fmt_base      = 0x0001000;
 constexpr option_id_t opt_codec_base    = 0x0002000;
 constexpr option_id_t opt_other_base    = 0x0010000;
 
+
 constexpr option_id_t opt_fmt_stream_id =       opt_fmt_base + 0;
 constexpr option_id_t opt_fmt_device_id =       opt_fmt_base + 1;
 

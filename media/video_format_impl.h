@@ -39,6 +39,8 @@ public:
     video_format_impl& set_options(const i_option& options);
     video_format_impl& assign(const i_video_format& other);
 
+    bool set_params(const i_property& property);
+    bool get_params(i_property& property) const;
 
     i_option& options();
 
