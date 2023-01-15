@@ -9,11 +9,6 @@
 namespace mpl::utils
 {
 
-namespace detail
-{
-
-}
-
 #define declare_conversion_func(type_in, type_out)\
     template bool convert(const type_in&, type_out&);
 

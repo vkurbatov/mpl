@@ -12,6 +12,8 @@
 #include "audio_format_impl.h"
 #include "tools/base/any_base.h"
 
+#include "option_helper.h"
+
 #include "v4l2_device_factory.h"
 #include "message_sink_impl.h"
 #include "i_buffer_collection.h"
@@ -24,6 +26,7 @@
 #include "i_message_source.h"
 
 #include "event_channel_state.h"
+
 
 #include <string>
 
@@ -160,15 +163,19 @@ void test4()
     option_impl option1;
     option_impl option2;
 
-    option1.set(1, 123);
-    option1.set(2, 456.7);
-    option1.set(3, true);
-    option1.set(4, std::string("Vasiliy"));
+    option_writer writer1(option1);
+    option_writer writer2(option2);
 
-    option2.set(5, 321);
-    option2.set(6, 7.654);
-    option2.set(7, false);
-    option2.set(8, std::string("Kurbatov"));
+
+    writer1.set(1, 123);
+    writer1.set(2, 456.7);
+    writer1.set(3, true);
+    writer1.set(4, std::string("Vasiliy"));
+
+    writer2.set(5, 321);
+    writer2.set(6, 7.654);
+    writer2.set(7, false);
+    writer2.set(8, std::string("Kurbatov"));
 
     auto cmp1 = option1.is_equal(option2);
     auto c1 = option1.merge(option2);
@@ -267,13 +274,70 @@ void test6()
     auto e3 = writer.get<device_type_t>("device_type");
 
     return;
+}
 
+struct ip_endpoint_t
+{
+    std::uint32_t address;
+    std::uint16_t port;
+
+    ip_endpoint_t() {}
+
+    ip_endpoint_t(std::uint32_t address = 0
+                  , std::uint16_t port = 0)
+        : address(address)
+        , port(port)
+    {
+
+    }
+
+    bool operator == (const ip_endpoint_t& other) const
+    {
+        return true;
+    }
+
+    bool operator != (const ip_endpoint_t& other) const
+    {
+        return !operator ==(other);
+    }
+};
+
+struct A
+{
+
+};
+
+void test7()
+{
+    ip_endpoint_t endpoint1(1234567, 1234);
+    ip_endpoint_t endpoint2(endpoint1);
+
+    option_impl options;
+
+    std::string test_string = "vasiliy";
+    std::int32_t test_int = 0;
+
+    base::any any_ep(test_int);
+
+    std::any any_test(endpoint1);
+
+    const ip_endpoint_t* e = std::any_cast<ip_endpoint_t>(&any_test);
+
+
+    // options.set(0, endpoint2);
+    /*if (auto e = options.get(0).cast<const ip_endpoint_t*>())
+    {
+        return;
+    }*/
+
+    return;
 }
 
 void test()
 {
     //test1();
-    test6();
+    //test6();
+    test7();
 }
 
 }

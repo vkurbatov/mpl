@@ -22,14 +22,14 @@ private:
 
 public:
 
-    template<typename T>
+    template<typename T, typename TV = std::decay_t<T>>
     struct default_comporator_t
     {
         bool operator()(const std::any& lhs
                         , const std::any& rhs)
         {
-            auto l = std::any_cast<T>(&lhs);
-            auto r = std::any_cast<T>(&rhs);
+            const TV* l = std::any_cast<TV>(&lhs);
+            const TV* r = std::any_cast<TV>(&rhs);
 
             return l != nullptr
                     && r != nullptr
@@ -37,14 +37,14 @@ public:
         }
     };
 
-    template<typename T>
+    template<typename T, typename TV = std::decay_t<T>>
     struct default_merger_t
     {
         bool operator()(std::any& lhs
                         , const std::any& rhs)
         {
-            auto l = std::any_cast<T>(&lhs);
-            auto r = std::any_cast<T>(&rhs);
+            auto l = std::any_cast<TV>(&lhs);
+            auto r = std::any_cast<TV>(&rhs);
 
             if (l != nullptr
                     && r != nullptr)
@@ -89,7 +89,7 @@ public:
 
     }
 
-    template<typename T>
+    template<typename T, typename VT = std::enable_if_t<!std::is_pointer_v<T>>>
     T cast() const
     {
         return std::any_cast<T>(m_value);

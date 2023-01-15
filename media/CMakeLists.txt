@@ -4,6 +4,7 @@ set(TARGET media)
 
 set(SOURCES
     test.cpp
+    type_info.cpp
     smart_buffer.cpp
     smart_buffer_collection.cpp
     stream_info.cpp
@@ -19,6 +20,7 @@ set(SOURCES
     property_tree_impl.cpp
     option_impl.cpp
     option_helper.cpp
+    option_value_impl.cpp
     convert_value_impl.cpp
     enum_convert_impl.cpp
     enum_serialize_impl.cpp
@@ -43,6 +45,7 @@ set(SOURCES
 
 set(PUBLIC_HEADERS
     common_types.h
+    type_info.h
     media_types.h
     audio_types.h
     audio_info.h
@@ -64,6 +67,7 @@ set(PUBLIC_HEADERS
     i_property_value.h
     i_property_tree.h
     i_option.h
+    i_option_value.h
     i_data_object.h
     i_buffer.h
     i_mapped_buffer.h
@@ -106,6 +110,7 @@ set(PRIVATE_HEADERS
     property_value_impl.h
     property_tree_impl.h
     option_impl.h
+    option_value_impl.h
     option_helper.h
     audio_format_impl.h
     video_format_impl.h
