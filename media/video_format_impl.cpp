@@ -48,7 +48,7 @@ video_format_impl &video_format_impl::set_width(int32_t width)
     return *this;
 }
 
-video_format_impl &video_format_impl::set_heigth(int32_t height)
+video_format_impl &video_format_impl::set_height(int32_t height)
 {
     m_height = height;
     return *this;

@@ -754,6 +754,31 @@ bool frame_info_t::is_timestamp() const
             || pts != AV_NOPTS_VALUE;
 }
 
+format_info_t::format_info_t(format_id_t format_id
+                             , codec_id_t codec_id)
+    : format_id(format_id)
+    , codec_id(codec_id)
+{
+
+}
+
+bool format_info_t::is_valid() const
+{
+    return format_id == unknown_format_id
+            && codec_id == unknown_codec_id;
+}
+
+bool format_info_t::is_encoded() const
+{
+    return codec_id != unknown_codec_id;
+}
+
+bool format_info_t::is_convertable() const
+{
+    return codec_id == unknown_codec_id
+            && format_id != unknown_format_id;
+}
+
 extra_data_t stream_info_t::create_extra_data(const void *extra_data
                                               , std::size_t extra_data_size
                                               , bool need_padding)
@@ -790,6 +815,22 @@ stream_info_t::stream_info_t(stream_id_t stream_id
                                              , need_extra_padding)))
 {
 
+}
+
+format_info_t stream_info_t::format_info() const
+{
+    switch(media_info.media_type)
+    {
+        case media_type_t::audio:
+            return { media_info.audio_info.sample_format, codec_info.id };
+        break;
+        case media_type_t::video:
+            return { media_info.video_info.pixel_format, codec_info.id };
+        break;
+        default:;
+    }
+
+    return {};
 }
 
 std::string stream_info_t::to_string() const
@@ -1066,6 +1107,49 @@ void codec_params_t::set_global_header(bool enable)
             : flags1 & ~AV_CODEC_FLAG_GLOBAL_HEADER;
 }
 
+void codec_params_t::load(const std::string &codec_params)
+{
+    for (const auto& option : parse_option_list(codec_params))
+    {
+        switch(check_custom_param(option.first))
+        {
+            case custom_parameter_t::bitrate:
+                bitrate = std::atoi(option.second.c_str());
+            break;
+            case custom_parameter_t::gop:
+                gop = std::atoi(option.second.c_str());
+            break;
+            case custom_parameter_t::frame_size:
+                frame_size = std::atoi(option.second.c_str());
+            break;
+            case custom_parameter_t::global_header:
+                if (option.second.empty() || std::atoi(option.second.c_str()) != 0)
+                {
+                    flags1 |= AV_CODEC_FLAG_GLOBAL_HEADER;
+                }
+                else
+                {
+                    flags1 &= ~AV_CODEC_FLAG_GLOBAL_HEADER;
+                }
+            break;
+            case custom_parameter_t::profile:
+                profile = std::atoi(option.second.c_str());
+            break;
+            case custom_parameter_t::level:
+                level = std::atoi(option.second.c_str());
+            break;
+            case custom_parameter_t::qmin:
+                qmin = std::atoi(option.second.c_str());
+            break;
+            case custom_parameter_t::qmax:
+                qmax = std::atoi(option.second.c_str());
+            break;
+            default:;
+        }
+
+    }
+}
+
 std::string codec_params_t::to_params() const
 {
     std::string result;
@@ -1144,29 +1228,5 @@ bool libav_register()
     return libav_register_flag;
 }
 
-format_info_t::format_info_t(format_id_t format_id
-                             , codec_id_t codec_id)
-    : format_id(format_id)
-    , codec_id(codec_id)
-{
-
-}
-
-bool format_info_t::is_valid() const
-{
-    return format_id == unknown_format_id
-            && codec_id == unknown_codec_id;
-}
-
-bool format_info_t::is_encoded() const
-{
-    return codec_id != unknown_codec_id;
-}
-
-bool format_info_t::is_convertable() const
-{
-    return codec_id == unknown_codec_id
-            && format_id != unknown_format_id;
-}
 
 }

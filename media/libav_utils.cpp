@@ -3,8 +3,11 @@
 #include <unordered_map>
 #include <cstdint>
 
-#include "audio_types.h"
-#include "video_types.h"
+#include "option_types.h"
+#include "option_helper.h"
+
+#include "audio_format_impl.h"
+#include "video_format_impl.h"
 
 #include "tools/ffmpeg/libav_base.h"
 
@@ -146,11 +149,6 @@ const std::unordered_map<audio_format_id_t,ffmpeg::format_info_t>& get_conversio
     return audio_format_table;
 }
 
-static auto libav_video_format_table = create_format_map<video_format_id_t>(video_format_table);
-static auto libav_video_codec_table = create_codec_map<video_format_id_t>(video_format_table);
-static auto libav_audio_format_table = create_format_map<audio_format_id_t>(audio_format_table);
-static auto libav_audio_codec_table = create_codec_map<audio_format_id_t>(audio_format_table);
-
 template<typename F>
 bool convert(const F& format_id, ffmpeg::format_info_t& format_info)
 {
@@ -190,6 +188,87 @@ bool convert(const ffmpeg::format_info_t& format_info, F& format_id)
     return false;
 }
 
+void convert_options(const i_option& option
+                     , ffmpeg::codec_info_t codec_info)
+{
+
+    option_reader reader(option);
+
+    reader.get(opt_codec_name, codec_info.name);
+    /*if (auto params = reader.get<std::string*>(opt_codec_params))
+    {
+        codec_info.codec_params.load(*params);
+    }*/
+
+    reader.get(opt_codec_bitrate, codec_info.codec_params.bitrate);
+    reader.get(opt_codec_gop, codec_info.codec_params.gop);
+    reader.get(opt_codec_gop, codec_info.codec_params.frame_size);
+    reader.get(opt_codec_profile, codec_info.codec_params.profile);
+    reader.get(opt_codec_level, codec_info.codec_params.level);
+
+}
+
+void convert_options(const i_option& option
+                     , ffmpeg::stream_info_t& stream_info)
+{
+
+    option_reader reader(option);
+
+    reader.get(opt_fmt_stream_id, stream_info.stream_id);
+    reader.get(opt_codec_extra_data, stream_info.extra_data);
+    convert_options(option
+                    , stream_info.codec_info);
+}
+
+void convert_options(const ffmpeg::codec_info_t& codec_info
+                     , i_option& option)
+{
+    option_writer writer(option);
+
+    if (codec_info.codec_params.bitrate != 0)
+    {
+        writer.set(opt_codec_bitrate, codec_info.codec_params.bitrate);
+    }
+
+    if (codec_info.codec_params.gop != 0)
+    {
+        writer.set(opt_codec_gop, codec_info.codec_params.gop);
+    }
+
+    if (codec_info.codec_params.frame_size != 0)
+    {
+        writer.set(opt_codec_frame_size, codec_info.codec_params.frame_size);
+    }
+
+    if (codec_info.codec_params.profile != 0)
+    {
+        writer.set(opt_codec_profile, codec_info.codec_params.profile);
+    }
+
+    if (codec_info.codec_params.level != 0)
+    {
+        writer.set(opt_codec_level, codec_info.codec_params.level);
+    }
+}
+
+void convert_options(const ffmpeg::stream_info_t& stream_info
+                     , i_option& option)
+{
+    option_writer writer(option);
+
+    if (stream_info.stream_id != ffmpeg::no_stream)
+    {
+        writer.set(opt_fmt_stream_id, stream_info.stream_id);
+    }
+
+    if (stream_info.extra_data)
+    {
+         writer.set(opt_codec_extra_data, stream_info.extra_data);
+    }
+
+}
+
+
 }
 
 template<>
@@ -218,6 +297,105 @@ bool convert(const ffmpeg::format_info_t& format_info, audio_format_id_t& format
 {
     return detail::convert(format_info
                            , format_id);
+}
+
+template<>
+bool convert(const i_media_format& format, ffmpeg::stream_info_t& stream_info)
+{
+    switch(format.media_type())
+    {
+        case media_type_t::audio:
+        {
+            const auto& audio_format = static_cast<const i_audio_format&>(format);
+            ffmpeg::format_info_t format_info;
+            if (convert(audio_format.format_id()
+                        , format_info))
+            {
+                stream_info.codec_info.id = format_info.codec_id;
+                stream_info.media_info.media_type = ffmpeg::media_type_t::audio;
+                stream_info.media_info.audio_info.sample_format = format_info.format_id;
+                stream_info.media_info.audio_info.sample_rate = audio_format.sample_rate();
+                stream_info.media_info.audio_info.channels = audio_format.channels();
+                detail::convert_options(audio_format.options()
+                                        , stream_info);
+
+                return true;
+            }
+        }
+        break;
+        case media_type_t::video:
+        {
+            const auto& video_format = static_cast<const i_video_format&>(format);
+            ffmpeg::format_info_t format_info;
+            if (convert(video_format.format_id()
+                        , format_info))
+            {
+                stream_info.codec_info.id = format_info.codec_id;
+                stream_info.media_info.media_type = ffmpeg::media_type_t::video;
+                stream_info.media_info.video_info.pixel_format = format_info.format_id;
+                stream_info.media_info.video_info.size.width = video_format.width();
+                stream_info.media_info.video_info.size.height = video_format.height();
+                stream_info.media_info.video_info.fps = video_format.frame_rate();
+                detail::convert_options(video_format.options()
+                                        , stream_info);
+
+                return true;
+            }
+        }
+        break;
+        default:;
+    }
+
+    return false;
+}
+
+template<>
+bool convert(const ffmpeg::stream_info_t& stream_info
+             , audio_format_impl& audio_format)
+{
+    if (stream_info.media_info.media_type == ffmpeg::media_type_t::audio)
+    {
+        audio_format_id_t format_id;
+        if (convert(stream_info.format_info()
+                    , format_id))
+        {
+            audio_format.set_format_id(format_id);
+            audio_format.set_sample_rate(stream_info.media_info.audio_info.sample_rate);
+            audio_format.set_sample_rate(stream_info.media_info.audio_info.channels);
+
+            detail::convert_options(stream_info
+                                    , audio_format.options());
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+template<>
+bool convert(const ffmpeg::stream_info_t& stream_info
+             , video_format_impl& video_format)
+{
+    if (stream_info.media_info.media_type == ffmpeg::media_type_t::video)
+    {
+        video_format_id_t format_id;
+        if (convert(stream_info.format_info()
+                    , format_id))
+        {
+            video_format.set_format_id(format_id);
+            video_format.set_width(stream_info.media_info.video_info.size.width);
+            video_format.set_height(stream_info.media_info.video_info.size.height);
+            video_format.set_frame_rate(stream_info.media_info.video_info.fps);
+
+            detail::convert_options(stream_info
+                                    , video_format.options());
+
+            return true;
+        }
+    }
+
+    return false;
 }
 
 

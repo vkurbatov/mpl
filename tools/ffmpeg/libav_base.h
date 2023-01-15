@@ -420,6 +420,8 @@ struct codec_params_t
     bool is_global_header() const;
     void set_global_header(bool enable);
 
+    void load(const std::string& codec_params);
+
     std::string to_params() const;
 
 };
@@ -492,6 +494,20 @@ struct frame_info_t
 typedef std::int32_t stream_id_t;
 const stream_id_t no_stream = -1;
 
+struct format_info_t
+{
+    format_id_t     format_id;
+    codec_id_t      codec_id;
+
+    format_info_t(format_id_t format_id = unknown_format_id
+                  , codec_id_t codec_id = unknown_codec_id);
+
+    bool is_valid() const;
+
+    bool is_encoded() const;
+    bool is_convertable() const;
+};
+
 struct stream_info_t
 {
     stream_id_t                 stream_id;
@@ -510,6 +526,8 @@ struct stream_info_t
                   , std::size_t extra_data_size = 0
                   , bool need_extra_padding = false);
 
+    format_info_t format_info() const;
+
 
     std::string to_string() const;
 
@@ -527,20 +545,6 @@ struct capture_diagnostic_t
     std::size_t     errors = 0;
     std::uint64_t   total_time = 0;
     std::uint64_t   alive_time = 0;
-};
-
-struct format_info_t
-{
-    format_id_t     format_id;
-    codec_id_t      codec_id;
-
-    format_info_t(format_id_t format_id = unknown_format_id
-                  , codec_id_t codec_id = unknown_codec_id);
-
-    bool is_valid() const;
-
-    bool is_encoded() const;
-    bool is_convertable() const;
 };
 
 typedef std::vector<stream_info_t> stream_info_list_t;

@@ -1,4 +1,4 @@
-#ifndef MPL_AUDIO_FORMAT_IMPL_H
+﻿#ifndef MPL_AUDIO_FORMAT_IMPL_H
 #define MPL_AUDIO_FORMAT_IMPL_H
 
 #include "i_audio_format.h"

@@ -33,11 +33,12 @@ public:
 
     video_format_impl& set_format_id(const video_format_id_t& format_id);
     video_format_impl& set_width(std::int32_t width);
-    video_format_impl& set_heigth(std::int32_t height);
+    video_format_impl& set_height(std::int32_t height);
     video_format_impl& set_frame_rate(double frame_rate);
     video_format_impl& set_options(option_impl&& options);
     video_format_impl& set_options(const i_option& options);
     video_format_impl& assign(const i_video_format& other);
+
 
     i_option& options();
 
