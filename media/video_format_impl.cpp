@@ -1,6 +1,8 @@
 #include "video_format_impl.h"
 #include "video_info.h"
 
+#include "media_utils.h"
+
 #include "core/property_writer.h"
 #include "core/option_helper.h"
 #include "core/option_types.h"
@@ -112,7 +114,7 @@ bool video_format_impl::set_params(const i_property &params)
                 | reader.get("width", m_width)
                 | reader.get("height", m_height)
                 | reader.get("frame_rate", m_frame_rate)
-                | utils::convert<i_property, i_option>(params, m_options);
+                | utils::convert_format_options(params, m_options);
     }
     return false;
 }
@@ -127,7 +129,7 @@ bool video_format_impl::get_params(i_property &params) const
             && writer.set("height", m_height)
             && writer.set("frame_rate", m_frame_rate))
     {
-        utils::convert<i_option, i_property>(m_options, params);
+        utils::convert_format_options(m_options, params);
         return true;
     }
 

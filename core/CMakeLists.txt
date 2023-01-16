@@ -18,7 +18,6 @@ set(SOURCES
     option_impl.cpp
     option_helper.cpp
     option_value_impl.cpp
-    option_convert_impl.cpp
     convert_value_impl.cpp
     convert_property_impl.cpp
     channel_control.cpp

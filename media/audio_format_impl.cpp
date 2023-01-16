@@ -1,6 +1,8 @@
 #include "audio_format_impl.h"
 #include "audio_info.h"
 
+#include "media_utils.h"
+
 #include "core/property_writer.h"
 #include "core/option_helper.h"
 #include "core/option_types.h"
@@ -99,7 +101,7 @@ bool audio_format_impl::set_params(const i_property &params)
         return reader.get("format", m_format_id)
                 | reader.get("sample_rate", m_sample_rate)
                 | reader.get("channels", m_channels)
-                | utils::convert<i_property, i_option>(params, m_options);
+                | utils::convert_format_options(params, m_options);
     }
     return false;
 }
@@ -113,7 +115,7 @@ bool audio_format_impl::get_params(i_property &params) const
             && writer.set("sample_rate", m_sample_rate)
             && writer.set("channels", m_channels))
     {
-        utils::convert<i_option, i_property>(m_options, params);
+        utils::convert_format_options(m_options, params);
         return true;
     }
 

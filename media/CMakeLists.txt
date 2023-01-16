@@ -31,6 +31,7 @@ set(PUBLIC_HEADERS
     video_info.h
     stream_info.h
     stream_types.h
+    media_option_types.h
     i_message_frame.h
     i_media_stream.h
     i_media_format.h

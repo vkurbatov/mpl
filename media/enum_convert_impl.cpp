@@ -9,39 +9,39 @@ namespace mpl::utils
 {
 
 declare_enum_converter_begin(device_type_t)
-    std::make_pair(device_type_t::undefined, "undefined"),
-    std::make_pair(device_type_t::v4l2, "v4l2"),
-    std::make_pair(device_type_t::file, "file"),
-    std::make_pair(device_type_t::http, "http"),
-    std::make_pair(device_type_t::rtsp, "rtsp"),
-    std::make_pair(device_type_t::rtmp, "rtmp"),
-    std::make_pair(device_type_t::vnc, "vnc")
+    declare_pair(device_type_t, undefined),
+    declare_pair(device_type_t, v4l2),
+    declare_pair(device_type_t, file),
+    declare_pair(device_type_t, http),
+    declare_pair(device_type_t, rtsp),
+    declare_pair(device_type_t, rtmp),
+    declare_pair(device_type_t, vnc)
 declare_enum_converter_end(device_type_t)
 
 declare_enum_converter_begin(media_type_t)
-    std::make_pair(media_type_t::undefined, "undefined"),
-    std::make_pair(media_type_t::audio, "audio"),
-    std::make_pair(media_type_t::video, "video"),
-    std::make_pair(media_type_t::data, "data"),
-    std::make_pair(media_type_t::custom, "custom"),
+    declare_pair(media_type_t, undefined),
+    declare_pair(media_type_t, audio),
+    declare_pair(media_type_t, video),
+    declare_pair(media_type_t, data),
+    declare_pair(media_type_t, custom),
 declare_enum_converter_end(media_type_t)
 
 declare_enum_converter_begin(audio_format_id_t)
-    std::make_pair(audio_format_id_t::undefined, "undefined"),
-    std::make_pair(audio_format_id_t::pcm8, "pcm8"),
-    std::make_pair(audio_format_id_t::pcm16, "pcm16"),
-    std::make_pair(audio_format_id_t::pcm32, "pcm32"),
-    std::make_pair(audio_format_id_t::float32, "float32"),
-    std::make_pair(audio_format_id_t::float64, "float64"),
-    std::make_pair(audio_format_id_t::pcm8p, "pcm8p"),
-    std::make_pair(audio_format_id_t::pcm16p, "pcm16p"),
-    std::make_pair(audio_format_id_t::pcm32p, "pcm32p"),
-    std::make_pair(audio_format_id_t::float32p, "float32p"),
-    std::make_pair(audio_format_id_t::float64p, "float64p"),
-    std::make_pair(audio_format_id_t::pcma, "pcma"),
-    std::make_pair(audio_format_id_t::pcmu, "pcmu"),
-    std::make_pair(audio_format_id_t::opus, "opus"),
-    std::make_pair(audio_format_id_t::aac, "aac")
+    declare_pair(audio_format_id_t, undefined),
+    declare_pair(audio_format_id_t, pcm8),
+    declare_pair(audio_format_id_t, pcm16),
+    declare_pair(audio_format_id_t, pcm32),
+    declare_pair(audio_format_id_t, float32),
+    declare_pair(audio_format_id_t, float64),
+    declare_pair(audio_format_id_t, pcm8p),
+    declare_pair(audio_format_id_t, pcm16p),
+    declare_pair(audio_format_id_t, pcm32p),
+    declare_pair(audio_format_id_t, float32p),
+    declare_pair(audio_format_id_t, float64p),
+    declare_pair(audio_format_id_t, pcma),
+    declare_pair(audio_format_id_t, pcmu),
+    declare_pair(audio_format_id_t, opus),
+    declare_pair(audio_format_id_t, aac)
 declare_enum_converter_end(audio_format_id_t)
 
 declare_enum_converter_begin(video_format_id_t)
