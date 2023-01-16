@@ -22,11 +22,15 @@ public:
                           , std::int32_t sample_rate = 0
                           , std::int32_t channels = 0);
 
+    static u_ptr_t create(const i_audio_format& other);
+    static u_ptr_t create(const i_property& params);
+
     audio_format_impl(const audio_format_id_t& format_id = audio_format_id_t::undefined
                       , std::int32_t sample_rate = 0
                       , std::int32_t channels = 0);
 
     audio_format_impl(const i_audio_format& other);
+    audio_format_impl(const i_property& params);
 
     audio_format_impl& set_format_id(const audio_format_id_t& format_id);
     audio_format_impl& set_sample_rate(std::int32_t sample_rate);
@@ -35,6 +39,9 @@ public:
     audio_format_impl& set_options(option_impl&& options);
 
     audio_format_impl& assign(const i_audio_format& other);
+
+    bool set_params(const i_property& params);
+    bool get_params(i_property& params) const;
 
     i_option& options();
 

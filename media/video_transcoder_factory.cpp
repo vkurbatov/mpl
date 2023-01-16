@@ -21,9 +21,7 @@ namespace mpl
 {
 
 class video_transcoder : public i_media_transcoder
-        , public i_message_sink
 {
-
     video_format_impl       m_input_format;
     video_format_impl       m_output_format;
 
@@ -94,14 +92,29 @@ public:
 
     // i_media_transcoder interface
 public:
-    const i_media_format &input_format() const override
-    {
-        return m_input_format;
-    }
 
-    const i_media_format &output_format() const override
+    const i_media_format &format() const override
     {
         return m_output_format;
+    }
+
+    // i_message_source interface
+public:
+    bool add_sink(i_message_sink *sink) override
+    {
+        return m_source_router.add_sink(sink);
+    }
+
+    bool remove_sink(i_message_sink *sink) override
+    {
+        return m_source_router.remove_sink(sink);
+    }
+
+    // i_message_sink interface
+public:
+    bool send_message(const i_message &message) override
+    {
+        return on_sink_message(message);
     }
 };
 

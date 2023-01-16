@@ -1,6 +1,10 @@
 #include "audio_format_impl.h"
 #include "audio_info.h"
 
+#include "property_writer.h"
+#include "option_helper.h"
+#include "option_types.h"
+
 namespace mpl
 {
 
@@ -11,6 +15,16 @@ audio_format_impl::u_ptr_t audio_format_impl::create(const audio_format_id_t &fo
     return std::make_unique<audio_format_impl>(format_id
                                                , sample_rate
                                                , channels);
+}
+
+audio_format_impl::u_ptr_t audio_format_impl::create(const i_audio_format &other)
+{
+    return std::make_unique<audio_format_impl>(other);
+}
+
+audio_format_impl::u_ptr_t audio_format_impl::create(const i_property &params)
+{
+    return std::make_unique<audio_format_impl>(params);
 }
 
 audio_format_impl::audio_format_impl(const audio_format_id_t &format_id
@@ -29,6 +43,12 @@ audio_format_impl::audio_format_impl(const i_audio_format &other)
     , m_channels(other.channels())
 {
     m_options.merge(other.options());
+}
+
+audio_format_impl::audio_format_impl(const i_property &params)
+    : audio_format_impl()
+{
+    set_params(params);
 }
 
 audio_format_impl &audio_format_impl::set_format_id(const audio_format_id_t &format_id)
@@ -69,6 +89,35 @@ audio_format_impl &audio_format_impl::assign(const i_audio_format &other)
     m_options.assign(other.options());
 
     return *this;
+}
+
+bool audio_format_impl::set_params(const i_property &params)
+{
+    property_reader reader(params);
+    if (reader.get("media_type", media_type_t::video) == media_type_t::video)
+    {
+        return reader.get("format", m_format_id)
+                | reader.get("sample_rate", m_sample_rate)
+                | reader.get("channels", m_channels)
+                | utils::convert<i_property, i_option>(params, m_options);
+    }
+    return false;
+}
+
+bool audio_format_impl::get_params(i_property &params) const
+{
+    property_writer writer(params);
+
+    if (writer.set("media_type", media_type_t::video)
+            && writer.set("format", m_format_id)
+            && writer.set("sample_rate", m_sample_rate)
+            && writer.set("channels", m_channels))
+    {
+        utils::convert<i_option, i_property>(m_options, params);
+        return true;
+    }
+
+    return false;
 }
 
 i_option& audio_format_impl::options()
@@ -155,7 +204,5 @@ int32_t audio_format_impl::channels() const
 {
     return m_channels;
 }
-
-
 
 }

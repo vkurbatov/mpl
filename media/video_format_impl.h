@@ -24,12 +24,17 @@ public:
                           , std::int32_t height = 0
                           , double frame_rate = 0.0);
 
+
+    static u_ptr_t create(const i_video_format& other);
+    static u_ptr_t create(const i_property& params);
+
     video_format_impl(const video_format_id_t& format_id = video_format_id_t::undefined
                       , std::int32_t width = 0
                       , std::int32_t height = 0
                       , double frame_rate = 0.0);
 
     video_format_impl(const i_video_format& other);
+    video_format_impl(const i_property& params);
 
     video_format_impl& set_format_id(const video_format_id_t& format_id);
     video_format_impl& set_width(std::int32_t width);
@@ -39,10 +44,10 @@ public:
     video_format_impl& set_options(const i_option& options);
     video_format_impl& assign(const i_video_format& other);
 
-    bool set_params(const i_property& property);
-    bool get_params(i_property& property) const;
+    bool set_params(const i_property& params);
+    bool get_params(i_property& params) const;
 
-    i_option& options();
+    option_impl& options();
 
     // i_media_format interface
 public:

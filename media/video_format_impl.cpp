@@ -19,6 +19,16 @@ video_format_impl::u_ptr_t video_format_impl::create(const video_format_id_t &fo
                                                , frame_rate);
 }
 
+video_format_impl::u_ptr_t video_format_impl::create(const i_video_format &other)
+{
+    return std::make_unique<video_format_impl>(other);
+}
+
+video_format_impl::u_ptr_t video_format_impl::create(const i_property &params)
+{
+    return std::make_unique<video_format_impl>(params);
+}
+
 video_format_impl::video_format_impl(const video_format_id_t &format_id
                                      , int32_t width
                                      , int32_t height
@@ -38,6 +48,12 @@ video_format_impl::video_format_impl(const i_video_format &other)
                         , other.frame_rate())
 {
     m_options.merge(other.options());
+}
+
+video_format_impl::video_format_impl(const i_property &params)
+    : video_format_impl()
+{
+    set_params(params);
 }
 
 video_format_impl &video_format_impl::set_format_id(const video_format_id_t &format_id)
@@ -84,28 +100,26 @@ video_format_impl &video_format_impl::assign(const i_video_format &other)
     m_frame_rate = other.frame_rate();
     m_options.assign(other.options());
 
-
-
     return *this;
 }
 
-bool video_format_impl::set_params(const i_property &property)
+bool video_format_impl::set_params(const i_property &params)
 {
-    property_reader reader(property);
+    property_reader reader(params);
     if (reader.get("media_type", media_type_t::video) == media_type_t::video)
     {
         return reader.get("format", m_format_id)
                 | reader.get("width", m_width)
                 | reader.get("height", m_height)
                 | reader.get("frame_rate", m_frame_rate)
-                | utils::convert<i_property, i_option>(property, m_options);
+                | utils::convert<i_property, i_option>(params, m_options);
     }
     return false;
 }
 
-bool video_format_impl::get_params(i_property &property) const
+bool video_format_impl::get_params(i_property &params) const
 {
-    property_writer writer(property);
+    property_writer writer(params);
 
     if (writer.set("media_type", media_type_t::video)
             && writer.set("format", m_format_id)
@@ -113,14 +127,14 @@ bool video_format_impl::get_params(i_property &property) const
             && writer.set("height", m_height)
             && writer.set("frame_rate", m_frame_rate))
     {
-        utils::convert<i_option, i_property>(m_options, property);
+        utils::convert<i_option, i_property>(m_options, params);
         return true;
     }
 
     return false;
 }
 
-i_option &video_format_impl::options()
+option_impl &video_format_impl::options()
 {
     return m_options;
 }
