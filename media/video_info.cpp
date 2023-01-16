@@ -90,7 +90,7 @@ reverse_map_t get_reverse_table()
 
 const video_format_info_t &video_format_info_t::get_info(video_format_id_t format_id)
 {
-    return detail::video_format_info_table[static_cast<std::int32_t>(format_id)];
+    return detail::video_format_info_table[static_cast<std::int32_t>(format_id) + 1];
 }
 
 video_format_id_t video_format_info_t::format_from_fourcc(uint32_t fourcc)

@@ -13,12 +13,16 @@
 #include "message_router_impl.h"
 
 
-
 #include "tools/ffmpeg/libav_converter.h"
 #include "tools/ffmpeg/libav_transcoder.h"
 
 namespace mpl
 {
+
+class libav_transcoder
+{
+
+};
 
 class video_transcoder : public i_media_transcoder
 {

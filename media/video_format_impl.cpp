@@ -76,7 +76,7 @@ video_format_impl &video_format_impl::set_height(int32_t height)
 
 video_format_impl &video_format_impl::set_frame_rate(double frame_rate)
 {
-    m_frame_rate = m_frame_rate;
+    m_frame_rate = frame_rate;
     return *this;
 }
 

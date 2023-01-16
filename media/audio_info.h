@@ -16,6 +16,7 @@ struct audio_format_info_t
     bool            encoded;
     bool            planar;
     bool            convertable;
+    std::uint32_t   fourcc;
 };
 
 }
