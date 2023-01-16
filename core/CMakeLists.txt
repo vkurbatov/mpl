@@ -1,0 +1,92 @@
+cmake_minimum_required(VERSION 3.16)
+
+set(TARGET mplcore)
+
+set(SOURCES
+    test.cpp
+    type_info.cpp
+    smart_buffer.cpp
+    smart_buffer_collection.cpp
+    utils.cpp
+    time_utils.cpp
+    property_helper.cpp
+    property_reader.cpp
+    property_writer.cpp
+    string_utils_impl.cpp
+    property_value_impl.cpp
+    property_tree_impl.cpp
+    option_impl.cpp
+    option_helper.cpp
+    option_value_impl.cpp
+    option_convert_impl.cpp
+    convert_value_impl.cpp
+    convert_property_impl.cpp
+    channel_control.cpp
+    message_router_impl.cpp
+    event.cpp
+    event_channel_state.cpp
+    message_event_impl.cpp
+    message_sink_impl.cpp
+)
+
+set(PUBLIC_HEADERS
+    common_types.h
+    type_info.h
+    property_types.h
+    time_types.h
+    message_types.h
+    channel_types.h
+    event_types.h
+    channel_control.h
+    option_types.h
+    event.h
+    event_channel_state.h
+    i_property.h
+    i_property_value.h
+    i_property_tree.h
+    i_option.h
+    i_option_value.h
+    i_data_object.h
+    i_buffer.h
+    i_mapped_buffer.h
+    i_dynamic_buffer.h
+    i_buffer_collection.h
+    i_channel.h
+    i_message.h
+    i_message_sink.h
+    i_message_source.h
+    i_message_event.h
+    i_message_channel.h
+    )
+
+set(PRIVATE_HEADERS
+    test.h
+    smart_buffer.h
+    smart_buffer_collection.h
+    utils.h
+    enum_utils.h
+    enum_converter_defs.h
+    enum_serialize_defs.h
+    time_utils.h
+    property_helper.h
+    property_reader.h
+    property_writer.h
+    convert_utils.h
+    pointer_utils.h
+    property_value_impl.h
+    property_tree_impl.h
+    option_impl.h
+    option_value_impl.h
+    option_helper.h
+    message_router_impl.h
+    message_event_impl.h
+    message_sink_impl.h
+)
+
+
+add_library(${TARGET}
+    ${SOURCES}
+    ${PRIVATE_HEADERS}
+    ${PUBLIC_HEADERS}
+)
+
