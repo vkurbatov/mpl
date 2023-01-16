@@ -6,8 +6,12 @@
 namespace mpl
 {
 
-class i_media_frame;
 class i_option;
+
+namespace media
+{
+
+class i_media_frame;
 class stream_info_t;
 
 class i_message_frame : public i_message
@@ -19,6 +23,8 @@ public:
     virtual const i_media_frame& frame() const = 0;
     virtual const i_option& options() const = 0;
 };
+
+}
 
 }
 

@@ -4,7 +4,7 @@
 #include "i_video_format.h"
 #include "core/option_impl.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class video_format_impl : public i_video_format

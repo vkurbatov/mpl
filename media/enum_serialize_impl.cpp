@@ -8,6 +8,8 @@
 namespace mpl
 {
 
+using namespace media;
+
 declare_enum_serializer(device_type_t)
 declare_enum_serializer(media_type_t)
 declare_enum_serializer(audio_format_id_t)

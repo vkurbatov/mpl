@@ -1,6 +1,6 @@
 #include "format_utils.h"
 
-namespace mpl::utils
+namespace mpl::media::utils
 {
 
 std::uint32_t to_fourcc(const std::string_view& format, bool be)

@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace mpl
+namespace mpl::media
 {
 
 namespace detail

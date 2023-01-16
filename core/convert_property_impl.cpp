@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 namespace detail
@@ -54,8 +54,8 @@ bool convert(const i_property::array_t &in_value, std::string& out_value)
 template<typename Tin, typename Tout>
 bool convert(const Tin& in_value, Tout& out_value)
 {
-    return mpl::utils::convert(in_value
-                               , out_value);
+    return mpl::core::utils::convert(in_value
+                                      , out_value);
 }
 
 template<typename Tin, typename Tout>

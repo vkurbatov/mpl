@@ -10,6 +10,9 @@ namespace mpl
 
 class i_buffer_collection;
 
+namespace media
+{
+
 class i_media_frame
 {
 public:
@@ -22,6 +25,8 @@ public:
     virtual const i_buffer_collection& buffers() const = 0;
     virtual u_ptr_t clone() const = 0;
 };
+
+}
 
 }
 

@@ -7,7 +7,7 @@
 #include "core/option_helper.h"
 #include "core/option_types.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 video_format_impl::u_ptr_t video_format_impl::create(const video_format_id_t &format_id

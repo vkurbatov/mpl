@@ -7,6 +7,6 @@
 
 int main()
 {
-    mpl::media_test();
+    mpl::media::media_test();
 }
 

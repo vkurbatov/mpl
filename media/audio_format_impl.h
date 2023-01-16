@@ -4,7 +4,7 @@
 #include "i_audio_format.h"
 #include "core/option_impl.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class audio_format_impl : public i_audio_format

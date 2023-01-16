@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 template<typename T, typename U>

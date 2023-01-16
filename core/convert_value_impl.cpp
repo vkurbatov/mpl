@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 #define declare_conversion_func(type_in, type_out)\

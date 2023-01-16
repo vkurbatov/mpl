@@ -4,7 +4,7 @@
 #include <string>
 #include <optional>
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 template<typename E>

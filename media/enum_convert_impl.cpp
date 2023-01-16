@@ -5,8 +5,10 @@
 #include "audio_types.h"
 #include "video_types.h"
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
+
+using namespace media;
 
 declare_enum_converter_begin(device_type_t)
     declare_pair(device_type_t, undefined),

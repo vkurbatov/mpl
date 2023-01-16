@@ -1,6 +1,6 @@
 #include "message_frame_impl.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 message_frame_base_impl::message_frame_base_impl(const i_option& options)

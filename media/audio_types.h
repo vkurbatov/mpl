@@ -1,7 +1,7 @@
 #ifndef MPL_AUDIO_TYPES_H
 #define MPL_AUDIO_TYPES_H
 
-namespace mpl
+namespace mpl::media
 {
 
 enum class audio_format_id_t

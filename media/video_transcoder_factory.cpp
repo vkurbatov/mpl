@@ -16,7 +16,7 @@
 #include "tools/ffmpeg/libav_converter.h"
 #include "tools/ffmpeg/libav_transcoder.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class libav_transcoder

@@ -9,7 +9,7 @@ namespace mpl
 class i_option;
 class i_property;
 
-namespace utils
+namespace media::utils
 {
 
 timestamp_t get_video_frame_time(double frame_rate);

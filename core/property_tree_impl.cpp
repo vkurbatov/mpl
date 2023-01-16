@@ -112,9 +112,9 @@ bool property_tree::is_equal(const i_property &property) const
 
 bool property_tree::set(const value_type_t &key, const i_property::s_ptr_t& property)
 {
-    auto args = utils::split_lines(key
-                                   , '.'
-                                   , 1);
+    auto args = core::utils::split_lines(key
+                                        , '.'
+                                        , 1);
     if (args.size() > 0)
     {
         if (args.size() > 1)
@@ -206,7 +206,7 @@ i_property *property_tree::find_property(const value_type_t &key)
 
 const i_property* property_tree::find_property(const value_type_t &key) const
 {
-    auto args = utils::split_lines(key, '.', 1);
+    auto args = core::utils::split_lines(key, '.', 1);
     if (args.size() > 0)
     {
         auto it = m_propertyes.find(args[0]);

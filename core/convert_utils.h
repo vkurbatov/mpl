@@ -1,7 +1,7 @@
 #ifndef MPL_CONVERT_UTILS_H
 #define MPL_CONVERT_UTILS_H
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 template<typename Tin, typename Tout>

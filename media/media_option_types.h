@@ -3,7 +3,7 @@
 
 #include "core/option_types.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 constexpr option_id_t opt_media_base    = opt_other_base;

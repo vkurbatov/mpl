@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <cstdint>
 
-namespace mpl::utils
+namespace mpl::media::utils
 {
 
 namespace detail
@@ -271,44 +271,49 @@ void convert_options(const ffmpeg::stream_info_t& stream_info
 }
 
 
-}
+} //detail
 
-template<>
-bool convert(const video_format_id_t& format_id, ffmpeg::format_info_t& format_info)
+} //mpl::media::utils
+
+namespace mpl::core::utils
 {
-    return detail::convert<video_format_id_t>(format_id
-                                              , format_info);
-}
 
 template<>
-bool convert(const audio_format_id_t& format_id, ffmpeg::format_info_t& format_info)
+bool convert(const media::video_format_id_t& format_id, ffmpeg::format_info_t& format_info)
 {
-    return detail::convert<audio_format_id_t>(format_id
-                                              , format_info);
+    return mpl::media::utils::detail::convert<media::video_format_id_t>(format_id
+                                                                        , format_info);
 }
 
 template<>
-bool convert(const ffmpeg::format_info_t& format_info, video_format_id_t& format_id)
+bool convert(const media::audio_format_id_t& format_id, ffmpeg::format_info_t& format_info)
 {
-    return detail::convert(format_info
-                           , format_id);
+    return mpl::media::utils::detail::convert<media::audio_format_id_t>(format_id
+                                                                        , format_info);
 }
 
 template<>
-bool convert(const ffmpeg::format_info_t& format_info, audio_format_id_t& format_id)
+bool convert(const ffmpeg::format_info_t& format_info, media::video_format_id_t& format_id)
 {
-    return detail::convert(format_info
-                           , format_id);
+    return mpl::media::utils::detail::convert(format_info
+                                                , format_id);
 }
 
 template<>
-bool convert(const i_media_format& format, ffmpeg::stream_info_t& stream_info)
+bool convert(const ffmpeg::format_info_t& format_info, media::audio_format_id_t& format_id)
+{
+    return mpl::media::utils::detail::convert(format_info
+                                                , format_id);
+}
+
+template<>
+bool convert(const media::i_media_format& format, ffmpeg::stream_info_t& stream_info)
 {
     switch(format.media_type())
     {
-        case media_type_t::audio:
+        case media::media_type_t::audio:
         {
-            const auto& audio_format = static_cast<const i_audio_format&>(format);
+            const auto& audio_format = static_cast<const media::i_audio_format&>(format);
             ffmpeg::format_info_t format_info;
             if (convert(audio_format.format_id()
                         , format_info))
@@ -318,16 +323,16 @@ bool convert(const i_media_format& format, ffmpeg::stream_info_t& stream_info)
                 stream_info.media_info.audio_info.sample_format = format_info.format_id;
                 stream_info.media_info.audio_info.sample_rate = audio_format.sample_rate();
                 stream_info.media_info.audio_info.channels = audio_format.channels();
-                detail::convert_options(audio_format.options()
-                                        , stream_info);
+                mpl::media::utils::detail::convert_options(audio_format.options()
+                                                            , stream_info);
 
                 return true;
             }
         }
         break;
-        case media_type_t::video:
+        case media::media_type_t::video:
         {
-            const auto& video_format = static_cast<const i_video_format&>(format);
+            const auto& video_format = static_cast<const media::i_video_format&>(format);
             ffmpeg::format_info_t format_info;
             if (convert(video_format.format_id()
                         , format_info))
@@ -338,8 +343,8 @@ bool convert(const i_media_format& format, ffmpeg::stream_info_t& stream_info)
                 stream_info.media_info.video_info.size.width = video_format.width();
                 stream_info.media_info.video_info.size.height = video_format.height();
                 stream_info.media_info.video_info.fps = video_format.frame_rate();
-                detail::convert_options(video_format.options()
-                                        , stream_info);
+                mpl::media::utils::detail::convert_options(video_format.options()
+                                                            , stream_info);
 
                 return true;
             }
@@ -353,11 +358,11 @@ bool convert(const i_media_format& format, ffmpeg::stream_info_t& stream_info)
 
 template<>
 bool convert(const ffmpeg::stream_info_t& stream_info
-             , audio_format_impl& audio_format)
+             , media::audio_format_impl& audio_format)
 {
     if (stream_info.media_info.media_type == ffmpeg::media_type_t::audio)
     {
-        audio_format_id_t format_id;
+        media::audio_format_id_t format_id;
         if (convert(stream_info.format_info()
                     , format_id))
         {
@@ -365,8 +370,8 @@ bool convert(const ffmpeg::stream_info_t& stream_info
             audio_format.set_sample_rate(stream_info.media_info.audio_info.sample_rate);
             audio_format.set_sample_rate(stream_info.media_info.audio_info.channels);
 
-            detail::convert_options(stream_info
-                                    , audio_format.options());
+            mpl::media::utils::detail::convert_options(stream_info
+                                                        , audio_format.options());
 
             return true;
         }
@@ -377,11 +382,11 @@ bool convert(const ffmpeg::stream_info_t& stream_info
 
 template<>
 bool convert(const ffmpeg::stream_info_t& stream_info
-             , video_format_impl& video_format)
+             , media::video_format_impl& video_format)
 {
     if (stream_info.media_info.media_type == ffmpeg::media_type_t::video)
     {
-        video_format_id_t format_id;
+        media::video_format_id_t format_id;
         if (convert(stream_info.format_info()
                     , format_id))
         {
@@ -390,8 +395,8 @@ bool convert(const ffmpeg::stream_info_t& stream_info
             video_format.set_height(stream_info.media_info.video_info.size.height);
             video_format.set_frame_rate(stream_info.media_info.video_info.fps);
 
-            detail::convert_options(stream_info
-                                    , video_format.options());
+            mpl::media::utils::detail::convert_options(stream_info
+                                                        , video_format.options());
 
             return true;
         }
@@ -399,6 +404,5 @@ bool convert(const ffmpeg::stream_info_t& stream_info
 
     return false;
 }
-
 
 }

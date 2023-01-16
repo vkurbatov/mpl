@@ -3,7 +3,7 @@
 
 #include "i_media_transcoder_factory.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class video_transcoder_factory : public i_media_transcoder_factory

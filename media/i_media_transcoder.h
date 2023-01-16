@@ -5,7 +5,7 @@
 #include "core/i_message_sink.h"
 #include "core/i_message_source.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class i_media_transcoder : public i_message_sink

@@ -3,7 +3,7 @@
 
 #include "i_media_frame.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class i_video_format;

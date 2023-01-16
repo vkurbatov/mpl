@@ -4,7 +4,7 @@
 #include "stream_types.h"
 #include <cstring>
 
-namespace mpl
+namespace mpl::media
 {
 
 struct stream_info_t

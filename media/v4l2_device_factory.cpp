@@ -17,7 +17,7 @@
 #include <shared_mutex>
 #include <atomic>
 
-namespace mpl
+namespace mpl::media
 {
 
 namespace detail
@@ -175,12 +175,12 @@ public:
     {
         m_frame_counter = 0;
         m_frame_timestamp = 0;
-        m_start_time = utils::now();
+        m_start_time = mpl::core::utils::now();
     }
 
     timestamp_t elapsed_time() const
     {
-        return utils::now() - m_start_time;
+        return mpl::core::utils::now() - m_start_time;
     }
 
     void process_timesatamp(std::uint32_t fps)

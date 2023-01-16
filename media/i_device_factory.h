@@ -8,6 +8,9 @@ namespace mpl
 
 class i_property;
 
+namespace media
+{
+
 class i_device_factory
 {
 public:
@@ -17,6 +20,8 @@ public:
     virtual ~i_device_factory() = default;
     virtual i_device::u_ptr_t create_device(const i_property& device_params) = 0;
 };
+
+}
 
 }
 

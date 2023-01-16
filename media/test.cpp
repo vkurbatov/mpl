@@ -30,7 +30,7 @@
 
 #include <string>
 
-namespace mpl
+namespace mpl::media
 {
 
 namespace
@@ -58,10 +58,10 @@ void test2()
 {
     auto convert_test = [](auto& in, auto& out)
     {
-        if (utils::convert(in, out))
+        if (core::utils::convert(in, out))
         {
             std::cout << "forward conversion: from " << in << " to " << out << " completed" << std::endl;
-            if (utils::convert(out, in))
+            if (core::utils::convert(out, in))
             {
                 std::cout << "backward conversion: from " << out << " to " << in << " completed" << std::endl;
             }
@@ -99,10 +99,10 @@ void test2()
 
     test_string.clear();
 
-    if (utils::convert(hex_test, test_string))
+    if (core::utils::convert(hex_test, test_string))
     {
         std::cout << "forward conversion hex " << test_string << " completed" << std::endl;
-        if (utils::convert(test_string, hex_test))
+        if (core::utils::convert(test_string, hex_test))
         {
             std::cout << "backward conversion hex " << test_string << " completed" << std::endl;
         }
@@ -250,7 +250,7 @@ void test5()
         if (device->control(channel_control_t::open()))
         {
 
-            utils::sleep(durations::seconds(60));
+            core::utils::sleep(durations::seconds(60));
             device->control(channel_control_t::close());
         }
 
@@ -265,10 +265,10 @@ void test6()
 {
     device_type_t enum_value = device_type_t::undefined;
     std::string string_value;
-    utils::convert(device_type_t::rtsp, string_value);
-    utils::convert(string_value, enum_value);
-    auto s2 = utils::enum_to_string<device_type_t>(enum_value);
-    auto e2 = utils::string_to_enum<device_type_t>(s2);
+    core::utils::convert(device_type_t::rtsp, string_value);
+    core::utils::convert(string_value, enum_value);
+    auto s2 = core::utils::enum_to_string<device_type_t>(enum_value);
+    auto e2 = core::utils::string_to_enum<device_type_t>(s2);
 
     auto tree = property_helper::create_tree();
     property_writer writer(*tree);

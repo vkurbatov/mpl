@@ -3,7 +3,7 @@
 
 #include "i_device_factory.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class v4l2_device_factory : public i_device_factory

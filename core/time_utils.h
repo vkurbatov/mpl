@@ -4,7 +4,7 @@
 #include "time_types.h"
 #include <string>
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 std::string to_string(timestamp_t timestamp = timestamp_null);

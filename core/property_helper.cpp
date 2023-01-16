@@ -48,14 +48,14 @@ i_property::u_ptr_t property_helper::create_array()
 template<class T>
 bool property_helper::deserialize(T &value, const i_property &property)
 {
-    return utils::convert(property, value);
+    return core::utils::convert(property, value);
 }
 
 template<>
 bool property_helper::deserialize(octet_string_t& value
                                         , const i_property &property)
 {
-     return utils::convert(property, value);
+     return core::utils::convert(property, value);
 }
 
 bool property_helper::deserialize(i_property::array_t &value
@@ -80,7 +80,7 @@ template<class T>
 bool property_helper::serialize(const T &value
                                 , i_property& property)
 {
-    return utils::convert(value, property);
+    return core::utils::convert(value, property);
 }
 
 bool property_helper::serialize(const i_property::array_t &value
@@ -115,8 +115,8 @@ const i_property* property_helper::operator[](const std::string &key) const
     }
     else
     {
-        auto args = utils::split_lines(key
-                                       , '.');
+        auto args = core::utils::split_lines(key
+                                             , '.');
 
         auto p = &m_property;
         for (const auto& k : args)

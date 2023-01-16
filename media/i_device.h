@@ -4,7 +4,7 @@
 #include "device_types.h"
 #include "core/i_message_channel.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class i_device : public i_message_channel

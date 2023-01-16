@@ -6,7 +6,7 @@
 #include "core/smart_buffer_collection.h"
 #include <unordered_map>
 
-namespace mpl
+namespace mpl::media
 {
 
 class video_frame_base_impl : public i_video_frame

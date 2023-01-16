@@ -1,7 +1,7 @@
 #ifndef MPL_VIDEO_TYPES_H
 #define MPL_VIDEO_TYPES_H
 
-namespace mpl
+namespace mpl::media
 {
 
 enum class video_format_id_t

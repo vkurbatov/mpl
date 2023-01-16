@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace mpl
+namespace mpl::media
 {
     enum class stream_direction_t
     {

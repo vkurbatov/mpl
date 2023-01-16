@@ -6,7 +6,7 @@
 #include "stream_info.h"
 #include "core/option_impl.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class message_frame_base_impl : public i_message_frame

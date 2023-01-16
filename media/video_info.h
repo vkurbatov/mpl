@@ -4,7 +4,7 @@
 #include "video_types.h"
 #include <cstdint>
 
-namespace mpl
+namespace mpl::media
 {
 
 struct video_format_info_t

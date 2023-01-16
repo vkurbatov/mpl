@@ -7,7 +7,7 @@
 #include <string>
 #include <cstdint>
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 namespace limits

@@ -5,7 +5,7 @@
 #include "i_media_format.h"
 #include <cstdint>
 
-namespace mpl
+namespace mpl::media
 {
 
 class i_audio_format : public i_media_format

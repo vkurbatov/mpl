@@ -6,7 +6,7 @@
 #include <string>
 #include "tools/base/convert_base.h"
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 namespace detail

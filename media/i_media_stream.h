@@ -3,7 +3,7 @@
 
 #include "i_media_format.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 class i_media_stream

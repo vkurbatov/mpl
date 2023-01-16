@@ -2,7 +2,7 @@
 
 #include "tools/base/string_base.h"
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 string_list_t split_lines(const std::string &input

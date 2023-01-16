@@ -86,7 +86,7 @@ public:
                 if (auto p = tree.property(k))
                 {
                     std::pair<K,T> element = {};
-                    if (utils::convert(k, element.first)
+                    if (core::utils::convert(k, element.first)
                             && deserialize(element.second
                                            , *p))
                     {
@@ -185,8 +185,8 @@ public:
         if (property.property_type() == property_type_t::object)
         {
             std::string key;
-            if (utils::convert(value.first
-                               , key))
+            if (core::utils::convert(value.first
+                                    , key))
             {
                 static_cast<i_property_tree&>(property).set(key
                                                             , serialize(value.second));

@@ -166,7 +166,7 @@ smart_buffer &smart_buffer::assign(const void *const_data, std::size_t size, boo
     reset();
     if (copy || const_data == nullptr)
     {
-        assign(utils::create_raw_array(const_data, size));
+        assign(core::utils::create_raw_array(const_data, size));
     }
     else
     {
@@ -273,8 +273,8 @@ void smart_buffer::make_store()
         if (m_storage_type != storage_type_t::stored_data
                 || m_storage_context.use_count() > 1)
         {
-            assign(utils::create_raw_array(data()
-                                          , size()));
+            assign(core::utils::create_raw_array(data()
+                                                , size()));
         }
     }
     else

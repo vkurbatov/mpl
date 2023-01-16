@@ -8,7 +8,7 @@
 
 #include <memory>
 
-namespace mpl
+namespace mpl::media
 {
 
 class i_media_format

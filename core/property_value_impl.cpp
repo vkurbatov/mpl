@@ -129,13 +129,13 @@ property_value<T>::property_value(const T &value)
 template<typename T>
 property_type_t property_value<T>::property_type() const
 {
-    return utils::get_property_type<T>();
+    return core::utils::get_property_type<T>();
 }
 
 template<typename T>
 std::size_t property_value<T>::size() const
 {
-    return utils::get_value_size(m_value);
+    return core::utils::get_value_size(m_value);
 }
 
 template<typename T>
@@ -147,8 +147,8 @@ i_property::u_ptr_t property_value<T>::clone() const
 template<typename T>
 bool property_value<T>::merge(const i_property &property)
 {
-    return utils::convert(property
-                          , m_value);
+    return core::utils::convert(property
+                                , m_value);
 }
 
 template<typename T>

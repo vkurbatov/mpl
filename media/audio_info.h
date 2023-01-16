@@ -4,7 +4,7 @@
 #include "audio_types.h"
 #include <cstdint>
 
-namespace mpl
+namespace mpl::media
 {
 
 struct audio_format_info_t

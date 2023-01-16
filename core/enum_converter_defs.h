@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace mpl::utils
+namespace mpl::core::utils
 {
 
 namespace detail
