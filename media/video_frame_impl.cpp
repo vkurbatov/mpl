@@ -1,5 +1,5 @@
 #include "video_frame_impl.h"
-#include "pointer_utils.h"
+#include "core/pointer_utils.h"
 
 namespace mpl
 {

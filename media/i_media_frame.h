@@ -1,9 +1,9 @@
 #ifndef MPL_I_MEDIA_FRAME_H
 #define MPL_I_MEDIA_FRAME_H
 
-#include "time_types.h"
+#include "core/time_types.h"
 #include "media_types.h"
-#include "i_buffer.h"
+#include "core/i_buffer.h"
 
 namespace mpl
 {

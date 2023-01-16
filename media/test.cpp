@@ -1,36 +1,39 @@
 #include <iostream>
 #include "test.h"
-#include "convert_utils.h"
-#include "enum_utils.h"
-#include "time_utils.h"
-#include "property_value_impl.h"
-#include "property_tree_impl.h"
+#include "core/convert_utils.h"
+#include "core/enum_utils.h"
+#include "core/time_utils.h"
+#include "core/property_value_impl.h"
+#include "core/property_tree_impl.h"
 
-#include "property_writer.h"
+#include "core/property_writer.h"
 
-#include "convert_utils.h"
+#include "core/convert_utils.h"
 #include "audio_format_impl.h"
 #include "tools/base/any_base.h"
 
-#include "option_helper.h"
+#include "core/option_helper.h"
 
 #include "v4l2_device_factory.h"
-#include "message_sink_impl.h"
-#include "i_buffer_collection.h"
+#include "core/message_sink_impl.h"
+#include "core/i_buffer_collection.h"
 #include "i_video_frame.h"
 #include "i_video_format.h"
 
 
 #include "i_message_frame.h"
-#include "i_message_event.h"
-#include "i_message_source.h"
+#include "core/i_message_event.h"
+#include "core/i_message_source.h"
 
-#include "event_channel_state.h"
+#include "core/event_channel_state.h"
 
 
 #include <string>
 
 namespace mpl
+{
+
+namespace
 {
 
 void test1()
@@ -333,7 +336,9 @@ void test7()
     return;
 }
 
-void test()
+}
+
+void media_test()
 {
     //test1();
     //test6();

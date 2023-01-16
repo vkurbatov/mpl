@@ -1,7 +1,7 @@
 #ifndef MPL_MEDIA_UTILS_H
 #define MPL_MEDIA_UTILS_H
 
-#include "time_types.h"
+#include "core/time_types.h"
 
 namespace mpl::utils
 {

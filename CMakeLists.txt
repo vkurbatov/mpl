@@ -59,14 +59,15 @@ add_library(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    media
+    mplmedia
+    mplcore
     vncwrp
     viscawrp
     v4l2wrp
     srlwrp
     ocvwrp
     avwrp
-    base
+    ptbase
     )
 
 set(TEST_SOURCES
@@ -90,6 +91,7 @@ target_link_libraries(${TEST_PROJECT_NAME}
     ${PROJECT_NAME}
     )
 
+add_subdirectory(core)
 add_subdirectory(media)
 add_subdirectory(tools)
 

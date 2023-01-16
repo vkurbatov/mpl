@@ -1,7 +1,7 @@
 #ifndef MPL_I_MESSAGE_FRAME_H
 #define MPL_I_MESSAGE_FRAME_H
 
-#include "i_message.h"
+#include "core/i_message.h"
 
 namespace mpl
 {

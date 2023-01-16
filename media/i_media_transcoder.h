@@ -2,8 +2,8 @@
 #define MPL_I_MEDIA_TRANSCODER_H
 
 #include "i_media_format.h"
-#include "i_message_sink.h"
-#include "i_message_source.h"
+#include "core/i_message_sink.h"
+#include "core/i_message_source.h"
 
 namespace mpl
 {

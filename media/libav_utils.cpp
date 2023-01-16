@@ -1,15 +1,16 @@
 #include "libav_utils.h"
-#include "convert_utils.h"
-#include <unordered_map>
-#include <cstdint>
 
-#include "option_types.h"
-#include "option_helper.h"
+#include "core/convert_utils.h"
+#include "core/option_types.h"
+#include "core/option_helper.h"
 
 #include "audio_format_impl.h"
 #include "video_format_impl.h"
 
 #include "tools/ffmpeg/libav_base.h"
+
+#include <unordered_map>
+#include <cstdint>
 
 namespace mpl::utils
 {
@@ -202,7 +203,7 @@ void convert_options(const i_option& option
 
     reader.get(opt_codec_bitrate, codec_info.codec_params.bitrate);
     reader.get(opt_codec_gop, codec_info.codec_params.gop);
-    reader.get(opt_codec_gop, codec_info.codec_params.frame_size);
+    reader.get(opt_codec_frame_size, codec_info.codec_params.frame_size);
     reader.get(opt_codec_profile, codec_info.codec_params.profile);
     reader.get(opt_codec_level, codec_info.codec_params.level);
 

@@ -2,9 +2,9 @@
 #define MPL_I_MEDIA_FORMAT_H
 
 #include "media_types.h"
-#include "i_buffer.h"
-#include "i_property.h"
-#include "i_option.h"
+#include "core/i_buffer.h"
+#include "core/i_property.h"
+#include "core/i_option.h"
 
 #include <memory>
 

@@ -1,9 +1,9 @@
 #include "audio_format_impl.h"
 #include "audio_info.h"
 
-#include "property_writer.h"
-#include "option_helper.h"
-#include "option_types.h"
+#include "core/property_writer.h"
+#include "core/option_helper.h"
+#include "core/option_types.h"
 
 namespace mpl
 {

@@ -1,86 +1,37 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET media)
+set(TARGET mplmedia)
 
 set(SOURCES
     test.cpp
-    type_info.cpp
-    smart_buffer.cpp
-    smart_buffer_collection.cpp
+    enum_convert_impl.cpp
+    enum_serialize_impl.cpp
     stream_info.cpp
-    utils.cpp
-    time_utils.cpp
     media_utils.cpp
     format_utils.cpp
     libav_utils.cpp
-    property_helper.cpp
-    property_reader.cpp
-    property_writer.cpp
-    string_utils_impl.cpp
-    property_value_impl.cpp
-    property_tree_impl.cpp
-    option_impl.cpp
-    option_helper.cpp
-    option_value_impl.cpp
-    option_convert_impl.cpp
-    convert_value_impl.cpp
-    enum_convert_impl.cpp
-    enum_serialize_impl.cpp
-    convert_property_impl.cpp
     audio_format_impl.cpp
     audio_info.cpp
+    audio_frame_impl.cpp
     video_format_impl.cpp
     video_info.cpp
-    channel_control.cpp
-    audio_frame_impl.cpp
     video_frame_impl.cpp
     message_frame_impl.cpp
-    message_router_impl.cpp
-    event.cpp
-    event_channel_state.cpp
-    message_event_impl.cpp
-    message_sink_impl.cpp
     video_transcoder_factory.cpp
     v4l2_device_factory.cpp
     v4l2_utils.cpp
 )
 
 set(PUBLIC_HEADERS
-    common_types.h
-    type_info.h
     media_types.h
+    device_types.h
     audio_types.h
     audio_info.h
     video_types.h
     video_info.h
     stream_info.h
-    property_types.h
-    time_types.h
-    message_types.h
     stream_types.h
-    channel_types.h
-    event_types.h
-    device_types.h
-    channel_control.h
-    option_types.h
-    event.h
-    event_channel_state.h
-    i_property.h
-    i_property_value.h
-    i_property_tree.h
-    i_option.h
-    i_option_value.h
-    i_data_object.h
-    i_buffer.h
-    i_mapped_buffer.h
-    i_dynamic_buffer.h
-    i_buffer_collection.h
-    i_channel.h
-    i_message.h
-    i_message_sink.h
-    i_message_source.h
     i_message_frame.h
-    i_message_event.h
     i_media_stream.h
     i_media_format.h
     i_media_frame.h
@@ -88,7 +39,6 @@ set(PUBLIC_HEADERS
     i_video_format.h
     i_audio_frame.h
     i_video_frame.h
-    i_message_channel.h
     i_device.h
     i_device_factory.h
     i_media_transcoder.h
@@ -97,32 +47,14 @@ set(PUBLIC_HEADERS
 
 set(PRIVATE_HEADERS
     test.h
-    smart_buffer.h
-    smart_buffer_collection.h
-    utils.h
-    enum_utils.h
-    time_utils.h
     media_utils.h
     libav_utils.h
-    property_helper.h
-    property_reader.h
-    property_writer.h
-    convert_utils.h
-    pointer_utils.h
     format_utils.h
-    property_value_impl.h
-    property_tree_impl.h
-    option_impl.h
-    option_value_impl.h
-    option_helper.h
     audio_format_impl.h
     video_format_impl.h
     audio_frame_impl.h
     video_frame_impl.h
     message_frame_impl.h
-    message_router_impl.h
-    message_event_impl.h
-    message_sink_impl.h
     video_transcoder_factory.h
     v4l2_device_factory.h
     v4l2_utils.h

@@ -2,7 +2,7 @@
 #define MPL_I_DEVICE_H
 
 #include "device_types.h"
-#include "i_message_channel.h"
+#include "core/i_message_channel.h"
 
 namespace mpl
 {

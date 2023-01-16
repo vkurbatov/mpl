@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET base)
+set(TARGET ptbase)
 
 set(SOURCES
     system.cpp

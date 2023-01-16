@@ -3,7 +3,7 @@
 
 #include "i_video_frame.h"
 #include "video_format_impl.h"
-#include "smart_buffer_collection.h"
+#include "core/smart_buffer_collection.h"
 #include <unordered_map>
 
 namespace mpl

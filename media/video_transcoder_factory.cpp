@@ -1,16 +1,16 @@
 #include "video_transcoder_factory.h"
 #include "video_format_impl.h"
 
-#include "convert_utils.h"
+#include "core/convert_utils.h"
 
 #include "i_message_frame.h"
 #include "i_video_frame.h"
 
-#include "message_event_impl.h"
-#include "event_channel_state.h"
+#include "core/message_event_impl.h"
+#include "core/event_channel_state.h"
 
-#include "message_sink_impl.h"
-#include "message_router_impl.h"
+#include "core/message_sink_impl.h"
+#include "core/message_router_impl.h"
 
 
 #include "tools/ffmpeg/libav_converter.h"
