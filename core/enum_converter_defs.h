@@ -111,6 +111,33 @@ namespace detail
                                                                       , start_index));
         return converter;
     }
+
+    template<typename E>
+    std::string enum_to_string(const E& enum_value, const std::string& default_string)
+    {
+        std::string result(default_string);
+        convert<E, std::string>(enum_value, result);
+        return result;
+    }
+
+    template<typename E>
+    E string_to_enum(const std::string& enum_string, const E& default_value)
+    {
+        E result = default_value;
+        convert<std::string, E>(enum_string, result);
+        return result;
+    }
+
+    template<typename E>
+    std::optional<E> string_to_enum(const std::string& enum_string)
+    {
+        E result = {};
+        if (convert<std::string, E>(enum_string, result))
+        {
+            return result;
+        }
+        return {};
+    }
 }
 
 #define declare_enum_converter_begin(enum_type)\
@@ -124,39 +151,12 @@ namespace detail
 #define declare_enum_converter_end(enum_type)\
         });\
     }\
-    template<> bool convert<>(const enum_type& in_value, std::string& out_value) { return __##enum_type::__converter.convert(in_value, out_value); };\
-    template<> bool convert<>(const std::string& in_value, enum_type& out_value) { return __##enum_type::__converter.convert(in_value, out_value); };\
-    template std::string enum_to_string<enum_type>(const enum_type& enum_value, const std::string& default_string);\
-    template enum_type string_to_enum<enum_type>(const std::string& enum_string, const enum_type& default_value);\
-    template std::optional<enum_type> string_to_enum<enum_type>(const std::string& enum_string);\
+    template<> bool convert<>(const enum_type& in_value, std::string& out_value) { return __##enum_type::__converter.convert(in_value, out_value); }\
+    template<> bool convert<>(const std::string& in_value, enum_type& out_value) { return __##enum_type::__converter.convert(in_value, out_value); }\
+    template<> std::string enum_to_string<enum_type>(const enum_type& enum_value, const std::string& default_string) { return detail::enum_to_string(enum_value, default_string); }\
+    template<> enum_type string_to_enum<enum_type>(const std::string& enum_string, const enum_type& default_value) { return detail::string_to_enum(enum_string, default_value);}\
+    template<> std::optional<enum_type> string_to_enum<enum_type>(const std::string& enum_string) { return detail::string_to_enum<enum_type>(enum_string); }
 
-
-template<typename E>
-std::string enum_to_string(const E& enum_value, const std::string& default_string)
-{
-    std::string result(default_string);
-    convert<E, std::string>(enum_value, result);
-    return result;
-}
-
-template<typename E>
-E string_to_enum(const std::string& enum_string, const E& default_value)
-{
-    E result = default_value;
-    convert<std::string, E>(enum_string, result);
-    return result;
-}
-
-template<typename E>
-std::optional<E> string_to_enum(const std::string& enum_string)
-{
-    E result = {};
-    if (convert<std::string, E>(enum_string, result))
-    {
-        return result;
-    }
-    return {};
-}
 
 #define xstr(s) str(s)
 #define str(s) #s
