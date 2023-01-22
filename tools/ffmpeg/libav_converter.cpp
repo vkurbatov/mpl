@@ -415,6 +415,13 @@ void libav_converter_context_deleter_t::operator()(libav_converter_context_t *li
 
 #define CHECK_FORMATS if (!input_fragment_info.is_convertable() || !output_fragment_info.is_convertable()) return 0
 
+libav_converter::u_ptr_t libav_converter::create(scaling_method_t scaling_method
+                                                 , int32_t linesize_align)
+{
+    return std::make_unique<libav_converter>(scaling_method
+                                             , linesize_align);
+}
+
 libav_converter::libav_converter(scaling_method_t scaling_method
                                  , std::int32_t linesize_align)
     : m_converter_context(new libav_converter_context_t(scaling_method

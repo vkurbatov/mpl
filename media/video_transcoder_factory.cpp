@@ -21,6 +21,11 @@ namespace mpl::media
 
 class libav_transcoder
 {
+    ffmpeg::libav_transcoder::u_ptr_t   m_decoder;
+    ffmpeg::libav_converter::u_ptr_t    m_converter;
+    ffmpeg::libav_transcoder::u_ptr_t   m_encoder;
+
+
 
 };
 

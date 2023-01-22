@@ -29,6 +29,11 @@ class libav_transcoder
     libav_transcoder_context_ptr_t     m_transcoder_context;
 
 public:
+
+    using u_ptr_t = std::unique_ptr<libav_transcoder>;
+
+    static u_ptr_t create();
+
     libav_transcoder();
 
     bool open(const stream_info_t& steam_info

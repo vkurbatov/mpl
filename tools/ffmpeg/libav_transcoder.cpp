@@ -945,6 +945,11 @@ void libav_transcoder_context_deleter_t::operator()(libav_transcoder_context_t *
     delete libav_transcoder_context_ptr;
 }
 //------------------------------------------------------------------------------
+libav_transcoder::u_ptr_t libav_transcoder::create()
+{
+    return std::make_unique<libav_transcoder>();
+}
+
 libav_transcoder::libav_transcoder()
     : m_transcoder_context(new libav_transcoder_context_t())
 {

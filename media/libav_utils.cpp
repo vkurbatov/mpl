@@ -197,10 +197,6 @@ void convert_options(const i_option& option
     option_reader reader(option);
 
     reader.get(opt_codec_name, codec_info.name);
-    /*if (auto params = reader.get<std::string*>(opt_codec_params))
-    {
-        codec_info.codec_params.load(*params);
-    }*/
 
     reader.get(opt_codec_bitrate, codec_info.codec_params.bitrate);
     reader.get(opt_codec_gop, codec_info.codec_params.gop);

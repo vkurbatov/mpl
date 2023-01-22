@@ -35,6 +35,12 @@ class libav_converter
     scaling_method_t                m_scaling_method;
 
 public:
+
+    using u_ptr_t = std::unique_ptr<libav_converter>;
+
+    static u_ptr_t create(scaling_method_t scaling_method = default_scaling_method
+                          , std::int32_t linesize_align = default_frame_align);
+
     libav_converter(scaling_method_t scaling_method = default_scaling_method
                     , std::int32_t linesize_align = default_frame_align);
 
