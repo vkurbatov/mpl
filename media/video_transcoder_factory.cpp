@@ -2,6 +2,7 @@
 #include "video_format_impl.h"
 
 #include "core/convert_utils.h"
+#include "core/option_helper.h"
 
 #include "i_message_frame.h"
 #include "i_video_frame.h"
@@ -12,6 +13,8 @@
 #include "core/message_sink_impl.h"
 #include "core/message_router_impl.h"
 
+#include "media_option_types.h"
+
 
 #include "tools/ffmpeg/libav_converter.h"
 #include "tools/ffmpeg/libav_transcoder.h"
@@ -19,12 +22,176 @@
 namespace mpl::media
 {
 
-class libav_transcoder
-{
-    ffmpeg::libav_transcoder::u_ptr_t   m_decoder;
-    ffmpeg::libav_converter::u_ptr_t    m_converter;
-    ffmpeg::libav_transcoder::u_ptr_t   m_encoder;
 
+struct complex_transcoder
+{    
+
+    ffmpeg::libav_transcoder::u_ptr_t   m_native_decoder;
+    ffmpeg::libav_converter::u_ptr_t    m_native_converter;
+    ffmpeg::libav_transcoder::u_ptr_t   m_native_encoder;
+
+    video_format_impl                   m_input_format;
+    video_format_impl                   m_output_format;
+
+    bool                                m_is_init;
+
+    static ffmpeg::libav_converter::u_ptr_t create_converter()
+    {
+        return ffmpeg::libav_converter::create();
+    }
+
+    static ffmpeg::libav_transcoder::u_ptr_t create_transcoder(const i_video_format& format
+                                                               , bool encoder)
+    {
+        if (format.is_encoded())
+        {
+            ffmpeg::stream_info_t stream_info;
+
+            if (mpl::core::utils::convert(format, stream_info))
+            {
+                if (auto transcoder = ffmpeg::libav_transcoder::create())
+                {
+                    option_reader options(format.options());
+                    std::string transcoder_options = options.get<std::string>(opt_codec_params, {});
+                    if (transcoder->open(stream_info
+                                         , encoder
+                                         ? ffmpeg::transcoder_type_t::encoder
+                                         : ffmpeg::transcoder_type_t::decoder
+                                         , transcoder_options))
+                    {
+                        return transcoder;
+                    }
+                }
+            }
+
+        }
+
+        return nullptr;
+    }
+
+    static ffmpeg::libav_transcoder::u_ptr_t create_encoder(const i_video_format& format)
+    {
+        return create_transcoder(format
+                                 , true);
+    }
+
+    static ffmpeg::libav_transcoder::u_ptr_t create_decoder(const i_video_format& format)
+    {
+        return create_transcoder(format
+                                 , false);
+    }
+
+    complex_transcoder(const i_video_format& output_format)
+        : m_output_format(output_format)
+        , m_is_init(false)
+    {
+
+    }
+
+    void reset()
+    {
+        m_is_init = false;
+        m_native_decoder.reset();
+        m_native_converter.reset();
+        m_native_encoder.reset();
+    }
+
+    bool reinitialize()
+    {
+        if (m_input_format.is_compatible(m_output_format))
+        {
+            reset();
+            return true;
+        }
+
+        ffmpeg::libav_transcoder::u_ptr_t   native_decoder = nullptr;
+        ffmpeg::libav_converter::u_ptr_t    native_converter = nullptr;
+        ffmpeg::libav_transcoder::u_ptr_t   native_encoder = nullptr;
+
+
+        bool need_decoder = m_input_format.is_encoded();
+        bool need_encoder = m_output_format.is_encoded();
+        bool need_converter = m_output_format.is_convertable();
+
+        if (need_encoder)
+        {
+            native_encoder = create_encoder(m_output_format);
+            if (native_encoder == nullptr)
+            {
+                return false;
+            }
+        }
+
+        if (need_decoder)
+        {
+            native_decoder = create_decoder(m_input_format);
+            if (native_decoder == nullptr)
+            {
+                return false;
+            }
+        }
+
+        if (need_converter == false)
+        {
+            //
+        }
+
+        return true;
+    }
+
+    bool check_or_update_input_format(const i_video_format& input_format
+                                      , bool key_frame = false)
+    {
+        bool need_reinitialize = false;
+
+        if (!m_is_init
+                || !m_input_format.is_compatible(input_format))
+        {
+            if (key_frame)
+            {
+                m_input_format.assign(input_format);
+                need_reinitialize = true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        if (need_reinitialize)
+        {
+            m_is_init = reinitialize();
+        }
+
+        return m_is_init;
+    }
+
+    bool push_video_frame(const i_video_frame& frame)
+    {
+        bool key_frame = frame.frame_type() == i_video_frame::frame_type_t::key_frame
+                || frame.frame_type() == i_video_frame::frame_type_t::image_frame;
+        if (check_or_update_input_format(frame.format()
+                                         , key_frame))
+        {
+
+        }
+
+        return false;
+    }
+
+    bool push_libav_frame(const ffmpeg::stream_info_t& stream_info
+                          , const void* data
+                          , std::size_t size)
+    {
+        return false;
+    }
+
+    bool on_decoder_frame(const ffmpeg::stream_info_t& stream_info
+                          , const void* data
+                          , std::size_t)
+    {
+        return false;
+    }
 
 
 };

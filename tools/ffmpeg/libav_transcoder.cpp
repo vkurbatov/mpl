@@ -258,6 +258,7 @@ struct libav_codec_context_t
         }
     }
 
+
     bool reinit(stream_info_t& stream_info
                 , bool is_encoder
                 , const std::string& options)
@@ -697,6 +698,44 @@ struct libav_codec_context_t
 
     }
 
+    format_set_t get_supported_formats() const
+    {
+        format_set_t result;
+        if (is_init)
+        {
+            switch (av_context->codec_type)
+            {
+                case AVMEDIA_TYPE_AUDIO:
+                {
+                    if (auto spml_fmt = av_context->codec->sample_fmts)
+                    {
+                        while (*spml_fmt != AV_SAMPLE_FMT_NONE)
+                        {
+                            result.emplace(static_cast<format_id_t>(*spml_fmt));
+                            spml_fmt++;
+                        }
+                    }
+                }
+                break;
+                case AVMEDIA_TYPE_VIDEO:
+                {
+                    if (auto pix_fmt = av_context->codec->pix_fmts)
+                    {
+                        while (*pix_fmt != AV_PIX_FMT_NONE)
+                        {
+                            result.emplace(static_cast<format_id_t>(*pix_fmt));
+                            pix_fmt++;
+                        }
+                    }
+                }
+                break;
+                default:;
+            }
+        }
+
+        return result;
+    }
+
     bool decode(const void* data
                 , std::size_t size
                 , frame_queue_t& decoded_frames
@@ -896,7 +935,7 @@ struct libav_transcoder_context_t
         {
             m_codec_context.reset();
             m_transcoder_type = transcoder_type_t::unknown;
-            m_stream_info = stream_info_t();
+            m_stream_info = {};
 
             return true;
         }
@@ -907,6 +946,13 @@ struct libav_transcoder_context_t
     bool is_open() const
     {
         return m_codec_context != nullptr;
+    }
+
+    format_set_t supported_formats() const
+    {
+        return m_codec_context != nullptr
+                ? m_codec_context->get_supported_formats()
+                : format_set_t{};
     }
 
     bool transcode(const void* data
@@ -975,6 +1021,11 @@ bool libav_transcoder::close()
 bool libav_transcoder::is_open() const
 {
     return m_transcoder_context->is_open();
+}
+
+format_set_t libav_transcoder::supported_formats() const
+{
+    return m_transcoder_context->supported_formats();
 }
 
 transcoder_type_t libav_transcoder::type() const

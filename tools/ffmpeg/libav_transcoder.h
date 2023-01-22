@@ -2,6 +2,7 @@
 #define FFMPEG_libav_transcoder_H
 
 #include "libav_base.h"
+#include <set>
 
 namespace ffmpeg
 {
@@ -24,6 +25,8 @@ enum class transcode_flag_t : std::uint32_t
     key_frame = 1
 };
 
+using format_set_t = std::set<format_id_t>;
+
 class libav_transcoder
 {
     libav_transcoder_context_ptr_t     m_transcoder_context;
@@ -41,6 +44,8 @@ public:
               , const std::string& options = "");
     bool close();
     bool is_open() const;
+
+    format_set_t supported_formats() const;
 
     transcoder_type_t type() const;
 

@@ -15,16 +15,18 @@
 namespace ffmpeg
 {
 
-typedef std::int32_t codec_id_t;
-typedef std::int32_t format_id_t;
-typedef format_id_t pixel_format_t;
-typedef format_id_t sample_format_t;
-typedef std::int32_t stream_parse_type_t;
+using codec_id_t = std::int32_t;
+using format_id_t = std::int32_t;
+using pixel_format_t = format_id_t;
+using sample_format_t = format_id_t;
+using stream_parse_type_t = std::int32_t;
 
 const std::int32_t default_frame_align = 1;
 
-typedef std::vector<pixel_format_t> pixel_formats_t;
-typedef std::vector<sample_format_t> sample_formats_t;
+using pixel_formats_t = std::vector<pixel_format_t>;
+using sample_formats_t = std::vector<sample_format_t>;
+
+using format_list_t = std::vector<format_id_t>;
 
 extern const std::int32_t padding_size;
 
