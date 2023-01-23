@@ -10,6 +10,12 @@
 namespace mpl::media
 {
 
+video_format_impl &video_format_impl::undefined_video_fromat()
+{
+    static video_format_impl undefined_format;
+    return undefined_format;
+}
+
 video_format_impl::u_ptr_t video_format_impl::create(const video_format_id_t &format_id
                                                      , int32_t width
                                                      , int32_t height

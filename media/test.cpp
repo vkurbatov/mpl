@@ -338,7 +338,7 @@ void test7()
 
 }
 
-void media_test()
+void tests()
 {
     //test1();
     //test6();

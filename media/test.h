@@ -4,7 +4,7 @@
 namespace mpl::media
 {
 
-void media_test();
+void tests();
 
 }
 

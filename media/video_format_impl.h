@@ -19,6 +19,8 @@ public:
     using u_ptr_t = std::unique_ptr<video_format_impl>;
     using s_ptr_t = std::shared_ptr<video_format_impl>;
 
+    static video_format_impl& undefined_video_fromat();
+
     static u_ptr_t create(const video_format_id_t& format_id = video_format_id_t::undefined
                           , std::int32_t width = 0
                           , std::int32_t height = 0

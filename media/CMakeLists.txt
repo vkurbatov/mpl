@@ -17,6 +17,7 @@ set(SOURCES
     video_info.cpp
     video_frame_impl.cpp
     message_frame_impl.cpp
+    libav_video_converter_factory.cpp
     video_transcoder_factory.cpp
     v4l2_device_factory.cpp
     v4l2_utils.cpp
@@ -36,6 +37,8 @@ set(PUBLIC_HEADERS
     i_media_stream.h
     i_media_format.h
     i_media_frame.h
+    i_media_converter_factory.h
+    i_media_converter.h
     i_audio_format.h
     i_video_format.h
     i_audio_frame.h
@@ -56,6 +59,7 @@ set(PRIVATE_HEADERS
     audio_frame_impl.h
     video_frame_impl.h
     message_frame_impl.h
+    libav_video_converter_factory.h
     video_transcoder_factory.h
     v4l2_device_factory.h
     v4l2_utils.h
