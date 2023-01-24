@@ -5,10 +5,11 @@
 #include "core/i_buffer_collection.h"
 
 #include "video_format_impl.h"
+#include "video_frame_impl.h"
+
+#include "message_frame_impl.h"
 
 #include "tools/ffmpeg/libav_converter.h"
-#include "message_frame_impl.h"
-#include "video_frame_impl.h"
 
 namespace mpl::media
 {
@@ -62,8 +63,7 @@ public:
     }
 
     libav_video_converter(const i_video_format &output_format)
-        : m_input_format(video_format_impl::undefined_video_fromat())
-        , m_output_format(output_format)
+        : m_output_format(output_format)
     {
         detail::fragment_info_from_format(m_output_format
                                           , m_output_fragment_info);
@@ -140,7 +140,7 @@ public:
 public:
     const i_media_format &input_format() const override
     {
-        return video_format_impl::undefined_video_fromat();
+        return m_input_format;
     }
 
     const i_media_format &output_format() const override

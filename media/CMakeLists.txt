@@ -18,6 +18,7 @@ set(SOURCES
     video_frame_impl.cpp
     message_frame_impl.cpp
     libav_video_converter_factory.cpp
+    libav_audio_converter_factory.cpp
     video_transcoder_factory.cpp
     v4l2_device_factory.cpp
     v4l2_utils.cpp
@@ -60,6 +61,7 @@ set(PRIVATE_HEADERS
     video_frame_impl.h
     message_frame_impl.h
     libav_video_converter_factory.h
+    libav_audio_converter_factory.h
     video_transcoder_factory.h
     v4l2_device_factory.h
     v4l2_utils.h

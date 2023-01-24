@@ -212,10 +212,16 @@ struct resampler_context_t
 
         return {};
     }
+
 };
 
 libav_resampler::libav_resampler()
-    : m_resampler_context(std::make_shared<resampler_context_t>())
+    : m_resampler_context(std::make_unique<resampler_context_t>())
+{
+
+}
+
+libav_resampler::~libav_resampler()
 {
 
 }
