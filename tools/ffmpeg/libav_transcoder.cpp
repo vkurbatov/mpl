@@ -202,6 +202,8 @@ static std::uint32_t g_context_id = 0;
 
 struct libav_codec_context_t
 {
+    using u_ptr_t = std::unique_ptr<libav_codec_context_t>;
+
     struct AVCodecContext*      av_context;
     struct AVFrame              av_frame;
     struct AVPacket             av_packet;
@@ -892,18 +894,22 @@ struct libav_codec_context_t
 struct libav_transcoder_context_t
 {
     using u_ptr_t = std::unique_ptr<libav_transcoder_context_t>;
-    using codec_context_ptr_t = std::unique_ptr<libav_codec_context_t>;
 
-    codec_context_ptr_t         m_codec_context;
-    stream_info_t               m_stream_info;
-    transcoder_type_t           m_transcoder_type;
+    frame_handler_t                         m_frame_handler;
+    libav_codec_context_t::u_ptr_t          m_codec_context;
+    stream_info_t                           m_stream_info;
+    transcoder_type_t                       m_transcoder_type;
 
-    static u_ptr_t create()
+    static u_ptr_t create(const frame_handler_t& frame_handler)
     {
-        return std::make_unique<libav_transcoder_context_t>();
+        return std::make_unique<libav_transcoder_context_t>(frame_handler);
     }
 
-    libav_transcoder_context_t()
+    libav_transcoder_context_t(const frame_handler_t& frame_handler)
+        : m_frame_handler(frame_handler)
+        , m_codec_context(nullptr)
+        , m_transcoder_type(transcoder_type_t::unknown)
+
     {
 
     }
@@ -992,13 +998,14 @@ struct libav_transcoder_context_t
     }
 };
 //------------------------------------------------------------------------------
-libav_transcoder::u_ptr_t libav_transcoder::create()
+libav_transcoder::u_ptr_t libav_transcoder::create(const frame_handler_t& frame_handler)
 {
-    return std::make_unique<libav_transcoder>();
+    return std::make_unique<libav_transcoder>(frame_handler);
 }
 
-libav_transcoder::libav_transcoder()
-    : m_transcoder_context(libav_transcoder_context_t::create())
+
+libav_transcoder::libav_transcoder(const frame_handler_t& frame_handler)
+    : m_transcoder_context(libav_transcoder_context_t::create(frame_handler))
 {
     LOG_T << "Create libav transcoder" LOG_END;
 }

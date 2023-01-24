@@ -21,7 +21,7 @@ set(SOURCES
     libav_video_converter_factory.cpp
     libav_audio_converter_factory.cpp
     libav_transcoder_factory.cpp
-    video_transcoder_factory.cpp
+    smart_transcoder_factory.cpp
     v4l2_device_factory.cpp
     v4l2_utils.cpp
 )
@@ -66,7 +66,7 @@ set(PRIVATE_HEADERS
     libav_video_converter_factory.h
     libav_audio_converter_factory.h
     libav_transcoder_factory.h
-    video_transcoder_factory.h
+    smart_transcoder_factory.h
     v4l2_device_factory.h
     v4l2_utils.h
 )

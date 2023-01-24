@@ -86,7 +86,7 @@ public:
     void set_format(video_format_impl&& video_format);
     void set_format(const i_video_format& video_format);
 
-    video_format_impl& get_format();
+    video_format_impl& video_format();
 
     void assign(const i_video_frame& other);
 

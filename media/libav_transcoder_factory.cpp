@@ -88,6 +88,7 @@ class libav_transcoder : public i_media_converter
     data_splitter               m_frame_splitter;
 
     frame_id_t                  m_frame_id;
+    bool                        m_wait_first_frame;
 
     bool                        m_is_init;
 
@@ -114,6 +115,7 @@ public:
         : m_output_sink(nullptr)
         , m_frame_splitter(0)
         , m_frame_id(0)
+        , m_wait_first_frame(media_format.media_type() == media_type_t::video)
 
     {
         m_is_init = initialize(media_format
@@ -254,11 +256,11 @@ public:
                 case media_type_t::audio:
                 {
                     audio_frame_impl audio_frame(static_cast<const i_audio_format&>(*m_output_format)
-                                                 , m_frame_id
+                                                 , m_frame_id++
                                                  , timestamp);
 
-                    audio_frame.get_format().set_sample_rate(libav_frame.info.media_info.audio_info.sample_rate);
-                    audio_frame.get_format().set_sample_rate(libav_frame.info.media_info.audio_info.channels);
+                    audio_frame.audio_format().set_sample_rate(libav_frame.info.media_info.audio_info.sample_rate);
+                    audio_frame.audio_format().set_sample_rate(libav_frame.info.media_info.audio_info.channels);
 
                     audio_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                            , smart_buffer(std::move(libav_frame.media_data)));
@@ -269,12 +271,12 @@ public:
                 case media_type_t::video:
                 {
                     video_frame_impl video_frame(static_cast<const i_video_format&>(*m_output_format)
-                                                 , m_frame_id
+                                                 , m_frame_id++
                                                  , timestamp);
 
-                    video_frame.get_format().set_width(libav_frame.info.media_info.video_info.size.width);
-                    video_frame.get_format().set_height(libav_frame.info.media_info.video_info.size.height);
-                    video_frame.get_format().set_frame_rate(libav_frame.info.media_info.video_info.fps);
+                    video_frame.video_format().set_width(libav_frame.info.media_info.video_info.size.width);
+                    video_frame.video_format().set_height(libav_frame.info.media_info.video_info.size.height);
+                    video_frame.video_format().set_frame_rate(libav_frame.info.media_info.video_info.fps);
 
                     video_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                            , smart_buffer(std::move(libav_frame.media_data)));
@@ -299,10 +301,21 @@ public:
                 auto frame_time = media_frame.timestamp();
                 std::int32_t result = 0;
 
-                auto flag = detail::is_key_frame(media_frame)
+                auto key_frame = detail::is_key_frame(media_frame);
+
+                auto flag = key_frame
                         ? ffmpeg::transcode_flag_t::key_frame
                         : ffmpeg::transcode_flag_t::none;
 
+                if (m_wait_first_frame)
+                {
+                    if (!key_frame)
+                    {
+                        return false;
+                    }
+
+                    m_wait_first_frame = false;
+                }
 
                 if (m_frame_splitter.fragment_size() > 0
                         && media_frame.media_type() == media_type_t::audio)

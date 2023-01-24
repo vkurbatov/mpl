@@ -109,7 +109,7 @@ audio_frame_impl::audio_frame_impl(const i_audio_frame &other)
     m_buffers.assign(other.buffers());
 }
 
-audio_format_impl &audio_frame_impl::get_format()
+audio_format_impl &audio_frame_impl::audio_format()
 {
     return m_audio_format;
 }

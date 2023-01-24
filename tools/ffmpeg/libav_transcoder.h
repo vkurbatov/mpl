@@ -33,9 +33,9 @@ public:
 
     using u_ptr_t = std::unique_ptr<libav_transcoder>;
 
-    static u_ptr_t create();
+    static u_ptr_t create(const frame_handler_t& frame_handler = nullptr);
 
-    libav_transcoder();
+    libav_transcoder(const frame_handler_t& frame_handler = nullptr);
     ~libav_transcoder();
 
     bool open(const stream_info_t& steam_info
@@ -60,6 +60,7 @@ public:
                    , frame_queue_t& frame_queue
                    , transcode_flag_t transcode_flags = transcode_flag_t::none
                    , std::int64_t timestamp = -1);
+
 
 
 };
