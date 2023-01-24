@@ -5,6 +5,7 @@ set(TARGET mplcore)
 set(SOURCES
     test.cpp
     type_info.cpp
+    data_splitter.cpp
     smart_buffer.cpp
     smart_buffer_collection.cpp
     utils.cpp
@@ -60,6 +61,7 @@ set(PUBLIC_HEADERS
 
 set(PRIVATE_HEADERS
     test.h
+    data_splitter.h
     smart_buffer.h
     smart_buffer_collection.h
     utils.h

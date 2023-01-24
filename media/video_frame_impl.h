@@ -34,6 +34,7 @@ public:
     smart_buffer_collection& smart_buffers();
     const smart_buffer_collection& smart_buffers() const;
 
+
     // i_media_frame interface
 public:
     media_type_t media_type() const override;
@@ -84,6 +85,8 @@ public:
     void set_format(const video_format_impl& video_format);
     void set_format(video_format_impl&& video_format);
     void set_format(const i_video_format& video_format);
+
+    video_format_impl& get_format();
 
     void assign(const i_video_frame& other);
 

@@ -210,7 +210,8 @@ public:
                                          , m_frame_counter
                                          , m_frame_timestamp
                                          , i_video_frame::frame_type_t::image_frame);
-            video_frame.smart_buffers().set_buffer(0, smart_buffer(std::move(frame.frame_data)));
+            video_frame.smart_buffers().set_buffer(main_media_buffer_index
+                                                   , smart_buffer(std::move(frame.frame_data)));
 
             m_frame_counter++;
             process_timesatamp(frame.frame_info.fps);

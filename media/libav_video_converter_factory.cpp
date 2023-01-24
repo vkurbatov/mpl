@@ -96,7 +96,7 @@ public:
         if (m_output_sink != nullptr
                 && check_or_update_format(video_frame.format()))
         {
-            if (auto buffer = video_frame.buffers().get_buffer(0))
+            if (auto buffer = video_frame.buffers().get_buffer(main_media_buffer_index))
             {
                 if (m_native_converter.convert_frames(m_input_fragment_info
                                                       , buffer->data()
@@ -109,7 +109,7 @@ public:
                                                  , video_frame.timestamp()
                                                  , video_frame.frame_type());
 
-                    video_frame.smart_buffers().set_buffer(0
+                    video_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                            , smart_buffer(m_output_buffer.data()
                                                                           , m_output_buffer.size()));
 

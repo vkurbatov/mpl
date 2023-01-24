@@ -8,9 +8,6 @@ namespace ffmpeg
 {
 
 struct libav_transcoder_context_t;
-struct libav_transcoder_context_deleter_t { void operator()(libav_transcoder_context_t* libav_transcoder_context_ptr); };
-
-typedef std::unique_ptr<libav_transcoder_context_t, libav_transcoder_context_deleter_t> libav_transcoder_context_ptr_t;
 
 enum class transcoder_type_t
 {
@@ -29,6 +26,7 @@ using format_set_t = std::set<format_id_t>;
 
 class libav_transcoder
 {
+    using libav_transcoder_context_ptr_t = std::unique_ptr<libav_transcoder_context_t>;
     libav_transcoder_context_ptr_t     m_transcoder_context;
 
 public:
@@ -38,6 +36,7 @@ public:
     static u_ptr_t create();
 
     libav_transcoder();
+    ~libav_transcoder();
 
     bool open(const stream_info_t& steam_info
               , transcoder_type_t transcoder_type

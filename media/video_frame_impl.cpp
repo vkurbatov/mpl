@@ -146,6 +146,11 @@ void video_frame_impl::set_format(const i_video_format& video_format)
     m_video_format.assign(video_format);
 }
 
+video_format_impl &video_frame_impl::get_format()
+{
+    return m_video_format;
+}
+
 void video_frame_impl::assign(const i_video_frame &other)
 {
     m_video_format.assign(other.format());

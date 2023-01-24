@@ -13,12 +13,14 @@ set(SOURCES
     audio_format_impl.cpp
     audio_info.cpp
     audio_frame_impl.cpp
+    audio_format_helper.cpp
     video_format_impl.cpp
     video_info.cpp
     video_frame_impl.cpp
     message_frame_impl.cpp
     libav_video_converter_factory.cpp
     libav_audio_converter_factory.cpp
+    libav_transcoder_factory.cpp
     video_transcoder_factory.cpp
     v4l2_device_factory.cpp
     v4l2_utils.cpp
@@ -59,9 +61,11 @@ set(PRIVATE_HEADERS
     video_format_impl.h
     audio_frame_impl.h
     video_frame_impl.h
+    audio_format_helper.h
     message_frame_impl.h
     libav_video_converter_factory.h
     libav_audio_converter_factory.h
+    libav_transcoder_factory.h
     video_transcoder_factory.h
     v4l2_device_factory.h
     v4l2_utils.h

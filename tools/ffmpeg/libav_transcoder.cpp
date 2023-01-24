@@ -891,11 +891,17 @@ struct libav_codec_context_t
 
 struct libav_transcoder_context_t
 {
-    typedef std::unique_ptr<libav_codec_context_t> codec_context_ptr_t;
+    using u_ptr_t = std::unique_ptr<libav_transcoder_context_t>;
+    using codec_context_ptr_t = std::unique_ptr<libav_codec_context_t>;
 
     codec_context_ptr_t         m_codec_context;
     stream_info_t               m_stream_info;
     transcoder_type_t           m_transcoder_type;
+
+    static u_ptr_t create()
+    {
+        return std::make_unique<libav_transcoder_context_t>();
+    }
 
     libav_transcoder_context_t()
     {
@@ -986,20 +992,20 @@ struct libav_transcoder_context_t
     }
 };
 //------------------------------------------------------------------------------
-void libav_transcoder_context_deleter_t::operator()(libav_transcoder_context_t *libav_transcoder_context_ptr)
-{
-    delete libav_transcoder_context_ptr;
-}
-//------------------------------------------------------------------------------
 libav_transcoder::u_ptr_t libav_transcoder::create()
 {
     return std::make_unique<libav_transcoder>();
 }
 
 libav_transcoder::libav_transcoder()
-    : m_transcoder_context(new libav_transcoder_context_t())
+    : m_transcoder_context(libav_transcoder_context_t::create())
 {
     LOG_T << "Create libav transcoder" LOG_END;
+}
+
+libav_transcoder::~libav_transcoder()
+{
+
 }
 
 bool libav_transcoder::open(const stream_info_t &steam_info

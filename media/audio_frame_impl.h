@@ -66,6 +66,8 @@ public:
 
     audio_frame_impl(const i_audio_frame& other);
 
+    audio_format_impl& get_format();
+
     void set_format(const audio_format_impl& audio_format);
     void set_format(audio_format_impl&& audio_format);
     void set_format(const i_audio_format& audio_format);
