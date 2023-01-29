@@ -9,6 +9,7 @@ namespace mpl::media
 class libav_video_converter_factory : public i_media_converter_factory
 {
 public:
+
     libav_video_converter_factory();
 
     // i_media_converter_factory interface
