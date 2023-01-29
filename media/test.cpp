@@ -15,8 +15,11 @@
 #include "core/option_helper.h"
 
 #include "v4l2_device_factory.h"
+#include "libav_input_device_factory.h"
 #include "core/message_sink_impl.h"
 #include "core/i_buffer_collection.h"
+#include "i_audio_frame.h"
+#include "i_audio_format.h"
 #include "i_video_frame.h"
 #include "i_video_format.h"
 
@@ -27,6 +30,7 @@
 
 #include "core/event_channel_state.h"
 
+#include "tools/ffmpeg/libav_base.h"
 
 #include <string>
 
@@ -336,13 +340,110 @@ void test7()
     return;
 }
 
+void test8()
+{
+
+    ffmpeg::libav_register();
+
+    std::string libav_url = "rtsp://wowzaec2demo.streamlock.net/vod/mp4";
+    std::string libav_options = "rtsp_transport=tcp";
+    auto libav_params = property_helper::create_tree();
+    property_writer writer(*libav_params);
+    writer.set<std::string>("url", libav_url);
+    writer.set<std::string>("options", libav_options);
+
+    libav_input_device_factory factory;
+
+
+
+
+    if (auto device = factory.create_device(*libav_params))
+    {
+        auto handler = [&](const i_message& message)
+        {
+            switch(message.category())
+            {
+                case message_category_t::frame:
+                {
+                    const auto& frame_message = static_cast<const i_message_frame&>(message);
+
+                    if (frame_message.frame().media_type() == media_type_t::video)
+                    {
+                        const auto& video_frame = static_cast<const i_video_frame&>(frame_message.frame());
+                        std::cout << "on_frame #" << video_frame.frame_id()
+                                  << ": format_id: " << core::utils::enum_to_string(video_frame.format().format_id())
+                                  << ", fmt: " << video_frame.format().width()
+                                  << "x" << video_frame.format().height()
+                                  << "@" << video_frame.format().frame_rate()
+                                  << ", ts: " << video_frame.timestamp()
+                                  << ", kf: " << (video_frame.frame_type() == i_video_frame::frame_type_t::key_frame);
+
+                        if (auto buffer = video_frame.buffers().get_buffer(0))
+                        {
+                            std::cout << ", size: " << buffer->size();
+                        }
+
+                        std::cout << std::endl;
+
+                    }
+                    else if (frame_message.frame().media_type() == media_type_t::audio)
+                    {
+                        const auto& audio_frame = static_cast<const i_audio_frame&>(frame_message.frame());
+                        std::cout << "on_frame #" << audio_frame.frame_id()
+                                  << ": format_id: " << core::utils::enum_to_string(audio_frame.format().format_id())
+                                  << ", fmt: " << audio_frame.format().sample_rate()
+                                  << "/" << audio_frame.format().channels()
+                                  << ", ts: " << audio_frame.timestamp();
+
+                        if (auto buffer = audio_frame.buffers().get_buffer(0))
+                        {
+                            std::cout << ", size: " << buffer->size();
+                        }
+
+                        std::cout << std::endl;
+                    }
+                }
+                break;
+                case message_category_t::event:
+                {
+                    const auto& event_message = static_cast<const i_message_event&>(message);
+                    if (event_message.event().event_id == event_id_t::channel_state)
+                    {
+                        const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
+                        std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
+                    }
+                }
+                break;
+                default:;
+            }
+
+            return false;
+        };
+
+        message_sink_impl sink(handler);
+        device->source()->add_sink(&sink);
+
+        if (device->control(channel_control_t::open()))
+        {
+
+            core::utils::sleep(durations::seconds(60));
+            device->control(channel_control_t::close());
+        }
+
+        device->source()->remove_sink(&sink);
+
+    }
+
+    return;
+}
+
 }
 
 void tests()
 {
     //test1();
     //test6();
-    test7();
+    test8();
 }
 
 }

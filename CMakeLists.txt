@@ -68,6 +68,13 @@ target_link_libraries(${PROJECT_NAME}
     ocvwrp
     avwrp
     ptbase
+    ${OpenCV_LIBRARIES}
+    ${AVCODEC_LIBRARIES}
+    ${SWRESAMPLE_LIBRARIES}
+    ${AVDEVICE_LIBRARIES}
+    ${SWSCALE_LIBRARIES}
+    ${AVUTIL_LIBRARIES}
+    ${AVFORMAT_LIBRARIES}
     )
 
 set(TEST_SOURCES

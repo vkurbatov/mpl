@@ -53,14 +53,14 @@ class libav_input_device : public i_device
         {
             property_reader reader(params);
             return reader.get("url", url)
-                    | reader.get("options", options);
+                    && reader.get("options", options);
         }
 
         bool save(i_property& params) const
         {
             property_writer writer(params);
             return writer.set("url", url)
-                    || writer.set("options", options) ;
+                    | writer.set("options", options);
         }
 
         bool is_valid() const
@@ -94,10 +94,25 @@ public:
 
     static u_ptr_t create(const i_property &device_params)
     {
+        device_params_t libav_params(device_params);
+        if (libav_params.is_valid())
+        {
+            return std::make_unique<libav_input_device>(libav_params);
+        }
+
         return nullptr;
     }
 
-    libav_input_device()
+    libav_input_device(const device_params_t& device_params)
+        : m_device_params(device_params)
+        , m_native_device([&](const ffmpeg::stream_info_t& stream_info
+                          , ffmpeg::frame_t&& libav_frame) { return on_native_frame(stream_info
+                                                                                    , std::move(libav_frame)); }
+                          , [&](const auto& event) { on_native_device_state(event);} )
+        , m_frame_counter(0)
+        , m_frame_timestamp(0)
+        , m_state(channel_state_t::ready)
+        , m_open(false)
     {
 
     }
@@ -208,9 +223,16 @@ public:
                     if (core::utils::convert(stream_info
                                              , format))
                     {
+                        i_video_frame::frame_type_t frame_type = format.is_convertable()
+                                ? i_video_frame::frame_type_t::image_frame
+                                : libav_frame.info.key_frame
+                                  ? i_video_frame::frame_type_t::key_frame
+                                  : i_video_frame::frame_type_t::delta_frame;
+
                         video_frame_impl frame(format
                                                , libav_frame.info.id
-                                               , libav_frame.info.timestamp());
+                                               , libav_frame.info.timestamp()
+                                               , frame_type);
 
                         frame.smart_buffers().set_buffer(main_media_buffer_index
                                                          , smart_buffer(std::move(libav_frame.media_data)));
