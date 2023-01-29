@@ -13,11 +13,9 @@ using namespace media;
 declare_enum_converter_begin(device_type_t)
     declare_pair(device_type_t, undefined),
     declare_pair(device_type_t, v4l2),
-    declare_pair(device_type_t, file),
-    declare_pair(device_type_t, http),
-    declare_pair(device_type_t, rtsp),
-    declare_pair(device_type_t, rtmp),
-    declare_pair(device_type_t, vnc)
+    declare_pair(device_type_t, libav),
+    declare_pair(device_type_t, vnc),
+    declare_pair(device_type_t, custom)
 declare_enum_converter_end(device_type_t)
 
 declare_enum_converter_begin(media_type_t)

@@ -265,7 +265,7 @@ void test6()
 {
     device_type_t enum_value = device_type_t::undefined;
     std::string string_value;
-    core::utils::convert(device_type_t::rtsp, string_value);
+    core::utils::convert(device_type_t::libav, string_value);
     core::utils::convert(string_value, enum_value);
     auto s2 = core::utils::enum_to_string<device_type_t>(enum_value);
     auto e2 = core::utils::string_to_enum<device_type_t>(s2);

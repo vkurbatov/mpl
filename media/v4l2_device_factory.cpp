@@ -1,15 +1,18 @@
 #include "v4l2_device_factory.h"
-#include "core/message_router_impl.h"
-#include "video_frame_impl.h"
-#include "core/property_writer.h"
+#include "v4l2_utils.h"
 
+#include "core/message_router_impl.h"
+#include "core/property_writer.h"
 #include "core/message_event_impl.h"
 #include "core/event_channel_state.h"
+#include "core/time_utils.h"
+
 #include "video_frame_impl.h"
 #include "message_frame_impl.h"
 
 #include "v4l2_utils.h"
-#include "core/time_utils.h"
+
+#include "video_frame_impl.h"
 
 #include "tools/base/sync_base.h"
 #include "tools/v4l2/v4l2_device.h"
