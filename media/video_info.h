@@ -16,8 +16,8 @@ struct video_format_info_t
     std::int32_t    bpp;
     bool            encoded;
     bool            planar;
-    bool            motion;
     bool            convertable;
+    bool            motion;
     std::int32_t    align_widht;
     std::int32_t    align_height;
     std::uint32_t   fourcc;
