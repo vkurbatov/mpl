@@ -296,12 +296,19 @@ struct libav_codec_context_t
                 {
                     stream_info.media_info >> *(av_context);
 
-                    if (av_context->sample_fmt == sample_format_none
-                            && codec->sample_fmts != nullptr)
+                    if (av_context->sample_fmt == sample_format_none)
                     {
-                        av_context->sample_fmt = codec->sample_fmts[0];
+                        if (codec->sample_fmts != nullptr)
+                        {
+                            av_context->sample_fmt = codec->sample_fmts[0];
+                        }
+                        else
+                        {
+                            av_context->sample_fmt = AV_SAMPLE_FMT_S16;
+                        }
                         stream_info.media_info.audio_info.sample_format = av_context->sample_fmt;
                     }
+
 
                     LOG_I << "Transcoder #" << context_id << ". Initialize audio context [" <<  av_context->sample_rate
                           << "/16/" << av_context->channels << "]" LOG_END;
@@ -324,10 +331,16 @@ struct libav_codec_context_t
                     }
 
 
-                    if (av_context->pix_fmt == pixel_format_none
-                            && codec->pix_fmts != nullptr)
+                    if (av_context->pix_fmt == pixel_format_none)
                     {
-                        av_context->pix_fmt = codec->pix_fmts[0];
+                        if (codec->pix_fmts != nullptr)
+                        {
+                            av_context->pix_fmt = codec->pix_fmts[0];
+                        }
+                        else
+                        {
+                            av_context->pix_fmt = AV_PIX_FMT_YUV420P;
+                        }
                         stream_info.media_info.video_info.pixel_format = av_context->pix_fmt;
                     }
 

@@ -303,47 +303,63 @@ bool convert(const ffmpeg::format_info_t& format_info, media::audio_format_id_t&
 }
 
 template<>
+bool convert(const media::i_audio_format& format, ffmpeg::stream_info_t& stream_info)
+{
+    ffmpeg::format_info_t format_info;
+    if (convert(format.format_id()
+                , format_info))
+    {
+        stream_info.codec_info.id = format_info.codec_id;
+        stream_info.media_info.media_type = ffmpeg::media_type_t::audio;
+        stream_info.media_info.audio_info.sample_format = format_info.format_id;
+        stream_info.media_info.audio_info.sample_rate = format.sample_rate();
+        stream_info.media_info.audio_info.channels = format.channels();
+        mpl::media::utils::detail::convert_options(format.options()
+                                                    , stream_info);
+
+        return true;
+    }
+
+    return false;
+}
+
+template<>
+bool convert(const media::i_video_format& format, ffmpeg::stream_info_t& stream_info)
+{
+    ffmpeg::format_info_t format_info;
+    if (convert(format.format_id()
+                , format_info))
+    {
+        stream_info.codec_info.id = format_info.codec_id;
+        stream_info.media_info.media_type = ffmpeg::media_type_t::video;
+        stream_info.media_info.video_info.pixel_format = format_info.format_id;
+        stream_info.media_info.video_info.size.width = format.width();
+        stream_info.media_info.video_info.size.height = format.height();
+        stream_info.media_info.video_info.fps = format.frame_rate();
+        mpl::media::utils::detail::convert_options(format.options()
+                                                    , stream_info);
+
+        return true;
+    }
+
+    return false;
+}
+
+template<>
 bool convert(const media::i_media_format& format, ffmpeg::stream_info_t& stream_info)
 {
     switch(format.media_type())
     {
         case media::media_type_t::audio:
         {
-            const auto& audio_format = static_cast<const media::i_audio_format&>(format);
-            ffmpeg::format_info_t format_info;
-            if (convert(audio_format.format_id()
-                        , format_info))
-            {
-                stream_info.codec_info.id = format_info.codec_id;
-                stream_info.media_info.media_type = ffmpeg::media_type_t::audio;
-                stream_info.media_info.audio_info.sample_format = format_info.format_id;
-                stream_info.media_info.audio_info.sample_rate = audio_format.sample_rate();
-                stream_info.media_info.audio_info.channels = audio_format.channels();
-                mpl::media::utils::detail::convert_options(audio_format.options()
-                                                            , stream_info);
-
-                return true;
-            }
+            return convert(static_cast<const media::i_audio_format&>(format)
+                           , stream_info);
         }
         break;
         case media::media_type_t::video:
         {
-            const auto& video_format = static_cast<const media::i_video_format&>(format);
-            ffmpeg::format_info_t format_info;
-            if (convert(video_format.format_id()
-                        , format_info))
-            {
-                stream_info.codec_info.id = format_info.codec_id;
-                stream_info.media_info.media_type = ffmpeg::media_type_t::video;
-                stream_info.media_info.video_info.pixel_format = format_info.format_id;
-                stream_info.media_info.video_info.size.width = video_format.width();
-                stream_info.media_info.video_info.size.height = video_format.height();
-                stream_info.media_info.video_info.fps = video_format.frame_rate();
-                mpl::media::utils::detail::convert_options(video_format.options()
-                                                            , stream_info);
-
-                return true;
-            }
+            return convert(static_cast<const media::i_video_format&>(format)
+                           , stream_info);
         }
         break;
         default:;
@@ -364,7 +380,7 @@ bool convert(const ffmpeg::stream_info_t& stream_info
         {
             audio_format.set_format_id(format_id);
             audio_format.set_sample_rate(stream_info.media_info.audio_info.sample_rate);
-            audio_format.set_sample_rate(stream_info.media_info.audio_info.channels);
+            audio_format.set_channels(stream_info.media_info.audio_info.channels);
 
             mpl::media::utils::detail::convert_options(stream_info
                                                         , audio_format.options());

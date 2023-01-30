@@ -309,7 +309,7 @@ public:
             case transcoder_state_t::output:
                 if (m_output_sink)
                 {
-                    m_output_sink->send_message(message_frame_ref_impl(frame));
+                    return m_output_sink->send_message(message_frame_ref_impl(frame));
                 }
             break;
             default:;

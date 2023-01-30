@@ -92,7 +92,7 @@ bool is_key_frame(const i_media_frame& frame)
     {
         auto frame_type = static_cast<const i_video_frame&>(frame).frame_type();
         return frame_type == i_video_frame::frame_type_t::key_frame
-                && frame_type == i_video_frame::frame_type_t::image_frame;
+                || frame_type == i_video_frame::frame_type_t::image_frame;
     }
     return false;
 }
@@ -274,7 +274,7 @@ public:
                             auto tune_stream_info = m_native_transcoder.config();
                             tune_stream_info.codec_info.id = ffmpeg::codec_id_none;
 
-                            if (core::utils::convert(stream_info
+                            if (core::utils::convert(tune_stream_info
                                                      , target_format))
                             {
                                 tune_format(target_format);
@@ -460,12 +460,12 @@ i_media_converter::u_ptr_t libav_transcoder_factory::create_converter(const i_me
     switch(media_format.media_type())
     {
         case media_type_t::audio:
-            libav_transcoder<media_type_t::audio>::create(media_format
-                                                          , m_encoder_factory);
+            return libav_transcoder<media_type_t::audio>::create(media_format
+                                                                , m_encoder_factory);
         break;
         case media_type_t::video:
-            libav_transcoder<media_type_t::video>::create(media_format
-                                                          , m_encoder_factory);
+            return libav_transcoder<media_type_t::video>::create(media_format
+                                                                 , m_encoder_factory);
         break;
         default:;
     }

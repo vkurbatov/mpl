@@ -10,6 +10,7 @@
 
 #include "core/convert_utils.h"
 #include "audio_format_impl.h"
+#include "video_format_impl.h"
 #include "tools/base/any_base.h"
 
 #include "core/option_helper.h"
@@ -22,6 +23,12 @@
 #include "i_audio_format.h"
 #include "i_video_frame.h"
 #include "i_video_format.h"
+
+#include "libav_audio_converter_factory.h"
+#include "libav_video_converter_factory.h"
+#include "media_converter_factory_impl.h"
+#include "libav_transcoder_factory.h"
+#include "smart_transcoder_factory.h"
 
 
 #include "i_message_frame.h"
@@ -354,7 +361,18 @@ void test8()
 
     libav_input_device_factory factory;
 
+    libav_audio_converter_factory audio_converter_factory;
+    libav_video_converter_factory video_converter_factory;
+    media_converter_factory_impl media_converter_factory(audio_converter_factory
+                                                         , video_converter_factory);
 
+    libav_transcoder_factory decoder_factory(false);
+    libav_transcoder_factory encoder_factory(true);
+
+
+    smart_transcoder_factory smart_factory(decoder_factory
+                                           , encoder_factory
+                                           , media_converter_factory);
 
 
     if (auto device = factory.create_device(*libav_params))
@@ -417,11 +435,27 @@ void test8()
                 default:;
             }
 
-            return false;
+            return true;
         };
 
+        audio_format_impl audio_format(audio_format_id_t::pcm16
+                                       , 48000
+                                       , 2);
+        video_format_impl video_format (video_format_id_t::yuv420p
+                                        , 1280
+                                        , 720
+                                        , 30);
+
+        auto audio_transcoder = smart_factory.create_converter(audio_format);
+        auto video_transcoder = smart_factory.create_converter(video_format);
+
         message_sink_impl sink(handler);
-        device->source()->add_sink(&sink);
+
+        audio_transcoder->set_sink(&sink);
+        video_transcoder->set_sink(&sink);
+
+        // device->source()->add_sink(audio_transcoder.get());
+        device->source()->add_sink(video_transcoder.get());
 
         if (device->control(channel_control_t::open()))
         {
@@ -430,8 +464,8 @@ void test8()
             device->control(channel_control_t::close());
         }
 
-        device->source()->remove_sink(&sink);
-
+        // device->source()->remove_sink(audio_transcoder.get());
+        device->source()->remove_sink(video_transcoder.get());
     }
 
     return;

@@ -34,7 +34,7 @@ public:
 
     audio_format_impl& set_format_id(const audio_format_id_t& format_id);
     audio_format_impl& set_sample_rate(std::int32_t sample_rate);
-    audio_format_impl& set_sample_channels(std::int32_t channels);
+    audio_format_impl& set_channels(std::int32_t channels);
     audio_format_impl& set_options(const i_option& options);
     audio_format_impl& set_options(option_impl&& options);
 

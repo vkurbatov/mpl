@@ -65,7 +65,7 @@ audio_format_impl &audio_format_impl::set_sample_rate(int32_t sample_rate)
     return *this;
 }
 
-audio_format_impl &audio_format_impl::set_sample_channels(int32_t channels)
+audio_format_impl &audio_format_impl::set_channels(int32_t channels)
 {
     m_channels = channels;
     return *this;

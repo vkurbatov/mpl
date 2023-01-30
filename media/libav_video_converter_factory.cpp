@@ -21,11 +21,12 @@ namespace detail
                                    , ffmpeg::fragment_info_t& fragment_info)
     {
         ffmpeg::stream_info_t stream_info;
-        if (core::utils::convert(format.format_id()
+        if (core::utils::convert(format
                                  , stream_info))
         {
             fragment_info.pixel_format = stream_info.media_info.video_info.pixel_format;
             fragment_info.frame_size = stream_info.media_info.video_info.size;
+            fragment_info.frame_rect.size = fragment_info.frame_size;
 
             return true;
         }
@@ -79,13 +80,18 @@ public:
         {
             if (!video_format.is_compatible(m_input_format))
             {
+                m_input_format.assign(video_format);
                 if (detail::fragment_info_from_format(m_input_format
                                                       , m_input_fragment_info))
                 {
-                    m_input_format.assign(video_format);
                     return true;
                 }
             }
+            else
+            {
+                return true;
+            }
+
         }
 
         return false;
@@ -98,7 +104,12 @@ public:
         {
             if (auto buffer = video_frame.buffers().get_buffer(main_media_buffer_index))
             {
-                if (m_native_converter.convert_frames(m_input_fragment_info
+                auto input_fragment_info = m_input_fragment_info;
+
+                ffmpeg::frame_rect_t::aspect_ratio(m_output_fragment_info.frame_rect
+                                                   , input_fragment_info.frame_rect);
+
+                if (m_native_converter.convert_frames(input_fragment_info
                                                       , buffer->data()
                                                       , m_output_fragment_info
                                                       , m_output_buffer.data()))
@@ -153,6 +164,11 @@ public:
         m_output_sink = output_sink;
     }
 };
+
+libav_video_converter_factory::libav_video_converter_factory()
+{
+
+}
 
 i_media_converter::u_ptr_t libav_video_converter_factory::create_converter(const i_media_format &output_format)
 {

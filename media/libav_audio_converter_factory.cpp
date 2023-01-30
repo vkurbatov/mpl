@@ -21,7 +21,7 @@ bool audio_info_from_format(const i_audio_format& format
                             , ffmpeg::audio_info_t& audio_info)
 {
     ffmpeg::stream_info_t stream_info;
-    if (core::utils::convert(format.format_id()
+    if (core::utils::convert(format
                              , stream_info))
     {
         audio_info = stream_info.media_info.audio_info;
@@ -79,6 +79,10 @@ public:
                                                    , m_input_audio_info))
                 {
                     m_input_format.assign(audio_format);
+                    return true;
+                }
+                else
+                {
                     return true;
                 }
             }
@@ -148,6 +152,11 @@ public:
         m_output_sink = output_sink;
     }
 };
+
+libav_audio_converter_factory::libav_audio_converter_factory()
+{
+
+}
 
 i_media_converter::u_ptr_t libav_audio_converter_factory::create_converter(const i_media_format &output_format)
 {

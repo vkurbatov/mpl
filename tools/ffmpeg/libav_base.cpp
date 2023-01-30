@@ -764,18 +764,18 @@ format_info_t::format_info_t(format_id_t format_id
 
 bool format_info_t::is_valid() const
 {
-    return format_id == unknown_format_id
-            && codec_id == unknown_codec_id;
+    return format_id > unknown_format_id
+            || codec_id > codec_id_none;
 }
 
 bool format_info_t::is_encoded() const
 {
-    return codec_id != unknown_codec_id;
+    return codec_id > codec_id_none;
 }
 
 bool format_info_t::is_convertable() const
 {
-    return codec_id == unknown_codec_id
+    return !is_encoded()
             && format_id != unknown_format_id;
 }
 
