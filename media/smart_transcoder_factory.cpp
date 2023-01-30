@@ -5,6 +5,7 @@
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 
+
 namespace mpl::media
 {
 
@@ -137,6 +138,15 @@ class smart_transcoder : public i_media_converter
     using format_impl_t = typename detail::format_types_t<MediaType>::format_impl_t;
     using frame_impl_t = typename detail::format_types_t<MediaType>::frame_impl_t;
 
+    enum class transcoder_state_t
+    {
+        input,
+        decode,
+        convert,
+        encode,
+        output
+    };
+
     detail::converter_manager       m_converter_manager;
 
     format_impl_t                   m_input_format;
@@ -153,6 +163,7 @@ class smart_transcoder : public i_media_converter
     i_message_sink*                 m_output_sink;
 
     bool                            m_is_init;
+    bool                            m_is_transit;
 
 public:
     using u_ptr_t = std::unique_ptr<smart_transcoder>;
@@ -185,26 +196,29 @@ public:
                         { return on_converter_frame(frame, options); } )
         , m_output_sink(nullptr)
         , m_is_init(false)
+        , m_is_transit(true)
     {
 
     }
 
     bool check_and_init_converters(const i_format_t& input_format
-                                   , i_format_t& output_format)
+                                   , const i_format_t& output_format)
     {
         if (!detail::is_compatible_format(input_format
                                           , output_format))
         {
-            i_format_t input_converted_format(input_format);
-            i_format_t output_convert_format(output_format);
+            format_impl_t input_convert_format(input_format);
+            format_impl_t output_convert_format(output_format);
 
+            // encoder
             if (output_format.is_encoded())
             {
                 if (m_encoder == nullptr
                         || !m_encoder->output_format().is_compatible(output_format))
                 {
                     m_encoder.reset();
-                    m_encoder = m_converter_manager.create_encoder(output_format);
+                    m_encoder = m_converter_manager.create_encoder(output_format
+                                                                   , &m_encoder_sink);
 
                     if (!m_encoder)
                     {
@@ -218,50 +232,156 @@ public:
             {
                 m_encoder.reset();
             }
+
+            // decoder
+            if (input_format.is_encoded())
+            {
+                if (m_decoder == nullptr
+                        || !m_decoder->input_format().is_compatible(input_format))
+                {
+                    m_decoder.reset();
+                    m_decoder = m_converter_manager.create_decoder(input_format
+                                                                   , &m_decoder_sink);
+
+                    if (!m_decoder)
+                    {
+                        return false;
+                    }
+
+                    input_convert_format.assign(static_cast<const i_format_t&>(m_decoder->output_format()));
+                }
+            }
+            else
+            {
+                m_decoder.reset();
+            }
+
+            // converter
+            if (input_convert_format.is_compatible(output_format))
+            {
+                m_converter.reset();
+            }
+            else
+            {
+                m_converter.reset();
+                m_converter = m_converter_manager.create_converter(output_format
+                                                                   , &m_converter_sink);
+
+                if (!m_converter)
+                {
+                    return false;
+                }
+            }
         }
         else
         {
-
+            reset_converters();
         }
 
         return true;
     }
 
-    bool on_message_frame(const i_frame_t& media_frame)
+    template<transcoder_state_t State = transcoder_state_t::input>
+    bool convert_and_write_frame(const i_frame_t& frame)
     {
-        if (!m_input_format.is_compatible(media_frame.format()))
+        switch(State)
         {
-
+            case transcoder_state_t::input:
+                return m_is_transit
+                        ? convert_and_write_frame<transcoder_state_t::output>(frame)
+                        : convert_and_write_frame<transcoder_state_t::decode>(frame);
+            break;
+            case transcoder_state_t::decode:
+                return m_decoder != nullptr
+                        ? m_decoder->send_message(message_frame_ref_impl(frame))
+                        : convert_and_write_frame<transcoder_state_t::convert>(frame);
+            break;
+            case transcoder_state_t::convert:
+                return m_converter != nullptr
+                        ? m_converter->send_message(message_frame_ref_impl(frame))
+                        : convert_and_write_frame<transcoder_state_t::encode>(frame);
+            break;
+            case transcoder_state_t::encode:
+                return m_encoder != nullptr
+                        ? m_encoder->send_message(message_frame_ref_impl(frame))
+                        : convert_and_write_frame<transcoder_state_t::output>(frame);
+            break;
+            case transcoder_state_t::output:
+                if (m_output_sink)
+                {
+                    m_output_sink->send_message(message_frame_ref_impl(frame));
+                }
+            break;
+            default:;
         }
 
         return false;
     }
 
-
-    bool on_encoder_frame(const i_frame_t& frame
-                          , const i_option& options)
+    bool on_message_frame(const i_frame_t& media_frame)
     {
+        if (!m_input_format.is_compatible(media_frame.format())
+                || !m_is_init)
+        {
+            m_input_format.assign(media_frame.format());
+
+            m_is_init = check_and_init_converters(m_input_format
+                                                  , m_output_format);
+
+            if (!m_is_init)
+            {
+                reset_converters();
+            }
+
+            m_is_transit = is_transit();
+        }
+
+        if (m_is_init)
+        {
+            convert_and_write_frame(media_frame);
+        }
+
         return false;
     }
 
     bool on_decoder_frame(const i_frame_t& frame
                           , const i_option& options)
     {
-        return false;
+        return convert_and_write_frame<transcoder_state_t::convert>(frame);
     }
 
     bool on_converter_frame(const i_frame_t& frame
                            , const i_option& options)
     {
-        return false;
+        return convert_and_write_frame<transcoder_state_t::encode>(frame);
     }
 
-    void reset()
+    bool on_encoder_frame(const i_frame_t& frame
+                          , const i_option& options)
+    {
+        return convert_and_write_frame<transcoder_state_t::output>(frame);
+    }
+
+
+    void reset_converters()
     {
         m_decoder.reset();
         m_encoder.reset();
         m_converter.reset();
+    }
+
+    void reset()
+    {
+        reset_converters();
         m_is_init = false;
+        m_is_transit = true;
+    }
+
+    bool is_transit() const
+    {
+        return m_decoder == nullptr
+                && m_converter == nullptr
+                && m_encoder == nullptr;
     }
 
     // i_message_sink interface
