@@ -105,14 +105,14 @@ public:
 
                 if (!output_samples.empty())
                 {
-                    audio_frame_impl audio_frame(m_output_format
-                                                 , audio_frame.frame_id()
-                                                 , audio_frame.timestamp());
+                    audio_frame_impl converted_audio_frame(m_output_format
+                                                           , converted_audio_frame.frame_id()
+                                                           , converted_audio_frame.timestamp());
 
-                    audio_frame.smart_buffers().set_buffer(main_media_buffer_index
-                                                           , smart_buffer(std::move(output_samples)));
+                    converted_audio_frame.smart_buffers().set_buffer(main_media_buffer_index
+                                                                    , smart_buffer(std::move(output_samples)));
 
-                    return m_output_sink->send_message(message_frame_ref_impl(audio_frame));
+                    return m_output_sink->send_message(message_frame_ref_impl(converted_audio_frame));
                 }
             }
         }

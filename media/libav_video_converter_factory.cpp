@@ -115,16 +115,16 @@ public:
                                                       , m_output_buffer.data()))
                 {
 
-                    video_frame_impl video_frame(m_output_format
-                                                 , video_frame.frame_id()
-                                                 , video_frame.timestamp()
-                                                 , video_frame.frame_type());
+                    video_frame_impl converted_video_frame(m_output_format
+                                                           , video_frame.frame_id()
+                                                           , video_frame.timestamp()
+                                                           , video_frame.frame_type());
 
-                    video_frame.smart_buffers().set_buffer(main_media_buffer_index
-                                                           , smart_buffer(m_output_buffer.data()
-                                                                          , m_output_buffer.size()));
+                    converted_video_frame.smart_buffers().set_buffer(main_media_buffer_index
+                                                                     , smart_buffer(m_output_buffer.data()
+                                                                     , m_output_buffer.size()));
 
-                    return m_output_sink->send_message(message_frame_ref_impl(video_frame));
+                    return m_output_sink->send_message(message_frame_ref_impl(converted_video_frame));
                 }
             }
         }
