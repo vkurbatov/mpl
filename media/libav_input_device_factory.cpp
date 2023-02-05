@@ -224,10 +224,13 @@ public:
                                              , format))
                     {
                         i_video_frame::frame_type_t frame_type = format.is_convertable()
-                                ? i_video_frame::frame_type_t::image_frame
-                                : libav_frame.info.key_frame
-                                  ? i_video_frame::frame_type_t::key_frame
-                                  : i_video_frame::frame_type_t::delta_frame;
+                                ? i_video_frame::frame_type_t::undefined
+                                : i_video_frame::frame_type_t::delta_frame;
+
+                        if (libav_frame.info.key_frame)
+                        {
+                            frame_type = i_video_frame::frame_type_t::key_frame;
+                        }
 
                         video_frame_impl frame(format
                                                , libav_frame.info.id

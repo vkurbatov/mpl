@@ -257,14 +257,14 @@ public:
             }
 
             // converter
-            if (input_convert_format.is_compatible(output_format))
+            if (input_convert_format.is_compatible(output_convert_format))
             {
                 m_converter.reset();
             }
             else
             {
                 m_converter.reset();
-                m_converter = m_converter_manager.create_converter(output_format
+                m_converter = m_converter_manager.create_converter(output_convert_format
                                                                    , &m_converter_sink);
 
                 if (!m_converter)

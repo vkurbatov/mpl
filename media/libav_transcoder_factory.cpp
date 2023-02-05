@@ -91,8 +91,7 @@ bool is_key_frame(const i_media_frame& frame)
     if (frame.media_type() == media_type_t::video)
     {
         auto frame_type = static_cast<const i_video_frame&>(frame).frame_type();
-        return frame_type == i_video_frame::frame_type_t::key_frame
-                || frame_type == i_video_frame::frame_type_t::image_frame;
+        return frame_type == i_video_frame::frame_type_t::key_frame;
     }
     return false;
 }
@@ -108,7 +107,7 @@ void tune_format(const ffmpeg::media_info_t& libav_media_info
 {
 
     format.set_sample_rate(libav_media_info.audio_info.sample_rate);
-    format.set_sample_rate(libav_media_info.audio_info.channels);
+    format.set_channels(libav_media_info.audio_info.channels);
 }
 
 template<>
@@ -184,7 +183,7 @@ public:
         , m_output_format(media_format)
         , m_frame_splitter(0)
         , m_frame_id(0)
-        , m_wait_first_frame(media_format.media_type() == media_type_t::video)
+        , m_wait_first_frame(false)
 
     {
         m_is_init = initialize(media_format
@@ -274,10 +273,14 @@ public:
                             auto tune_stream_info = m_native_transcoder.config();
                             tune_stream_info.codec_info.id = ffmpeg::codec_id_none;
 
+
+
                             if (core::utils::convert(tune_stream_info
                                                      , target_format))
                             {
                                 tune_format(target_format);
+                                m_wait_first_frame = !encoder
+                                        && media_format.media_type() == media_type_t::video;
                                 return true;
                             }
                         }
@@ -339,6 +342,7 @@ public:
                 {
                     if (!key_frame)
                     {
+                        // need key frame for decoder
                         return false;
                     }
 

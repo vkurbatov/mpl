@@ -30,6 +30,8 @@
 #include "libav_transcoder_factory.h"
 #include "smart_transcoder_factory.h"
 
+#include "media_option_types.h"
+
 
 #include "i_message_frame.h"
 #include "core/i_message_event.h"
@@ -438,13 +440,17 @@ void test8()
             return true;
         };
 
-        audio_format_impl audio_format(audio_format_id_t::pcm16
+        audio_format_impl audio_format(audio_format_id_t::pcma
                                        , 48000
                                        , 2);
-        video_format_impl video_format (video_format_id_t::yuv420p
+        video_format_impl video_format (video_format_id_t::h264
                                         , 1280
                                         , 720
                                         , 30);
+
+        std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
+
+        option_writer(video_format.options()).set(opt_codec_params, encoder_options);
 
         auto audio_transcoder = smart_factory.create_converter(audio_format);
         auto video_transcoder = smart_factory.create_converter(video_format);
@@ -454,7 +460,7 @@ void test8()
         audio_transcoder->set_sink(&sink);
         video_transcoder->set_sink(&sink);
 
-        // device->source()->add_sink(audio_transcoder.get());
+        device->source()->add_sink(audio_transcoder.get());
         device->source()->add_sink(video_transcoder.get());
 
         if (device->control(channel_control_t::open()))
@@ -464,7 +470,7 @@ void test8()
             device->control(channel_control_t::close());
         }
 
-        // device->source()->remove_sink(audio_transcoder.get());
+        device->source()->remove_sink(audio_transcoder.get());
         device->source()->remove_sink(video_transcoder.get());
     }
 

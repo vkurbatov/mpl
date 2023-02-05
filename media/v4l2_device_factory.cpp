@@ -212,7 +212,7 @@ public:
             video_frame_impl video_frame(std::move(video_format)
                                          , m_frame_counter
                                          , m_frame_timestamp
-                                         , i_video_frame::frame_type_t::image_frame);
+                                         , i_video_frame::frame_type_t::undefined);
             video_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                    , smart_buffer(std::move(frame.frame_data)));
 

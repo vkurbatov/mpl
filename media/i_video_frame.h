@@ -16,8 +16,7 @@ public:
     {
         undefined = -1,
         delta_frame,
-        key_frame,
-        image_frame
+        key_frame
     };
 
     using u_ptr_t = std::unique_ptr<i_video_frame>;
