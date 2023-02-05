@@ -28,11 +28,11 @@ class libav_input_device : public i_device
 
     struct device_params_t
     {
-        device_type_t   device_type = device_type_t::libav;
+        device_type_t   device_type = device_type_t::libav_in;
         std::string     url;
         std::string     options;
 
-        device_params_t(device_type_t device_type = device_type_t::libav
+        device_params_t(device_type_t device_type = device_type_t::libav_in
                 , const std::string_view& url = {}
                 , const std::string_view& options = {})
             : device_type(device_type)
@@ -65,7 +65,7 @@ class libav_input_device : public i_device
 
         bool is_valid() const
         {
-            return device_type == device_type_t::libav
+            return device_type == device_type_t::libav_in
                     && !url.empty();
         }
 
@@ -97,14 +97,14 @@ public:
         device_params_t libav_params(device_params);
         if (libav_params.is_valid())
         {
-            return std::make_unique<libav_input_device>(libav_params);
+            return std::make_unique<libav_input_device>(std::move(libav_params));
         }
 
         return nullptr;
     }
 
-    libav_input_device(const device_params_t& device_params)
-        : m_device_params(device_params)
+    libav_input_device(device_params_t&& device_params)
+        : m_device_params(std::move(device_params))
         , m_native_device([&](const ffmpeg::stream_info_t& stream_info
                           , ffmpeg::frame_t&& libav_frame) { return on_native_frame(stream_info
                                                                                     , std::move(libav_frame)); }
@@ -119,7 +119,7 @@ public:
 
     ~libav_input_device()
     {
-
+        close();
     }
 
     void change_state(channel_state_t new_state
@@ -319,7 +319,7 @@ public:
     }
     device_type_t device_type() const override
     {
-        return device_type_t::v4l2;
+        return device_type_t::v4l2_in;
     }
 };
 

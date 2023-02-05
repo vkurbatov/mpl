@@ -19,7 +19,7 @@ class property_helper
     const i_property&   m_property;
 public:
     static i_property::u_ptr_t create_tree();
-    static i_property::u_ptr_t create_array();
+    static i_property::u_ptr_t create_array(i_property::array_t&& values = {});
 
     template<class T>
     static bool deserialize(T& value, const i_property& property);

@@ -278,7 +278,7 @@ void test6()
 {
     device_type_t enum_value = device_type_t::undefined;
     std::string string_value;
-    core::utils::convert(device_type_t::libav, string_value);
+    core::utils::convert(device_type_t::libav_in, string_value);
     core::utils::convert(string_value, enum_value);
     auto s2 = core::utils::enum_to_string<device_type_t>(enum_value);
     auto e2 = core::utils::string_to_enum<device_type_t>(s2);
@@ -286,7 +286,7 @@ void test6()
     auto tree = property_helper::create_tree();
     property_writer writer(*tree);
 
-    writer.set("device_type", device_type_t::v4l2);
+    writer.set("device_type", device_type_t::v4l2_in);
     auto e3 = writer.get<device_type_t>("device_type");
 
     return;

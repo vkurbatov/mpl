@@ -12,8 +12,10 @@ using namespace media;
 
 declare_enum_converter_begin(device_type_t)
     declare_pair(device_type_t, undefined),
-    declare_pair(device_type_t, v4l2),
-    declare_pair(device_type_t, libav),
+    declare_pair(device_type_t, v4l2_in),
+    declare_pair(device_type_t, v4l2_out),
+    declare_pair(device_type_t, libav_in),
+    declare_pair(device_type_t, libav_out),
     declare_pair(device_type_t, vnc),
     declare_pair(device_type_t, custom)
 declare_enum_converter_end(device_type_t)

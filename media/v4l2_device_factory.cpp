@@ -38,10 +38,10 @@ class v4l2_device : public i_device
 
     struct device_params_t
     {
-        device_type_t   device_type = device_type_t::v4l2;
+        device_type_t   device_type = device_type_t::v4l2_in;
         std::string     url;
 
-        device_params_t(device_type_t device_type = device_type_t::v4l2
+        device_params_t(device_type_t device_type = device_type_t::v4l2_in
                 , const std::string_view& url = {})
             : device_type(device_type)
             , url(url)
@@ -70,7 +70,7 @@ class v4l2_device : public i_device
 
         bool is_valid() const
         {
-            return device_type == device_type_t::v4l2
+            return device_type == device_type_t::v4l2_in
                     && !url.empty();
         }
     };
@@ -291,7 +291,7 @@ public:
     }
     device_type_t device_type() const override
     {
-        return device_type_t::v4l2;
+        return device_type_t::v4l2_in;
     }
 };
 

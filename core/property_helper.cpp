@@ -40,9 +40,9 @@ i_property::u_ptr_t property_helper::create_tree()
     return property_tree::create();
 }
 
-i_property::u_ptr_t property_helper::create_array()
+i_property::u_ptr_t property_helper::create_array(i_property::array_t&& values)
 {
-    return property_value<i_property::array_t>::create();
+    return property_value<i_property::array_t>::create(std::move(values));
 }
 
 template<class T>

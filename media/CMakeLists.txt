@@ -22,7 +22,9 @@ set(SOURCES
     libav_audio_converter_factory.cpp
     libav_transcoder_factory.cpp
     libav_input_device_factory.cpp
+    libav_output_device_factory.cpp
     media_converter_factory_impl.cpp
+    media_serialize_impl.cpp
     smart_transcoder_factory.cpp
     v4l2_device_factory.cpp
     v4l2_utils.cpp
@@ -69,6 +71,7 @@ set(PRIVATE_HEADERS
     libav_audio_converter_factory.h
     libav_transcoder_factory.h
     libav_input_device_factory.h
+    libav_output_device_factory.h
     media_converter_factory_impl.h
     smart_transcoder_factory.h
     v4l2_device_factory.h
