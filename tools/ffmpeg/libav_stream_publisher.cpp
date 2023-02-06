@@ -462,7 +462,7 @@ bool libav_stream_publisher::push_frame(const frame_t& frame)
                                                         , frame.media_data.data()
                                                         , frame.media_data.size()
                                                         , frame.info.key_frame
-                                                        , -1);
+                                                        , frame.info.timestamp());
 }
 
 }

@@ -17,6 +17,7 @@
 
 #include "v4l2_device_factory.h"
 #include "libav_input_device_factory.h"
+#include "libav_output_device_factory.h"
 #include "core/message_sink_impl.h"
 #include "core/i_buffer_collection.h"
 #include "i_audio_frame.h"
@@ -477,13 +478,92 @@ void test8()
     return;
 }
 
+void test9()
+{
+    ffmpeg::libav_register();
+
+    std::string input_url = "rtsp://wowzaec2demo.streamlock.net/vod/mp4";
+    std::string input_options = "rtsp_transport=tcp";
+
+    std::string output_url = "rtmp://127.0.0.1/cam1/stream";
+    auto libav_input_device_params = property_helper::create_tree();
+    {
+        property_writer writer(*libav_input_device_params);
+        writer.set<std::string>("url", input_url);
+        writer.set<std::string>("options", input_options);
+    }
+
+    auto libav_output_device_params = property_helper::create_tree();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        audio_format_impl audio_format(audio_format_id_t::aac
+                                       , 48000
+                                       , 2);
+
+        video_format_impl video_format(video_format_id_t::h264
+                                       , 512
+                                       , 288
+                                       , 30);
+
+        option_writer(video_format.options()).set<std::int32_t>(opt_fmt_stream_id, 1);
+
+        i_property::array_t streams;
+        if (auto ap = property_helper::create_tree())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
+        if (auto vp = property_helper::create_tree())
+        {
+            if (video_format.get_params(*vp))
+            {
+                streams.emplace_back(std::move(vp));
+            }
+        }
+
+        writer.set("streams", streams);
+    }
+
+    libav_input_device_factory input_device_factory;
+    libav_output_device_factory output_device_factory;
+
+
+    if (auto input_device = input_device_factory.create_device(*libav_input_device_params))
+    {
+        if (auto output_device = output_device_factory.create_device(*libav_output_device_params))
+        {
+            input_device->source()->add_sink(output_device->sink());
+
+            if (output_device->control(channel_control_t::open()))
+            {
+
+                if (input_device->control(channel_control_t::open()))
+                {
+                    core::utils::sleep(durations::seconds(60));
+                    input_device->control(channel_control_t::close());
+                }
+
+                output_device->control(channel_control_t::close());
+            }
+
+            input_device->source()->remove_sink(output_device->sink());
+        }
+    }
+
+    return;
+}
+
 }
 
 void tests()
 {
     //test1();
     //test6();
-    test8();
+    test9();
 }
 
 }

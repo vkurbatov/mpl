@@ -51,7 +51,7 @@ namespace detail
             {
                 stream_id = streams.empty()
                         ? 0
-                        : std::prev(streams.end())->first;
+                        : std::prev(streams.end())->first + 1;
                 writer.set<stream_id_t>(opt_fmt_stream_id
                                          , stream_id);
             }
@@ -249,7 +249,7 @@ class libav_output_device : public i_device
                 }
             }
 
-            return native_streams();
+            return stream_list;
         }
 
         const i_media_format* get_format(stream_id_t stream_id) const
@@ -295,23 +295,6 @@ class libav_output_device : public i_device
         }
     };
 
-    class stream_output
-    {
-
-        libav_output_device&        m_owner;
-        i_media_format::u_ptr_t     m_format;
-        frame_id_t                  m_frame_counter;
-        timestamp_t                 m_frame_timestamp;
-
-        stream_output(libav_output_device& owner
-                      , i_media_format::u_ptr_t&& format)
-            : m_owner(owner)
-            , m_format(std::move(format))
-        {
-
-        }
-    };
-
     class frame_manager
     {
         mutable mutex_t             m_safe_mutex;
@@ -345,7 +328,7 @@ class libav_output_device : public i_device
             lock_t lock(m_safe_mutex);
             if (!m_frame_queue.empty())
             {
-                frame = std::move(m_frame_queue.back());
+                frame = std::move(m_frame_queue.front());
                 m_frame_queue.pop();
                 return true;
             }
@@ -374,11 +357,6 @@ class libav_output_device : public i_device
     message_sink_impl               m_message_sink;
     message_router_impl             m_router;
 
-    frame_id_t                      m_frame_counter;
-    timestamp_t                     m_frame_timestamp;
-
-    timestamp_t                     m_start_time;
-
     frame_manager                   m_frame_manager;
 
     channel_state_t                 m_state;
@@ -388,9 +366,9 @@ public:
     using u_ptr_t = std::unique_ptr<libav_output_device>;
     using s_ptr_t = std::shared_ptr<libav_output_device>;
 
-    static u_ptr_t create(const i_property& property)
+    static u_ptr_t create(const i_property& params)
     {
-        device_params_t device_params(property);
+        device_params_t device_params(params);
         if (device_params.is_valid())
         {
             return std::make_unique<libav_output_device>(std::move(device_params));
@@ -402,6 +380,9 @@ public:
     libav_output_device(device_params_t&& device_params)
         : m_device_params(std::move(device_params))
         , m_message_sink([&](const auto& message) { return on_message(message); } )
+        , m_state(channel_state_t::ready)
+        , m_open(false)
+
     {
 
     }
@@ -425,19 +406,14 @@ public:
     {
         bool expected = false;
         if (m_open.compare_exchange_strong(expected
-                                                   , true
-                                                   , std::memory_order_acquire))
+                                           , true
+                                           , std::memory_order_acquire))
         {
-            reset();
-
             change_state(channel_state_t::opening);
 
             m_thread = std::thread([&]{ main_proc(); });
 
-            m_open.store(false
-                         , std::memory_order_release);
-
-            change_state(channel_state_t::failed);
+            return true;
         }
 
         return false;
@@ -465,14 +441,6 @@ public:
         return false;
     }
 
-
-    void reset()
-    {
-        m_frame_counter = 0;
-        m_frame_timestamp = 0;
-        m_start_time = mpl::core::utils::now();
-    }
-
     bool on_audio_frame(const i_audio_frame& frame)
     {
         auto stream_id = m_device_params.get_stream_id(frame.format());
@@ -486,6 +454,7 @@ public:
                 libav_frame.media_data = core::utils::create_raw_array(buffer->data()
                                                                        , buffer->size());
                 libav_frame.info.pts = frame.timestamp();
+                libav_frame.info.dts = frame.timestamp();
 
                 m_frame_manager.push_frame(std::move(libav_frame));
 
@@ -509,6 +478,8 @@ public:
                 libav_frame.media_data = core::utils::create_raw_array(buffer->data()
                                                                        , buffer->size());
                 libav_frame.info.pts = frame.timestamp();
+                libav_frame.info.dts = frame.timestamp();
+                libav_frame.info.key_frame = frame.frame_type() == i_video_frame::frame_type_t::key_frame;
 
                 m_frame_manager.push_frame(std::move(libav_frame));
 
@@ -562,6 +533,7 @@ public:
             if (native_publisher.open(m_device_params.url
                                       , m_device_params.native_streams()))
             {
+                std::size_t err_count = 0;
                 change_state(channel_state_t::connected);
                 while(libav_output_device::is_open())
                 {
@@ -571,8 +543,17 @@ public:
                     {
                         if (!native_publisher.push_frame(libav_frame))
                         {
+                            err_count++;
                             break;
                         }
+                        else
+                        {
+                            err_count = 0;
+                        }
+                    }
+                    if (err_count > 10)
+                    {
+                        break;
                     }
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
@@ -639,7 +620,7 @@ libav_output_device_factory::libav_output_device_factory()
 
 i_device::u_ptr_t libav_output_device_factory::create_device(const i_property &device_params)
 {
-    return nullptr;
+    return libav_output_device::create(device_params);
 }
 
 }

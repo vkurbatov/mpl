@@ -96,7 +96,7 @@ audio_format_impl &audio_format_impl::assign(const i_audio_format &other)
 bool audio_format_impl::set_params(const i_property &params)
 {
     property_reader reader(params);
-    if (reader.get("media_type", media_type_t::video) == media_type_t::video)
+    if (reader.get("media_type", media_type_t::audio) == media_type_t::audio)
     {
         return reader.get("format", m_format_id)
                 | reader.get("sample_rate", m_sample_rate)
@@ -110,7 +110,7 @@ bool audio_format_impl::get_params(i_property &params) const
 {
     property_writer writer(params);
 
-    if (writer.set("media_type", media_type_t::video)
+    if (writer.set("media_type", media_type_t::audio)
             && writer.set("format", m_format_id)
             && writer.set("sample_rate", m_sample_rate)
             && writer.set("channels", m_channels))

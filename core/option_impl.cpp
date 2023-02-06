@@ -103,7 +103,7 @@ bool option_impl::set(const option_id_t &id
 
 const i_option_value* option_impl::get(const option_id_t &id) const
 {
-    auto it = m_options.find(id);
+    const auto& it = m_options.find(id);
     return it != m_options.end()
             ? it->second.get()
             : nullptr;
