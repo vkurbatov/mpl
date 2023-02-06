@@ -150,7 +150,9 @@ public:
 
             m_open.store(false
                          , std::memory_order_release);
+
             change_state(channel_state_t::failed);
+
         }
 
         return false;

@@ -6,6 +6,7 @@
 #include "core/message_event_impl.h"
 #include "core/event_channel_state.h"
 #include "core/time_utils.h"
+#include "core/utils.h"
 
 #include "core/option_helper.h"
 
@@ -29,31 +30,41 @@ namespace mpl::media
 constexpr std::size_t default_max_queue_size = 1000;
 
 using stream_list_t = std::vector<i_media_format::u_ptr_t>;
-using stream_map_t = std::unordered_map<std::int32_t, i_media_format::u_ptr_t>;
+using stream_map_t = std::map<std::int32_t, i_media_format::u_ptr_t>;
 
 namespace detail
 {
 
     template<typename Format>
-    bool check_and_tune_format(Format& format
-                               , std::int32_t force_idx)
+    bool check_and_append_format(Format&& format
+                                , stream_map_t& streams)
     {
-        if (format.is_valid())
+        if (format != nullptr
+                && format->is_valid())
         {
-            option_writer writer(format.options());
+            option_writer writer(format->options());
 
-            if (!writer.has_type<std::int32_t>(opt_fmt_stream_id))
+            std::int32_t stream_id = writer.get<stream_id_t>(opt_fmt_stream_id
+                                                              , stream_id_undefined);
+
+            if (stream_id <= stream_id_undefined)
             {
-                writer.set<std::int32_t>(opt_fmt_stream_id
-                                         , force_idx);
+                stream_id = streams.empty()
+                        ? 0
+                        : std::prev(streams.end())->first;
+                writer.set<stream_id_t>(opt_fmt_stream_id
+                                         , stream_id);
             }
+
+            return streams.emplace(stream_id
+                                  , std::move(format)).second;
         }
 
         return false;
     }
 
     bool deserialize_stream_list(const i_property& property
-                                 , stream_list_t& stream_list)
+                                 , stream_map_t& streams)
     {
         bool result = false;
         if (property.property_type() == property_type_t::array)
@@ -66,28 +77,14 @@ namespace detail
                     {
                         case media_type_t::audio:
                         {
-                            if (auto p = audio_format_impl::create(*f))
-                            {
-                                if (check_and_tune_format(*p
-                                                          , stream_list.size()))
-                                {
-                                    result = true;
-                                    stream_list.emplace_back(std::move(p));
-                                }
-                            }
+                            result |= check_and_append_format(audio_format_impl::create(*f)
+                                                              , streams);
                         }
                         break;
                         case media_type_t::video:
                         {
-                            if (auto p = video_format_impl::create(*f))
-                            {
-                                if (check_and_tune_format(*p
-                                                          , stream_list.size()))
-                                {
-                                    result = true;
-                                    stream_list.emplace_back(std::move(p));
-                                }
-                            }
+                            result |= check_and_append_format(video_format_impl::create(*f)
+                                                              , streams);
                         }
                         break;
                         default:;
@@ -100,11 +97,11 @@ namespace detail
         return result;
     }
 
-    i_property::u_ptr_t serialize_stream_list(const stream_list_t& stream_list)
+    i_property::u_ptr_t serialize_stream_list(const stream_map_t& stream_map)
     {
         i_property::array_t streams;
 
-        for (const auto& s : stream_list)
+        for (const auto& [id, s] : stream_map)
         {
             if (s != nullptr)
             {
@@ -189,11 +186,11 @@ class libav_output_device : public i_device
     {
         device_type_t   device_type = device_type_t::libav_out;
         std::string     url;
-        stream_list_t   streams;
+        stream_map_t    streams;
 
         device_params_t(device_type_t device_type = device_type_t::libav_out
                 , const std::string_view& url = {}
-                , stream_list_t&& streams = {})
+                , stream_map_t&& streams = {})
             : device_type(device_type)
             , url(url)
             , streams(std::move(streams))
@@ -206,7 +203,6 @@ class libav_output_device : public i_device
         {
             load(params);
         }
-
 
         bool load(const i_property& params)
         {
@@ -241,18 +237,54 @@ class libav_output_device : public i_device
         ffmpeg::stream_info_list_t native_streams() const
         {
             ffmpeg::stream_info_list_t stream_list;
-            for (const auto& s : streams)
+            for (const auto& [id, s] : streams)
             {
                 ffmpeg::stream_info_t stream_info;
                 if (s != nullptr
                         && core::utils::convert(*s
                                                 , stream_info))
                 {
+                    stream_info.stream_id = id;
                     stream_list.emplace_back(std::move(stream_info));
                 }
             }
 
             return native_streams();
+        }
+
+        const i_media_format* get_format(stream_id_t stream_id) const
+        {
+            if (auto it = streams.find(stream_id); it != streams.end())
+            {
+                return it->second.get();
+            }
+            return nullptr;
+        }
+
+        stream_id_t get_stream_id(const i_media_format& format) const
+        {
+            auto found_stream_id = option_reader(format.options()).get(opt_fmt_stream_id
+                                                                       , stream_id_undefined);
+            if (found_stream_id == stream_id_undefined)
+            {
+                for (const auto& [id, s] : streams)
+                {
+                    if (s != nullptr
+                            && s->is_compatible(format))
+                    {
+                        return id;
+                    }
+                }
+            }
+            else if (auto f = get_format(found_stream_id))
+            {
+                if (f->is_compatible(format))
+                {
+                    return found_stream_id;
+                }
+            }
+
+            return stream_id_undefined;
         }
 
         bool is_valid() const
@@ -298,10 +330,10 @@ class libav_output_device : public i_device
             clear();
         }
 
-        void push_frame(ffmpeg::frame_t&& frame)
+        void push_frame(ffmpeg::frame_t&& libav_frame)
         {
             lock_t lock(m_safe_mutex);
-            m_frame_queue.emplace(std::move(frame));
+            m_frame_queue.emplace(std::move(libav_frame));
             while(m_frame_queue.size() > m_max_queue_size)
             {
                 m_frame_queue.pop();
@@ -356,6 +388,17 @@ public:
     using u_ptr_t = std::unique_ptr<libav_output_device>;
     using s_ptr_t = std::shared_ptr<libav_output_device>;
 
+    static u_ptr_t create(const i_property& property)
+    {
+        device_params_t device_params(property);
+        if (device_params.is_valid())
+        {
+            return std::make_unique<libav_output_device>(std::move(device_params));
+        }
+
+        return nullptr;
+    }
+
     libav_output_device(device_params_t&& device_params)
         : m_device_params(std::move(device_params))
         , m_message_sink([&](const auto& message) { return on_message(message); } )
@@ -365,7 +408,7 @@ public:
 
     ~libav_output_device()
     {
-        // close();
+        close();
     }
 
     void change_state(channel_state_t new_state
@@ -382,8 +425,8 @@ public:
     {
         bool expected = false;
         if (m_open.compare_exchange_strong(expected
-                                           , true
-                                           , std::memory_order_acquire))
+                                                   , true
+                                                   , std::memory_order_acquire))
         {
             reset();
 
@@ -393,6 +436,7 @@ public:
 
             m_open.store(false
                          , std::memory_order_release);
+
             change_state(channel_state_t::failed);
         }
 
@@ -429,6 +473,52 @@ public:
         m_start_time = mpl::core::utils::now();
     }
 
+    bool on_audio_frame(const i_audio_frame& frame)
+    {
+        auto stream_id = m_device_params.get_stream_id(frame.format());
+        if (stream_id != stream_id_undefined)
+        {
+            if (auto buffer = frame.buffers().get_buffer(main_media_buffer_index))
+            {
+                ffmpeg::frame_t libav_frame;
+                libav_frame.info.media_info.media_type = ffmpeg::media_type_t::audio;
+                libav_frame.info.id = stream_id;
+                libav_frame.media_data = core::utils::create_raw_array(buffer->data()
+                                                                       , buffer->size());
+                libav_frame.info.pts = frame.timestamp();
+
+                m_frame_manager.push_frame(std::move(libav_frame));
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool on_video_frame(const i_video_frame& frame)
+    {
+        auto stream_id = m_device_params.get_stream_id(frame.format());
+        if (stream_id != stream_id_undefined)
+        {
+            if (auto buffer = frame.buffers().get_buffer(main_media_buffer_index))
+            {
+                ffmpeg::frame_t libav_frame;
+                libav_frame.info.media_info.media_type = ffmpeg::media_type_t::video;
+                libav_frame.info.id = stream_id;
+                libav_frame.media_data = core::utils::create_raw_array(buffer->data()
+                                                                       , buffer->size());
+                libav_frame.info.pts = frame.timestamp();
+
+                m_frame_manager.push_frame(std::move(libav_frame));
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     bool on_message_frame(const i_media_frame& media_frame)
     {
         if (m_open)
@@ -436,17 +526,14 @@ public:
             switch(media_frame.media_type())
             {
                 case media_type_t::audio:
-                {
-
-                }
+                    return on_audio_frame(static_cast<const i_audio_frame&>(media_frame));
                 break;
                 case media_type_t::video:
-                {
-
-                }
+                    return on_video_frame(static_cast<const i_video_frame&>(media_frame));
                 break;
                 default:;
             }
+
         }
         return false;
     }
