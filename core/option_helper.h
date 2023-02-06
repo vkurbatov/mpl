@@ -42,7 +42,7 @@ public:
     {
         auto any_option_value = m_options.get(key);
         return any_option_value != nullptr
-                && cast<T>(&any_option_value) != nullptr;
+                && cast<T>(*any_option_value) != nullptr;
     }
 
     template<typename T>

@@ -7,6 +7,10 @@
 #include "core/event_channel_state.h"
 #include "core/time_utils.h"
 
+#include "core/option_helper.h"
+
+
+#include "media_option_types.h"
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 #include "message_frame_impl.h"
@@ -29,6 +33,25 @@ using stream_map_t = std::unordered_map<std::int32_t, i_media_format::u_ptr_t>;
 
 namespace detail
 {
+
+    template<typename Format>
+    bool check_and_tune_format(Format& format
+                               , std::int32_t force_idx)
+    {
+        if (format.is_valid())
+        {
+            option_writer writer(format.options());
+
+            if (!writer.has_type<std::int32_t>(opt_fmt_stream_id))
+            {
+                writer.set<std::int32_t>(opt_fmt_stream_id
+                                         , force_idx);
+            }
+        }
+
+        return false;
+    }
+
     bool deserialize_stream_list(const i_property& property
                                  , stream_list_t& stream_list)
     {
@@ -45,7 +68,8 @@ namespace detail
                         {
                             if (auto p = audio_format_impl::create(*f))
                             {
-                                if (p->is_valid())
+                                if (check_and_tune_format(*p
+                                                          , stream_list.size()))
                                 {
                                     result = true;
                                     stream_list.emplace_back(std::move(p));
@@ -57,7 +81,8 @@ namespace detail
                         {
                             if (auto p = video_format_impl::create(*f))
                             {
-                                if (p->is_valid())
+                                if (check_and_tune_format(*p
+                                                          , stream_list.size()))
                                 {
                                     result = true;
                                     stream_list.emplace_back(std::move(p));
@@ -228,16 +253,6 @@ class libav_output_device : public i_device
             }
 
             return native_streams();
-        }
-
-        std::int32_t get_stream_index(const i_media_format& format)
-        {
-            for (const auto& s : streams)
-            {
-
-            }
-
-            return false;
         }
 
         bool is_valid() const
