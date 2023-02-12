@@ -135,7 +135,9 @@ std::int32_t init(const std::string& uri
 
     is_streaming_protocol = device_type == device_type_t::rtmp
             || device_type == device_type_t::rtsp
-            || device_type == device_type_t::rtp;
+            || device_type == device_type_t::rtp
+            || device_type == device_type_t::alsa
+            || device_type == device_type_t::pulse;
 
 
     if (!is_init)
@@ -642,9 +644,8 @@ struct libav_stream_grabber_context_t
         bool pop_frame(frame_pair_t& frame, std::int64_t& frame_order)
         {
             std::lock_guard<std::mutex> lock(m_mutex);
-            if (m_has_read)
+            if (m_has_read || m_streaming_protocol)
             {
-
                 auto it = m_frames.begin();
                 if (it != m_frames.end())
                 {

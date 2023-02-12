@@ -20,8 +20,12 @@ extern "C"
 
 #include <iostream>
 #include "tools/base/string_base.h"
+#include "tools/base/url_base.h"
 
 namespace ffmpeg
+{
+
+namespace detail
 {
 
 static const char* fetch_stream_name(device_type_t device_type)
@@ -33,11 +37,45 @@ static const char* fetch_stream_name(device_type_t device_type)
         , "flv"     // rtmp,
         , "rtp"     // rtp,
         , "v4l2"    // camera,
-        , nullptr     // http,
-        , "mpeg"     // file,
+        , nullptr   // http,
+        , "mpeg"    // file,
+        , "alsa"    // alsa
+        , "pulse"   // pulse
     };
 
     return format_table[static_cast<std::int32_t>(device_type)];
+}
+
+ff_const59 AVOutputFormat* find_output_format(const std::string& url)
+{
+    base::url_info_t url_info;
+
+    if (url_info.parse_url(url))
+    {
+        switch(utils::fetch_device_type(url))
+        {
+            case device_type_t::rtsp:
+            case device_type_t::rtmp:
+            case device_type_t::rtp:
+            case device_type_t::http:
+            case device_type_t::file:
+                return av_guess_format(nullptr
+                                       , url.c_str()
+                                       , nullptr);
+            break;
+            case device_type_t::camera:
+            case device_type_t::alsa:
+            case device_type_t::pulse:
+                return av_guess_format(url_info.protocol.c_str()
+                                       , nullptr
+                                       , nullptr);
+            break;
+            default:;
+        }
+    }
+    return nullptr;
+}
+
 }
 
 struct libav_output_format_context_t
@@ -104,19 +142,35 @@ struct libav_output_format_context_t
               , const stream_info_list_t& stream_list)
     {
 
-        auto format = av_guess_format(nullptr
+        /*auto format = av_guess_format(nullptr
                                       , uri.c_str()
-                                      , nullptr);
+                                      , nullptr);*/
+
+        auto format = detail::find_output_format(uri);
 
         /*if (device_type == device_type_t::file)
         {
             format = nullptr;
         }*/
 
+        auto c_url = uri.c_str();
+
+        switch(device_type)
+        {
+            case device_type_t::alsa:
+                c_url += 7;
+            break;
+            case device_type_t::pulse:
+                c_url += 8;
+            break;
+            default:;
+        }
+
+
         avformat_alloc_output_context2(&context
                                         , format
-                                        , format == nullptr ? fetch_stream_name(device_type) : nullptr
-                                        , uri.c_str());
+                                        , format == nullptr ? detail::fetch_stream_name(device_type) : nullptr
+                                        , c_url);
 
         if (context != nullptr)
         {
@@ -139,7 +193,7 @@ struct libav_output_format_context_t
     {
         auto codec = avcodec_find_encoder(static_cast<AVCodecID>(stream_info.codec_info.id));
 
-        if (codec != nullptr)
+        //if (codec != nullptr)
         {
             auto av_stream = avformat_new_stream(context
                                                 , nullptr);
@@ -160,9 +214,27 @@ struct libav_output_format_context_t
                 av_stream->codecpar->codec_id = static_cast<AVCodecID>(strm.codec_info.id);
                 av_stream->codecpar->frame_size = strm.codec_info.codec_params.frame_size;
 
-                av_stream->codecpar->codec_type = codec->type;
+                if (codec != nullptr)
+                {
+                    av_stream->codecpar->codec_type = codec->type;
+                }
+                else
+                {
+                    switch(stream_info.media_info.media_type)
+                    {
+                        case media_type_t::audio:
+                            av_stream->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+                        break;
+                        case media_type_t::video:
+                            av_stream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+                        break;
+                        case media_type_t::data:
+                            av_stream->codecpar->codec_type = AVMEDIA_TYPE_DATA;
+                        break;
+                    }
+                }
 
-                switch (codec->type)
+                switch (av_stream->codecpar->codec_type)
                 {
                     case AVMEDIA_TYPE_AUDIO:
                         strm.extra_data = nullptr;
@@ -239,10 +311,18 @@ struct libav_output_format_context_t
             }
         }
 
-        auto res = avformat_write_header(context
-                                         , nullptr);
 
-        return res >= 0;
+        if (device_type != device_type_t::alsa
+                && device_type != device_type_t::pulse)
+        {
+
+            auto res = avformat_write_header(context
+                                             , nullptr);
+
+            return res >= 0;
+        }
+
+        return true;
     }
 
     bool push_frame(std::int32_t stream_id

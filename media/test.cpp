@@ -42,6 +42,7 @@
 
 #include "tools/ffmpeg/libav_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
+#include "tools/ffmpeg/libav_stream_publisher.h"
 #include "tools/base/url_base.h"
 
 #include <string>
@@ -626,11 +627,34 @@ void test10()
                   << std::endl;
     }
 
-    auto frame_handler = [](const ffmpeg::stream_info_t& stream_info
+
+    std::string output_url = "pulse://alsa_output.pci-0000_00_05.0.analog-stereo";
+    ffmpeg::libav_stream_publisher libav_publisher;
+    ffmpeg::stream_info_t stream_info;
+    stream_info.codec_info.id = ffmpeg::codec_id_none;
+    stream_info.stream_id = 0;
+    stream_info.media_info.media_type = ffmpeg::media_type_t::audio;
+    stream_info.media_info.audio_info.sample_format = ffmpeg::sample_format_pcm16;
+    stream_info.media_info.audio_info.sample_rate = 48000;
+    stream_info.media_info.audio_info.channels = 2;
+
+    auto r = libav_publisher.open(output_url
+                                  , {stream_info});
+
+
+
+
+    auto frame_handler = [&](const ffmpeg::stream_info_t& stream_info
             , ffmpeg::frame_t&& frame) ->
     bool
     {
         std::cout << "Frame #" << frame.info.id << std::endl;
+
+        if (libav_publisher.is_opened())
+        {
+            frame.info.id = 0;
+            // libav_publisher.push_frame(frame);
+        }
         return true;
     };
 
@@ -648,6 +672,7 @@ void test10()
     // config.url = "alsa://hw:0,0";
     config.url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     libav_grabber.open(config.url);
+
 
     core::utils::sleep(durations::seconds(60));
 
@@ -684,13 +709,106 @@ void test11()
     return;
 }
 
+void test12()
+{
+    ffmpeg::libav_register();
+    libav_input_device_factory input_device_factory;
+
+    std::string input_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
+
+    //std::string input_options = "rtsp_transport=tcp";
+
+    auto libav_input_device_params = property_helper::create_tree();
+    {
+        property_writer writer(*libav_input_device_params);
+        writer.set<std::string>("url", input_url);
+        // writer.set<std::string>("options", input_options);
+    }
+
+    if (auto input_device = input_device_factory.create_device(*libav_input_device_params))
+    {
+        auto handler = [&](const i_message& message)
+        {
+            switch(message.category())
+            {
+                case message_category_t::frame:
+                {
+                    const auto& frame_message = static_cast<const i_message_frame&>(message);
+
+                    if (frame_message.frame().media_type() == media_type_t::video)
+                    {
+                        const auto& video_frame = static_cast<const i_video_frame&>(frame_message.frame());
+                        std::cout << "on_frame #" << video_frame.frame_id()
+                                  << ": format_id: " << core::utils::enum_to_string(video_frame.format().format_id())
+                                  << ", fmt: " << video_frame.format().width()
+                                  << "x" << video_frame.format().height()
+                                  << "@" << video_frame.format().frame_rate()
+                                  << ", ts: " << video_frame.timestamp()
+                                  << ", kf: " << (video_frame.frame_type() == i_video_frame::frame_type_t::key_frame);
+
+                        if (auto buffer = video_frame.buffers().get_buffer(0))
+                        {
+                            std::cout << ", size: " << buffer->size();
+                        }
+
+                        std::cout << std::endl;
+
+                    }
+                    else if (frame_message.frame().media_type() == media_type_t::audio)
+                    {
+                        const auto& audio_frame = static_cast<const i_audio_frame&>(frame_message.frame());
+                        std::cout << "on_frame #" << audio_frame.frame_id()
+                                  << ": format_id: " << core::utils::enum_to_string(audio_frame.format().format_id())
+                                  << ", fmt: " << audio_frame.format().sample_rate()
+                                  << "/" << audio_frame.format().channels()
+                                  << ", ts: " << audio_frame.timestamp();
+
+                        if (auto buffer = audio_frame.buffers().get_buffer(0))
+                        {
+                            std::cout << ", size: " << buffer->size();
+                        }
+
+                        std::cout << std::endl;
+                    }
+                }
+                break;
+                case message_category_t::event:
+                {
+                    const auto& event_message = static_cast<const i_message_event&>(message);
+                    if (event_message.event().event_id == event_id_t::channel_state)
+                    {
+                        const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
+                        std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
+                    }
+                }
+                break;
+                default:;
+            }
+
+            return true;
+        };
+
+        message_sink_impl sink(handler);
+
+        input_device->source()->add_sink(&sink);
+        input_device->control(channel_control_t::open());
+        core::utils::sleep(durations::seconds(60));
+        input_device->control(channel_control_t::close());
+        input_device->source()->remove_sink(&sink);
+
+    }
+
+
+    return;
+}
+
 }
 
 void tests()
 {
     //test1();
     //test6();
-    test10();
+    test12();
 }
 
 }
