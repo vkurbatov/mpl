@@ -41,6 +41,8 @@
 #include "core/event_channel_state.h"
 
 #include "tools/ffmpeg/libav_base.h"
+#include "tools/ffmpeg/libav_stream_grabber.h"
+#include "tools/base/url_base.h"
 
 #include <string>
 
@@ -557,13 +559,138 @@ void test9()
     return;
 }
 
+void test10()
+{
+    ffmpeg::libav_register();
+
+    auto audio_input_class_list = ffmpeg::device_info_t::device_class_list(ffmpeg::media_type_t::audio, true);
+    auto audio_output_class_list = ffmpeg::device_info_t::device_class_list(ffmpeg::media_type_t::audio, false);
+    auto video_input_class_list = ffmpeg::device_info_t::device_class_list(ffmpeg::media_type_t::video, true);
+    auto video_output_class_list = ffmpeg::device_info_t::device_class_list(ffmpeg::media_type_t::video, false);
+
+    std::cout << "Audio input class list: " << std::endl;
+    for (const auto& c : audio_input_class_list)
+    {
+        std::cout << c << std::endl;
+    }
+
+    std::cout << "Audio output class list: " << std::endl;
+    for (const auto& c : audio_output_class_list)
+    {
+        std::cout << c << std::endl;
+    }
+
+    std::cout << "Video input class list: " << std::endl;
+    for (const auto& c : video_input_class_list)
+    {
+        std::cout << c << std::endl;
+    }
+
+    std::cout << "Video output class list: " << std::endl;
+    for (const auto& c : video_output_class_list)
+    {
+        std::cout << c << std::endl;
+    }
+
+    auto audio_input_device_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+                                                                      , true
+                                                                      , "alsa");
+
+    auto audio_output_device_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+                                                                      , false
+                                                                      , "alsa");
+    /*    std::string name;
+    std::string description;
+    std::string device_class;
+    bool        is_source;*/
+
+    std::cout << "Audio input device list: " << std::endl;
+    for (const auto& d : audio_input_device_list)
+    {
+        std::cout << "Name: " << d.name
+                  << ", Description: " << d.description
+                  << ", Class: " << d.device_class
+                  << ", Direction: " << d.is_source
+                  << ", Uri: " << d.to_uri()
+                  << std::endl;
+    }
+
+    std::cout << "Audio output device list: " << std::endl;
+    for (const auto& d : audio_output_device_list)
+    {
+        std::cout << "Name: " << d.name
+                  << ", Description: " << d.description
+                  << ", Class: " << d.device_class
+                  << ", Direction: " << d.is_source
+                  << ", Uri: " << d.to_uri()
+                  << std::endl;
+    }
+
+    auto frame_handler = [](const ffmpeg::stream_info_t& stream_info
+            , ffmpeg::frame_t&& frame) ->
+    bool
+    {
+        std::cout << "Frame #" << frame.info.id << std::endl;
+        return true;
+    };
+
+    auto event_handler = [](const ffmpeg::streaming_event_t& streaming_event) ->
+    void
+    {
+        std::cout << "device event: " << static_cast<std::int32_t>(streaming_event) << std::endl;
+    };
+
+    ffmpeg::libav_stream_grabber libav_grabber(frame_handler
+                                               , event_handler);
+
+    ffmpeg::libav_grabber_config_t config;
+    config.stream_mask = ffmpeg::stream_mask_all;
+    config.url = "alsa://hw:0,0";
+    libav_grabber.open(config.url);
+
+    core::utils::sleep(durations::seconds(60));
+
+    return;
+}
+
+void test11()
+{
+    const std::vector<std::string> test_urls =
+    {
+        "rtsp://192.168.0.1",
+        "rtsp://user@192.168.0.1",
+        "rtsp://user:pass@192.168.0.1",
+        "rtsp://user:pass@192.168.0.1:1234",
+        "rtsp://user:pass@192.168.0.1:1234?param1=1",
+        "rtsp://user:pass@192.168.0.1?param1=1",
+        "hfds://"
+    };
+
+    for (const auto& u : test_urls)
+    {
+        std::cout << "Parse URL: " << u << std::endl;
+        base::url_info_t url;
+        if (url.parse_url(u))
+        {
+            std::cout << "Parse Completed! " << std::endl;
+            std::cout << "Reverse build url: " << url.to_url() << std::endl;
+        }
+        else
+        {
+            std::cout << "Parse Failed! " << std::endl;
+        }
+    }
+
+    return;
+}
+
 }
 
 void tests()
 {
     //test1();
     //test6();
-    test9();
+    test11();
 }
 
 }

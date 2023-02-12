@@ -129,7 +129,10 @@ std::int32_t init(const std::string& uri
     auto device_type = utils::fetch_device_type(uri);
 
 
-    is_streaming_protocol = device_type == device_type_t::rtmp || device_type == device_type_t::rtsp || device_type == device_type_t::rtp;
+    is_streaming_protocol = device_type == device_type_t::rtmp
+            || device_type == device_type_t::rtsp
+            || device_type == device_type_t::rtp;
+
 
     if (!is_init)
     {

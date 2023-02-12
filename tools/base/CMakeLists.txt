@@ -16,6 +16,7 @@ set(SOURCES
     random_base.cpp
     convert_base.cpp
     any_base.cpp
+    url_base.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -36,6 +37,7 @@ set(PUBLIC_HEADERS
     random_base.h
     convert_base.h
     any_base.h
+    url_base.h
 )
 
 set(PRIVATE_HEADERS

@@ -207,11 +207,11 @@ device_class_list_t device_info_t::device_class_list(media_type_t media_type
     return device_class_list;
 }
 
-device_info_list_t device_info_t::device_list(media_type_t media_type
+device_info_t::list_t device_info_t::device_list(media_type_t media_type
                                               , bool is_source
                                               , const std::string& device_class)
 {
-    device_info_list_t device_info_list;
+    list_t device_info_list;
 
     auto class_list = device_class_list(media_type
                                         , is_source);
@@ -1223,8 +1223,10 @@ bool libav_register()
     {
         avcodec_register_all();
         avdevice_register_all();
+        avformat_network_init();
         av_register_all();
     }
+
     return libav_register_flag;
 }
 

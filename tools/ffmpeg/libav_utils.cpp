@@ -91,7 +91,16 @@ void set_options(AVDictionary* av_options
 
 device_type_t fetch_device_type(const std::string &uri)
 {
-    static const std::string device_names_table[] = { "", "rtsp://", "rtmp://", "rtp://", "v4l2://", "http://", "file://" };
+    static const std::string device_names_table[] = { ""
+                                                      , "rtsp://"
+                                                      , "rtmp://"
+                                                      , "rtp://"
+                                                      , "v4l2://"
+                                                      , "http://"
+                                                      , "file://"
+                                                      , "alsa://"
+                                                      , "pulsa://"
+                                                     };
 
     if (uri.find("/") == 0)
     {

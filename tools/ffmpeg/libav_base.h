@@ -197,6 +197,8 @@ enum class device_type_t
     camera,
     http,
     file,
+    alsa,
+    pulsa
 };
 
 enum stream_mask_t : std::uint32_t
@@ -211,16 +213,17 @@ enum stream_mask_t : std::uint32_t
 
 struct device_info_t;
 
-typedef std::vector<device_info_t> device_info_list_t;
-typedef std::vector<std::string> device_class_list_t;
+using device_class_list_t = std::vector<std::string>;
+using device_info_list_t = std::vector<device_info_t>;
 
 struct device_info_t
 {
+    using list_t = std::vector<device_info_t>;
     static device_class_list_t device_class_list(media_type_t media_type
                                                  , bool is_source);
-    static device_info_list_t device_list(media_type_t media_type
-                                          , bool is_source
-                                          , const std::string& device_class = {});
+    static list_t device_list(media_type_t media_type
+                               , bool is_source
+                               , const std::string& device_class = {});
 
     media_type_t media_type;
     std::string name;
