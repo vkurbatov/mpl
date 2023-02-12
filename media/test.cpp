@@ -594,11 +594,11 @@ void test10()
 
     auto audio_input_device_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
                                                                       , true
-                                                                      , "alsa");
+                                                                      , "pulse");
 
     auto audio_output_device_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
                                                                       , false
-                                                                      , "alsa");
+                                                                      , "pulse");
     /*    std::string name;
     std::string description;
     std::string device_class;
@@ -645,7 +645,8 @@ void test10()
 
     ffmpeg::libav_grabber_config_t config;
     config.stream_mask = ffmpeg::stream_mask_all;
-    config.url = "alsa://hw:0,0";
+    // config.url = "alsa://hw:0,0";
+    config.url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     libav_grabber.open(config.url);
 
     core::utils::sleep(durations::seconds(60));
@@ -663,7 +664,6 @@ void test11()
         "rtsp://user:pass@192.168.0.1:1234",
         "rtsp://user:pass@192.168.0.1:1234?param1=1",
         "rtsp://user:pass@192.168.0.1?param1=1",
-        "hfds://"
     };
 
     for (const auto& u : test_urls)
@@ -690,7 +690,7 @@ void tests()
 {
     //test1();
     //test6();
-    test11();
+    test10();
 }
 
 }

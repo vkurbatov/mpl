@@ -198,7 +198,7 @@ enum class device_type_t
     http,
     file,
     alsa,
-    pulsa
+    pulse
 };
 
 enum stream_mask_t : std::uint32_t

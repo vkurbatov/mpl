@@ -99,7 +99,7 @@ device_type_t fetch_device_type(const std::string &uri)
                                                       , "http://"
                                                       , "file://"
                                                       , "alsa://"
-                                                      , "pulsa://"
+                                                      , "pulse://"
                                                      };
 
     if (uri.find("/") == 0)

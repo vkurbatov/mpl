@@ -20,6 +20,7 @@ extern "C"
 
 #include <iostream>
 #include "tools/base/string_base.h"
+#include "tools/base/url_base.h"
 
 namespace ffmpeg
 {
@@ -128,6 +129,9 @@ std::int32_t init(const std::string& uri
 
     auto device_type = utils::fetch_device_type(uri);
 
+    base::url_info_t url_info;
+
+    url_info.parse_url(uri);
 
     is_streaming_protocol = device_type == device_type_t::rtmp
             || device_type == device_type_t::rtsp
@@ -137,6 +141,12 @@ std::int32_t init(const std::string& uri
     if (!is_init)
     {
         AVDictionary* av_options = nullptr;
+
+        AVInputFormat *input_format = nullptr;
+        if (url_info.is_valid())
+        {
+            input_format = av_find_input_format(url_info.protocol.c_str());
+        }
 
         type = device_type;
         switch(type)
@@ -150,6 +160,13 @@ std::int32_t init(const std::string& uri
                 if (*c_uri != '/')
                 {
                     c_uri++;
+                }
+            break;
+            case device_type_t::alsa:
+            case device_type_t::pulse:
+                if (url_info.is_valid())
+                {
+                    c_uri = url_info.host.c_str();
                 }
             break;
             default:
@@ -170,7 +187,7 @@ std::int32_t init(const std::string& uri
 
         result = avformat_open_input(&context
                                      , c_uri
-                                     , nullptr
+                                     , input_format
                                      , &av_options);
 
         av_dict_free(&av_options);
