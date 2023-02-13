@@ -578,10 +578,21 @@ struct libav_codec_context_t
                                     );
         }
 
-        if (av_context->codec_id == AV_CODEC_ID_MJPEG
-                && av_frame.format == AV_PIX_FMT_YUVJ420P)
+        if (av_context->codec_id == AV_CODEC_ID_MJPEG)
         {
-            av_frame.format = AV_PIX_FMT_YUV420P;
+            switch(av_frame.format)
+            {
+                case AV_PIX_FMT_YUVJ420P:
+                    av_frame.format = AV_PIX_FMT_YUV420P;
+                break;
+                case AV_PIX_FMT_YUVJ422P:
+                    av_frame.format = AV_PIX_FMT_YUV422P;
+                break;
+                case AV_PIX_FMT_YUVJ444P:
+                    av_frame.format = AV_PIX_FMT_YUV444P;
+                break;
+                default:;
+            }
         }
 
         LOG_T << "Transcoder #" << context_id << ". Fetch video frame with size " << video_data.size() << " bytes" LOG_END;
@@ -676,12 +687,25 @@ struct libav_codec_context_t
                 frame.info.media_info.media_type = media_type_t::video;
                 frame.info.media_info.video_info.size = { av_frame.width, av_frame.height };
                 frame.info.media_info.video_info.fps = av_q2d(av_context->framerate) + 0.5;
+
                 if (!is_encoder
-                        && av_context->codec_id == AV_CODEC_ID_MJPEG
-                        && av_frame.format == AV_PIX_FMT_YUVJ420P)
+                        && av_context->codec_id == AV_CODEC_ID_MJPEG)
                 {
-                    av_frame.format = AV_PIX_FMT_YUV420P;
+                    switch(av_frame.format)
+                    {
+                        case AV_PIX_FMT_YUVJ420P:
+                            av_frame.format = AV_PIX_FMT_YUV420P;
+                        break;
+                        case AV_PIX_FMT_YUVJ422P:
+                            av_frame.format = AV_PIX_FMT_YUV422P;
+                        break;
+                        case AV_PIX_FMT_YUVJ444P:
+                            av_frame.format = AV_PIX_FMT_YUV444P;
+                        break;
+                        default:;
+                    }
                 }
+
                 frame.info.media_info.video_info.pixel_format = av_frame.format;
 
             }

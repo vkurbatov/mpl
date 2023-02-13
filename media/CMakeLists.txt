@@ -9,7 +9,7 @@ set(SOURCES
     stream_info.cpp
     media_utils.cpp
     format_utils.cpp
-    libav_utils.cpp
+    libav_format_utils.cpp
     audio_format_impl.cpp
     audio_info.cpp
     audio_frame_impl.cpp
@@ -59,7 +59,7 @@ set(PUBLIC_HEADERS
 set(PRIVATE_HEADERS
     test.h
     media_utils.h
-    libav_utils.h
+    libav_format_utils.h
     format_utils.h
     audio_format_impl.h
     video_format_impl.h

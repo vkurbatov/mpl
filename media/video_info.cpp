@@ -70,7 +70,7 @@ using reverse_map_t = std::unordered_multimap<std::uint32_t, video_format_id_t>;
 reverse_map_t get_reverse_table()
 {
     reverse_map_t result;
-    std::int32_t format_idx = 0;
+    std::int32_t format_idx = -1;
 
     for (const auto& info : video_format_info_table)
     {

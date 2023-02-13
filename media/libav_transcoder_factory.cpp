@@ -15,6 +15,7 @@
 #include "message_frame_impl.h"
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
+#include "video_info.h"
 
 #include "audio_format_helper.h"
 
@@ -91,32 +92,60 @@ bool is_key_frame(const i_media_frame& frame)
     if (frame.media_type() == media_type_t::video)
     {
         auto frame_type = static_cast<const i_video_frame&>(frame).frame_type();
-        return frame_type == i_video_frame::frame_type_t::key_frame;
+        return frame_type == i_video_frame::frame_type_t::key_frame
+                || !video_format_info_t::get_info(static_cast<const i_video_frame&>(frame).format().format_id()).motion;
     }
     return false;
 }
 
+template<typename FrameImpl>
+void set_key_frame(FrameImpl& frame_impl, bool key_frame)
+{
+    // nothing
+}
+
+template<>
+void set_key_frame(video_frame_impl& frame_impl, bool key_frame)
+{
+    frame_impl.set_frame_type(key_frame
+                              ? i_video_frame::frame_type_t::key_frame
+                              : i_video_frame::frame_type_t::delta_frame);
+}
+
 template<typename FormatImpl>
-void tune_format(const ffmpeg::media_info_t& libav_media_info
+void tune_frame_format(const ffmpeg::frame_t& libav_frame
                  , FormatImpl& format);
 
 
 template<>
-void tune_format(const ffmpeg::media_info_t& libav_media_info
+void tune_frame_format(const ffmpeg::frame_t& libav_frame
                  , audio_format_impl& format)
 {
+    audio_format_id_t format_id = format.format_id();
+    if (core::utils::convert(libav_frame.format_info()
+                             , format_id))
+    {
+        format.set_format_id(format_id);
+    }
 
-    format.set_sample_rate(libav_media_info.audio_info.sample_rate);
-    format.set_channels(libav_media_info.audio_info.channels);
+    format.set_sample_rate(libav_frame.info.media_info.audio_info.sample_rate);
+    format.set_channels(libav_frame.info.media_info.audio_info.channels);
 }
 
 template<>
-void tune_format(const ffmpeg::media_info_t& libav_media_info
-                 , video_format_impl& format)
+void tune_frame_format(const ffmpeg::frame_t& libav_frame
+                      , video_format_impl& format)
 {
-    format.set_width(libav_media_info.video_info.size.width);
-    format.set_height(libav_media_info.video_info.size.height);
-    format.set_frame_rate(libav_media_info.video_info.fps);
+    video_format_id_t format_id = format.format_id();
+    if (core::utils::convert(libav_frame.format_info()
+                             , format_id))
+    {
+        format.set_format_id(format_id);
+    }
+
+    format.set_width(libav_frame.info.media_info.video_info.size.width);
+    format.set_height(libav_frame.info.media_info.video_info.size.height);
+    format.set_frame_rate(libav_frame.info.media_info.video_info.fps);
 }
 
 std::uint32_t get_sample_size(const i_media_format& format)
@@ -304,12 +333,15 @@ public:
         {
             auto format_frame = m_output_format;
             format_frame.set_options(input_frame.format().options());
-            detail::tune_format(libav_frame.info.media_info
-                                , format_frame);
+            detail::tune_frame_format(libav_frame
+                                      , format_frame);
 
             frame_impl_t frame(format_frame
                                , m_frame_id++
                                , timestamp);
+
+            detail::set_key_frame(frame
+                                  , libav_frame.info.key_frame);
 
             frame.smart_buffers().set_buffer(main_media_buffer_index
                                              , smart_buffer(std::move(libav_frame.media_data)));

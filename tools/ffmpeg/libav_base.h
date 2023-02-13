@@ -131,6 +131,8 @@ extern const codec_id_t codec_id_opus;
 extern const codec_id_t codec_id_pcma;
 extern const codec_id_t codec_id_pcmu;
 
+extern const codec_id_t codec_id_first_audio;
+
 extern const codec_id_t codec_id_none;
 
 enum class custom_parameter_t
@@ -542,6 +544,7 @@ struct frame_t
 {
     frame_info_t    info;
     media_data_t    media_data;
+    format_info_t format_info() const;
 };
 
 struct capture_diagnostic_t

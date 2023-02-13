@@ -312,10 +312,16 @@ stream_info_list_t get_streams(stream_mask_t stream_mask)
             }
             stream_info.stream_id = av_stream->index;
             stream_info.codec_info.codec_params.parse_type = av_stream->need_parsing;
+
             if (av_stream->codec != nullptr)
             {
                 stream_info.codec_info.id = av_stream->codec->codec_id;
                 stream_info.codec_info.name = stream_info.codec_info.codec_name(stream_info.codec_info.id);
+                if (stream_info.codec_info.id == codec_id_first_audio)
+                {
+                    stream_info.codec_info.id = codec_id_none;
+                    stream_info.codec_info.name.clear();
+                }
                 stream_info.codec_info.codec_params.bitrate = av_stream->codec->bit_rate;
                 stream_info.codec_info.codec_params.frame_size = av_stream->codec->frame_size;
                 stream_info.codec_info.codec_params.flags1 = av_stream->codec->flags;

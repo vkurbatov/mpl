@@ -1,4 +1,4 @@
-#include "libav_utils.h"
+#include "libav_format_utils.h"
 
 #include "core/convert_utils.h"
 #include "media_option_types.h"
@@ -126,7 +126,7 @@ OutMap create_codec_map(const InMap& format_map)
 
     for (const auto& f : format_map)
     {
-        if (f.second.codec_id != ffmpeg::unknown_codec_id)
+        if (f.second.codec_id > ffmpeg::codec_id_none)
         {
             out.emplace(f.second.codec_id
                         , f.first);

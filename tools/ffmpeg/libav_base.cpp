@@ -43,6 +43,8 @@ const codec_id_t codec_id_opus = static_cast<codec_id_t>(AV_CODEC_ID_OPUS);
 const codec_id_t codec_id_pcma = static_cast<codec_id_t>(AV_CODEC_ID_PCM_ALAW);
 const codec_id_t codec_id_pcmu = static_cast<codec_id_t>(AV_CODEC_ID_PCM_MULAW);
 
+const codec_id_t codec_id_first_audio = static_cast<codec_id_t>(AV_CODEC_ID_FIRST_AUDIO);
+
 const codec_id_t codec_id_none = static_cast<codec_id_t>(AV_CODEC_ID_NONE);
 
 //extern const pixel_format_t default_pixel_format = static_cast<pixel_format_t>(AV_PIX_FMT_YUV420P);
@@ -1228,6 +1230,22 @@ bool libav_register()
     }
 
     return libav_register_flag;
+}
+
+format_info_t frame_t::format_info() const
+{
+    switch(info.media_info.media_type)
+    {
+        case media_type_t::audio:
+            return { info.media_info.audio_info.sample_format, info.codec_id };
+        break;
+        case media_type_t::video:
+            return { info.media_info.video_info.pixel_format, info.codec_id };
+        break;
+        default:;
+    }
+
+    return {};
 }
 
 
