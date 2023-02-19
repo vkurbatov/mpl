@@ -673,7 +673,7 @@ struct libav_codec_context_t
         {
             frame.info.pts = av_frame.pkt_pts;
             frame.info.dts = av_frame.pkt_dts;
-            frame.info.id = frame_counter;
+            //frame.info.stream_id = frame_counter;
 
             if (av_context->codec->type == AVMEDIA_TYPE_AUDIO)
             {

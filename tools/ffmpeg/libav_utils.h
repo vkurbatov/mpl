@@ -6,6 +6,7 @@
 struct AVCodecContext;
 struct AVCodecParameters;
 struct AVDictionary;
+struct AVStream;
 
 namespace ffmpeg
 {
@@ -19,6 +20,8 @@ extra_data_t extract_global_header(const stream_info_t& stream_info);
 
 device_type_t fetch_device_type(const std::string& uri);
 
+url_format_t fetch_url_format(const std::string& url);
+
 void merge_codec_params(AVCodecContext& av_context
                             , codec_params_t& codec_params);
 
@@ -26,6 +29,7 @@ void set_options(AVDictionary* av_options
                  , const std::string& options);
 
 std::string error_string(std::int32_t av_errno);
+
 
 }
 
@@ -49,6 +53,12 @@ media_info_t& operator >> (const AVCodecContext& av_context
                            , media_info_t& media_info);
 media_info_t& operator >> (const AVCodecParameters& av_codecpar
                            , media_info_t& media_info);
+
+AVStream& operator << (AVStream& av_stream
+                       , const stream_info_t& stream_info);
+
+stream_info_t& operator << (stream_info_t& stream_info
+                            , const AVStream& av_stream);
 
 }
 

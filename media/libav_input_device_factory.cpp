@@ -207,7 +207,7 @@ public:
                                              , format))
                     {
                         audio_frame_impl frame(format
-                                               , libav_frame.info.id
+                                               , libav_frame.info.stream_id
                                                , libav_frame.info.timestamp());
 
                         frame.smart_buffers().set_buffer(main_media_buffer_index
@@ -235,7 +235,7 @@ public:
                         }
 
                         video_frame_impl frame(format
-                                               , libav_frame.info.id
+                                               , libav_frame.info.stream_id
                                                , libav_frame.info.timestamp()
                                                , frame_type);
 

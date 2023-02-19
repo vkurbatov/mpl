@@ -427,7 +427,7 @@ std::int32_t fetch_media_data(frame_t& frame, std::int64_t& frame_order)
 
             frame.info.dts = packet.dts;
             frame.info.pts = packet.pts;
-            frame.info.id = packet.stream_index;
+            frame.info.stream_id = packet.stream_index;
             frame.info.key_frame = (packet.flags & AV_PKT_FLAG_KEY) != 0;
 
             frame.media_data.resize(packet.size);
@@ -863,7 +863,7 @@ struct libav_stream_grabber_context_t
 
                     error_counter = 0;
 
-                    LOG_T << "grabber #" << m_grabber_id << ". Fetch frame #" << frame.info.id
+                    LOG_T << "grabber #" << m_grabber_id << ". Fetch frame #" << frame.info.stream_id
                               << "(" << frame.info.to_string()
                               << "): size: " << frame.media_data.size() << ", ts:" << frame_order LOG_END;
 
@@ -871,7 +871,7 @@ struct libav_stream_grabber_context_t
                     {
                         frame.info.media_info = stream->stream_info.media_info;
                         frame.info.codec_id = stream->stream_info.codec_info.id;
-                        frame.info.id = stream->frame_id++;
+                        frame.info.stream_id = stream->stream_info.stream_id;
 
                         frame_manager_t::frame_pair_t frame_pair(std::move(frame)
                                                                  , stream);
@@ -951,7 +951,7 @@ struct libav_stream_grabber_context_t
                 {
                     libav_stream_t& stream = *frame.second;
 
-                    LOG_T << "grabber #" << m_grabber_id << ". Pop frame #" << frame.first.info.id
+                    LOG_T << "grabber #" << m_grabber_id << ". Pop frame #" << frame.first.info.stream_id
                               << "(" << frame.first.info.to_string()
                               << "): size: " << frame.first.media_data.size() << ", ts:" << frame_order LOG_END;
 

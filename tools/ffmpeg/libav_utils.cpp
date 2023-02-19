@@ -6,6 +6,8 @@ extern "C"
 #include <libavformat/avformat.h>
 }
 
+#include "tools/base/url_base.h"
+
 
 namespace ffmpeg
 {
@@ -129,6 +131,34 @@ std::string error_string(int32_t av_errno)
 {
     char serr[1024] = {};
     return av_make_error_string(serr, sizeof(serr), av_errno);
+}
+
+url_format_t fetch_url_format(const std::string &url)
+{
+    url_format_t format;
+    base::url_info_t url_info;
+
+    format.url = url;
+
+    if (url_info.parse_url(url))
+    {
+        format.format_type = url_info.protocol;
+
+        switch(fetch_device_type(url))
+        {
+            case device_type_t::alsa:
+            case device_type_t::pulse:
+            case device_type_t::camera:
+                format.url = url_info.host;
+            break;
+            case device_type_t::rtmp:
+                format.format_type = "flv";
+            break;
+            default:;
+        }
+    }
+
+    return format;
 }
 
 
@@ -276,6 +306,51 @@ media_info_t &operator >>(const AVCodecParameters &av_codecpar
 {
     return media_info << av_codecpar;
 }
+
+AVStream& operator << (AVStream& av_stream
+                       , const stream_info_t& stream_info)
+{
+    (*av_stream.codecpar) << stream_info.media_info;
+    av_stream.index = stream_info.stream_id;
+    av_stream.codecpar->codec_id = static_cast<AVCodecID>(stream_info.codec_info.id);
+
+    av_stream.codecpar->bit_rate = stream_info.codec_info.codec_params.bitrate;
+    av_stream.codecpar->frame_size = stream_info.codec_info.codec_params.frame_size;
+
+
+    return av_stream;
+}
+
+stream_info_t& operator << (stream_info_t& stream_info
+                            , const AVStream& av_stream)
+{
+    stream_info.media_info << *av_stream.codecpar;
+    stream_info.stream_id = av_stream.index;
+
+
+    stream_info.codec_info.id = av_stream.codecpar->codec_id;
+    stream_info.codec_info.name = codec_info_t::codec_name(stream_info.codec_info.id);
+
+    if (stream_info.codec_info.id == codec_id_first_audio)
+    {
+        stream_info.codec_info.id = codec_id_none;
+        stream_info.codec_info.name.clear();
+    }
+
+    stream_info.codec_info.codec_params.bitrate = av_stream.codecpar->bit_rate;
+    stream_info.codec_info.codec_params.frame_size = av_stream.codecpar->frame_size;
+
+    if (av_stream.codecpar->extradata != nullptr
+            && av_stream.codecpar->extradata_size > 0)
+    {
+        stream_info.extra_data = stream_info_t::create_extra_data(av_stream.codecpar->extradata
+                                                                  , av_stream.codecpar->extradata_size
+                                                                  , true);
+    }
+
+    return stream_info;
+}
+
 
 
 }

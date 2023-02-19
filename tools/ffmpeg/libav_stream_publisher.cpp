@@ -538,7 +538,7 @@ bool libav_stream_publisher::push_frame(int32_t stream_id
 
 bool libav_stream_publisher::push_frame(const frame_t& frame)
 {
-    return m_libav_stream_publisher_context->push_frame(frame.info.id
+    return m_libav_stream_publisher_context->push_frame(frame.info.stream_id
                                                         , frame.media_data.data()
                                                         , frame.media_data.size()
                                                         , frame.info.key_frame

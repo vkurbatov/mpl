@@ -717,13 +717,13 @@ std::string media_info_t::to_string() const
 frame_info_t::frame_info_t(const media_info_t &media_info
                            , int64_t pts
                            , int64_t dts
-                           , int32_t id
+                           , int32_t stream_id
                            , codec_id_t codec_id
                            , bool key_frame)
     : media_info(media_info)
     , pts(pts)
     , dts(dts)
-    , id(id)
+    , stream_id(stream_id)
     , codec_id(codec_id)
     , key_frame(key_frame)
 {

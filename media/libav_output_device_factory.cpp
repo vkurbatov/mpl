@@ -450,7 +450,7 @@ public:
             {
                 ffmpeg::frame_t libav_frame;
                 libav_frame.info.media_info.media_type = ffmpeg::media_type_t::audio;
-                libav_frame.info.id = stream_id;
+                libav_frame.info.stream_id = stream_id;
                 libav_frame.media_data = core::utils::create_raw_array(buffer->data()
                                                                        , buffer->size());
                 libav_frame.info.pts = frame.timestamp();
@@ -474,7 +474,7 @@ public:
             {
                 ffmpeg::frame_t libav_frame;
                 libav_frame.info.media_info.media_type = ffmpeg::media_type_t::video;
-                libav_frame.info.id = stream_id;
+                libav_frame.info.stream_id = stream_id;
                 libav_frame.media_data = core::utils::create_raw_array(buffer->data()
                                                                        , buffer->size());
                 libav_frame.info.pts = frame.timestamp();

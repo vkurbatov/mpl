@@ -648,11 +648,11 @@ void test10()
             , ffmpeg::frame_t&& frame) ->
     bool
     {
-        std::cout << "Frame #" << frame.info.id << std::endl;
+        std::cout << "Frame #" << frame.info.stream_id << std::endl;
 
         if (libav_publisher.is_opened())
         {
-            frame.info.id = 0;
+            frame.info.stream_id = 0;
             // libav_publisher.push_frame(frame);
         }
         return true;

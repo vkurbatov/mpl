@@ -15,6 +15,8 @@
 namespace ffmpeg
 {
 
+using libav_parameters_t = std::map<std::string, std::string>;
+
 using codec_id_t = std::int32_t;
 using format_id_t = std::int32_t;
 using pixel_format_t = format_id_t;
@@ -30,7 +32,6 @@ using format_list_t = std::vector<format_id_t>;
 
 extern const std::int32_t padding_size;
 
-constexpr codec_id_t unknown_codec_id = -1;
 constexpr format_id_t unknown_format_id = -1;
 constexpr pixel_format_t unknown_pixel_format = unknown_format_id;
 constexpr sample_format_t unknown_sample_format = unknown_format_id;
@@ -481,14 +482,14 @@ struct frame_info_t
     media_info_t                media_info;
     std::int64_t                pts;
     std::int64_t                dts;
-    std::int32_t                id;
+    std::int32_t                stream_id;
     codec_id_t                  codec_id;
     bool                        key_frame;
 
     frame_info_t(const media_info_t& media_info = media_info_t()
                  , std::int64_t pts = 0
                  , std::int64_t dts = 0
-                 , std::int32_t id = 0
+                 , std::int32_t stream_id = 0
                  , codec_id_t codec_id = codec_id_none
                  , bool key_frame = false);
 
@@ -507,7 +508,7 @@ struct format_info_t
     codec_id_t      codec_id;
 
     format_info_t(format_id_t format_id = unknown_format_id
-                  , codec_id_t codec_id = unknown_codec_id);
+                  , codec_id_t codec_id = codec_id_none);
 
     bool is_valid() const;
 
@@ -554,6 +555,13 @@ struct capture_diagnostic_t
     std::uint64_t   total_time = 0;
     std::uint64_t   alive_time = 0;
 };
+
+struct url_format_t
+{
+    std::string     url;
+    std::string     format_type;
+};
+
 
 typedef std::vector<stream_info_t> stream_info_list_t;
 typedef std::queue<frame_t> frame_queue_t;
