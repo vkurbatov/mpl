@@ -181,7 +181,7 @@ device_class_list_t device_info_t::device_class_list(media_type_t media_type
                 if (input_format->name != nullptr)
                 {
                     device_class_list.emplace_back(input_format->name);
-                    if (device_class_list.back().find("video4linux") != std::string::npos)
+                    if (device_class_list.back().find("video4linux") == 0)
                     {
                         device_class_list.back() = "v4l2";
                     }

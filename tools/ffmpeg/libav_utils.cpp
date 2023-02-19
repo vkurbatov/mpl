@@ -64,18 +64,18 @@ extra_data_t extract_global_header(const stream_info_t &stream_info)
     return extra_data;
 }
 
-#define MERGE_PARAM(left, right) if ((right) > 0) (left) = (right); else (right) = (left)
+#define __merge_params(left, right) if ((right) > 0) (left) = (right); else (right) = (left)
 
 void merge_codec_params(AVCodecContext &av_context
                         , codec_params_t &codec_params)
 {
-    MERGE_PARAM(av_context.bit_rate, codec_params.bitrate);
-    MERGE_PARAM(av_context.gop_size, codec_params.gop);
-    MERGE_PARAM(av_context.frame_size, codec_params.frame_size);
-    MERGE_PARAM(av_context.profile, codec_params.profile);
-    MERGE_PARAM(av_context.level, codec_params.level);
-    MERGE_PARAM(av_context.qmin, codec_params.qmin);
-    MERGE_PARAM(av_context.qmax, codec_params.qmax);
+    __merge_params(av_context.bit_rate, codec_params.bitrate);
+    __merge_params(av_context.gop_size, codec_params.gop);
+    __merge_params(av_context.frame_size, codec_params.frame_size);
+    __merge_params(av_context.profile, codec_params.profile);
+    __merge_params(av_context.level, codec_params.level);
+    __merge_params(av_context.qmin, codec_params.qmin);
+    __merge_params(av_context.qmax, codec_params.qmax);
     av_context.flags |= codec_params.flags1;
     av_context.flags2 |= codec_params.flags2;
 }
