@@ -19,6 +19,7 @@ using libav_option_t = std::pair<std::string, std::string>;
 using libav_option_map_t = std::map<std::string, std::string>;
 using libav_option_list_t = std::vector<libav_option_t>;
 
+using timestamp_t = std::int64_t;
 using codec_id_t = std::int32_t;
 using format_id_t = std::int32_t;
 using pixel_format_t = format_id_t;
@@ -37,6 +38,8 @@ extern const std::int32_t padding_size;
 constexpr format_id_t unknown_format_id = -1;
 constexpr pixel_format_t unknown_pixel_format = unknown_format_id;
 constexpr sample_format_t unknown_sample_format = unknown_format_id;
+
+extern const timestamp_t timestamp_no_value;
 
 extern const pixel_format_t pixel_format_none;
 extern const pixel_format_t pixel_format_bgr8;
@@ -501,7 +504,7 @@ struct frame_info_t
     bool is_timestamp() const;
 };
 
-typedef std::int32_t stream_id_t;
+using stream_id_t = std::int32_t;
 const stream_id_t no_stream = -1;
 
 struct format_info_t
@@ -545,11 +548,29 @@ struct stream_info_t
 
 };
 
+/*
+struct data_frame_t
+{
+    media_data_t    stored_data;
+    const void*     ref_data;
+    std::size_t     ref_size;
+
+};*/
+
+struct frame_ref_t
+{
+    frame_info_t    info;
+    const void*     data = nullptr;
+    std::size_t     size = 0;
+};
+
 struct frame_t
 {
     frame_info_t    info;
     media_data_t    media_data;
     format_info_t format_info() const;
+
+    frame_ref_t get_frame_ref() const;
 };
 
 struct capture_diagnostic_t

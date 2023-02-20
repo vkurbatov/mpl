@@ -285,8 +285,13 @@ struct libav_input_format::context_t
 
     bool set_config(const config_t& config)
     {
-        m_config = config;
-        return true;
+        if (!is_open())
+        {
+            m_config = config;
+            return true;
+        }
+
+        return false;
     }
 
     stream_info_list_t streams() const

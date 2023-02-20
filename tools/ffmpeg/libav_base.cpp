@@ -22,6 +22,8 @@ static bool libav_register_flag = false;
 
 const std::int32_t padding_size = AV_INPUT_BUFFER_PADDING_SIZE;
 
+const timestamp_t timestamp_no_value = AV_NOPTS_VALUE;
+
 const codec_id_t codec_id_flv1 = static_cast<codec_id_t>(AV_CODEC_ID_FLV1);
 const codec_id_t codec_id_h261 = static_cast<codec_id_t>(AV_CODEC_ID_H261);
 const codec_id_t codec_id_h263 = static_cast<codec_id_t>(AV_CODEC_ID_H263);
@@ -1247,6 +1249,22 @@ format_info_t frame_t::format_info() const
 
     return {};
 }
+
+frame_ref_t frame_t::get_frame_ref() const
+{
+    frame_ref_t frame_ref;
+
+    frame_ref.info = info;
+
+    if (!media_data.empty())
+    {
+        frame_ref.data = media_data.data();
+        frame_ref.size = media_data.size();
+    }
+
+    return frame_ref;
+}
+
 
 
 }
