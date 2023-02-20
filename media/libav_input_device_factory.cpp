@@ -12,7 +12,9 @@
 
 #include "tools/base/sync_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
+#include "tools/ffmpeg/libav_input_format.h"
 
+#include <thread>
 #include <shared_mutex>
 #include <atomic>
 
@@ -69,21 +71,22 @@ class libav_input_device : public i_device
                     && !url.empty();
         }
 
-        ffmpeg::libav_grabber_config_t native_config() const
+        ffmpeg::libav_input_format::config_t native_config() const
         {
-            return { url, ffmpeg::stream_mask_only_media, options };
+            return { url
+                     , options };
         }
     };
 
-
     device_params_t                 m_device_params;
     message_router_impl             m_router;
-    ffmpeg::libav_stream_grabber    m_native_device;
 
     frame_id_t                      m_frame_counter;
     timestamp_t                     m_frame_timestamp;
 
     timestamp_t                     m_start_time;
+
+    std::thread                     m_thread;
 
     channel_state_t                 m_state;
     std::atomic_bool                m_open;
@@ -105,10 +108,6 @@ public:
 
     libav_input_device(device_params_t&& device_params)
         : m_device_params(std::move(device_params))
-        , m_native_device([&](const ffmpeg::stream_info_t& stream_info
-                          , ffmpeg::frame_t&& libav_frame) { return on_native_frame(stream_info
-                                                                                    , std::move(libav_frame)); }
-                          , [&](const auto& event) { on_native_device_state(event);} )
         , m_frame_counter(0)
         , m_frame_timestamp(0)
         , m_state(channel_state_t::ready)
@@ -139,20 +138,9 @@ public:
                                            , true
                                            , std::memory_order_acquire))
         {
-            reset();
-
             change_state(channel_state_t::opening);
-
-            if (m_native_device.open(m_device_params.native_config()))
-            {
-                return true;
-            }
-
-            m_open.store(false
-                         , std::memory_order_release);
-
-            change_state(channel_state_t::failed);
-
+            m_thread = std::thread([&]{ grabbing_thread(); });
+            return true;
         }
 
         return false;
@@ -162,15 +150,15 @@ public:
     {
         if (m_open.load(std::memory_order_acquire))
         {
-            change_state(channel_state_t::closing);
 
-            if (!m_native_device.close())
-            {
-                change_state(channel_state_t::failed);
-            }
+            change_state(channel_state_t::closing);
 
             m_open.store(false
                          , std::memory_order_release);
+            if (m_thread.joinable())
+            {
+                m_thread.join();
+            }
 
             change_state(channel_state_t::closed);
 
@@ -179,6 +167,57 @@ public:
         }
 
         return false;
+    }
+
+    void grabbing_thread()
+    {
+        change_state(channel_state_t::open);
+
+        std::size_t error_counter = 0;
+
+        enum class state_t
+        {
+            opening,
+            reading,
+            waiting
+        };
+
+        while(is_open())
+        {
+            ffmpeg::libav_input_format native_input_device(m_device_params.native_config());
+
+            change_state(channel_state_t::connecting);
+
+            if (native_input_device.open())
+            {
+                auto streams = native_input_device.streams();
+                change_state(channel_state_t::connected);
+
+                while(is_open()
+                      && error_counter < 10)
+                {
+                    ffmpeg::frame_t libav_frame;
+                    if (native_input_device.read(libav_frame))
+                    {
+                        error_counter = 0;
+                        on_native_frame(streams[libav_frame.info.stream_id]
+                                        , libav_frame);
+                    }
+                    else
+                    {
+                        error_counter++;
+                        if (is_open())
+                        {
+                            core::utils::sleep(durations::milliseconds(100));
+                        }
+                    }
+                }
+
+                change_state(channel_state_t::disconnecting);
+                native_input_device.close();
+                change_state(channel_state_t::disconnected);
+            }
+        }
     }
 
     void reset()
@@ -193,8 +232,9 @@ public:
         return mpl::core::utils::now() - m_start_time;
     }
 
+
     bool on_native_frame(const ffmpeg::stream_info_t& stream_info
-                         , ffmpeg::frame_t&& libav_frame)
+                         , ffmpeg::frame_t& libav_frame)
     {
         if (!libav_frame.media_data.empty())
         {
@@ -254,31 +294,6 @@ public:
 
         // нужно всегда возвращать true, иначе граббер будет копить входящий поток для отложенного чтения
         return true;
-
-        return true;
-    }
-
-    void on_native_device_state(const ffmpeg::streaming_event_t& streaming_event)
-    {
-        if (libav_input_device::is_open())
-        {
-            switch(streaming_event)
-            {
-                case ffmpeg::streaming_event_t::start:
-                    change_state(channel_state_t::open);
-                break;
-                case ffmpeg::streaming_event_t::stop:
-                    change_state(channel_state_t::closed);
-                break;
-                case ffmpeg::streaming_event_t::open:
-                    change_state(channel_state_t::connected);
-                break;
-                case ffmpeg::streaming_event_t::close:
-                    change_state(channel_state_t::disconnected);
-                break;
-                default:;
-            }
-        }
     }
 
     // i_channel interface

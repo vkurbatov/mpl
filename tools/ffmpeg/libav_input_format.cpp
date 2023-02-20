@@ -291,6 +291,10 @@ struct libav_input_format::context_t
 
     stream_info_list_t streams() const
     {
+        if (m_native_context)
+        {
+            return m_native_context->streams();
+        }
         return {};
     }
 
