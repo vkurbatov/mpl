@@ -26,15 +26,12 @@ private:
     context_ptr_t       m_context;
 
 public:
-    libav_input_format(const config_t& config = {}
-                       , const frame_handler_t& frame_handler = nullptr);
+    libav_input_format(const config_t& config = {});
 
     ~libav_input_format();
 
     const config_t& config() const;
     bool set_config(const config_t& config);
-
-    bool set_frame_handler(const frame_handler_t& frame_handler);
 
     stream_info_list_t streams() const;
 
@@ -45,7 +42,6 @@ public:
     bool cancel();
 
     bool read(frame_t& frame);
-    bool read();
 };
 
 }

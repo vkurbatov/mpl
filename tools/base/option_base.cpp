@@ -3,6 +3,7 @@
 namespace base
 {
 
+
 static void trim_spaces(std::string& string
                         , const std::string& whitespaces = " \t\f\v\n\r")
 {
@@ -68,6 +69,16 @@ option_list_t parse_option_list(const std::string& options_string)
     }
 
     return options;
+}
+
+option_map_t parse_option_map(const std::string &options_string)
+{
+    option_map_t option_map;
+    for (const auto& o : parse_option_list(options_string))
+    {
+        option_map.emplace(o.first, o.second);
+    }
+    return option_map;
 }
 
 }

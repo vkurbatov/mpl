@@ -43,6 +43,7 @@
 #include "tools/ffmpeg/libav_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
 #include "tools/ffmpeg/libav_stream_publisher.h"
+#include "tools/ffmpeg/libav_input_format.h"
 #include "tools/base/url_base.h"
 
 #include <string>
@@ -905,6 +906,37 @@ void test13()
     return;
 }
 
+void test14()
+{
+    ffmpeg::libav_register();
+
+    // std::string url = "rtsp://wowzaec2demo.streamlock.net/vod/mp4";
+    std::string url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
+    //std::string options = "rtsp_transport=tcp";
+    std::string options;
+
+    ffmpeg::libav_input_format::config_t config(url
+                                                , options);
+
+    ffmpeg::libav_input_format input_format(config);
+
+    if (input_format.open())
+    {
+        std::cout << "libav format opened" << std::endl;
+        ffmpeg::frame_t libav_frame;
+        while(input_format.read(libav_frame))
+        {
+            std::cout << "Read frame: stream: " << libav_frame.info.stream_id
+                      << ", format: " << libav_frame.info.to_string()
+                      << ", ts: " << libav_frame.info.timestamp() << std::endl;
+        }
+    }
+
+    input_format.close();
+
+
+}
+
 }
 
 void tests()
@@ -912,7 +944,7 @@ void tests()
     //test1();
     //test6();
     // test12();
-    test13();
+    test14();
 }
 
 }

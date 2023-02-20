@@ -14,6 +14,9 @@ namespace ffmpeg
 namespace utils
 {
 
+libav_option_list_t parse_option_list(const std::string& options);
+libav_option_map_t parse_option_map(const std::string& options);
+
 bool is_global_header_format(const std::string& format_name);
 
 extra_data_t extract_global_header(const stream_info_t& stream_info);
@@ -25,8 +28,11 @@ url_format_t fetch_url_format(const std::string& url);
 void merge_codec_params(AVCodecContext& av_context
                             , codec_params_t& codec_params);
 
-void set_options(AVDictionary* av_options
+void set_options(AVDictionary** av_options
                  , const std::string& options);
+
+void set_options(AVDictionary** av_options
+                 , const libav_option_map_t& params);
 
 std::string error_string(std::int32_t av_errno);
 

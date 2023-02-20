@@ -177,7 +177,7 @@ std::int32_t init(const std::string& uri
         }
 
 
-        utils::set_options(av_options
+        utils::set_options(&av_options
                            , options);
 
         context = avformat_alloc_context();

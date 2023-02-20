@@ -16,6 +16,15 @@ namespace ffmpeg
 namespace utils
 {
 
+libav_option_list_t parse_option_list(const std::string &options)
+{
+    return base::parse_option_list(options);
+}
+
+libav_option_map_t parse_option_map(const std::string &options)
+{
+    return base::parse_option_map(options);
+}
 
 bool is_global_header_format(const std::string &format_name)
 {
@@ -82,14 +91,24 @@ void merge_codec_params(AVCodecContext &av_context
     av_context.flags2 |= codec_params.flags2;
 }
 
-void set_options(AVDictionary* av_options
+void set_options(AVDictionary** av_options
                  , const std::string &options)
 {
     for (const auto& opt : parse_option_list(options))
     {
-        av_dict_set(&av_options, opt.first.c_str(), opt.second.c_str(), 0);
+        av_dict_set(av_options, opt.first.c_str(), opt.second.c_str(), 0);
     }
 }
+
+void set_options(AVDictionary **av_options
+                 , const libav_option_map_t &params)
+{
+    for (const auto& p : params)
+    {
+        av_dict_set(av_options, p.first.c_str(), p.second.c_str(), 0);
+    }
+}
+
 
 device_type_t fetch_device_type(const std::string &uri)
 {
@@ -160,7 +179,6 @@ url_format_t fetch_url_format(const std::string &url)
 
     return format;
 }
-
 
 }
 

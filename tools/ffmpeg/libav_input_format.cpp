@@ -68,28 +68,24 @@ struct libav_input_format::context_t
     {
         using u_ptr_t = std::unique_ptr<native_context_t>;
 
-        context_t&                  m_owner;
         struct AVFormatContext*     m_context;
         struct AVPacket             m_packet;
         interrupt_timeout_t         m_interrupt_timeout;
-        stream_info_list_t          m_streams;
+        stream_info_t::list_t       m_streams;
         bool                        m_open;
 
-        static u_ptr_t create(context_t& owner)
+        static u_ptr_t create()
         {
             if (auto context = avformat_alloc_context())
             {
-                return std::make_unique<native_context_t>(owner
-                                                          , context);
+                return std::make_unique<native_context_t>(context);
             }
 
             return nullptr;
         }
 
-        native_context_t(context_t& owner
-                         , AVFormatContext* context)
-            : m_owner(owner)
-            , m_context(context)
+        native_context_t(AVFormatContext* context)
+            : m_context(context)
             , m_open(false)
         {
             av_init_packet(&m_packet);
@@ -106,21 +102,20 @@ struct libav_input_format::context_t
             }
         }
 
-        bool native_open(const std::string& url
-                         , const std::string& options = {})
+        bool native_open(const config_t& config)
         {
             AVDictionary* av_options = nullptr;
             AVInputFormat *input_format = nullptr;
 
-            url_format_t url_format = utils::fetch_url_format(url);
+            url_format_t url_format = utils::fetch_url_format(config.url);
 
             if (!url_format.format_type.empty())
             {
                 input_format = av_find_input_format(url_format.format_type.c_str());
             }
 
-            utils::set_options(av_options
-                               , options);
+            utils::set_options(&av_options
+                               , config.options);
 
             m_context->interrupt_callback.opaque = &m_interrupt_timeout;
             m_context->interrupt_callback.callback = &interrupt_timeout_t::check_interrupt;
@@ -142,7 +137,7 @@ struct libav_input_format::context_t
 
                 if (result >= 0)
                 {
-                    m_streams = get_streams();
+                    m_streams = fetch_streams();
                     return true;
                 }
 
@@ -152,18 +147,12 @@ struct libav_input_format::context_t
             return false;
         }
 
-        bool open()
+        bool open(const config_t& config)
         {
             if (!m_open)
             {
-                m_open = true;
-                if (native_open(m_owner.m_config.url
-                                , m_owner.m_config.options))
-                {
-                    return true;
-                }
-
-                m_open = false;
+                m_open = native_open(config);
+                return m_open;
             }
 
             return false;
@@ -181,18 +170,15 @@ struct libav_input_format::context_t
             return false;
         }
 
-        stream_info_list_t get_streams()
+        stream_info_list_t fetch_streams()
         {
             stream_info_list_t streams;
 
-            if (m_open)
+            for (std::uint32_t i = 0; i < m_context->nb_streams; i++)
             {
-                for (std::uint32_t i = 0; i < m_context->nb_streams; i++)
-                {
-                    stream_info_t stream;
-                    stream << *m_context->streams[i];
-                    streams.emplace_back(stream);
-                }
+                stream_info_t stream;
+                stream << *m_context->streams[i];
+                streams.emplace_back(stream);
             }
 
             return streams;
@@ -210,7 +196,7 @@ struct libav_input_format::context_t
 
         }
 
-        std::int32_t read_frame(frame_t&& frame)
+        std::int32_t read_frame(frame_t& frame)
         {
             std::int32_t result = -1;
 
@@ -220,10 +206,39 @@ struct libav_input_format::context_t
                 result = av_read_frame(m_context
                                        , &m_packet);
 
-                if (result >= 0 && m_packet.size > 0)
+                if (result >= 0
+                        && m_packet.size > 0)
                 {
+                    auto& stream = m_context->streams[m_packet.stream_index];
 
+                    switch(stream->codecpar->codec_type)
+                    {
+                        case AVMEDIA_TYPE_AUDIO:
+                            av_packet_rescale_ts(&m_packet, stream->time_base, { 1, stream->codecpar->sample_rate });
+                        break;
+                        case AVMEDIA_TYPE_VIDEO:
+                            av_packet_rescale_ts(&m_packet, stream->time_base, { 1, 90000 });
+                        break;
+                    }
+
+                    frame.info.dts = m_packet.dts;
+                    frame.info.pts = m_packet.pts;
+                    frame.info.stream_id = m_packet.stream_index;
+                    frame.info.key_frame = (m_packet.flags & AV_PKT_FLAG_KEY) != 0;
+
+                    frame.info.codec_id = stream->codecpar->codec_id;
+                    frame.info.media_info = m_streams[m_packet.stream_index].media_info;
+
+                    frame.media_data.resize(m_packet.size);
+
+                    memcpy(frame.media_data.data()
+                                , m_packet.data
+                                , m_packet.size);
+
+                    result = m_packet.stream_index;
                 }
+
+                av_packet_unref(&m_packet);
             }
 
             return result;
@@ -232,6 +247,11 @@ struct libav_input_format::context_t
         void cancel()
         {
             m_interrupt_timeout.cancel();
+        }
+
+        const stream_info_t::list_t& streams() const
+        {
+            return m_streams;
         }
     };
 
@@ -242,24 +262,20 @@ struct libav_input_format::context_t
     frame_handler_t             m_frame_handler;
     native_context_t::u_ptr_t   m_native_context;
 
-    static u_ptr_t create(const libav_input_format::config_t& config
-                          , const frame_handler_t& frame_handler)
+    static u_ptr_t create(const libav_input_format::config_t& config)
     {
-        return std::make_unique<context_t>(config
-                                           , frame_handler);
+        return std::make_unique<context_t>(config);
     }
 
-    context_t(const libav_input_format::config_t& config
-              , const frame_handler_t& frame_handler)
+    context_t(const libav_input_format::config_t& config)
         : m_config(config)
-        , m_frame_handler(frame_handler)
     {
 
     }
 
     ~context_t()
     {
-
+        close();
     }
 
     const config_t& config() const
@@ -273,12 +289,6 @@ struct libav_input_format::context_t
         return true;
     }
 
-    bool set_frame_handler(const frame_handler_t& frame_handler)
-    {
-        m_frame_handler = frame_handler;
-        return true;
-    }
-
     stream_info_list_t streams() const
     {
         return {};
@@ -286,11 +296,31 @@ struct libav_input_format::context_t
 
     bool open()
     {
+        if (m_native_context == nullptr)
+        {
+            m_native_context = native_context_t::create();
+            if (m_native_context != nullptr)
+            {
+                if (m_native_context->open(m_config))
+                {
+                    return true;
+                }
+
+                close();
+            }
+        }
+
         return false;
     }
 
     bool close()
     {
+        if (m_native_context != nullptr)
+        {
+            m_native_context.reset();
+            return true;
+        }
+
         return false;
     }
 
@@ -306,13 +336,13 @@ struct libav_input_format::context_t
 
     bool read(frame_t& frame)
     {
+        if (m_native_context != nullptr)
+        {
+            return m_native_context->read_frame(frame) >= 0;
+        }
         return false;
     }
 
-    bool read()
-    {
-        return false;
-    }
 };
 
 libav_input_format::config_t::config_t(const std::string_view &url
@@ -328,10 +358,8 @@ bool libav_input_format::config_t::is_valid() const
     return !url.empty();
 }
 
-libav_input_format::libav_input_format(const config_t &config
-                                       , const frame_handler_t& frame_handler)
-    : m_context(context_t::create(config
-                                  , frame_handler))
+libav_input_format::libav_input_format(const config_t &config)
+    : m_context(context_t::create(config))
 {
 
 }
@@ -351,10 +379,6 @@ bool libav_input_format::set_config(const config_t &config)
     return m_context->set_config(config);
 }
 
-bool libav_input_format::set_frame_handler(const frame_handler_t& frame_handler)
-{
-    return m_context->set_frame_handler(frame_handler);
-}
 
 stream_info_list_t libav_input_format::streams() const
 {
@@ -386,9 +410,5 @@ bool libav_input_format::read(frame_t &frame)
     return m_context->read(frame);
 }
 
-bool libav_input_format::read()
-{
-    return m_context->read();
-}
 
 }

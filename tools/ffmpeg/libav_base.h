@@ -15,7 +15,9 @@
 namespace ffmpeg
 {
 
-using libav_parameters_t = std::map<std::string, std::string>;
+using libav_option_t = std::pair<std::string, std::string>;
+using libav_option_map_t = std::map<std::string, std::string>;
+using libav_option_list_t = std::vector<libav_option_t>;
 
 using codec_id_t = std::int32_t;
 using format_id_t = std::int32_t;
@@ -518,6 +520,8 @@ struct format_info_t
 
 struct stream_info_t
 {
+    using list_t = std::vector<stream_info_t>;
+
     stream_id_t                 stream_id;
     codec_info_t                codec_info;
     media_info_t                media_info;
