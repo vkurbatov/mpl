@@ -138,6 +138,17 @@ extern const codec_id_t codec_id_pcma;
 extern const codec_id_t codec_id_pcmu;
 
 extern const codec_id_t codec_id_first_audio;
+extern const codec_id_t codec_id_pcm8;
+extern const codec_id_t codec_id_pcm16;
+extern const codec_id_t codec_id_pcm32;
+extern const codec_id_t codec_id_float32;
+extern const codec_id_t codec_id_float64;
+extern const codec_id_t codec_id_pcm8p;
+extern const codec_id_t codec_id_pcm16p;
+extern const codec_id_t codec_id_pcm32p;
+extern const codec_id_t codec_id_float32p;
+extern const codec_id_t codec_id_float64p;
+
 
 extern const codec_id_t codec_id_none;
 

@@ -46,6 +46,16 @@ const codec_id_t codec_id_pcma = static_cast<codec_id_t>(AV_CODEC_ID_PCM_ALAW);
 const codec_id_t codec_id_pcmu = static_cast<codec_id_t>(AV_CODEC_ID_PCM_MULAW);
 
 const codec_id_t codec_id_first_audio = static_cast<codec_id_t>(AV_CODEC_ID_FIRST_AUDIO);
+const codec_id_t codec_id_pcm8 = static_cast<codec_id_t>(AV_CODEC_ID_PCM_U8);
+const codec_id_t codec_id_pcm16 = static_cast<codec_id_t>(AV_CODEC_ID_PCM_S16LE);
+const codec_id_t codec_id_pcm32 = static_cast<codec_id_t>(AV_CODEC_ID_PCM_S32LE);
+const codec_id_t codec_id_float32 = static_cast<codec_id_t>(AV_CODEC_ID_PCM_F32LE);
+const codec_id_t codec_id_float64 = static_cast<codec_id_t>(AV_CODEC_ID_PCM_F64LE);
+const codec_id_t codec_id_pcm8p = static_cast<codec_id_t>(AV_CODEC_ID_PCM_S8_PLANAR);
+const codec_id_t codec_id_pcm16p = static_cast<codec_id_t>(AV_CODEC_ID_PCM_S16LE_PLANAR);
+const codec_id_t codec_id_pcm32p = static_cast<codec_id_t>(AV_CODEC_ID_PCM_S32LE_PLANAR);
+const codec_id_t codec_id_float32p = static_cast<codec_id_t>(AV_CODEC_ID_PCM_F32LE);
+const codec_id_t codec_id_float64p = static_cast<codec_id_t>(AV_CODEC_ID_PCM_F64LE);
 
 const codec_id_t codec_id_none = static_cast<codec_id_t>(AV_CODEC_ID_NONE);
 

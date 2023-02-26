@@ -53,10 +53,10 @@ bool add_stream(AVFormatContext* context
             switch(av_stream->codecpar->codec_type)
             {
                 case AVMEDIA_TYPE_AUDIO:
-                    av_stream->time_base = { 1, av_stream->codecpar->sample_rate };
+                    // av_stream->time_base = { 1, av_stream->codecpar->sample_rate };
                 break;
                 case AVMEDIA_TYPE_VIDEO:
-                    av_stream->time_base = { 1, static_cast<std::int32_t>(stream_info.media_info.video_info.fps) };
+                    // av_stream->time_base = { 1, static_cast<std::int32_t>(stream_info.media_info.video_info.fps) };
                 break;
                 case AVMEDIA_TYPE_DATA:
 
@@ -153,7 +153,7 @@ struct libav_output_format::context_t
                                 }
                             }
 
-                            if (m_context->oformat->flags & AVFMT_GLOBALHEADER)
+                            if ((m_context->oformat->flags & (AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH)) != 0)
                             {
                                 if (avformat_write_header(m_context
                                                           , nullptr) < 0)
@@ -178,7 +178,7 @@ struct libav_output_format::context_t
         {
             if (m_context != nullptr)
             {
-                if (m_context->oformat->flags & AVFMT_GLOBALHEADER)
+                if ((m_context->oformat->flags & (AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH)) != 0)
                 {
                     av_write_trailer(m_context);
                 }
@@ -214,6 +214,34 @@ struct libav_output_format::context_t
             return m_context != nullptr;
         }
 
+        bool write_as_frame(const frame_ref_t& frame)
+        {
+            if (m_context != nullptr)
+            {
+                std::uint32_t stream_id = static_cast<std::uint32_t>(frame.info.stream_id);
+                if (stream_id < m_context->nb_streams)
+                {
+                    auto& av_stream = *m_context->streams[stream_id];
+                    AVFrame av_frame = {};
+                    av_frame.channels = av_stream.codecpar->channels;
+                    av_frame.sample_rate = av_stream.codecpar->sample_rate;
+                    av_frame.format = av_stream.codecpar->format;
+
+                    av_frame.data[0] = const_cast<std::uint8_t*>(static_cast<const std::uint8_t*>(frame.data));
+                    av_frame.linesize[0] = frame.size;
+                    av_frame.pts = frame.info.pts;
+
+                    auto ret = av_interleaved_write_uncoded_frame(m_context
+                                                                  , stream_id
+                                                                  , &av_frame);
+
+                    return ret >= 0;
+                }
+            }
+
+            return false;
+        }
+
         bool write(const frame_ref_t& frame)
         {
             if (m_context != nullptr)
@@ -233,12 +261,20 @@ struct libav_output_format::context_t
                     av_packet.stream_index = stream_id;
                     av_packet.data = const_cast<std::uint8_t*>(static_cast<const std::uint8_t*>(frame.data));
                     av_packet.size = frame.size;
+                    av_packet.pts = frame.info.pts;
+                    av_packet.pts = frame.info.dts;
+                    /*
+                    if (av_packet.pts == AV_NOPTS_VALUE)
+                    {
+                        av_packet.pts = 0;
+                    }
+
+                    av_packet.dts = 0;*/
 
                     switch(av_stream.codecpar->codec_type)
                     {
                         case AVMEDIA_TYPE_AUDIO:
                         {
-                            av_packet.pts = frame.info.pts;
                             av_packet_rescale_ts(&av_packet
                                                  , { 1, static_cast<std::int32_t>(stream_info.media_info.audio_info.sample_rate) }
                                                  , av_stream.time_base);
@@ -246,7 +282,6 @@ struct libav_output_format::context_t
                         break;
                         case AVMEDIA_TYPE_VIDEO:
                         {
-                            av_packet.pts = frame.info.pts;
                             av_packet_rescale_ts(&av_packet
                                                  , { 1, 90000 }
                                                  , av_stream.time_base);
@@ -255,7 +290,7 @@ struct libav_output_format::context_t
                         default:;
                     }
 
-                    av_packet.dts = AV_NOPTS_VALUE;
+
 
                     auto ret = av_interleaved_write_frame(m_context, &av_packet);
 

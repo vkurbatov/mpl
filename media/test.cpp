@@ -937,6 +937,73 @@ void test14()
 
 }
 
+void test15()
+{
+    ffmpeg::libav_register();
+
+    std::string input_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";;
+    std::string input_options = {};
+
+    std::string output_url = "pulse://alsa_output.pci-0000_00_05.0.analog-stereo";
+    auto libav_input_device_params = property_helper::create_tree();
+    {
+        property_writer writer(*libav_input_device_params);
+        writer.set<std::string>("url", input_url);
+        writer.set<std::string>("options", input_options);
+    }
+
+    auto libav_output_device_params = property_helper::create_tree();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        audio_format_impl audio_format(audio_format_id_t::pcm16
+                                       , 48000
+                                       , 2);
+
+
+
+        i_property::array_t streams;
+        if (auto ap = property_helper::create_tree())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
+
+        writer.set("streams", streams);
+    }
+
+    libav_input_device_factory input_device_factory;
+    libav_output_device_factory output_device_factory;
+
+
+    if (auto input_device = input_device_factory.create_device(*libav_input_device_params))
+    {
+        if (auto output_device = output_device_factory.create_device(*libav_output_device_params))
+        {
+            input_device->source()->add_sink(output_device->sink());
+
+            if (output_device->control(channel_control_t::open()))
+            {
+
+                if (input_device->control(channel_control_t::open()))
+                {
+                    core::utils::sleep(durations::seconds(60));
+                    input_device->control(channel_control_t::close());
+                }
+
+                output_device->control(channel_control_t::close());
+            }
+
+            input_device->source()->remove_sink(output_device->sink());
+        }
+    }
+
+    return;
+}
+
 }
 
 void tests()
@@ -944,7 +1011,7 @@ void tests()
     //test1();
     //test6();
     // test12();
-    test9();
+    test15();
 }
 
 }
