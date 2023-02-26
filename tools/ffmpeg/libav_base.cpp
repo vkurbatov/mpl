@@ -1265,6 +1265,17 @@ frame_ref_t frame_t::get_frame_ref() const
     return frame_ref;
 }
 
+media_data_t frame_ref_t::get_media_data() const
+{
+    if (data != nullptr
+            && size > 0)
+    {
+        return media_data_t(static_cast<const std::uint8_t*>(data)
+                            , static_cast<const std::uint8_t*>(data) + size);
+    }
+    return {};
+}
+
 
 
 }

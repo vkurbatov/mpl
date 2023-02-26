@@ -196,7 +196,7 @@ public:
                 while(is_open()
                       && error_counter < 10)
                 {
-                    ffmpeg::frame_t libav_frame;
+                    ffmpeg::frame_ref_t libav_frame;
                     if (native_input_device.read(libav_frame))
                     {
                         error_counter = 0;
@@ -234,9 +234,9 @@ public:
 
 
     bool on_native_frame(const ffmpeg::stream_info_t& stream_info
-                         , ffmpeg::frame_t& libav_frame)
+                         , ffmpeg::frame_ref_t& libav_frame)
     {
-        if (!libav_frame.media_data.empty())
+        if (libav_frame.size > 0)
         {
             switch(stream_info.media_info.media_type)
             {
@@ -251,7 +251,8 @@ public:
                                                , libav_frame.info.timestamp());
 
                         frame.smart_buffers().set_buffer(main_media_buffer_index
-                                                         , smart_buffer(std::move(libav_frame.media_data)));
+                                                         , smart_buffer(libav_frame.data
+                                                                        , libav_frame.size));
 
                         message_frame_ref_impl message_frame(frame);
 
@@ -280,7 +281,8 @@ public:
                                                , frame_type);
 
                         frame.smart_buffers().set_buffer(main_media_buffer_index
-                                                         , smart_buffer(std::move(libav_frame.media_data)));
+                                                         , smart_buffer(libav_frame.data
+                                                                        , libav_frame.size));
 
                         message_frame_ref_impl message_frame(frame);
 

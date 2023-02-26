@@ -562,6 +562,8 @@ struct frame_ref_t
     frame_info_t    info;
     const void*     data = nullptr;
     std::size_t     size = 0;
+
+    media_data_t get_media_data() const;
 };
 
 struct frame_t

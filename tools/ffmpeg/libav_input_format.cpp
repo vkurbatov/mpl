@@ -196,13 +196,14 @@ struct libav_input_format::context_t
 
         }
 
-        std::int32_t read_frame(frame_t& frame)
+        std::int32_t read_frame(frame_ref_t& frame_ref)
         {
             std::int32_t result = -1;
 
             if (m_open)
             {
                 m_interrupt_timeout.reset();
+                av_packet_unref(&m_packet);
                 result = av_read_frame(m_context
                                        , &m_packet);
 
@@ -221,24 +222,32 @@ struct libav_input_format::context_t
                         break;
                     }
 
-                    frame.info.dts = m_packet.dts;
-                    frame.info.pts = m_packet.pts;
-                    frame.info.stream_id = m_packet.stream_index;
-                    frame.info.key_frame = (m_packet.flags & AV_PKT_FLAG_KEY) != 0;
+                    frame_ref.info.dts = m_packet.dts;
+                    frame_ref.info.pts = m_packet.pts;
+                    frame_ref.info.stream_id = m_packet.stream_index;
+                    frame_ref.info.key_frame = (m_packet.flags & AV_PKT_FLAG_KEY) != 0;
 
-                    frame.info.codec_id = stream->codecpar->codec_id;
-                    frame.info.media_info = m_streams[m_packet.stream_index].media_info;
+                    frame_ref.info.codec_id = stream->codecpar->codec_id;
+                    frame_ref.info.media_info = m_streams[m_packet.stream_index].media_info;
 
-                    frame.media_data.resize(m_packet.size);
-
-                    memcpy(frame.media_data.data()
-                                , m_packet.data
-                                , m_packet.size);
+                    frame_ref.data = m_packet.data;
+                    frame_ref.size = m_packet.size;
 
                     result = m_packet.stream_index;
                 }
+            }
 
-                av_packet_unref(&m_packet);
+            return result;
+        }
+
+        std::int32_t read_frame(frame_t& frame)
+        {
+            frame_ref_t frame_ref;
+            auto result = read_frame(frame_ref);
+            if (result >= 0)
+            {
+                frame.info = std::move(frame_ref.info);
+                frame.media_data = frame_ref.get_media_data();
             }
 
             return result;
@@ -352,6 +361,15 @@ struct libav_input_format::context_t
         return false;
     }
 
+    bool read(frame_ref_t& frame_frame)
+    {
+        if (m_native_context != nullptr)
+        {
+            return m_native_context->read_frame(frame_frame) >= 0;
+        }
+        return false;
+    }
+
 };
 
 libav_input_format::config_t::config_t(const std::string_view &url
@@ -417,6 +435,11 @@ bool libav_input_format::cancel()
 bool libav_input_format::read(frame_t &frame)
 {
     return m_context->read(frame);
+}
+
+bool libav_input_format::read(frame_ref_t &frame_ref)
+{
+    return m_context->read(frame_ref);
 }
 
 

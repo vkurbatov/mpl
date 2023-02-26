@@ -42,6 +42,7 @@ public:
     bool cancel();
 
     bool read(frame_t& frame);
+    bool read(frame_ref_t& ref_frame);
 };
 
 }
