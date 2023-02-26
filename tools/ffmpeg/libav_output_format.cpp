@@ -25,7 +25,7 @@ ff_const59 AVOutputFormat* find_output_format(const url_format_t& url_format)
                                  , nullptr);
     }
 
-    if (format != nullptr)
+    if (format == nullptr)
     {
         format = av_guess_format(nullptr
                                  , url_format.url.c_str()
@@ -155,7 +155,8 @@ struct libav_output_format::context_t
 
                             if (m_context->oformat->flags & AVFMT_GLOBALHEADER)
                             {
-                                if (av_write_trailer(m_context) < 0)
+                                if (avformat_write_header(m_context
+                                                          , nullptr) < 0)
                                 {
                                     break;
                                 }

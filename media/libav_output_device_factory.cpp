@@ -17,7 +17,8 @@
 #include "message_frame_impl.h"
 
 #include "tools/base/sync_base.h"
-#include "tools/ffmpeg/libav_stream_publisher.h"
+//#include "tools/ffmpeg/libav_stream_publisher.h"
+#include "tools/ffmpeg/libav_output_format.h"
 
 #include <shared_mutex>
 #include <thread>
@@ -145,34 +146,6 @@ namespace detail
     }
 
 }
-
-/*
-class libav_device_wrapper
-{
-
-    using state_handler_t = std::function<void(channel_state_t)>;
-    ffmpeg::libav_stream_publisher  m_native_device;
-    std::string                     m_url;
-    state_handler_t                 m_state_handler;
-
-    stream_list_t                   m_streams;
-
-    libav_device_wrapper(const std::string& url
-                         , const stream_list_t& streams
-                         , state_handler_t&& state_handler)
-        : m_url(url)
-        , m_streams(streams)
-        , m_state_handler(std::move(state_handler))
-    {
-
-    }
-
-    bool push_frame(const i_media_frame& frame)
-    {
-        return false;
-    }
-};
-*/
 
 class libav_output_device : public i_device
 {
@@ -528,10 +501,14 @@ public:
 
         while(libav_output_device::is_open())
         {
-            ffmpeg::libav_stream_publisher native_publisher;
+            ffmpeg::libav_output_format::config_t native_config;
+
+            native_config.url = m_device_params.url;
+            native_config.streams = m_device_params.native_streams();
+
+            ffmpeg::libav_output_format native_publisher(native_config);
             change_state(channel_state_t::connecting);
-            if (native_publisher.open(m_device_params.url
-                                      , m_device_params.native_streams()))
+            if (native_publisher.open())
             {
                 std::size_t err_count = 0;
                 change_state(channel_state_t::connected);
@@ -541,7 +518,8 @@ public:
                     while(m_frame_manager.fetch_frame(libav_frame)
                           && libav_output_device::is_open())
                     {
-                        if (!native_publisher.push_frame(libav_frame))
+
+                        if (!native_publisher.write(libav_frame.get_frame_ref()))
                         {
                             err_count++;
                             break;

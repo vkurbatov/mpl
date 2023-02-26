@@ -580,7 +580,7 @@ struct libav_codec_context_t
 
         if (av_context->codec_id == AV_CODEC_ID_MJPEG)
         {
-            switch(av_frame.format)
+            switch(static_cast<AVPixelFormat>(av_frame.format))
             {
                 case AV_PIX_FMT_YUVJ420P:
                     av_frame.format = AV_PIX_FMT_YUV420P;
@@ -633,10 +633,10 @@ struct libav_codec_context_t
         switch (av_context->codec_type)
         {
             case AVMEDIA_TYPE_AUDIO:
-                media_data = std::move(get_audio_data());
+                media_data = get_audio_data();
             break;
             case AVMEDIA_TYPE_VIDEO:
-                media_data = std::move(get_video_data());
+                media_data = get_video_data();
             break;
         }
 
