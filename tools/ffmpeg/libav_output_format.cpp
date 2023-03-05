@@ -91,10 +91,12 @@ struct libav_output_format::context_t
 
         struct AVFormatContext*     m_context;
         stream_info_t::list_t       m_streams;
+        bool                        m_write_header;
 
 
         native_context_t()
             : m_context(nullptr)
+            , m_write_header(false)
         {
 
         }
@@ -108,6 +110,7 @@ struct libav_output_format::context_t
         {
             if (m_context == nullptr)
             {
+                m_write_header = false;
                 if (config.is_valid())
                 {
                     url_format_t url_format = utils::fetch_url_format(config.url);
@@ -157,15 +160,11 @@ struct libav_output_format::context_t
                             utils::set_options(&av_options
                                                , config.options);
 
-                            if (avformat_write_header(m_context
-                                                      , &av_options) < 0)
-                            {
-                                av_dict_free(&av_options);
-                                break;
-                            }
+                            m_write_header = avformat_write_header(m_context
+                                                                   , &av_options) >= 0;
 
                             av_dict_free(&av_options);
-                            return true;
+                            return m_write_header;
 
                         }
                         while(false);
@@ -181,7 +180,11 @@ struct libav_output_format::context_t
         {
             if (m_context != nullptr)
             {
-                av_write_trailer(m_context);
+                if (m_write_header)
+                {
+                    av_write_trailer(m_context);
+                    m_write_header = false;
+                }
 
                 for (std::uint32_t i = 0; i < m_context->nb_streams; i++)
                 {
@@ -262,7 +265,7 @@ struct libav_output_format::context_t
                     av_packet.data = const_cast<std::uint8_t*>(static_cast<const std::uint8_t*>(frame.data));
                     av_packet.size = frame.size;
                     av_packet.pts = frame.info.pts;
-                    av_packet.pts = frame.info.dts;
+                    av_packet.dts = frame.info.dts;
 
                     switch(av_stream.codecpar->codec_type)
                     {
