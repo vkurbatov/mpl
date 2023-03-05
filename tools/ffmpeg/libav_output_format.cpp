@@ -153,15 +153,18 @@ struct libav_output_format::context_t
                                 }
                             }
 
-                            if ((m_context->oformat->flags & (AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH)) != 0)
+                            AVDictionary* av_options = nullptr;
+                            utils::set_options(&av_options
+                                               , config.options);
+
+                            if (avformat_write_header(m_context
+                                                      , &av_options) < 0)
                             {
-                                if (avformat_write_header(m_context
-                                                          , nullptr) < 0)
-                                {
-                                    break;
-                                }
+                                av_dict_free(&av_options);
+                                break;
                             }
 
+                            av_dict_free(&av_options);
                             return true;
 
                         }
@@ -178,10 +181,7 @@ struct libav_output_format::context_t
         {
             if (m_context != nullptr)
             {
-                if ((m_context->oformat->flags & (AVFMT_GLOBALHEADER | AVFMT_ALLOW_FLUSH)) != 0)
-                {
-                    av_write_trailer(m_context);
-                }
+                av_write_trailer(m_context);
 
                 for (std::uint32_t i = 0; i < m_context->nb_streams; i++)
                 {
@@ -263,13 +263,6 @@ struct libav_output_format::context_t
                     av_packet.size = frame.size;
                     av_packet.pts = frame.info.pts;
                     av_packet.pts = frame.info.dts;
-                    /*
-                    if (av_packet.pts == AV_NOPTS_VALUE)
-                    {
-                        av_packet.pts = 0;
-                    }
-
-                    av_packet.dts = 0;*/
 
                     switch(av_stream.codecpar->codec_type)
                     {

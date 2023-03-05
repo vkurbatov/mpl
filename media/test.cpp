@@ -941,10 +941,33 @@ void test15()
 {
     ffmpeg::libav_register();
 
-    std::string input_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";;
+    auto audio_input_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+                                                               , true
+                                                               , "pulse");
+    auto audio_output_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+                                                                , false
+                                                                , "pulse");
+
+    std::cout << "Audio input pulse devices: " << std::endl;
+    for (const auto& c : audio_input_list)
+    {
+        std::cout << c.name << std::endl;
+    }
+
+    std::cout << "Audio output pulse devices: " << std::endl;
+    for (const auto& c : audio_output_list)
+    {
+        std::cout << c.name << std::endl;
+    }
+    //return;
+
+    // std::string input_url = "pulse://alsa_input.usb-Logitech_USB_Headset_Logitech_USB_Headset-00.mono-fallback";
+    std::string input_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     std::string input_options = {};
 
+    // std::string output_url = "pulse://alsa_output.usb-Logitech_USB_Headset_Logitech_USB_Headset-00.analog-stereo";
     std::string output_url = "pulse://alsa_output.pci-0000_00_05.0.analog-stereo";
+    std::string output_options = "buffer_size=480";
     auto libav_input_device_params = property_helper::create_tree();
     {
         property_writer writer(*libav_input_device_params);
@@ -956,6 +979,7 @@ void test15()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
+        writer.set<std::string>("options", output_options);
         audio_format_impl audio_format(audio_format_id_t::pcm16
                                        , 48000
                                        , 2);

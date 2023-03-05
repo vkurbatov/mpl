@@ -159,13 +159,16 @@ class libav_output_device : public i_device
     {
         device_type_t   device_type = device_type_t::libav_out;
         std::string     url;
+        std::string     options;
         stream_map_t    streams;
 
         device_params_t(device_type_t device_type = device_type_t::libav_out
                 , const std::string_view& url = {}
+                , const std::string_view& options = {}
                 , stream_map_t&& streams = {})
             : device_type(device_type)
             , url(url)
+            , options(options)
             , streams(std::move(streams))
         {
 
@@ -182,6 +185,7 @@ class libav_output_device : public i_device
             property_reader reader(params);
             if (reader.get("url", url))
             {
+                reader.get("options", options);
                 if (auto s  = reader["streams"])
                 {
                     streams.clear();
@@ -198,6 +202,7 @@ class libav_output_device : public i_device
             property_writer writer(params);
             if (writer.set("url", url))
             {
+                writer.set("options", options, {});
                 if (auto s = detail::serialize_stream_list(streams))
                 {
                     return writer.set("streams", s);
@@ -258,6 +263,16 @@ class libav_output_device : public i_device
             }
 
             return stream_id_undefined;
+        }
+
+        ffmpeg::libav_output_format::config_t native_config() const
+        {
+            return
+            {
+                url,
+                options,
+                native_streams()
+            };
         }
 
         bool is_valid() const
@@ -501,10 +516,7 @@ public:
 
         while(libav_output_device::is_open())
         {
-            ffmpeg::libav_output_format::config_t native_config;
-
-            native_config.url = m_device_params.url;
-            native_config.streams = m_device_params.native_streams();
+            ffmpeg::libav_output_format::config_t native_config = m_device_params.native_config();
 
             ffmpeg::libav_output_format native_publisher(native_config);
             change_state(channel_state_t::connecting);
