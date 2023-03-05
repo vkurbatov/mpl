@@ -1,5 +1,6 @@
 #include "libav_transcoder_factory.h"
 
+#include "core/property_reader.h"
 #include "core/convert_utils.h"
 #include "core/option_helper.h"
 
@@ -188,12 +189,15 @@ class libav_transcoder : public i_media_converter
 public:
     using u_ptr_t = std::unique_ptr<libav_transcoder>;
 
-    static u_ptr_t create(const i_media_format &media_format
+    static u_ptr_t create(const i_property &property
                           , bool encoder)
     {
-        if (media_format.media_type() == MediaType)
+        property_reader reader(property);
+        format_impl_t media_format;
+        if (reader.get("format", media_format)
+                && media_format.is_encoded())
         {
-            if (auto transcoder = std::make_unique<libav_transcoder>(static_cast<const i_format_t&>(media_format)
+            if (auto transcoder = std::make_unique<libav_transcoder>(std::move(media_format)
                                                                      , encoder))
             {
                 if (transcoder->is_init())
@@ -206,10 +210,10 @@ public:
         return nullptr;
     }
 
-    libav_transcoder(const i_format_t &media_format
+    libav_transcoder(format_impl_t&& media_format
                      , bool encoder)
         : m_output_sink(nullptr)
-        , m_output_format(media_format)
+        , m_output_format(std::move(media_format))
         , m_frame_splitter(0)
         , m_frame_id(0)
         , m_wait_first_frame(false)
@@ -491,16 +495,18 @@ libav_transcoder_factory::libav_transcoder_factory(bool encoder_factory)
 
 }
 
-i_media_converter::u_ptr_t libav_transcoder_factory::create_converter(const i_media_format &media_format)
+i_media_converter::u_ptr_t libav_transcoder_factory::create_converter(const i_property& params)
 {
-    switch(media_format.media_type())
+    property_reader reader(params);
+    switch(reader.get<media_type_t>("format.media_type"
+                                    , media_type_t::undefined))
     {
         case media_type_t::audio:
-            return libav_transcoder<media_type_t::audio>::create(media_format
+            return libav_transcoder<media_type_t::audio>::create(params
                                                                 , m_encoder_factory);
         break;
         case media_type_t::video:
-            return libav_transcoder<media_type_t::video>::create(media_format
+            return libav_transcoder<media_type_t::video>::create(params
                                                                  , m_encoder_factory);
         break;
         default:;

@@ -29,6 +29,7 @@ namespace mpl::media
 {
 
 constexpr std::size_t default_max_queue_size = 1000;
+constexpr std::size_t default_max_repeat_errors = 10;
 
 using stream_list_t = std::vector<i_media_format::u_ptr_t>;
 using stream_map_t = std::map<std::int32_t, i_media_format::u_ptr_t>;
@@ -541,7 +542,7 @@ public:
                             err_count = 0;
                         }
                     }
-                    if (err_count > 10)
+                    if (err_count > default_max_repeat_errors)
                     {
                         break;
                     }

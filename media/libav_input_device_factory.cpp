@@ -22,6 +22,57 @@
 namespace mpl::media
 {
 
+struct stream_t
+{
+    using list_t = std::vector<stream_t>;
+    ffmpeg::stream_info_t   stream_info;
+    timestamp_t             timestamp;
+    frame_id_t              frame_id;
+
+    static stream_t::list_t create_list(ffmpeg::stream_info_t::list_t&& streams)
+    {
+        stream_t::list_t stream_list;
+
+        for (auto && s : streams)
+        {
+            stream_list.emplace_back(std::move(s));
+        }
+
+        return stream_list;
+    }
+
+    stream_t(ffmpeg::stream_info_t&& stream_info)
+        : stream_info(std::move(stream_info))
+        , timestamp(0)
+        , frame_id(0)
+    {
+
+    }
+
+    void reset()
+    {
+        timestamp = 0;
+        frame_id = 0;
+    }
+
+    void next()
+    {
+        frame_id++;
+    }
+
+    timestamp_t push_timestamp(timestamp_t native_timestamp)
+    {
+        if (frame_id == 0)
+        {
+            timestamp = native_timestamp;
+            return 0;
+        }
+
+        return native_timestamp - timestamp;
+    }
+
+};
+
 class libav_input_device : public i_device
 {
     using mutex_t = base::shared_spin_lock;
@@ -190,7 +241,7 @@ public:
 
             if (native_input_device.open())
             {
-                auto streams = native_input_device.streams();
+                auto streams = stream_t::create_list(native_input_device.streams());
                 change_state(channel_state_t::connected);
 
                 while(is_open()
@@ -199,9 +250,11 @@ public:
                     ffmpeg::frame_ref_t libav_frame;
                     if (native_input_device.read(libav_frame))
                     {
+                        auto& stream = streams[libav_frame.info.stream_id];
                         error_counter = 0;
-                        on_native_frame(streams[libav_frame.info.stream_id]
+                        on_native_frame(stream
                                         , libav_frame);
+                        stream.next();
                     }
                     else
                     {
@@ -233,22 +286,22 @@ public:
     }
 
 
-    bool on_native_frame(const ffmpeg::stream_info_t& stream_info
+    bool on_native_frame(stream_t& stream
                          , ffmpeg::frame_ref_t& libav_frame)
     {
         if (libav_frame.size > 0)
         {
-            switch(stream_info.media_info.media_type)
+            switch(stream.stream_info.media_info.media_type)
             {
                 case ffmpeg::media_type_t::audio:
                 {
                     audio_format_impl format;
-                    if (core::utils::convert(stream_info
+                    if (core::utils::convert(stream.stream_info
                                              , format))
                     {
                         audio_frame_impl frame(format
-                                               , libav_frame.info.stream_id
-                                               , libav_frame.info.timestamp());
+                                               , stream.frame_id
+                                               , stream.push_timestamp(libav_frame.info.timestamp()));
 
                         frame.smart_buffers().set_buffer(main_media_buffer_index
                                                          , smart_buffer(libav_frame.data
@@ -256,14 +309,14 @@ public:
 
                         message_frame_ref_impl message_frame(frame);
 
-                        m_router.send_message(message_frame);
+                        return m_router.send_message(message_frame);
                     }
                 }
                 break;
                 case ffmpeg::media_type_t::video:
                 {
                     video_format_impl format;
-                    if (core::utils::convert(stream_info
+                    if (core::utils::convert(stream.stream_info
                                              , format))
                     {
                         i_video_frame::frame_type_t frame_type = format.is_convertable()
@@ -276,8 +329,8 @@ public:
                         }
 
                         video_frame_impl frame(format
-                                               , libav_frame.info.stream_id
-                                               , libav_frame.info.timestamp()
+                                               , stream.frame_id
+                                               , stream.push_timestamp(libav_frame.info.timestamp())
                                                , frame_type);
 
                         frame.smart_buffers().set_buffer(main_media_buffer_index
@@ -286,7 +339,7 @@ public:
 
                         message_frame_ref_impl message_frame(frame);
 
-                        m_router.send_message(message_frame);
+                        return m_router.send_message(message_frame);
                     }
                 }
                 break;
@@ -294,8 +347,7 @@ public:
             }
         }
 
-        // нужно всегда возвращать true, иначе граббер будет копить входящий поток для отложенного чтения
-        return true;
+        return false;
     }
 
     // i_channel interface

@@ -13,7 +13,7 @@ public:
     using s_ptr_t = std::shared_ptr<i_media_converter_factory>;
 
     virtual ~i_media_converter_factory() = default;
-    virtual i_media_converter::u_ptr_t create_converter(const i_media_format& output_format) = 0;
+    virtual i_media_converter::u_ptr_t create_converter(const i_property& params) = 0;
 };
 
 }

@@ -3,11 +3,14 @@
 
 #include "i_video_format.h"
 #include "core/option_impl.h"
+#include "core/i_parametrizable.h"
+#include <string>
 
 namespace mpl::media
 {
 
 class video_format_impl : public i_video_format
+        , public i_parametrizable
 {
     video_format_id_t       m_format_id;
     std::int32_t            m_width;
@@ -46,8 +49,10 @@ public:
     video_format_impl& set_options(const i_option& options);
     video_format_impl& assign(const i_video_format& other);
 
-    bool set_params(const i_property& params);
-    bool get_params(i_property& params) const;
+    bool set_params(const i_property& params) override;
+    bool get_params(i_property& params) const override;
+
+    i_property::u_ptr_t get_params(const std::string& path = {}) const;
 
     option_impl& options();
 

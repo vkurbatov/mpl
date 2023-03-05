@@ -1,6 +1,7 @@
 #include "libav_audio_converter_factory.h"
 
 #include "core/convert_utils.h"
+#include "core/property_reader.h"
 #include "core/option_helper.h"
 #include "core/i_buffer_collection.h"
 
@@ -46,21 +47,27 @@ class libav_audio_converter : public i_media_converter
 public:
     using u_ptr_t = std::unique_ptr<libav_audio_converter>;
 
-    static u_ptr_t create(const i_media_format &output_format)
+    static u_ptr_t create(const i_property &params)
     {
-        if (output_format.media_type() == media_type_t::audio
-                && output_format.is_valid()
-                && output_format.is_convertable())
+        property_reader reader(params);
+        audio_format_impl audio_format;
+        if (reader.get("format"
+                       , audio_format))
         {
-            return std::make_unique<libav_audio_converter>(static_cast<const i_audio_format&>(output_format));
+            if (audio_format.media_type() == media_type_t::audio
+                    && audio_format.is_valid()
+                    && audio_format.is_convertable())
+            {
+                return std::make_unique<libav_audio_converter>(std::move(audio_format));
 
+            }
         }
 
         return nullptr;
     }
 
-    libav_audio_converter(const i_audio_format &output_format)
-        : m_output_format(output_format)
+    libav_audio_converter(audio_format_impl &&output_format)
+        : m_output_format(std::move(output_format))
     {
         detail::audio_info_from_format(m_output_format
                                        , m_output_audio_info);
@@ -158,9 +165,9 @@ libav_audio_converter_factory::libav_audio_converter_factory()
 
 }
 
-i_media_converter::u_ptr_t libav_audio_converter_factory::create_converter(const i_media_format &output_format)
+i_media_converter::u_ptr_t libav_audio_converter_factory::create_converter(const i_property &params)
 {
-    return libav_audio_converter::create(output_format);
+    return libav_audio_converter::create(params);
 }
 
 

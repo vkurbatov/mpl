@@ -44,6 +44,7 @@ set(PUBLIC_HEADERS
     i_property.h
     i_property_value.h
     i_property_tree.h
+    i_parametrizable.h
     i_option.h
     i_option_value.h
     i_data_object.h

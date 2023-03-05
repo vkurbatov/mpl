@@ -1,5 +1,6 @@
 #include "libav_video_converter_factory.h"
 
+#include "core/property_reader.h"
 #include "core/convert_utils.h"
 #include "core/option_helper.h"
 #include "core/i_buffer_collection.h"
@@ -50,21 +51,24 @@ class libav_video_converter : public i_media_converter
 public:
     using u_ptr_t = std::unique_ptr<libav_video_converter>;
 
-    static u_ptr_t create(const i_media_format &output_format)
+    static u_ptr_t create(const i_property& params)
     {
-        if (output_format.media_type() == media_type_t::video
-                && output_format.is_valid()
-                && output_format.is_convertable())
+        property_reader reader(params);
+        video_format_impl video_format;
+        if (reader.get("format", video_format))
         {
-            return std::make_unique<libav_video_converter>(static_cast<const i_video_format&>(output_format));
-
+            if (video_format.is_valid()
+                    && video_format.is_convertable())
+            {
+                return std::make_unique<libav_video_converter>(std::move(video_format));
+            }
         }
 
         return nullptr;
     }
 
-    libav_video_converter(const i_video_format &output_format)
-        : m_output_format(output_format)
+    libav_video_converter(video_format_impl &&video_format)
+        : m_output_format(video_format)
     {
         detail::fragment_info_from_format(m_output_format
                                           , m_output_fragment_info);
@@ -170,9 +174,9 @@ libav_video_converter_factory::libav_video_converter_factory()
 
 }
 
-i_media_converter::u_ptr_t libav_video_converter_factory::create_converter(const i_media_format &output_format)
+i_media_converter::u_ptr_t libav_video_converter_factory::create_converter(const i_property& params)
 {
-    return libav_video_converter::create(output_format);
+    return libav_video_converter::create(params);
 }
 
 

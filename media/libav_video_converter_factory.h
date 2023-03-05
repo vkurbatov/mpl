@@ -14,7 +14,7 @@ public:
 
     // i_media_converter_factory interface
 public:
-    i_media_converter::u_ptr_t create_converter(const i_media_format &output_format) override;
+    i_media_converter::u_ptr_t create_converter(const i_property& params) override;
 };
 
 }

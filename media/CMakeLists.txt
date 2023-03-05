@@ -52,8 +52,6 @@ set(PUBLIC_HEADERS
     i_video_frame.h
     i_device.h
     i_device_factory.h
-    i_media_transcoder.h
-    i_media_transcoder_factory.h
     )
 
 set(PRIVATE_HEADERS

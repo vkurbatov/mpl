@@ -122,6 +122,19 @@ bool audio_format_impl::get_params(i_property &params) const
     return false;
 }
 
+i_property::u_ptr_t audio_format_impl::get_params(const std::string &path) const
+{
+    if (auto params = property_helper::create_tree())
+    {
+        if (property_writer(*params).set(path, *this))
+        {
+            return params;
+        }
+    }
+
+    return nullptr;
+}
+
 i_option& audio_format_impl::options()
 {
     return m_options;

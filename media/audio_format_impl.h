@@ -2,12 +2,15 @@
 #define MPL_AUDIO_FORMAT_IMPL_H
 
 #include "i_audio_format.h"
+#include "core/i_parametrizable.h"
 #include "core/option_impl.h"
+#include <string>
 
 namespace mpl::media
 {
 
 class audio_format_impl : public i_audio_format
+        , public i_parametrizable
 {
     audio_format_id_t       m_format_id;
     std::int32_t            m_sample_rate;
@@ -40,8 +43,10 @@ public:
 
     audio_format_impl& assign(const i_audio_format& other);
 
-    bool set_params(const i_property& params);
-    bool get_params(i_property& params) const;
+    bool set_params(const i_property& params) override;
+    bool get_params(i_property& params) const override;
+    i_property::u_ptr_t get_params(const std::string& path = {}) const;
+
 
     i_option& options();
 

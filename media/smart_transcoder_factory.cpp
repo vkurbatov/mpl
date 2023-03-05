@@ -1,5 +1,6 @@
 #include "smart_transcoder_factory.h"
 
+#include "core/property_reader.h"
 #include "message_frame_impl.h"
 
 #include "audio_frame_impl.h"
@@ -40,8 +41,11 @@ bool is_compatible_format(const Format& input_format
     return input_format.is_compatible(output_format);
 }
 
+template<media_type_t MediaType>
 class converter_manager
 {
+    using format_impl_t = typename detail::format_types_t<MediaType>::format_impl_t;
+
     i_media_converter_factory&  m_media_decoders;
     i_media_converter_factory&  m_media_encoders;
     i_media_converter_factory&  m_media_converters;
@@ -57,36 +61,45 @@ public:
 
     }
 
-    i_media_converter::u_ptr_t create_decoder(const i_media_format& encode_format
+    i_media_converter::u_ptr_t create_decoder(const format_impl_t& encode_format
                                               , i_message_sink* sink)
     {
-        if (auto decoder = m_media_decoders.create_converter(encode_format))
+        if (auto decoder_params = encode_format.get_params("format"))
         {
-            decoder->set_sink(sink);
-            return decoder;
+            if (auto decoder = m_media_decoders.create_converter(*decoder_params))
+            {
+                decoder->set_sink(sink);
+                return decoder;
+            }
         }
 
         return nullptr;
     }
-    i_media_converter::u_ptr_t create_encoder(const i_media_format& decode_format
+    i_media_converter::u_ptr_t create_encoder(const format_impl_t& decode_format
                                               , i_message_sink* sink)
     {
-        if (auto encoder = m_media_encoders.create_converter(decode_format))
+        if (auto encoder_params = decode_format.get_params("format"))
         {
-            encoder->set_sink(sink);
-            return encoder;
+            if (auto encoder = m_media_encoders.create_converter(*encoder_params))
+            {
+                encoder->set_sink(sink);
+                return encoder;
+            }
         }
 
         return nullptr;
 
     }
-    i_media_converter::u_ptr_t create_converter(const i_media_format& convert_format
+    i_media_converter::u_ptr_t create_converter(const format_impl_t& convert_format
                                                 , i_message_sink* sink)
     {
-        if (auto converter = m_media_converters.create_converter(convert_format))
+        if (auto converter_params = convert_format.get_params("format"))
         {
-            converter->set_sink(sink);
-            return converter;
+            if (auto converter = m_media_converters.create_converter(*converter_params))
+            {
+                converter->set_sink(sink);
+                return converter;
+            }
         }
 
         return nullptr;
@@ -147,47 +160,54 @@ class smart_transcoder : public i_media_converter
         output
     };
 
-    detail::converter_manager       m_converter_manager;
+    detail::converter_manager<MediaType>    m_converter_manager;
 
-    format_impl_t                   m_input_format;
-    format_impl_t                   m_output_format;
+    format_impl_t                           m_input_format;
+    format_impl_t                           m_output_format;
 
-    i_media_converter::u_ptr_t      m_decoder;
-    i_media_converter::u_ptr_t      m_encoder;
-    i_media_converter::u_ptr_t      m_converter;
+    i_media_converter::u_ptr_t              m_decoder;
+    i_media_converter::u_ptr_t              m_encoder;
+    i_media_converter::u_ptr_t              m_converter;
 
-    detail::frame_sink<MediaType>   m_decoder_sink;
-    detail::frame_sink<MediaType>   m_encoder_sink;
-    detail::frame_sink<MediaType>   m_converter_sink;
+    detail::frame_sink<MediaType>           m_decoder_sink;
+    detail::frame_sink<MediaType>           m_encoder_sink;
+    detail::frame_sink<MediaType>           m_converter_sink;
 
-    i_message_sink*                 m_output_sink;
+    i_message_sink*                         m_output_sink;
 
-    bool                            m_is_init;
-    bool                            m_is_transit;
+    bool                                    m_is_init;
+    bool                                    m_is_transit;
 
 public:
     using u_ptr_t = std::unique_ptr<smart_transcoder>;
 
-    static u_ptr_t create(const i_format_t &output_format
+    static u_ptr_t create(const i_property &params
                           , i_media_converter_factory &media_decoders
                           , i_media_converter_factory &media_encoders
                           , i_media_converter_factory &media_converters)
     {
-        return std::make_unique<smart_transcoder>(output_format
-                                                 , media_decoders
-                                                 , media_encoders
-                                                 , media_converters);
+        property_reader reader(params);
+        format_impl_t media_format;
+        if (reader.get("format", media_format))
+        {
+            return std::make_unique<smart_transcoder>(std::move(media_format)
+                                                     , media_decoders
+                                                     , media_encoders
+                                                     , media_converters);
+        }
+
+        return nullptr;
     }
 
 
-    smart_transcoder(const i_format_t &output_format
+    smart_transcoder(format_impl_t&& output_format
                      , i_media_converter_factory &media_decoders
                      , i_media_converter_factory &media_encoders
                      , i_media_converter_factory &media_converters)
         : m_converter_manager(media_decoders
                               , media_encoders
                               , media_converters)
-        , m_output_format(output_format)
+        , m_output_format(std::move(output_format))
         , m_decoder_sink([&](const auto& frame, const auto& options)
                         { return on_decoder_frame(frame, options); } )
         , m_encoder_sink([&](const auto& frame, const auto& options)
@@ -426,18 +446,20 @@ smart_transcoder_factory::smart_transcoder_factory(i_media_converter_factory &me
 
 }
 
-i_media_converter::u_ptr_t smart_transcoder_factory::create_converter(const i_media_format &convert_format)
+i_media_converter::u_ptr_t smart_transcoder_factory::create_converter(const i_property &params)
 {
-    switch(convert_format.media_type())
+    property_reader reader(params);
+    switch(reader.get<media_type_t>("format.media_type"
+                                    , media_type_t::undefined))
     {
         case media_type_t::audio:
-            return smart_transcoder<media_type_t::audio>::create(static_cast<const i_audio_format&>(convert_format)
+            return smart_transcoder<media_type_t::audio>::create(params
                                                                 , m_media_decoders
                                                                 , m_media_encoders
                                                                 , m_media_converters);
         break;
         case media_type_t::video:
-            return smart_transcoder<media_type_t::video>::create(static_cast<const i_video_format&>(convert_format)
+            return smart_transcoder<media_type_t::video>::create(params
                                                                 , m_media_decoders
                                                                 , m_media_encoders
                                                                 , m_media_converters);

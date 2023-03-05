@@ -457,8 +457,8 @@ void test8()
 
         option_writer(video_format.options()).set(opt_codec_params, encoder_options);
 
-        auto audio_transcoder = smart_factory.create_converter(audio_format);
-        auto video_transcoder = smart_factory.create_converter(video_format);
+        auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
+        auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
 
         message_sink_impl sink(handler);
 
@@ -852,8 +852,8 @@ void test13()
     option_writer(video_format.options()).set(opt_codec_params, encoder_options);
     option_writer(video_format.options()).set(opt_fmt_stream_id, 1);
 
-    auto audio_transcoder = smart_factory.create_converter(audio_format);
-    auto video_transcoder = smart_factory.create_converter(video_format);
+    auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
+    auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
 
     auto libav_output_device_params = property_helper::create_tree();
     {
@@ -1034,8 +1034,9 @@ void tests()
 {
     //test1();
     //test6();
-    // test12();
-    test15();
+    test9();
+    //test13();
+    // test15();
 }
 
 }
