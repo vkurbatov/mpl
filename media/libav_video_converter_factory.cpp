@@ -68,7 +68,7 @@ public:
     }
 
     libav_video_converter(video_format_impl &&video_format)
-        : m_output_format(video_format)
+        : m_output_format(std::move(video_format))
     {
         detail::fragment_info_from_format(m_output_format
                                           , m_output_fragment_info);

@@ -893,7 +893,7 @@ void test13()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
-    core::utils::sleep(durations::seconds(60));
+    core::utils::sleep(durations::seconds(600));
 
     input_audio_device->control(channel_control_t::close());
     input_video_device->control(channel_control_t::close());

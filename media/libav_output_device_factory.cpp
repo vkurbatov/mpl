@@ -36,37 +36,28 @@ using stream_map_t = std::map<std::int32_t, i_media_format::u_ptr_t>;
 
 namespace detail
 {
-
     template<typename Format>
     bool check_and_append_format(Format&& format
-                                , stream_map_t& streams)
+                                , stream_list_t& streams)
     {
         if (format != nullptr
                 && format->is_valid())
         {
             option_writer writer(format->options());
 
-            std::int32_t stream_id = writer.get<stream_id_t>(opt_fmt_stream_id
-                                                              , stream_id_undefined);
+            std::int32_t stream_id = streams.size();
+            writer.set<stream_id_t>(opt_fmt_stream_id
+                                     , stream_id);
 
-            if (stream_id <= stream_id_undefined)
-            {
-                stream_id = streams.empty()
-                        ? 0
-                        : std::prev(streams.end())->first + 1;
-                writer.set<stream_id_t>(opt_fmt_stream_id
-                                         , stream_id);
-            }
-
-            return streams.emplace(stream_id
-                                  , std::move(format)).second;
+            streams.emplace_back(std::move(format));
+            return true;
         }
 
         return false;
     }
 
     bool deserialize_stream_list(const i_property& property
-                                 , stream_map_t& streams)
+                                 , stream_list_t& streams)
     {
         bool result = false;
         if (property.property_type() == property_type_t::array)
@@ -99,11 +90,11 @@ namespace detail
         return result;
     }
 
-    i_property::u_ptr_t serialize_stream_list(const stream_map_t& stream_map)
+    i_property::u_ptr_t serialize_stream_list(const stream_list_t& streams_list)
     {
         i_property::array_t streams;
 
-        for (const auto& [id, s] : stream_map)
+        for (const auto& s : streams_list)
         {
             if (s != nullptr)
             {
@@ -148,6 +139,108 @@ namespace detail
 
 }
 
+
+struct timestamp_manager_t
+{
+    struct stream_context_t
+    {
+        using list_t = std::vector<stream_context_t>;
+        ffmpeg::stream_info_t       stream;
+        std::size_t                 frame_id;
+        timestamp_t                 first_timestamp;
+
+        stream_context_t(const ffmpeg::stream_info_t& stream_info)
+            : stream(stream_info)
+            , frame_id(0)
+            , first_timestamp(0)
+        {
+
+        }
+
+        void reset()
+        {
+            frame_id = 0;
+            first_timestamp = 0;
+        }
+
+        timestamp_t push_pts(timestamp_t native_timestamp)
+        {
+            if (frame_id == 0)
+            {
+                first_timestamp = native_timestamp;
+            }
+
+            frame_id++;
+            return native_timestamp - first_timestamp;
+        }
+    };
+
+    stream_context_t::list_t        streams;
+    bool                            open;
+
+    static stream_context_t::list_t create_stream_context_list(const ffmpeg::stream_info_list_t& streams)
+    {
+        stream_context_t::list_t stream_context_list;
+
+        for (const auto& s : streams)
+        {
+            stream_context_list.emplace_back(stream_context_t(s));
+        }
+
+        return stream_context_list;
+    }
+
+    timestamp_manager_t(const ffmpeg::stream_info_list_t& streams)
+        : streams(create_stream_context_list(streams))
+        , open(false)
+    {
+
+    }
+
+    void reset()
+    {
+        for (auto& s : streams)
+        {
+            s.reset();
+        }
+    }
+
+    bool has_sync() const
+    {
+        bool result = !streams.empty();
+
+        for (const auto& s : streams)
+        {
+            result &= s.frame_id > 0;
+        }
+
+        return result;
+    }
+
+    bool check_and_rescale_frame(ffmpeg::frame_t& libav_frame)
+    {
+        if (static_cast<std::size_t>(libav_frame.info.stream_id) < streams.size())
+        {
+            auto& stream = streams[libav_frame.info.stream_id];
+            libav_frame.info.pts = stream.push_pts(libav_frame.info.timestamp());
+            libav_frame.info.dts = libav_frame.info.pts;
+
+            if (!open)
+            {
+                if (has_sync())
+                {
+                    reset();
+                    open = true;
+                }
+            }
+
+            return open;
+        }
+
+        return false;
+    }
+};
+
 class libav_output_device : public i_device
 {
     using thread_t = std::thread;
@@ -161,12 +254,13 @@ class libav_output_device : public i_device
         device_type_t   device_type = device_type_t::libav_out;
         std::string     url;
         std::string     options;
-        stream_map_t    streams;
+        stream_list_t   streams;
+        bool            sync_tracks;
 
         device_params_t(device_type_t device_type = device_type_t::libav_out
                 , const std::string_view& url = {}
                 , const std::string_view& options = {}
-                , stream_map_t&& streams = {})
+                , stream_list_t&& streams = {})
             : device_type(device_type)
             , url(url)
             , options(options)
@@ -216,16 +310,18 @@ class libav_output_device : public i_device
         ffmpeg::stream_info_list_t native_streams() const
         {
             ffmpeg::stream_info_list_t stream_list;
-            for (const auto& [id, s] : streams)
+            stream_id_t stream_id = 0;
+            for (const auto& s : streams)
             {
                 ffmpeg::stream_info_t stream_info;
                 if (s != nullptr
                         && core::utils::convert(*s
                                                 , stream_info))
                 {
-                    stream_info.stream_id = id;
+                    stream_info.stream_id = stream_id;
                     stream_list.emplace_back(std::move(stream_info));
                 }
+                stream_id++;
             }
 
             return stream_list;
@@ -233,9 +329,9 @@ class libav_output_device : public i_device
 
         const i_media_format* get_format(stream_id_t stream_id) const
         {
-            if (auto it = streams.find(stream_id); it != streams.end())
+            if (static_cast<std::size_t>(stream_id) < streams.size())
             {
-                return it->second.get();
+                return streams[stream_id].get();
             }
             return nullptr;
         }
@@ -246,13 +342,14 @@ class libav_output_device : public i_device
                                                                        , stream_id_undefined);
             if (found_stream_id == stream_id_undefined)
             {
-                for (const auto& [id, s] : streams)
+                stream_id_t stream_id = 0;
+                for (const auto& s : streams)
                 {
-                    if (s != nullptr
-                            && s->is_compatible(format))
+                    if (s->is_compatible(format))
                     {
-                        return id;
+                        return stream_id;
                     }
+                    stream_id++;
                 }
             }
             else if (auto f = get_format(found_stream_id))
@@ -520,6 +617,8 @@ public:
             ffmpeg::libav_output_format::config_t native_config = m_device_params.native_config();
 
             ffmpeg::libav_output_format native_publisher(native_config);
+            timestamp_manager_t pts_manager(native_config.streams);
+
             change_state(channel_state_t::connecting);
             if (native_publisher.open())
             {
@@ -532,14 +631,17 @@ public:
                           && libav_output_device::is_open())
                     {
 
-                        if (!native_publisher.write(libav_frame.get_frame_ref()))
+                        if (pts_manager.check_and_rescale_frame(libav_frame))
                         {
-                            err_count++;
-                            break;
-                        }
-                        else
-                        {
-                            err_count = 0;
+                            if (!native_publisher.write(libav_frame.get_frame_ref()))
+                            {
+                                err_count++;
+                                break;
+                            }
+                            else
+                            {
+                                err_count = 0;
+                            }
                         }
                     }
                     if (err_count > default_max_repeat_errors)

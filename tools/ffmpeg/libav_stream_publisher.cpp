@@ -210,7 +210,7 @@ struct libav_output_format_context_t
                 }
 
                 av_stream->id = strm.stream_id;
-                av_stream->codecpar->bit_rate =  strm.codec_info.codec_params.bitrate;
+                av_stream->codecpar->bit_rate = strm.codec_info.codec_params.bitrate;
                 av_stream->codecpar->codec_id = static_cast<AVCodecID>(strm.codec_info.id);
                 av_stream->codecpar->frame_size = strm.codec_info.codec_params.frame_size;
 

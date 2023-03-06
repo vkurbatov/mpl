@@ -67,6 +67,14 @@ bool add_stream(AVFormatContext* context
                 default:;
             }
 
+            if (context->oformat->flags & AVFMT_GLOBALHEADER)
+            {
+                if (stream_info.extra_data == nullptr)
+                {
+                    stream_info.extra_data = utils::extract_global_header(stream_info);
+                }
+            }
+
             if (stream_info.extra_data != nullptr)
             {
                 av_stream->codecpar->extradata = stream_info.extra_data->data();

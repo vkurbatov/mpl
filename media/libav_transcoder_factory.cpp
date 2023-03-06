@@ -219,7 +219,7 @@ public:
         , m_wait_first_frame(false)
 
     {
-        m_is_init = initialize(media_format
+        m_is_init = initialize(m_output_format
                                , encoder);
     }
 
@@ -385,6 +385,7 @@ public:
                     m_wait_first_frame = false;
                 }
 
+
                 if (m_frame_splitter.fragment_size() > 0
                         && media_frame.media_type() == media_type_t::audio)
                 {
@@ -398,7 +399,8 @@ public:
 
                     frame_time -= samples;
 
-                    while(!queue.empty() && result >= 0)
+                    while(!queue.empty()
+                          && result >= 0)
                     {
 
                         if (m_native_transcoder.transcode(queue.front().data()
@@ -425,9 +427,14 @@ public:
                 {
                     while(!frame_queue.empty())
                     {
+
+                        // auto samples = frame_queue.front().media_data.size();
                         push_frame(std::move(frame_queue.front())
                                              , media_frame
                                              , frame_time);
+
+
+                        frame_time += m_native_transcoder.config().codec_info.codec_params.frame_size;
 
                         frame_queue.pop();
                     }

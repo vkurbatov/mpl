@@ -53,6 +53,32 @@ extra_data_t extract_global_header(const stream_info_t &stream_info)
             codec_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
             stream_info.media_info >> (*codec_context);
 
+            switch(codec_context->codec_type)
+            {
+                case AVMEDIA_TYPE_AUDIO:
+                {
+                    if (codec_context->sample_fmt == AV_SAMPLE_FMT_NONE)
+                    {
+                        if (codec->sample_fmts != nullptr)
+                        {
+                            codec_context->sample_fmt = *codec->sample_fmts;
+                        }
+                    }
+                }
+                break;
+                case AVMEDIA_TYPE_VIDEO:
+                {
+                    if (codec_context->pix_fmt == AV_PIX_FMT_NONE)
+                    {
+                        if (codec->pix_fmts != nullptr)
+                        {
+                            codec_context->pix_fmt = *codec->pix_fmts;
+                        }
+                    }
+                }
+                break;
+            }
+
             if (avcodec_open2(codec_context
                               , codec
                               , nullptr) >= 0)
@@ -189,7 +215,10 @@ AVCodecContext &operator <<(AVCodecContext &av_context
     {
         case media_type_t::audio:
             av_context.codec_type = AVMEDIA_TYPE_AUDIO;
-            av_context.sample_fmt = static_cast<AVSampleFormat>(media_info.audio_info.sample_format);
+            if (media_info.audio_info.sample_format != sample_format_none)
+            {
+                av_context.sample_fmt = static_cast<AVSampleFormat>(media_info.audio_info.sample_format);
+            }
             av_context.sample_rate = media_info.audio_info.sample_rate;
             av_context.channels = media_info.audio_info.channels;
             av_context.channel_layout = av_context.channels > 1
