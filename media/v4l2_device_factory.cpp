@@ -81,6 +81,7 @@ class v4l2_device : public i_device
 
     frame_id_t                  m_frame_counter;
     timestamp_t                 m_frame_timestamp;
+    timestamp_t                 m_real_timestamp;
 
     timestamp_t                 m_start_time;
 
@@ -106,6 +107,7 @@ public:
                           , [&](const auto& event) { on_native_device_state(event);} )
         , m_frame_counter(0)
         , m_frame_timestamp(0)
+        , m_real_timestamp(0)
         , m_state(channel_state_t::ready)
         , m_open(false)
     {
@@ -178,6 +180,7 @@ public:
     {
         m_frame_counter = 0;
         m_frame_timestamp = 0;
+        m_real_timestamp = 0;
         m_start_time = mpl::core::utils::now();
     }
 
@@ -188,15 +191,13 @@ public:
 
     void process_timesatamp(std::uint32_t fps)
     {
-        if (fps == 0)
+        m_real_timestamp = (elapsed_time() * video_sample_rate) / durations::seconds(1);
+        m_frame_timestamp = m_real_timestamp;
+        if (fps != 0)
         {
-            m_frame_timestamp += (video_sample_rate * durations::seconds(1)) / elapsed_time();
+            auto duration = video_sample_rate / fps;
+            m_frame_timestamp -= m_frame_timestamp % (duration / 2);
         }
-        else
-        {
-            m_frame_timestamp += video_sample_rate / fps;
-        }
-
     }
 
     bool on_native_frame(v4l2::frame_t&& frame)
