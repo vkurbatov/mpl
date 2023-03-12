@@ -81,17 +81,13 @@ public:
         {
             if (!audio_format.is_compatible(m_input_format))
             {
-
-                if (detail::audio_info_from_format(m_input_format
-                                                   , m_input_audio_info))
-                {
-                    m_input_format.assign(audio_format);
-                    return true;
-                }
-                else
-                {
-                    return true;
-                }
+                m_input_format.assign(audio_format);
+                return detail::audio_info_from_format(m_input_format
+                                                      , m_input_audio_info);
+            }
+            else
+            {
+                return true;
             }
         }
 
@@ -113,8 +109,8 @@ public:
                 if (!output_samples.empty())
                 {
                     audio_frame_impl converted_audio_frame(m_output_format
-                                                           , converted_audio_frame.frame_id()
-                                                           , converted_audio_frame.timestamp());
+                                                           , audio_frame.frame_id()
+                                                           , audio_frame.timestamp());
 
                     converted_audio_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                                     , smart_buffer(std::move(output_samples)));

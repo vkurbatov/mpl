@@ -260,7 +260,6 @@ public:
         auto tune_stream_info = m_native_transcoder.config();
         tune_stream_info.codec_info.id = ffmpeg::codec_id_none;
 
-        format.set_format_id(audio_format_id_t::pcm16);
         if (m_native_transcoder.type() == ffmpeg::transcoder_type_t::encoder
             && tune_stream_info.codec_info.codec_params.frame_size > 0)
         {
@@ -436,6 +435,8 @@ public:
 
                         frame_queue.pop();
                     }
+
+                    return true;
                 }
 
             }

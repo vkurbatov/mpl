@@ -26,40 +26,6 @@ namespace ffmpeg
 namespace utils
 {
 
-template<typename T>
-T max_val()
-{
-    return std::numeric_limits<T>::max();
-}
-
-template<> float max_val()
-{
-    return 1.0f;
-}
-template<> double max_val()
-{
-    return 1.0;
-}
-
-template<typename Tin, typename Tout = std::int16_t>
-void sample_convert(const void* input_buffer
-                    , void* output_buffer
-                    , std::size_t samples
-                    , std::int32_t step = 1)
-{
-    auto input_ptr = reinterpret_cast<const Tin*>(input_buffer);
-    auto output_ptr = reinterpret_cast<Tout*>(output_buffer);
-
-    while (samples-- > 0)
-    {
-        //*output_ptr = (*input_ptr * max_val<Tout>()) / static_cast<Tout>(max_val<Tin>());
-        *output_ptr = static_cast<Tout>((static_cast<double>(*input_ptr) * static_cast<double>(max_val<Tout>())) / static_cast<double>(max_val<Tin>()));
-
-        output_ptr += step > 0 ? step : 1;
-        input_ptr += step < 0 ? -step : 1 ;
-    }
-}
-
 
 void update_context_info(const AVCodecContext& av_context
                          , stream_info_t& stream_info
@@ -207,7 +173,6 @@ struct libav_codec_context_t
     struct AVCodecContext*      av_context;
     struct AVFrame              av_frame;
     struct AVPacket             av_packet;
-    media_data_t                resample_buffer;
     std::uint32_t               context_id;
     std::int32_t                frame_counter;
     bool                        is_encoder;
@@ -410,58 +375,30 @@ struct libav_codec_context_t
     {
         media_data_t audio_data;
 
-        bool is_planar_format = av_frame.format >= AV_SAMPLE_FMT_U8P
-                && av_frame.nb_samples > 1;
-
+        bool is_planar_format = av_sample_fmt_is_planar(static_cast<AVSampleFormat>(av_frame.format));
+        
+        auto sample_size = av_get_bytes_per_sample(static_cast<AVSampleFormat>(av_frame.format));
         auto total_samples = av_frame.nb_samples * av_frame.channels;
 
-        audio_data.resize(total_samples * 2, 0);
+        audio_data.resize(total_samples * sample_size, 0);
 
         if (is_planar_format)
         {
-            for (int c = 0; c < av_frame.channels && av_frame.data[c] != nullptr; c++)
+            auto part_size = audio_data.size() / av_frame.channels;
+            for (int c = 0; c < av_frame.channels
+                 && av_frame.data[c] != nullptr; c++)
             {
-                auto data_ptr = audio_data.data() + c * 2;
-                switch(av_frame.format)
-                {
-                    case AV_SAMPLE_FMT_U8P:
-                        utils::sample_convert<std::int8_t>(av_frame.data[c], data_ptr, av_frame.nb_samples, av_frame.channels);
-                    break;
-                    case AV_SAMPLE_FMT_S16P:
-                        utils::sample_convert<std::int16_t>(av_frame.data[c], data_ptr, av_frame.nb_samples, av_frame.channels);
-                    break;
-                    case AV_SAMPLE_FMT_S32P:
-                        utils::sample_convert<std::int32_t>(av_frame.data[c], data_ptr, av_frame.nb_samples, av_frame.channels);
-                    break;
-                    case AV_SAMPLE_FMT_FLTP:
-                        utils::sample_convert<float>(av_frame.data[c], data_ptr, av_frame.nb_samples, av_frame.channels);
-                    break;
-                    case AV_SAMPLE_FMT_DBLP:
-                        utils::sample_convert<double>(av_frame.data[c], data_ptr, av_frame.nb_samples, av_frame.channels);
-                    break;
-                }
+                auto data_ptr = audio_data.data() + c * part_size;
+                memcpy(data_ptr
+                       , av_frame.data[c]
+                       , part_size);
             }
         }
         else
         {
-            switch(av_frame.format)
-            {
-                case AV_SAMPLE_FMT_U8:
-                    utils::sample_convert<std::int8_t>(av_frame.data[0], audio_data.data(), total_samples);
-                break;
-                case AV_SAMPLE_FMT_S16:
-                    utils::sample_convert<std::int16_t>(av_frame.data[0], audio_data.data(), total_samples);
-                break;
-                case AV_SAMPLE_FMT_S32:
-                    utils::sample_convert<std::int8_t>(av_frame.data[0], audio_data.data(), total_samples);
-                break;
-                case AV_SAMPLE_FMT_FLT:
-                    utils::sample_convert<float>(av_frame.data[0], audio_data.data(), total_samples);
-                break;
-                case AV_SAMPLE_FMT_DBL:
-                    utils::sample_convert<double>(av_frame.data[0], audio_data.data(), total_samples);
-                break;
-            }
+            memcpy(audio_data.data()
+                   , av_frame.data[0]
+                   , audio_data.size());
         }
 
         LOG_T << "Transcoder #" << context_id << ". Fetch PCM16 audio frame with size " << audio_data.size() << " bytes" LOG_END;
@@ -474,73 +411,29 @@ struct libav_codec_context_t
     bool set_audio_data(const void *data
                         , std::size_t size)
     {
-        av_frame.nb_samples = size / (2 * av_frame.channels);
+        auto sample_size = av_get_bytes_per_sample(static_cast<AVSampleFormat>(av_frame.format));
+        bool is_planar_format = av_sample_fmt_is_planar(static_cast<AVSampleFormat>(av_frame.format));
 
-        if (av_frame.format == AV_SAMPLE_FMT_S16)
+        av_frame.nb_samples = size / (sample_size * av_frame.channels);
+
+        auto data_ptr = const_cast<std::uint8_t*>(static_cast<const std::uint8_t*>(data));
+        if (is_planar_format)
         {
-            av_frame.data[0] = const_cast<std::uint8_t*>(static_cast<const std::uint8_t*>(data));
-            av_frame.linesize[0] = size;
+            auto part_size = size / av_frame.channels;
+            for (int c = 0; c < av_frame.channels; c++)
+            {
+                av_frame.data[c] = data_ptr;
+                av_frame.linesize[c] = part_size;
+                data_ptr += part_size;
+            }
         }
         else
         {
-            resample_buffer.resize(audio_info_t::sample_size(av_frame.format, av_frame.channels) * av_frame.nb_samples);
-            auto total_samples = av_frame.nb_samples * av_frame.channels;
-
-            bool is_planar_format = av_frame.format >= AV_SAMPLE_FMT_U8P;
-            av_frame.linesize[0] = 0;
-
-            if (is_planar_format)
-            {
-                auto plane_size = resample_buffer.size() /  av_frame.channels;
-                for (int c = 0; c < av_frame.channels; c++)
-                {
-                    auto offset = plane_size * c;
-                    auto data_ptr = static_cast<const std::uint8_t*>(data) + c * 2;
-                    switch(av_frame.format)
-                    {
-                        case AV_SAMPLE_FMT_U8P:
-                            utils::sample_convert<std::int16_t, std::int8_t>(data_ptr, resample_buffer.data() + offset, av_frame.nb_samples, -av_frame.channels);
-                        break;
-                        case AV_SAMPLE_FMT_S16P:
-                            utils::sample_convert<std::int16_t, std::int16_t>(data_ptr, resample_buffer.data() + offset, av_frame.nb_samples, -av_frame.channels);
-                        break;
-                        case AV_SAMPLE_FMT_S32P:
-                            utils::sample_convert<std::int16_t, std::int32_t>(data_ptr, resample_buffer.data() + offset, av_frame.nb_samples, -av_frame.channels);
-                        break;
-                        case AV_SAMPLE_FMT_FLTP:
-                            utils::sample_convert<std::int16_t, float>(data_ptr, resample_buffer.data() + offset, av_frame.nb_samples, -av_frame.channels);
-                        break;
-                        case AV_SAMPLE_FMT_DBLP:
-                            utils::sample_convert<std::int16_t, double>(data_ptr, resample_buffer.data() + offset, av_frame.nb_samples, -av_frame.channels);
-                        break;
-                    }
-                    av_frame.data[c] = resample_buffer.data() + offset;
-                }
-                av_frame.linesize[0] = resample_buffer.size();
-            }
-            else
-            {
-                switch(av_frame.format)
-                {
-                    case AV_SAMPLE_FMT_U8:
-                        utils::sample_convert<std::int16_t, std::int8_t>(av_frame.data[0], resample_buffer.data(), total_samples);
-                    break;
-                    case AV_SAMPLE_FMT_S32:
-                        utils::sample_convert<std::int16_t, std::int32_t>(av_frame.data[0], resample_buffer.data(), total_samples);
-                    break;
-                    case AV_SAMPLE_FMT_FLT:
-                        utils::sample_convert<std::int16_t, float>(av_frame.data[0], resample_buffer.data(), total_samples);
-                    break;
-                    case AV_SAMPLE_FMT_DBL:
-                        utils::sample_convert<std::int16_t, double>(av_frame.data[0], resample_buffer.data(), total_samples);
-                    break;
-                }
-
-                av_frame.data[0] = resample_buffer.data();
-                av_frame.linesize[0] = resample_buffer.size();
-            }
-
+            av_frame.data[0] = data_ptr;
+            av_frame.linesize[0] = size;
         }
+
+
 
         av_frame.pts += av_frame.nb_samples;
 
@@ -672,7 +565,7 @@ struct libav_codec_context_t
                 frame.info.media_info.media_type = media_type_t::audio;
                 frame.info.media_info.audio_info.sample_rate = av_frame.sample_rate;
                 frame.info.media_info.audio_info.channels = av_frame.channels;
-                frame.info.media_info.audio_info.sample_format = AV_SAMPLE_FMT_S16;//av_frame.format;
+                frame.info.media_info.audio_info.sample_format = av_frame.format;
             }
             else
             {

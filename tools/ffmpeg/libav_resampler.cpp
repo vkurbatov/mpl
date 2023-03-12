@@ -100,7 +100,6 @@ struct swr_wrapper
     {
         if (is_open())
         {
-
             auto input_samples = m_input_format.sample_size() != 0 ? input_size / m_input_format.sample_size() : 0;
 
             if (input_samples != 0)
