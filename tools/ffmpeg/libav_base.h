@@ -523,6 +523,8 @@ struct format_info_t
     format_id_t     format_id;
     codec_id_t      codec_id;
 
+    static const format_info_t& undefined();
+
     format_info_t(format_id_t format_id = unknown_format_id
                   , codec_id_t codec_id = codec_id_none);
 
@@ -530,6 +532,7 @@ struct format_info_t
 
     bool is_encoded() const;
     bool is_convertable() const;
+    bool is_undefined() const;
 };
 
 struct stream_info_t

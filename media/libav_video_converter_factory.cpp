@@ -103,8 +103,7 @@ public:
 
     bool on_video_frame(const i_video_frame& video_frame)
     {
-        if (m_output_sink != nullptr
-                && check_or_update_format(video_frame.format()))
+        if (check_or_update_format(video_frame.format()))
         {
             if (auto buffer = video_frame.buffers().get_buffer(main_media_buffer_index))
             {
@@ -139,12 +138,18 @@ public:
 public:
     bool send_message(const i_message &message) override
     {
-        if (message.category() == message_category_t::frame)
+        if (message.category() == message_category_t::frame
+                && m_output_sink != nullptr)
         {
             const i_message_frame& message_frame = static_cast<const i_message_frame&>(message);
             if (message_frame.frame().media_type() == media_type_t::video)
             {
-                return on_video_frame(static_cast<const i_video_frame&>(message_frame.frame()));
+                const auto& video_frame = static_cast<const i_video_frame&>(message_frame.frame());
+                if (video_frame.format().is_compatible(m_output_format))
+                {
+                    return m_output_sink->send_message(message);
+                }
+                return on_video_frame(video_frame);
             }
         }
 

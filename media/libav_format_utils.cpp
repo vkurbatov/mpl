@@ -27,7 +27,7 @@ using audio_table_t = std::unordered_map<audio_format_id_t
 
 static const video_table_t video_format_table =
 {
-    { video_format_id_t::undefined, { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::undefined, { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_none } },
     { video_format_id_t::yuv420p,   { ffmpeg::pixel_format_yuv420p, ffmpeg::codec_id_raw_video } },
     { video_format_id_t::yuv422p,   { ffmpeg::pixel_format_yuv422p, ffmpeg::codec_id_raw_video } },
     { video_format_id_t::yuv444p,   { ffmpeg::pixel_format_yuv444p, ffmpeg::codec_id_raw_video } },
@@ -107,6 +107,7 @@ OutMap create_format_map(const InMap& format_map)
 
     for (const auto& f : format_map)
     {
+        // if (out.find(f.second.format_id) == out.end())
         if (f.second.format_id != ffmpeg::unknown_format_id)
         {
             out.emplace(f.second.format_id
@@ -126,6 +127,7 @@ OutMap create_codec_map(const InMap& format_map)
 
     for (const auto& f : format_map)
     {
+        // if (out.find(f.second.codec_id) == out.end())
         if (f.second.codec_id > ffmpeg::codec_id_none)
         {
             out.emplace(f.second.codec_id
@@ -154,6 +156,12 @@ const std::unordered_map<audio_format_id_t,ffmpeg::format_info_t>& get_conversio
 template<typename F>
 bool convert(const F& format_id, ffmpeg::format_info_t& format_info)
 {
+    if (format_id == F::undefined)
+    {
+        format_info = ffmpeg::format_info_t::undefined();
+        return true;
+    }
+
     const auto& conversion_table = detail::get_conversion_map<F>();
     if (auto it = conversion_table.find(format_id); it != conversion_table.end())
     {
@@ -167,7 +175,14 @@ bool convert(const F& format_id, ffmpeg::format_info_t& format_info)
 template<typename F>
 bool convert(const ffmpeg::format_info_t& format_info, F& format_id)
 {
+    if (format_info.is_undefined())
+    {
+        format_id = F::undefined;
+        return true;
+    }
+
     const auto& conversion_table = detail::get_conversion_map<F>();
+
     if (format_info.is_encoded())
     {
         static const auto codec_table = create_codec_map<F>(conversion_table);
@@ -374,7 +389,7 @@ bool convert(const ffmpeg::stream_info_t& stream_info
 {
     if (stream_info.media_info.media_type == ffmpeg::media_type_t::audio)
     {
-        media::audio_format_id_t format_id;
+        media::audio_format_id_t format_id = media::audio_format_id_t::undefined;
         if (convert(stream_info.format_info()
                     , format_id))
         {
@@ -398,7 +413,7 @@ bool convert(const ffmpeg::stream_info_t& stream_info
 {
     if (stream_info.media_info.media_type == ffmpeg::media_type_t::video)
     {
-        media::video_format_id_t format_id;
+        media::video_format_id_t format_id = media::video_format_id_t::undefined;
         if (convert(stream_info.format_info()
                     , format_id))
         {

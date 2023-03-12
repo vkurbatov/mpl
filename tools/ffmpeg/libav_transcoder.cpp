@@ -302,10 +302,6 @@ struct libav_codec_context_t
                         {
                             av_context->sample_fmt = codec->sample_fmts[0];
                         }
-                        else
-                        {
-                            av_context->sample_fmt = AV_SAMPLE_FMT_S16;
-                        }
                         stream_info.media_info.audio_info.sample_format = av_context->sample_fmt;
                     }
 
@@ -336,10 +332,6 @@ struct libav_codec_context_t
                         if (codec->pix_fmts != nullptr)
                         {
                             av_context->pix_fmt = codec->pix_fmts[0];
-                        }
-                        else
-                        {
-                            av_context->pix_fmt = AV_PIX_FMT_YUV420P;
                         }
                         stream_info.media_info.video_info.pixel_format = av_context->pix_fmt;
                     }

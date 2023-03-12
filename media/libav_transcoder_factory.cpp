@@ -306,8 +306,6 @@ public:
                             auto tune_stream_info = m_native_transcoder.config();
                             tune_stream_info.codec_info.id = ffmpeg::codec_id_none;
 
-
-
                             if (core::utils::convert(tune_stream_info
                                                      , target_format))
                             {

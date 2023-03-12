@@ -130,12 +130,18 @@ public:
 public:
     bool send_message(const i_message &message) override
     {
-        if (message.category() == message_category_t::frame)
+        if (message.category() == message_category_t::frame
+                && m_output_sink != nullptr)
         {
             const i_message_frame& message_frame = static_cast<const i_message_frame&>(message);
             if (message_frame.frame().media_type() == media_type_t::audio)
             {
-                return on_audio_frame(static_cast<const i_audio_frame&>(message_frame.frame()));
+                const auto& audio_frame = static_cast<const i_audio_frame&>(message_frame.frame());
+                if (audio_frame.format().is_compatible(m_output_format))
+                {
+                    return m_output_sink->send_message(message);
+                }
+                return on_audio_frame(audio_frame);
             }
         }
 

@@ -140,7 +140,7 @@ public:
 
             change_state(channel_state_t::opening);
             if (m_native_device.open(m_device_params.url
-                                     , 2))
+                                     , 4))
             {
                 return true;
             }

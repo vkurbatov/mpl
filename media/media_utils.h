@@ -20,6 +20,7 @@ namespace utils
 
 timestamp_t get_video_frame_time(double frame_rate);
 
+
 bool convert_format_options(const i_option& options, i_property& property);
 bool convert_format_options(const i_property& property, i_option& options);
 

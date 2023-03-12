@@ -1,11 +1,13 @@
 #include "smart_transcoder_factory.h"
 
-#include "core/property_reader.h"
+#include "core/property_writer.h"
+#include "core/option_helper.h"
 #include "message_frame_impl.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 
+#include "media_option_types.h"
 
 namespace mpl::media
 {
@@ -40,6 +42,61 @@ bool is_compatible_format(const Format& input_format
 {
     return input_format.is_compatible(output_format);
 }
+
+void merge_format(const i_audio_format& input_format
+                  , audio_format_impl& output_format)
+{
+    if (!output_format.is_valid())
+    {
+        output_format.options().merge(input_format.options());
+        if (output_format.format_id() == audio_format_id_t::undefined)
+        {
+            output_format.set_format_id(input_format.format_id());
+        }
+
+        if (output_format.sample_rate() == 0)
+        {
+            output_format.set_sample_rate(input_format.sample_rate());
+        }
+
+        if (output_format.channels() == 0)
+        {
+            output_format.set_channels(input_format.channels());
+        }
+
+    }
+}
+
+void merge_format(const i_video_format& input_format
+                  , video_format_impl& output_format)
+{
+    if (!output_format.is_valid())
+    {
+
+        output_format.options().merge(input_format.options());
+        if (output_format.format_id() == video_format_id_t::undefined)
+        {
+            output_format.set_format_id(input_format.format_id());
+        }
+
+        if (output_format.width() == 0)
+        {
+            output_format.set_width(input_format.width());
+        }
+
+        if (output_format.height() == 0)
+        {
+            output_format.set_height(input_format.height());
+        }
+
+        if (output_format.frame_rate() == 0.0f)
+        {
+            output_format.set_frame_rate(input_format.frame_rate());
+        }
+
+    }
+}
+
 
 template<media_type_t MediaType>
 class converter_manager
@@ -160,10 +217,41 @@ class smart_transcoder : public i_media_converter
         output
     };
 
+    struct params_t
+    {
+        bool    transcode_always;
+        params_t(bool transcode_always = false)
+            : transcode_always(transcode_always)
+        {
+
+        }
+
+        params_t(const i_property& params)
+            : params_t()
+        {
+            load(params);
+        }
+
+        bool load(const i_property& params)
+        {
+            property_reader reader(params);
+            return reader.get("transcode_always", transcode_always);
+        }
+
+        bool store(i_property& params) const
+        {
+            property_writer writer(params);
+            return writer.set("transcode_always", transcode_always, false);
+        }
+    };
+
     detail::converter_manager<MediaType>    m_converter_manager;
+
+    params_t                                m_params;
 
     format_impl_t                           m_input_format;
     format_impl_t                           m_output_format;
+    format_impl_t                           m_real_output_format;
 
     i_media_converter::u_ptr_t              m_decoder;
     i_media_converter::u_ptr_t              m_encoder;
@@ -190,10 +278,13 @@ public:
         format_impl_t media_format;
         if (reader.get("format", media_format))
         {
+            params_t internal_params(params);
+
             return std::make_unique<smart_transcoder>(std::move(media_format)
-                                                     , media_decoders
-                                                     , media_encoders
-                                                     , media_converters);
+                                                      , std::move(internal_params)
+                                                      , media_decoders
+                                                      , media_encoders
+                                                      , media_converters);
         }
 
         return nullptr;
@@ -201,13 +292,16 @@ public:
 
 
     smart_transcoder(format_impl_t&& output_format
+                     , params_t&& params
                      , i_media_converter_factory &media_decoders
                      , i_media_converter_factory &media_encoders
                      , i_media_converter_factory &media_converters)
         : m_converter_manager(media_decoders
                               , media_encoders
                               , media_converters)
+        , m_params(std::move(params))
         , m_output_format(std::move(output_format))
+        , m_real_output_format(m_output_format)
         , m_decoder_sink([&](const auto& frame, const auto& options)
                         { return on_decoder_frame(frame, options); } )
         , m_encoder_sink([&](const auto& frame, const auto& options)
@@ -225,7 +319,8 @@ public:
                                    , const i_format_t& output_format)
     {
         if (!detail::is_compatible_format(input_format
-                                          , output_format))
+                                          , output_format)
+                || m_params.transcode_always)
         {
             format_impl_t input_convert_format(input_format);
             format_impl_t output_convert_format(output_format);
@@ -345,8 +440,12 @@ public:
         {
             m_input_format.assign(media_frame.format());
 
+            m_real_output_format = m_output_format;
+            detail::merge_format(m_input_format
+                                 , m_real_output_format);
+
             m_is_init = check_and_init_converters(m_input_format
-                                                  , m_output_format);
+                                                  , m_real_output_format);
 
             if (!m_is_init)
             {
@@ -428,7 +527,7 @@ public:
     }
     const i_media_format &output_format() const override
     {
-        return m_output_format;
+        return m_real_output_format;
     }
     void set_sink(i_message_sink *output_sink) override
     {

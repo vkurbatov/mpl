@@ -14,6 +14,7 @@ extern "C"
 #include <chrono>
 #include <thread>
 #include <map>
+#include <set>
 
 namespace ffmpeg
 {
@@ -768,6 +769,12 @@ bool frame_info_t::is_timestamp() const
             || pts != AV_NOPTS_VALUE;
 }
 
+const format_info_t &format_info_t::undefined()
+{
+    static const format_info_t undefined_format_info;
+    return undefined_format_info;
+}
+
 format_info_t::format_info_t(format_id_t format_id
                              , codec_id_t codec_id)
     : format_id(format_id)
@@ -791,6 +798,12 @@ bool format_info_t::is_convertable() const
 {
     return !is_encoded()
             && format_id != unknown_format_id;
+}
+
+bool format_info_t::is_undefined() const
+{
+    return format_id == unknown_format_id
+            && codec_id == codec_id_none;
 }
 
 extra_data_t stream_info_t::create_extra_data(const void *extra_data
@@ -1031,6 +1044,7 @@ std::string codec_info_t::to_string() const
             ? codec_name(id)
             : name;
 }
+
 
 pixel_formats_t codec_info_t::supported_video_formats() const
 {
