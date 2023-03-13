@@ -43,7 +43,7 @@ bool add_stream(AVFormatContext* context
     if (codec != nullptr)
     {
         auto av_stream = avformat_new_stream(context
-                                            , nullptr);
+                                            , codec);
 
         if (av_stream != nullptr)
         {
@@ -53,10 +53,10 @@ bool add_stream(AVFormatContext* context
             switch(av_stream->codecpar->codec_type)
             {
                 case AVMEDIA_TYPE_AUDIO:
-                    // av_stream->time_base = { 1, av_stream->codecpar->sample_rate };
+                    av_stream->time_base = { 1, av_stream->codecpar->sample_rate };
                 break;
                 case AVMEDIA_TYPE_VIDEO:
-                    // av_stream->time_base = { 1, static_cast<std::int32_t>(stream_info.media_info.video_info.fps) };
+                    av_stream->time_base = { 1, static_cast<std::int32_t>(stream_info.media_info.video_info.fps) };
                 break;
                 case AVMEDIA_TYPE_DATA:
 
@@ -67,8 +67,10 @@ bool add_stream(AVFormatContext* context
                 default:;
             }
 
+
             if (context->oformat->flags & AVFMT_GLOBALHEADER)
             {
+                av_stream->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
                 if (stream_info.extra_data == nullptr)
                 {
                     stream_info.extra_data = utils::extract_global_header(stream_info);

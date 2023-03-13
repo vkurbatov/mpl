@@ -49,7 +49,6 @@ extra_data_t extract_global_header(const stream_info_t &stream_info)
 
         if (codec_context != nullptr)
         {
-
             codec_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
             stream_info.media_info >> (*codec_context);
 
@@ -266,7 +265,7 @@ AVCodecParameters &operator <<(AVCodecParameters &av_codecpar
             av_codecpar.codec_type = AVMEDIA_TYPE_VIDEO;
             av_codecpar.width = media_info.video_info.size.width;
             av_codecpar.height = media_info.video_info.size.height;
-            av_codecpar.sample_aspect_ratio = av_d2q(media_info.video_info.fps, max_fps);
+            // av_codecpar.sample_aspect_ratio = av_d2q(media_info.video_info.fps, max_fps);
             av_codecpar.format = media_info.video_info.pixel_format;
             av_codecpar.sample_rate = video_sample_rate;
         break;
@@ -331,7 +330,7 @@ media_info_t &operator <<(media_info_t &media_info
             media_info.media_type = media_type_t::video;
             media_info.video_info.size.width= av_codecpar.width;
             media_info.video_info.size.height = av_codecpar.height;
-            media_info.video_info.fps = av_q2d(av_codecpar.sample_aspect_ratio) + 0.5;
+            // media_info.video_info.fps = av_q2d(av_codecpar.sample_aspect_ratio) + 0.5;
             media_info.video_info.pixel_format = av_codecpar.format;
         break;
         case AVMEDIA_TYPE_DATA:
@@ -365,6 +364,7 @@ AVStream& operator << (AVStream& av_stream
     av_stream.codecpar->frame_size = stream_info.codec_info.codec_params.frame_size;
 
 
+
     return av_stream;
 }
 
@@ -374,6 +374,13 @@ stream_info_t& operator << (stream_info_t& stream_info
     stream_info.media_info << *av_stream.codecpar;
     stream_info.stream_id = av_stream.index;
 
+    switch(stream_info.media_info.media_type)
+    {
+        case media_type_t::video:
+            stream_info.media_info.video_info.fps = av_q2d(av_stream.time_base) + 0.5;
+        break;
+        default:;
+    }
 
     stream_info.codec_info.id = av_stream.codecpar->codec_id;
     stream_info.codec_info.name = codec_info_t::codec_name(stream_info.codec_info.id);

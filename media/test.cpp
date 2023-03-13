@@ -1040,6 +1040,7 @@ void test16()
     std::string input_audio_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     std::string input_video_url = "/dev/video0";
     std::string output_url = "rtmp://127.0.0.1/cam1/stream";
+    //std::string output_url = "/home/user/test.mp4";
 
     auto libav_input_audio_params = property_helper::create_tree();
     {
@@ -1086,7 +1087,8 @@ void test16()
     /*option_writer(video_format.options()).set(opt_codec_params, encoder_options);
     option_writer(video_format.options()).set(opt_fmt_stream_id, 1);*/
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(transcode_video_format.options()).set(opt_fmt_stream_id, 1);
+    option_writer(transcode_video_format.options()).set(opt_fmt_stream_id, 0);
+    option_writer(transcode_audio_format.options()).set(opt_fmt_stream_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*transcode_audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*transcode_video_format.get_params("format"));
@@ -1096,13 +1098,6 @@ void test16()
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
         i_property::array_t streams;
-        if (auto ap = property_helper::create_tree())
-        {
-            if (audio_format.get_params(*ap))
-            {
-                streams.emplace_back(std::move(ap));
-            }
-        }
 
         if (auto vp = property_helper::create_tree())
         {
@@ -1111,6 +1106,15 @@ void test16()
                 streams.emplace_back(std::move(vp));
             }
         }
+
+        if (auto ap = property_helper::create_tree())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
 
         writer.set("streams", streams);
     }
@@ -1129,7 +1133,7 @@ void test16()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
-    core::utils::sleep(durations::seconds(600));
+    core::utils::sleep(durations::seconds(150));
 
     input_audio_device->control(channel_control_t::close());
     input_video_device->control(channel_control_t::close());

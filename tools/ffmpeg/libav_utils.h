@@ -3,6 +3,7 @@
 
 #include "libav_base.h"
 
+struct AVCodec;
 struct AVCodecContext;
 struct AVCodecParameters;
 struct AVDictionary;

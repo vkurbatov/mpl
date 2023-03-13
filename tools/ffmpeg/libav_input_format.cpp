@@ -218,7 +218,7 @@ struct libav_input_format::context_t
                             av_packet_rescale_ts(&m_packet, stream->time_base, { 1, stream->codecpar->sample_rate });
                         break;
                         case AVMEDIA_TYPE_VIDEO:
-                            av_packet_rescale_ts(&m_packet, stream->time_base, { 1, 90000 });
+                            av_packet_rescale_ts(&m_packet, stream->time_base, { 1, video_sample_rate });
                         break;
                     }
 

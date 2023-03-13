@@ -318,10 +318,12 @@ struct libav_codec_context_t
                                             , &av_options
                                             , options);
 
-                if (is_encoder && av_context->codec_id == AV_CODEC_ID_H264)
+                if (is_encoder
+                        && av_context->codec_id == AV_CODEC_ID_H264)
                 {
                     // av_dict_set(&av_options, "x264opts", "bframes=0", 0);
                     av_dict_set(&av_options, "bsf", "dump_extra=freq=keyframe", 0);
+                    // av_context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
                 }
 
                 av_context->workaround_bugs |= FF_BUG_AUTODETECT;
