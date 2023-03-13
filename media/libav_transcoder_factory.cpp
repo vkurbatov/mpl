@@ -10,7 +10,8 @@
 #include "core/message_event_impl.h"
 #include "core/event_channel_state.h"
 
-#include "core/data_splitter.h"
+//#include "core/data_splitter.h"
+#include "audio_frame_splitter.h"
 
 #include "media_option_types.h"
 #include "message_frame_impl.h"
@@ -179,7 +180,7 @@ class libav_transcoder : public i_media_converter
     format_impl_t               m_input_format;
     format_impl_t               m_output_format;
 
-    data_splitter               m_frame_splitter;
+    audio_frame_splitter        m_frame_splitter;
 
     frame_id_t                  m_frame_id;
     bool                        m_wait_first_frame;
@@ -214,7 +215,6 @@ public:
                      , bool encoder)
         : m_output_sink(nullptr)
         , m_output_format(std::move(media_format))
-        , m_frame_splitter(0)
         , m_frame_id(0)
         , m_wait_first_frame(false)
 
@@ -263,8 +263,10 @@ public:
         if (m_native_transcoder.type() == ffmpeg::transcoder_type_t::encoder
             && tune_stream_info.codec_info.codec_params.frame_size > 0)
         {
-            m_frame_splitter.reset(tune_stream_info.codec_info.codec_params.frame_size
-                                   * audio_format_helper(format).sample_size());
+            m_frame_splitter.setup(format
+                                   , tune_stream_info.codec_info.codec_params.frame_size);
+            /*m_frame_splitter.reset(tune_stream_info.codec_info.codec_params.frame_size
+                                   * audio_format_helper(format).sample_size());*/
         }
     }
 
@@ -383,15 +385,12 @@ public:
                 }
 
 
-                if (m_frame_splitter.fragment_size() > 0
+                if (m_frame_splitter.duration() > 0
                         && media_frame.media_type() == media_type_t::audio)
                 {
-                    auto sample_size = detail::get_sample_size(media_frame.format());
-                    auto samples = sample_size > 0
-                            ? m_frame_splitter.buffered_size() / sample_size
-                            : 0;
+                    auto samples = m_frame_splitter.buffered_samples();
 
-                    auto queue = m_frame_splitter.push_stream(buffer->data()
+                    auto queue = m_frame_splitter.push_frame(buffer->data()
                                                               , buffer->size());
 
                     frame_time -= samples;

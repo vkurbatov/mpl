@@ -14,6 +14,7 @@ class audio_format_helper
 public:
     audio_format_helper(const i_audio_format& audio_format);
 
+    bool is_planar() const;
     std::size_t bits_per_sample() const;
     std::size_t sample_size() const;
     timestamp_t duration_form_size(std::size_t size) const;

@@ -10,6 +10,7 @@ set(SOURCES
     media_utils.cpp
     format_utils.cpp
     libav_format_utils.cpp
+    audio_frame_splitter.cpp
     audio_format_impl.cpp
     audio_info.cpp
     audio_frame_impl.cpp
@@ -59,6 +60,7 @@ set(PRIVATE_HEADERS
     media_utils.h
     libav_format_utils.h
     format_utils.h
+    audio_frame_splitter.h
     audio_format_impl.h
     video_format_impl.h
     audio_frame_impl.h

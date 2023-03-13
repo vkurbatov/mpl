@@ -11,6 +11,11 @@ audio_format_helper::audio_format_helper(const i_audio_format &audio_format)
 
 }
 
+bool audio_format_helper::is_planar() const
+{
+    return audio_format_info_t::get_info(m_audio_format.format_id()).planar;
+}
+
 std::size_t audio_format_helper::bits_per_sample() const
 {
     return audio_format_info_t::get_info(m_audio_format.format_id()).bps;
