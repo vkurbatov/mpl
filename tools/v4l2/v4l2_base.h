@@ -50,6 +50,7 @@ struct frame_size_t
 
 struct frame_info_t
 {
+    using array_t = std::vector<frame_info_t>;
     frame_size_t    size;
     std::uint32_t   fps;
     pixel_format_t  pixel_format;
@@ -65,8 +66,6 @@ struct frame_info_t
 
 };
 
-typedef std::vector<frame_info_t> format_list_t;
-
 struct frame_t
 {
     frame_info_t    frame_info;
@@ -79,24 +78,24 @@ struct frame_t
             , frame_data_t&& frame_data);
 };
 
-typedef std::queue<frame_t> frame_queue_t;
-
-typedef std::int32_t value_type_t;
+using frame_queue_t = std::queue<frame_t>;
+using ctrl_value_t = std::int32_t;
+using ctrl_id_t = std::uint32_t;
 
 struct control_range_t
 {
-    value_type_t   min;
-    value_type_t   max;
+    ctrl_value_t   min;
+    ctrl_value_t   max;
 
-    control_range_t(value_type_t min
-                    , value_type_t max);
+    control_range_t(ctrl_value_t min
+                    , ctrl_value_t max);
 
     bool operator == (const control_range_t& range) const;
     bool operator != (const control_range_t& range) const;
 
-   value_type_t range_length() const;
+   ctrl_value_t range_length() const;
 
-    bool is_join(value_type_t value) const;
+    bool is_join(ctrl_value_t value) const;
 };
 
 enum control_type_t
@@ -107,40 +106,56 @@ enum control_type_t
     menu
 };
 
-struct control_menu_item_t
+struct control_menu_t
 {
-    std::int32_t id;
-    std::string  name;
+    using array_t = std::vector<control_menu_t>;
+    ctrl_id_t       id;
+    std::string     name;
 
-    control_menu_item_t(std::uint32_t id
+    control_menu_t(std::uint32_t id
                         , const std::string& name);
 };
 
-using control_menu_t = std::vector<control_menu_item_t>;
-
-struct control_t
+struct control_info_t
 {
-    std::int32_t    id;
-    std::string     name;
-    value_type_t    step;
-    value_type_t    default_value;
-    value_type_t    current_value;
-    control_range_t range;
-    control_menu_t  menu;
+    using array_t = std::vector<control_info_t>;
+    using map_t = std::map<ctrl_id_t, control_info_t>;
 
-    control_t(std::uint32_t id
-              , const std::string& name
-              , value_type_t step
-              , value_type_t default_value
-              , value_type_t current_value
-              , value_type_t min
-              , value_type_t max);
+    ctrl_id_t               id;
+    std::string             name;
+    ctrl_value_t            step;
+    ctrl_value_t            default_value;
+    ctrl_value_t            current_value;
+    control_range_t         range;
+    control_menu_t::array_t menu;
+
+    control_info_t(ctrl_id_t id
+                  , const std::string& name
+                  , ctrl_value_t step
+                  , ctrl_value_t default_value
+                  , ctrl_value_t current_value
+                  , ctrl_value_t min
+                  , ctrl_value_t max);
 
     control_type_t type() const;
 };
 
-typedef std::map<std::uint32_t, control_t> control_map_t;
-typedef std::vector<control_t> control_list_t;
+struct ctrl_command_t
+{
+    using array_t = std::vector<ctrl_command_t>;
+
+    ctrl_id_t       id;
+    ctrl_value_t    value;
+    bool            is_set;
+    bool            success;
+    std::uint32_t   delay_ms;
+
+    ctrl_command_t(ctrl_id_t id = 0
+                   , ctrl_value_t value = 0
+                   , bool is_set = false
+                   , bool success = false
+                   , std::uint32_t delay_ms = 0);
+};
 
 struct buffer_item_t
 {

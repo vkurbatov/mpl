@@ -38,7 +38,7 @@ namespace detail
     };
 
     std::size_t fetch_supported_fps(handle_t handle
-                                    , format_list_t& format_list
+                                    , frame_info_t::array_t& format_list
                                     , const frame_size_t& frame_size
                                     , pixel_format_t pixel_format)
     {
@@ -85,7 +85,7 @@ namespace detail
     }
 
     std::size_t fetch_supported_frame_sizes(handle_t handle
-                                            , format_list_t& format_list
+                                            , frame_info_t::array_t& format_list
                                             , pixel_format_t pixel_format)
     {
         std::size_t result = 0;
@@ -131,7 +131,7 @@ namespace detail
     }
 
     std::size_t fetch_supported_formats(handle_t handle
-                                        , format_list_t& format_list)
+                                        , frame_info_t::array_t& format_list)
     {
         std::size_t result = 0;
 
@@ -210,9 +210,9 @@ bool io_wait(handle_t handle
     return select(handle + 1, &rfds, NULL, NULL, &tv) > 0;
 }
 
-format_list_t fetch_supported_format(handle_t handle)
+frame_info_t::array_t fetch_supported_format(handle_t handle)
 {
-    format_list_t format_list;
+    frame_info_t::array_t format_list;
 
     detail::fetch_supported_formats(handle
                                    , format_list);
@@ -259,10 +259,11 @@ bool fetch_fps(handle_t handle
     return false;
 }
 
-control_map_t fetch_control_list(handle_t handle)
-{
-    control_map_t control_list;
 
+std::size_t fetch_control_list(handle_t handle
+                        , control_info_t::map_t &controls)
+{
+    std::size_t result = 0;
     struct v4l2_query_ext_ctrl queryctrl = {};
     queryctrl.id = V4L2_CTRL_CLASS_USER | V4L2_CTRL_FLAG_NEXT_CTRL | V4L2_CTRL_FLAG_GRABBED;
 
@@ -274,7 +275,7 @@ control_map_t fetch_control_list(handle_t handle)
         if ((queryctrl.flags & (V4L2_CTRL_FLAG_DISABLED | V4L2_CTRL_FLAG_READ_ONLY)) == 0
                 && xioctl(handle, VIDIOC_G_CTRL, &c) >= 0)
         {
-            control_t control(c.id
+            control_info_t control(c.id
                               , queryctrl.name
                               , queryctrl.step
                               , queryctrl.default_value
@@ -299,14 +300,24 @@ control_map_t fetch_control_list(handle_t handle)
                 }
             }
 
-            control_list.emplace(control.id, std::move(control));
+            controls.emplace(control.id, std::move(control));
+            result++;
         }
 
         queryctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
-
     }
 
-    return control_list;
+    return result;
+}
+
+control_info_t::map_t fetch_control_list(handle_t handle)
+{
+    control_info_t::map_t controls;
+
+    fetch_control_list(handle, controls);
+
+    return controls;
+
 }
 
 bool set_frame_format(handle_t handle
@@ -466,6 +477,7 @@ bool get_control(handle_t handle, uint32_t id, int32_t &value)
 
     return false;
 }
+
 
 
 }

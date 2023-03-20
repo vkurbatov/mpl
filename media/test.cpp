@@ -1071,9 +1071,9 @@ void test16()
                                    , 48000
                                    , 2);
     video_format_impl video_format (video_format_id_t::h264
-                                    , 640
-                                    , 480
-                                    , 15);
+                                    , 1280
+                                    , 720
+                                    , 30);
 
     audio_format_impl transcode_audio_format(audio_format_id_t::aac
                                            , 0
@@ -1083,7 +1083,7 @@ void test16()
                                               , 0
                                               , 0);
 
-    std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
+    std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=30;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
     /*option_writer(video_format.options()).set(opt_codec_params, encoder_options);
     option_writer(video_format.options()).set(opt_fmt_stream_id, 1);*/
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);

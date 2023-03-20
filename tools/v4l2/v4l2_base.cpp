@@ -85,7 +85,7 @@ frame_t::frame_t(const frame_info_t &frame_info
 
 }
 
-control_menu_item_t::control_menu_item_t(uint32_t id, const std::string &name)
+control_menu_t::control_menu_t(uint32_t id, const std::string &name)
     : id(id)
     , name(name)
 {
@@ -93,8 +93,8 @@ control_menu_item_t::control_menu_item_t(uint32_t id, const std::string &name)
 }
 
 
-control_range_t::control_range_t(value_type_t min
-                                 , value_type_t max)
+control_range_t::control_range_t(ctrl_value_t min
+                                 , ctrl_value_t max)
     : min(min)
     , max(max)
 {
@@ -112,23 +112,23 @@ bool control_range_t::operator !=(const control_range_t &range) const
     return !operator == (range);
 }
 
-value_type_t control_range_t::range_length() const
+ctrl_value_t control_range_t::range_length() const
 {
     return max - min;
 }
 
-bool control_range_t::is_join(value_type_t value) const
+bool control_range_t::is_join(ctrl_value_t value) const
 {
     return value >= min && value <= max;
 }
 
-control_t::control_t(uint32_t id
+control_info_t::control_info_t(ctrl_id_t id
                      , const std::string &name
-                     , value_type_t step
-                     , value_type_t default_value
-                     , value_type_t current_value
-                     , value_type_t min
-                     , value_type_t max)
+                     , ctrl_value_t step
+                     , ctrl_value_t default_value
+                     , ctrl_value_t current_value
+                     , ctrl_value_t min
+                     , ctrl_value_t max)
     : id(id)
     , name(name)
     , step(step)
@@ -139,7 +139,7 @@ control_t::control_t(uint32_t id
 
 }
 
-control_type_t control_t::type() const
+control_type_t control_info_t::type() const
 {
     if (id != 0)
     {
@@ -160,6 +160,20 @@ control_type_t control_t::type() const
     return control_type_t::undefined;
 }
 
+ctrl_command_t::ctrl_command_t(ctrl_id_t id
+                               , ctrl_value_t value
+                               , bool is_set
+                               , bool success
+                               , std::uint32_t delay_ms)
+    : id(id)
+    , value(value)
+    , is_set(is_set)
+    , success(success)
+    , delay_ms(delay_ms)
+{
+
+}
+
 buffer_item_t &mapped_buffer_t::current()
 {
     return buffers[index];
@@ -169,5 +183,6 @@ void mapped_buffer_t::next()
 {
     index = (index + 1) % buffers.size();
 }
+
 
 }

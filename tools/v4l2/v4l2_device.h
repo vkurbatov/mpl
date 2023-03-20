@@ -27,11 +27,14 @@ public:
     bool is_opened() const;
     bool is_established() const;
 
-    format_list_t get_supported_formats() const;
+    frame_info_t::array_t get_supported_formats() const;
     frame_info_t get_format() const;
     bool set_format(const frame_info_t& format);
 
-    control_list_t get_control_list() const;
+    control_info_t::array_t get_control_list() const;
+
+    std::size_t controls(ctrl_command_t::array_t& controls);
+
     bool set_control(std::uint32_t control_id, std::int32_t value);
     std::int32_t get_control(std::uint32_t control_id, std::int32_t default_value = 0);
 

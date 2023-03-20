@@ -20,7 +20,7 @@ bool io_wait(handle_t handle
 
 handle_t open_device(const std::string& uri_device);
 bool close_device(handle_t handle);
-format_list_t fetch_supported_format(handle_t handle);
+frame_info_t::array_t fetch_supported_format(handle_t handle);
 bool fetch_frame_format(handle_t handle
                         , frame_size_t& frame_size
                         , pixel_format_t& pixel_format);
@@ -45,7 +45,10 @@ bool get_control(handle_t handle
 mapped_buffer_t map(handle_t handle, std::size_t buffer_count = 1);
 std::size_t unmap(handle_t handle, mapped_buffer_t& mapped_buffer);
 
-control_map_t fetch_control_list(handle_t handle);
+control_info_t::map_t fetch_control_list(handle_t handle);
+std::size_t fetch_control_list(handle_t handle
+                        , control_info_t::map_t& controls);
+
 frame_data_t fetch_frame_data(handle_t handle
                               , mapped_buffer_t& mapped_buffer
                               , std::uint32_t timeout = 0);

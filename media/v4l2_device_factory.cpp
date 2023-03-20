@@ -19,6 +19,7 @@
 
 #include <shared_mutex>
 #include <atomic>
+#include <thread>
 
 namespace mpl::media
 {
@@ -139,9 +140,17 @@ public:
             reset();
 
             change_state(channel_state_t::opening);
+
+            v4l2::frame_info_t  format({1280, 720}, 30, v4l2::pixel_format_mjpeg);
+            m_native_device.set_format(format);
+
             if (m_native_device.open(m_device_params.url
                                      , 4))
             {
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                auto controls = m_native_device.get_control_list();
+
                 return true;
             }
 
