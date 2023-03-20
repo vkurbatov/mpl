@@ -41,6 +41,8 @@ public:
     bool set_relative_control(std::uint32_t control_id, double value);
     double get_relatuive_control(std::uint32_t control_id, double default_value = 0);
 
+    bool read_frame(frame_t& frame);
+
     bool get_ptz(double& pan, double& tilt, double& zoom);
     bool set_ptz(double pan, double tilt, double zoom);
 

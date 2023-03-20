@@ -151,6 +151,18 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 auto controls = m_native_device.get_control_list();
 
+                v4l2::ctrl_command_t::array_t ctrls;
+                for (const auto& c : controls)
+                {
+                    ctrls.emplace_back(c.id
+                                       , 0
+                                       , false
+                                       , false
+                                       , 0);
+                }
+
+                auto result = m_native_device.controls(ctrls);
+
                 return true;
             }
 

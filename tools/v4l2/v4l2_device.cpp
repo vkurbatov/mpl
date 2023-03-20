@@ -463,22 +463,6 @@ struct v4l2_device::context_t
             {
                 for (auto& c: request.controls)
                 {
-                    std::int32_t min = 0;
-                    std::int32_t max = 0;
-
-                    if (request.is_relative)
-                    {
-                        auto it = m_control_list.find(c.id);
-
-                        if (it == m_control_list.end())
-                        {
-                            break;
-                        }
-
-                        min = it->second.range.min;
-                        max = it->second.range.max;
-                    }
-
                     if (c.delay_ms > 0
                             && m_running)
                     {
@@ -598,6 +582,11 @@ struct v4l2_device::context_t
 
     }
 
+    bool read_frame(frame_t& frame)
+    {
+        return false;
+    }
+
     bool set_ptz(double pan
                  , double tilt
                  , double zoom)
@@ -714,6 +703,11 @@ double v4l2_device::get_relatuive_control(uint32_t control_id, double default_va
 {
     return m_context->get_relative_control(control_id
                                            , default_value);
+}
+
+bool v4l2_device::read_frame(frame_t &frame)
+{
+    return m_context->read_frame(frame);
 }
 
 bool v4l2_device::get_ptz(double &pan
