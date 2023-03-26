@@ -14,10 +14,12 @@ struct v4l2_object_t
     mapped_buffer_t mapped_buffer;
 
     static u_ptr_t create(const std::string& url
-                          , std::size_t buffer_count)
+                          , std::size_t buffer_count
+                          , const frame_info_t& frame_info = {})
     {
         if (auto dev = std::make_unique<v4l2_object_t>(url
-                                                       , buffer_count))
+                                                       , buffer_count
+                                                       , frame_info))
         {
             if (dev->is_open())
             {
@@ -29,12 +31,17 @@ struct v4l2_object_t
     }
 
     v4l2_object_t(const std::string& url
-                  , std::size_t buffer_count)
+                  , std::size_t buffer_count
+                  , const frame_info_t& frame_info = {})
 
         : handle(v4l2::open_device(url))
     {
         if (handle >= 0)
         {
+            if (!frame_info.is_null())
+            {
+                set_frame_info(frame_info);
+            }
             mapped_buffer = v4l2::map(handle
                                       , buffer_count);
         }
@@ -97,9 +104,15 @@ struct v4l2_object_t
     bool set_frame_info(const frame_info_t& frame_info)
     {
 
-        return set_frame_format(frame_info.size
-                                , frame_info.pixel_format)
-                && set_fps(frame_info.fps);
+        if (handle >= 0)
+        {
+
+            return set_frame_format(frame_info.size
+                                    , frame_info.pixel_format)
+                        && set_fps(frame_info.fps);
+        }
+
+        return false;
 
     }
 
@@ -229,11 +242,16 @@ struct v4l2_input_device::context_t
         if (m_v4l2_object == nullptr)
         {
             m_v4l2_object = v4l2_object_t::create(m_config.url
-                                                  , m_config.read_timeout);
+                                                  , m_config.buffers);
             if (m_v4l2_object != nullptr)
             {
-
+                if (load_info())
+                {
+                    return true;
+                }
             }
+            reset_info();
+            m_v4l2_object.reset();
         }
 
         return false;
@@ -245,9 +263,7 @@ struct v4l2_input_device::context_t
         {
             m_v4l2_object.reset();
 
-            m_frame_info = {};
-            m_control_list.clear();
-            m_format_list.clear();
+            reset_info();
 
             return true;
         }
@@ -289,13 +305,23 @@ struct v4l2_input_device::context_t
     {
         if (is_opened())
         {
-            if (check_format_support(format)
-                    && m_v4l2_object->set_frame_info(format))
+            if (m_frame_info == format)
             {
-                m_frame_info = format;
-                return m_v4l2_object->fetch_frame_info(m_frame_info);
+                return true;
             }
 
+            if (check_format_support(format))
+            {
+                m_v4l2_object.reset();
+                m_v4l2_object = v4l2_object_t::create(m_config.url
+                                                      , m_config.buffers
+                                                      , format);
+                if (is_opened())
+                {
+                    m_frame_info = format;
+                    return m_v4l2_object->fetch_frame_info(m_frame_info);
+                }
+            }
         }
 
         return false;

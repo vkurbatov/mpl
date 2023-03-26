@@ -329,9 +329,11 @@ bool set_frame_format(handle_t handle
     video_fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     video_fmt.fmt.pix.width = frame_size.width;
     video_fmt.fmt.pix.height = frame_size.height;
-    video_fmt.fmt.pix.pixelformat = pixel_format;   
+    video_fmt.fmt.pix.pixelformat = pixel_format;
 
-    return xioctl(handle, VIDIOC_S_FMT, &video_fmt) >= 0;
+    auto result = xioctl(handle, VIDIOC_S_FMT, &video_fmt);
+
+    return result >= 0;
 }
 
 bool set_fps(handle_t handle

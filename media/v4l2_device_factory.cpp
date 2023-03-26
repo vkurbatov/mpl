@@ -6,6 +6,8 @@
 #include "core/message_event_impl.h"
 #include "core/event_channel_state.h"
 #include "core/time_utils.h"
+#include "core/convert_utils.h"
+
 
 #include "video_frame_impl.h"
 #include "message_frame_impl.h"
@@ -15,7 +17,7 @@
 #include "video_frame_impl.h"
 
 #include "tools/base/sync_base.h"
-#include "tools/v4l2/v4l2_device.h"
+#include "tools/v4l2/v4l2_input_device.h"
 
 #include <shared_mutex>
 #include <atomic>
@@ -31,6 +33,7 @@ namespace detail
 
 class v4l2_device : public i_device
 {
+
     using mutex_t = base::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
@@ -74,11 +77,125 @@ class v4l2_device : public i_device
             return device_type == device_type_t::v4l2_in
                     && !url.empty();
         }
+
+        v4l2::v4l2_input_device::config_t native_config() const
+        {
+            return { url
+                    , 4
+                    , 50 };
+        }
+    };
+
+    class v4l2_wrapper
+    {
+
+        mutable mutex_t             m_safe_mutex;
+        v4l2::v4l2_input_device     m_native_device;
+
+    public:
+
+        v4l2_wrapper(const device_params_t& params)
+            : m_native_device(params.native_config())
+        {
+
+        }
+
+        inline bool open()
+        {
+            lock_t lock(m_safe_mutex);
+            return m_native_device.open();
+        }
+
+        inline bool close()
+        {
+            lock_t lock(m_safe_mutex);
+            return m_native_device.close();
+        }
+
+        inline bool is_open() const
+        {
+            shared_lock_t lock(m_safe_mutex);
+            return m_native_device.is_opened();
+        }
+
+        inline bool set_config(const device_params_t& config)
+        {
+            lock_t lock(m_safe_mutex);
+            return m_native_device.set_config(config.native_config());
+        }
+
+        inline device_params_t config() const
+        {
+            shared_lock_t lock(m_safe_mutex);
+            auto native_config = m_native_device.config();
+            return { device_type_t::v4l2_in
+                        , native_config.url };
+        }
+
+        inline bool set_format(const i_video_format& format)
+        {
+            v4l2::frame_info_t frame_info;
+            if (mpl::core::utils::convert(format
+                                          , frame_info))
+            {
+                lock_t lock(m_safe_mutex);
+                return m_native_device.set_format(frame_info);
+            }
+
+            return false;
+        }
+
+        bool get_format(video_frame_impl& format) const
+        {
+            v4l2::frame_info_t frame_info;
+            {
+                shared_lock_t lock(m_safe_mutex);
+                frame_info = m_native_device.get_format();
+            }
+
+            if (!frame_info.is_null())
+            {
+                return mpl::core::utils::convert(frame_info
+                                                 , format);
+            }
+
+            return false;
+
+        }
+
+
+        std::vector<video_format_impl> get_supported_formats() const
+        {
+            std::vector<video_format_impl> formats;
+            v4l2::frame_info_t::array_t v4l2_formats;
+            {
+                shared_lock_t lock(m_safe_mutex);
+                v4l2_formats = m_native_device.get_supported_formats();
+            }
+
+            for (const auto& f : v4l2_formats)
+            {
+                video_format_impl format;
+                if (mpl::core::utils::convert(f
+                                              , format))
+                {
+                    formats.emplace_back(std::move(format));
+                }
+            }
+
+            return formats;
+        }
+
+        inline bool read_frame(v4l2::frame_t& frame)
+        {
+            lock_t lock(m_safe_mutex);
+            return m_native_device.read_frame(frame);
+        }
     };
 
     device_params_t             m_device_params;
     message_router_impl         m_router;
-    v4l2::v4l2_device           m_native_device;
+    v4l2_wrapper                m_native_device;
 
     frame_id_t                  m_frame_counter;
     timestamp_t                 m_frame_timestamp;
@@ -86,8 +203,11 @@ class v4l2_device : public i_device
 
     timestamp_t                 m_start_time;
 
+    std::thread                 m_thread;
+
     channel_state_t             m_state;
-    std::atomic_bool            m_open;
+    std::atomic_bool            m_running;
+    bool                        m_open;
 
 public:
 
@@ -104,12 +224,12 @@ public:
 
     v4l2_device(const device_params_t& device_params)
         : m_device_params(device_params)
-        , m_native_device([&](auto&& frame) { return on_native_frame(std::move(frame)); }
-                          , [&](const auto& event) { on_native_device_state(event);} )
+        , m_native_device(m_device_params)
         , m_frame_counter(0)
         , m_frame_timestamp(0)
         , m_real_timestamp(0)
         , m_state(channel_state_t::ready)
+        , m_running(false)
         , m_open(false)
     {
 
@@ -132,44 +252,15 @@ public:
 
     bool open()
     {
-        bool expected = false;
-        if (m_open.compare_exchange_strong(expected
-                                           , true
-                                           , std::memory_order_acquire))
+        if (!m_open)
         {
-            reset();
+            m_open = true;
+            m_running.store(true, std::memory_order_release);
 
             change_state(channel_state_t::opening);
 
-            v4l2::frame_info_t  format({1280, 720}, 30, v4l2::pixel_format_mjpeg);
-            m_native_device.set_format(format);
-
-            if (m_native_device.open(m_device_params.url
-                                     , 4))
-            {
-
-                /*
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                auto controls = m_native_device.get_control_list();
-
-                v4l2::ctrl_command_t::array_t ctrls;
-                for (const auto& c : controls)
-                {
-                    ctrls.emplace_back(c.id
-                                       , 0
-                                       , false
-                                       , false
-                                       , 0);
-                }
-
-                auto result = m_native_device.controls(ctrls);
-*/
-                return true;
-            }
-
-            m_open.store(false
-                         , std::memory_order_release);
-            change_state(channel_state_t::failed);
+            m_thread = std::thread([&]{ grabbing_thread(); });
+            return true;
         }
 
         return false;
@@ -177,22 +268,19 @@ public:
 
     bool close()
     {
-        if (m_open.load(std::memory_order_acquire))
+        if (m_open)
         {
             change_state(channel_state_t::closing);
+            m_running.store(false, std::memory_order_release);
+            m_open = false;
 
-            if (!m_native_device.close())
+            if (m_thread.joinable())
             {
-                change_state(channel_state_t::failed);
+                m_thread.join();
             }
 
-            m_open.store(false
-                         , std::memory_order_release);
-
             change_state(channel_state_t::closed);
-
             return true;
-
         }
 
         return false;
@@ -222,7 +310,7 @@ public:
         }
     }
 
-    bool on_native_frame(v4l2::frame_t&& frame)
+    bool on_native_frame(v4l2::frame_t& frame)
     {
         video_format_impl video_format(utils::format_form_v4l2(frame.frame_info.pixel_format)
                                        , frame.frame_info.size.width
@@ -251,27 +339,62 @@ public:
         return true;
     }
 
-    void on_native_device_state(const v4l2::streaming_event_t& streaming_event)
+    void grabbing_thread()
     {
-        if (v4l2_device::is_open())
+        change_state(channel_state_t::open);
+
+        std::size_t error_counter = 0;
+        std::uint32_t frame_time = 1000;//(1000 / 60) - 1;
+
+        while(is_running())
         {
-            switch(streaming_event)
+            change_state(channel_state_t::connecting);
+            if (m_native_device.open())
             {
-                case v4l2::streaming_event_t::start:
-                    change_state(channel_state_t::open);
-                break;
-                case v4l2::streaming_event_t::stop:
-                    change_state(channel_state_t::closed);
-                break;
-                case v4l2::streaming_event_t::open:
-                    change_state(channel_state_t::connected);
-                break;
-                case v4l2::streaming_event_t::close:
-                    change_state(channel_state_t::disconnected);
-                break;
-                default:;
+                video_format_impl vf(video_format_id_t::mjpeg
+                                     , 1280
+                                     , 720
+                                     , 30);
+                m_native_device.set_format(vf);
+                change_state(channel_state_t::connected);
+
+                error_counter = 0;
+
+                while (is_running()
+                       && error_counter < 10)
+                {
+                    v4l2::frame_t v4l2_frame;
+                    if (m_native_device.read_frame(v4l2_frame))
+                    {
+                        error_counter = 0;
+                        on_native_frame(v4l2_frame);
+                        if (v4l2_frame.frame_info.fps != 0)
+                        {
+                            frame_time = 1000 / v4l2_frame.frame_info.fps;
+                        }
+                    }
+                    else
+                    {
+                        error_counter++;
+                    }
+
+                    if (is_running())
+                    {
+                        core::utils::sleep(durations::milliseconds(frame_time));
+                    }
+                }
+
+                change_state(channel_state_t::disconnecting);
+                m_native_device.close();
+                change_state(channel_state_t::disconnected);
             }
         }
+
+    }
+
+    bool is_running() const
+    {
+        return m_running.load(std::memory_order_acquire);
     }
 
     // i_channel interface
@@ -293,7 +416,7 @@ public:
     }
     bool is_open() const override
     {
-        return m_open.load(std::memory_order_acquire);
+        return m_open;
     }
 
     channel_state_t state() const override
