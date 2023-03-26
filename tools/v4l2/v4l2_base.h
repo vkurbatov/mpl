@@ -166,7 +166,7 @@ struct buffer_item_t
 struct mapped_buffer_t
 {
     std::vector<buffer_item_t>  buffers;
-    std::uint32_t               index;
+    std::uint32_t               index = 0;
 
     buffer_item_t& current();
     void next();

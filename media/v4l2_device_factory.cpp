@@ -148,6 +148,7 @@ public:
                                      , 4))
             {
 
+                /*
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 auto controls = m_native_device.get_control_list();
 
@@ -162,7 +163,7 @@ public:
                 }
 
                 auto result = m_native_device.controls(ctrls);
-
+*/
                 return true;
             }
 
