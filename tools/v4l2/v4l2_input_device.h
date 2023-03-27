@@ -18,10 +18,12 @@ public:
         std::string     url;
         std::size_t     buffers;
         std::uint32_t   read_timeout = 0;
+        frame_info_t    frame_info;
 
         config_t(const std::string_view& url = {}
                 , std::size_t buffers = 1
-                , std::uint32_t read_timeout = 0);
+                , std::uint32_t read_timeout = 0
+                , const frame_info_t& frame_info = {});
     };
 
     v4l2_input_device(const config_t& config = {});

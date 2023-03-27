@@ -32,7 +32,7 @@ struct v4l2_object_t
 
     v4l2_object_t(const std::string& url
                   , std::size_t buffer_count
-                  , const frame_info_t& frame_info = {})
+                  , const frame_info_t& frame_info)
 
         : handle(v4l2::open_device(url))
     {
@@ -96,7 +96,6 @@ struct v4l2_object_t
 
     bool set_fps(std::uint32_t fps)
     {
-
         return v4l2::set_fps(handle
                              , fps);
     }
@@ -183,7 +182,6 @@ struct v4l2_input_device::context_t
     frame_info_t                        m_frame_info;
 
 
-
     static u_ptr_t create(const config_t& config)
     {
         return std::make_unique<context_t>(config);
@@ -242,7 +240,8 @@ struct v4l2_input_device::context_t
         if (m_v4l2_object == nullptr)
         {
             m_v4l2_object = v4l2_object_t::create(m_config.url
-                                                  , m_config.buffers);
+                                                  , m_config.buffers
+                                                  , m_config.frame_info);
             if (m_v4l2_object != nullptr)
             {
                 if (load_info())
@@ -368,10 +367,12 @@ struct v4l2_input_device::context_t
 
 v4l2_input_device::config_t::config_t(const std::string_view &url
                                       , std::size_t buffers
-                                      , uint32_t read_timeout)
+                                      , uint32_t read_timeout
+                                      , const frame_info_t& frame_info)
     : url(url)
     , buffers(buffers)
     , read_timeout(read_timeout)
+    , frame_info(frame_info)
 {
 
 }

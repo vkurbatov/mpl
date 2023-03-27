@@ -8,7 +8,6 @@
 #include "core/time_utils.h"
 #include "core/convert_utils.h"
 
-
 #include "video_frame_impl.h"
 #include "message_frame_impl.h"
 
@@ -42,13 +41,16 @@ class v4l2_device : public i_device
 
     struct device_params_t
     {
-        device_type_t   device_type = device_type_t::v4l2_in;
-        std::string     url;
+        device_type_t       device_type = device_type_t::v4l2_in;
+        std::string         url;
+        std::size_t         buffers;
 
         device_params_t(device_type_t device_type = device_type_t::v4l2_in
-                , const std::string_view& url = {})
+                , const std::string_view& url = {}
+                , std::size_t buffers = 4)
             : device_type(device_type)
             , url(url)
+            , buffers(buffers)
         {
 
         }
@@ -63,13 +65,20 @@ class v4l2_device : public i_device
         bool load(const i_property& params)
         {
             property_reader reader(params);
-            return reader.get("url", url);
+            if (reader.get("device_type", device_type_t::v4l2_in) == device_type_t::v4l2_in)
+            {
+                return reader.get("url", url)
+                        | reader.get("buffers", buffers);
+            }
+            return false;
         }
 
         bool save(i_property& params) const
         {
             property_writer writer(params);
-            return writer.set("url", url);
+            return writer.set("device_type", device_type_t::v4l2_in)
+                    && writer.set("url", url)
+                    && writer.set("buffers", buffers);
         }
 
         bool is_valid() const
@@ -81,7 +90,7 @@ class v4l2_device : public i_device
         v4l2::v4l2_input_device::config_t native_config() const
         {
             return { url
-                    , 4
+                    , buffers
                     , 50 };
         }
     };
@@ -91,6 +100,7 @@ class v4l2_device : public i_device
 
         mutable mutex_t             m_safe_mutex;
         v4l2::v4l2_input_device     m_native_device;
+        v4l2::frame_info_t          m_frame_info;
 
     public:
 
@@ -188,6 +198,7 @@ class v4l2_device : public i_device
 
         inline bool read_frame(v4l2::frame_t& frame)
         {
+
             lock_t lock(m_safe_mutex);
             return m_native_device.read_frame(frame);
         }
@@ -344,7 +355,7 @@ public:
         change_state(channel_state_t::open);
 
         std::size_t error_counter = 0;
-        std::uint32_t frame_time = 1000;//(1000 / 60) - 1;
+        std::uint32_t frame_time = 1000; //(1000 / 60) - 1;
 
         while(is_running())
         {
@@ -397,6 +408,41 @@ public:
         return m_running.load(std::memory_order_acquire);
     }
 
+    bool set_params(const i_property& input_params)
+    {
+        return false;
+    }
+
+    bool get_params(i_property& output_params)
+    {
+        if (m_device_params.save(output_params))
+        {
+            property_writer writer(output_params);
+
+        }
+
+        return false;
+    }
+
+    bool internal_configure(const i_property* input_params
+                            , i_property* output_params)
+    {
+        bool result = false;
+
+        if (input_params != nullptr)
+        {
+            result = set_params(*input_params);
+        }
+
+        if (output_params != nullptr)
+        {
+            result = get_params(*output_params);
+        }
+
+        return result;
+    }
+
+
     // i_channel interface
 public:
     bool control(const channel_control_t &control) override
@@ -408,6 +454,10 @@ public:
             break;
             case channel_control_id_t::close:
                 return close();
+            break;
+            case channel_control_id_t::configure:
+                return internal_configure(control.input_params
+                                          , control.output_params);
             break;
             default:;
         }
