@@ -160,6 +160,40 @@ control_type_t control_info_t::type() const
     return control_type_t::undefined;
 }
 
+std::vector<std::string> control_info_t::menu_list() const
+{
+    std::vector<std::string> names;
+    for (const auto& m : menu)
+    {
+        names.emplace_back(m.name);
+    }
+    return names;
+}
+
+const control_menu_t *control_info_t::get_menu_item(ctrl_id_t id) const
+{
+    for (const auto& m : menu)
+    {
+        if (m.id == id)
+        {
+            return &m;
+        }
+    }
+    return nullptr;
+}
+
+const control_menu_t *control_info_t::get_menu_item(const std::string &name) const
+{
+    for (const auto& m : menu)
+    {
+        if (m.name == name)
+        {
+            return &m;
+        }
+    }
+    return nullptr;
+}
+
 ctrl_command_t::ctrl_command_t(ctrl_id_t id
                                , ctrl_value_t value
                                , bool is_set

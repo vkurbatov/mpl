@@ -110,6 +110,16 @@ class v4l2_device : public i_device
 
         }
 
+        inline void lock()
+        {
+            m_safe_mutex.lock();
+        }
+
+        inline void unlock()
+        {
+            m_safe_mutex.unlock();
+        }
+
         inline bool open()
         {
             lock_t lock(m_safe_mutex);
@@ -142,6 +152,18 @@ class v4l2_device : public i_device
                         , native_config.url };
         }
 
+        inline std::size_t controls(v4l2::ctrl_command_t::array_t& controls)
+        {
+            lock_t lock(m_safe_mutex);
+            return m_native_device.controls(controls);
+        }
+
+        inline bool control(v4l2::ctrl_command_t& control)
+        {
+            lock_t lock(m_safe_mutex);
+            return m_native_device.control(control);
+        }
+
         inline bool set_format(const i_video_format& format)
         {
             v4l2::frame_info_t frame_info;
@@ -155,7 +177,7 @@ class v4l2_device : public i_device
             return false;
         }
 
-        bool get_format(video_frame_impl& format) const
+        bool get_format(video_format_impl& format) const
         {
             v4l2::frame_info_t frame_info;
             {
@@ -171,8 +193,7 @@ class v4l2_device : public i_device
 
             return false;
 
-        }
-
+        }        
 
         std::vector<video_format_impl> get_supported_formats() const
         {
@@ -196,9 +217,120 @@ class v4l2_device : public i_device
             return formats;
         }
 
+        v4l2::control_info_t::map_t get_suppoted_controls() const
+        {
+            shared_lock_t lock(m_safe_mutex);
+            return m_native_device.get_supported_controls();
+        }
+
+        bool get_formats(i_property& params)
+        {
+            auto formats = get_supported_formats();
+            return !formats.empty()
+                    && property_writer(params).set({}, formats);
+        }
+
+        i_property::u_ptr_t get_formats()
+        {
+            if (auto formats = property_helper::create_array())
+            {
+                if (get_formats(*formats))
+                {
+                    return formats;
+                }
+            }
+
+            return nullptr;
+        }
+
+
+        std::size_t get_controls(i_property& params)
+        {
+            std::size_t result = 0;
+            auto controls = get_suppoted_controls();
+            if (!controls.empty())
+            {
+                i_property::array_t controls_array;
+
+                for (const auto& c : controls)
+                {
+                    if (auto ctrl = property_helper::create_tree())
+                    {
+                        property_writer writer(*ctrl);
+                        const v4l2::control_info_t& control_info = c.second;
+                        std::string key = control_info.name;
+                        switch(control_info.type())
+                        {
+                            case v4l2::control_type_t::boolean:
+                            {
+                                if (writer.set(std::string(key).append(".value")
+                                               , static_cast<bool>(control_info.current_value)))
+                                {
+                                    controls_array.emplace_back(std::move(ctrl));
+                                }
+
+                            }
+                            break;
+                            case v4l2::control_type_t::numeric:
+                            {
+                                if (writer.set(std::string(key).append(".value")
+                                                , control_info.current_value))
+                                {
+                                    writer.set(std::string(key).append(".min")
+                                               , control_info.range.min);
+                                    writer.set(std::string(key).append(".max")
+                                               , control_info.range.max);
+                                    writer.set(std::string(key).append(".step")
+                                               , control_info.step);
+
+                                    controls_array.emplace_back(std::move(ctrl));
+                                }
+
+
+                            }
+                            break;
+                            case v4l2::control_type_t::menu:
+                            {
+                                if (auto item = control_info.get_menu_item(control_info.current_value))
+                                {
+                                    writer.set(std::string(key).append(".value")
+                                               , item->name);
+
+                                    writer.set(std::string(key).append(".menu")
+                                               , control_info.menu_list());
+
+                                    controls_array.emplace_back(std::move(ctrl));
+                                }
+                            }
+                            break;
+                            default:;
+                        }
+                    }
+                }
+                result = controls_array.size();
+                if (result > 0)
+                {
+                    property_writer(params).set({}, controls_array);
+                }
+            }
+            return result;
+        }
+
+        inline i_property::u_ptr_t get_controls()
+        {
+            if (auto ctrls = property_helper::create_array())
+            {
+                if (get_controls(*ctrls) > 0)
+                {
+                    return ctrls;
+                }
+            }
+
+            return nullptr;
+        }
+
         inline bool read_frame(v4l2::frame_t& frame)
         {
-
             lock_t lock(m_safe_mutex);
             return m_native_device.read_frame(frame);
         }
@@ -206,7 +338,7 @@ class v4l2_device : public i_device
 
     device_params_t             m_device_params;
     message_router_impl         m_router;
-    v4l2_wrapper                m_native_device;
+    v4l2_wrapper                m_wrapped_device;
 
     frame_id_t                  m_frame_counter;
     timestamp_t                 m_frame_timestamp;
@@ -235,7 +367,7 @@ public:
 
     v4l2_device(const device_params_t& device_params)
         : m_device_params(device_params)
-        , m_native_device(m_device_params)
+        , m_wrapped_device(m_device_params)
         , m_frame_counter(0)
         , m_frame_timestamp(0)
         , m_real_timestamp(0)
@@ -360,13 +492,8 @@ public:
         while(is_running())
         {
             change_state(channel_state_t::connecting);
-            if (m_native_device.open())
+            if (m_wrapped_device.open())
             {
-                video_format_impl vf(video_format_id_t::mjpeg
-                                     , 1280
-                                     , 720
-                                     , 30);
-                m_native_device.set_format(vf);
                 change_state(channel_state_t::connected);
 
                 error_counter = 0;
@@ -375,7 +502,7 @@ public:
                        && error_counter < 10)
                 {
                     v4l2::frame_t v4l2_frame;
-                    if (m_native_device.read_frame(v4l2_frame))
+                    if (m_wrapped_device.read_frame(v4l2_frame))
                     {
                         error_counter = 0;
                         on_native_frame(v4l2_frame);
@@ -396,7 +523,7 @@ public:
                 }
 
                 change_state(channel_state_t::disconnecting);
-                m_native_device.close();
+                m_wrapped_device.close();
                 change_state(channel_state_t::disconnected);
             }
         }
@@ -410,7 +537,24 @@ public:
 
     bool set_params(const i_property& input_params)
     {
-        return false;
+        bool result = false;
+        auto device_params = m_device_params;
+        if (device_params.load(input_params))
+        {
+            if (!is_open())
+            {
+                m_device_params = device_params;
+                result = true;
+            }
+        }
+/*
+        property_reader reader(input_params);
+        if (auto params = reader["controls"])
+        {
+
+        }*/
+
+        return result;
     }
 
     bool get_params(i_property& output_params)
@@ -419,6 +563,26 @@ public:
         {
             property_writer writer(output_params);
 
+            if (m_wrapped_device.is_open())
+            {
+                video_format_impl video_format;
+                if (m_wrapped_device.get_format(video_format))
+                {
+                    writer.set("format", video_format);
+                }
+
+                if (auto formats = m_wrapped_device.get_formats())
+                {
+                    writer.set("formats", *formats);
+                }
+
+                if (auto controls = m_wrapped_device.get_controls())
+                {
+                    writer.set("controls", *controls);
+                }
+
+            }
+            return true;
         }
 
         return false;

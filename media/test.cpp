@@ -1133,6 +1133,16 @@ void test16()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
+    core::utils::sleep(durations::milliseconds(100));
+
+    if (auto params = property_helper::create_tree())
+    {
+        if (input_video_device->control(channel_control_t::get_config(params.get())))
+        {
+            params.reset();
+        }
+    }
+
     core::utils::sleep(durations::seconds(150));
 
     input_audio_device->control(channel_control_t::close());

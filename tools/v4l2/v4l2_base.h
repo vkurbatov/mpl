@@ -138,6 +138,9 @@ struct control_info_t
                   , ctrl_value_t max);
 
     control_type_t type() const;
+    std::vector<std::string> menu_list() const;
+    const control_menu_t* get_menu_item(ctrl_id_t id) const;
+    const control_menu_t* get_menu_item(const std::string& name) const;
 };
 
 struct ctrl_command_t

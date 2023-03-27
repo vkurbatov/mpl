@@ -178,7 +178,6 @@ struct v4l2_input_device::context_t
     v4l2_object_t::u_ptr_t              m_v4l2_object;
 
     frame_info_t::array_t               m_format_list;
-    control_info_t::map_t               m_control_list;
     frame_info_t                        m_frame_info;
 
 
@@ -202,7 +201,6 @@ struct v4l2_input_device::context_t
     void reset_info()
     {
         m_frame_info = {};
-        m_control_list.clear();
         m_format_list.clear();
     }
 
@@ -214,7 +212,6 @@ struct v4l2_input_device::context_t
             if (m_v4l2_object->fetch_frame_info(m_frame_info))
             {
                 m_format_list = m_v4l2_object->fetch_supported_format_list();
-                m_control_list = m_v4l2_object->fetch_control_list();
                 return true;
             }
 
@@ -328,7 +325,12 @@ struct v4l2_input_device::context_t
 
     control_info_t::map_t get_supported_controls() const
     {
-        return m_control_list;
+        if (is_opened())
+        {
+            return m_v4l2_object->fetch_control_list();
+        }
+
+        return {};
     }
 
     std::size_t controls(ctrl_command_t::array_t& controls)
@@ -347,6 +349,12 @@ struct v4l2_input_device::context_t
         }
 
         return result;
+    }
+
+    bool control(ctrl_command_t& control)
+    {
+        return is_opened()
+                && m_v4l2_object->control(control);
     }
 
     bool read_frame(frame_t& frame)
@@ -436,6 +444,11 @@ control_info_t::map_t v4l2_input_device::get_supported_controls() const
 std::size_t v4l2_input_device::controls(ctrl_command_t::array_t &controls)
 {
     return m_context->controls(controls);
+}
+
+bool v4l2_input_device::control(ctrl_command_t &control)
+{
+    return m_context->control(control);
 }
 
 bool v4l2_input_device::read_frame(frame_t &frame)

@@ -64,13 +64,27 @@ const channel_control_t &channel_control_t::stop()
     return close_shutdown;
 }
 
+channel_control_t channel_control_t::control(const i_property *input_params
+                                             , i_property *output_params)
+{
+    return
+    {
+        channel_control_id_t::control
+        , "control"
+        , input_params
+        , output_params
+    };
+}
+
 channel_control_t channel_control_t::configure(const i_property *input_params
                                                , i_property *output_params)
 {
-    return { channel_control_id_t::configure
-                , "configure"
-                , input_params
-                , output_params
+    return
+    {
+        channel_control_id_t::configure
+        , "configure"
+        , input_params
+        , output_params
     };
 }
 

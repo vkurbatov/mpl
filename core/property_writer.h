@@ -14,8 +14,10 @@ public:
 
     property_writer(i_property& property);
 
-    i_property* create_tree(const std::string& key, bool create_always = true);
-    i_property* create_array(const std::string& key, bool create_always = true);
+    i_property* create_tree(const std::string& key
+                            , bool create_always = true);
+    i_property* create_array(const std::string& key
+                             , bool create_always = true);
     i_property* operator[](const std::string& key);
 
     bool set(const std::string& key, const i_property& property);

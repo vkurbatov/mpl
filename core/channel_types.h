@@ -35,6 +35,7 @@ enum class channel_control_id_t
     start,
     stop,
     configure,
+    control,
     custom
 };
 

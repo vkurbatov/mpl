@@ -42,6 +42,7 @@ public:
 
     control_info_t::map_t get_supported_controls() const;
     std::size_t controls(ctrl_command_t::array_t& controls);
+    bool control(ctrl_command_t& control);
 
     bool read_frame(frame_t& frame);
 };
