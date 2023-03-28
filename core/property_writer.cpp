@@ -70,6 +70,27 @@ i_property* property_writer::create_array(const std::string &key, bool create_al
     return nullptr;
 }
 
+i_property *property_writer::create(const std::string &key
+                                    , const i_property &property)
+{
+    if (!key.empty()
+            && m_property.property_type() == property_type_t::object)
+    {
+        auto& tree = static_cast<i_property_tree&>(m_property);
+        if (auto clone_value = property.clone())
+        {
+            auto p = clone_value.get();
+            if (tree.set(key
+                         , std::move(clone_value)))
+            {
+                return p;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 i_property* property_writer::operator[](const std::string &key)
 {
     return const_cast<i_property*>(property_helper::operator [](key));
@@ -77,9 +98,14 @@ i_property* property_writer::operator[](const std::string &key)
 
 bool property_writer::set(const std::string &key, const i_property &property)
 {
-    if (auto p = operator [](key))
+    if (key.empty())
     {
-        return p->merge(property);
+        return m_property.merge(property);
+    }
+    else
+    {
+        return create(key
+                      , property) != nullptr;
     }
 
     return false;
@@ -98,7 +124,7 @@ bool property_writer::remove(const std::string &key)
             && m_property.property_type() == property_type_t::object)
     {
         static_cast<i_property_tree&>(m_property).set(key
-                                                               , nullptr);
+                                                      , nullptr);
 
         return true;
     }
