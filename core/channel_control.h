@@ -24,7 +24,7 @@ struct channel_control_t
     static const channel_control_t& start();
     static const channel_control_t& stop();
 
-    static channel_control_t control(const i_property* input_params
+    static channel_control_t command(const i_property* input_params
                                      , i_property* output_params);
 
     static channel_control_t configure(const i_property* input_params

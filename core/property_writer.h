@@ -93,6 +93,8 @@ public:
     bool merge(const std::string& dst_key
                , const std::string& src_key
                , const i_property& property);
+
+    bool clear();
 };
 
 }

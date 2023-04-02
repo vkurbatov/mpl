@@ -1133,15 +1133,44 @@ void test16()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
-    core::utils::sleep(durations::milliseconds(100));
-
     if (auto params = property_helper::create_tree())
     {
+        while(input_video_device->state() != channel_state_t::connected);
+
+        auto output_cmds = property_helper::create_tree();
+        auto input_cmds = property_helper::create_tree();
+        property_writer out_writer(*output_cmds);
+        property_writer in_writer(*input_cmds);
+
         if (input_video_device->control(channel_control_t::get_config(params.get())))
         {
-            params.reset();
+            property_reader reader(*params);
+            for (const auto& r : reader.property_list("controls"))
+            {
+                out_writer.create_tree(r);
+            }
+            out_writer.create_tree("format");
+            video_format_impl vf(video_format_id_t::mjpeg
+                                 , 1280
+                                 , 720
+                                 , 30);
+            in_writer.set("format", vf);
         }
+
+        if (input_video_device->control(channel_control_t::command(input_cmds.get()
+                                                                   , output_cmds.get())
+                                        )
+                )
+        {
+            out_writer.clear();
+            in_writer.clear();
+        }
+
+
+
     }
+
+
 
     core::utils::sleep(durations::seconds(150));
 

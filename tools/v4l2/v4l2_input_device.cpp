@@ -150,12 +150,9 @@ struct v4l2_object_t
 
     bool control(ctrl_command_t& command)
     {
-        if (command.is_set)
-        {
-            command.success = command.is_set
-                    ? set_control(command.id, command.value)
-                    : get_control(command.id, command.value);
-        }
+        command.success = command.is_set
+                ? set_control(command.id, command.value)
+                : get_control(command.id, command.value);
 
         if (command.success
                 && command.delay_ms > 0)

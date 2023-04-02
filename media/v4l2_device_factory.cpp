@@ -98,9 +98,11 @@ class v4l2_device : public i_device
     class v4l2_wrapper
     {
 
-        mutable mutex_t             m_safe_mutex;
-        v4l2::v4l2_input_device     m_native_device;
-        v4l2::frame_info_t          m_frame_info;
+        mutable mutex_t                         m_safe_mutex;
+        v4l2::v4l2_input_device                 m_native_device;
+        v4l2::frame_info_t                      m_frame_info;
+        mutable v4l2::control_info_t::map_t     m_cached_controls;
+        mutable v4l2::frame_info_t::array_t     m_cached_formats;
 
     public:
 
@@ -123,13 +125,28 @@ class v4l2_device : public i_device
         inline bool open()
         {
             lock_t lock(m_safe_mutex);
-            return m_native_device.open();
+            {
+                if (m_native_device.open())
+                {
+                    m_cached_controls = m_native_device.get_supported_controls();
+                    m_cached_formats = m_native_device.get_supported_formats();
+                    return true;
+                }
+            }
+            return false;
         }
 
         inline bool close()
         {
             lock_t lock(m_safe_mutex);
-            return m_native_device.close();
+            if (m_native_device.close())
+            {
+                m_cached_controls.clear();
+                m_cached_formats.clear();
+                return true;
+            }
+
+            return false;
         }
 
         inline bool is_open() const
@@ -195,13 +212,21 @@ class v4l2_device : public i_device
 
         }        
 
-        std::vector<video_format_impl> get_supported_formats() const
+        std::vector<video_format_impl> get_supported_formats(bool cached = false) const
         {
             std::vector<video_format_impl> formats;
             v4l2::frame_info_t::array_t v4l2_formats;
             {
                 shared_lock_t lock(m_safe_mutex);
-                v4l2_formats = m_native_device.get_supported_formats();
+                if (!cached || m_cached_formats.empty())
+                {
+                    v4l2_formats = m_native_device.get_supported_formats();
+                    m_cached_formats = v4l2_formats;
+                }
+                else
+                {
+                    v4l2_formats = m_cached_formats;
+                }
             }
 
             for (const auto& f : v4l2_formats)
@@ -217,10 +242,15 @@ class v4l2_device : public i_device
             return formats;
         }
 
-        v4l2::control_info_t::map_t get_suppoted_controls() const
+        v4l2::control_info_t::map_t get_suppoted_controls(bool cached = false) const
         {
             shared_lock_t lock(m_safe_mutex);
-            return m_native_device.get_supported_controls();
+            if (!cached
+                    || m_cached_controls.empty())
+            {
+                m_cached_controls = m_native_device.get_supported_controls();
+            }
+            return m_cached_controls;
         }
 
         bool get_formats(i_property& params)
@@ -243,20 +273,21 @@ class v4l2_device : public i_device
             return nullptr;
         }
 
-
         std::size_t get_controls(i_property& params)
         {
             std::size_t result = 0;
             auto controls = get_suppoted_controls();
-            if (!controls.empty())
+            if (!controls.empty()
+                    && params.property_type() == property_type_t::object)
             {
-                i_property::array_t controls_array;
+                // i_property::array_t controls_array;
 
+                property_writer writer(params);
                 for (const auto& c : controls)
                 {
-                    if (auto ctrl = property_helper::create_tree())
+                    // if (auto ctrl = property_helper::create_tree())
                     {
-                        property_writer writer(*ctrl);
+                        // property_writer writer(*ctrl);
                         const v4l2::control_info_t& control_info = c.second;
                         std::string key = control_info.name;
                         switch(control_info.type())
@@ -266,7 +297,7 @@ class v4l2_device : public i_device
                                 if (writer.set(std::string(key).append(".value")
                                                , static_cast<bool>(control_info.current_value)))
                                 {
-                                    controls_array.emplace_back(std::move(ctrl));
+                                    result++;
                                 }
 
                             }
@@ -283,7 +314,8 @@ class v4l2_device : public i_device
                                     writer.set(std::string(key).append(".step")
                                                , control_info.step);
 
-                                    controls_array.emplace_back(std::move(ctrl));
+                                    result++;
+
                                 }
 
 
@@ -299,7 +331,7 @@ class v4l2_device : public i_device
                                     writer.set(std::string(key).append(".menu")
                                                , control_info.menu_list());
 
-                                    controls_array.emplace_back(std::move(ctrl));
+                                    result++;
                                 }
                             }
                             break;
@@ -307,18 +339,174 @@ class v4l2_device : public i_device
                         }
                     }
                 }
-                result = controls_array.size();
-                if (result > 0)
-                {
-                    property_writer(params).set({}, controls_array);
-                }
             }
             return result;
         }
 
+        v4l2::ctrl_command_t::array_t create_commands(const i_property& commands
+                                                      , bool is_set) const
+        {
+            v4l2::ctrl_command_t::array_t controls;
+
+            property_reader reader(commands);
+
+            for (const auto& c : m_cached_controls)
+            {
+                const v4l2::control_info_t& control_info = c.second;
+                if (auto property = reader[control_info.name])
+                {
+                    property_reader sub_reader(*property);
+                    auto delay = sub_reader.get<std::uint32_t>("delay", 0);
+                    if (!is_set)
+                    {
+                        controls.emplace_back(control_info.id
+                                              , 0
+                                              , false
+                                              , false
+                                              , delay);
+                    }
+                    else
+                    {
+                        switch(control_info.type())
+                        {
+                            case v4l2::control_type_t::boolean:
+                            {
+                                if (auto value = sub_reader.get<bool>("value"))
+                                {
+                                    controls.emplace_back(control_info.id
+                                                          , static_cast<std::int32_t>(*value)
+                                                          , true
+                                                          , false
+                                                          , delay);
+                                }
+                            }
+                            break;
+                            case v4l2::control_type_t::numeric:
+                            {
+                                if (auto value = sub_reader.get<std::int32_t>("value"))
+                                {
+                                    controls.emplace_back(control_info.id
+                                                          , *value
+                                                          , true
+                                                          , false
+                                                          , delay);
+                                }
+                            }
+                            break;
+                            case v4l2::control_type_t::menu:
+                            {
+                                if (auto value = sub_reader.get<std::string>("value"))
+                                {
+                                    if (auto item = control_info.get_menu_item(*value))
+                                    {
+                                        controls.emplace_back(control_info.id
+                                                              , item->id
+                                                              , true
+                                                              , false
+                                                              , delay);
+                                    }
+                                }
+                            }
+                            break;
+                            default:;
+                        }
+                    }
+                }
+            }
+
+            return controls;
+        }
+
+        bool command(const i_property* input_params
+                     , i_property* output_params)
+        {
+            lock_t lock(m_safe_mutex);
+            if (m_native_device.is_opened())
+            {
+                bool result = false;
+                if (input_params)
+                {
+                    property_reader reader(*input_params);
+
+                    auto controls = create_commands(*input_params
+                                                    , true);
+                    result = m_native_device.controls(controls) > 0;
+
+                    if (auto video_format = reader.get<video_format_impl>("format"))
+                    {
+                        v4l2::frame_info_t frame_info;
+                        if (mpl::core::utils::convert<i_video_format>(*video_format
+                                                                     , frame_info))
+                        {
+                            result |= m_native_device.set_format(frame_info);
+                        }
+                    }
+                }
+
+                if (output_params)
+                {
+                    property_writer writer(*output_params);
+                    auto controls = create_commands(*output_params
+                                                    , false);
+
+                    m_native_device.controls(controls);
+
+                    for (const auto& c : controls)
+                    {
+                        if (c.success
+                                && !c.is_set)
+                        {
+                            auto it = m_cached_controls.find(c.id);
+                            if (it != m_cached_controls.end())
+                            {
+                                const v4l2::control_info_t& control_info = it->second;
+                                switch(control_info.type())
+                                {
+                                    case v4l2::control_type_t::boolean:
+                                        result |= writer.set(control_info.name
+                                                             , static_cast<bool>(c.value));
+                                    break;
+                                    case v4l2::control_type_t::numeric:
+                                        result |= writer.set(control_info.name
+                                                             , c.value);
+                                    break;
+                                    case v4l2::control_type_t::menu:
+                                        if (auto item = control_info.get_menu_item(c.id))
+                                        {
+                                            result |= writer.set(control_info.name
+                                                                 , item->name);
+                                        }
+                                    break;
+                                    default:;
+                                }
+                            }
+                        }
+                    }
+
+                    if (writer.has_property("format"))
+                    {
+                        auto frame_info =  m_native_device.get_format();
+                        if (!frame_info.is_null())
+                        {
+                            video_format_impl video_format;
+                            if (mpl::core::utils::convert(frame_info
+                                                          , video_format))
+                            {
+                                result |= writer.set("format", video_format);
+                            }
+                        }
+                    }
+                }
+
+                return result;
+            }
+
+            return false;
+        }
+
         inline i_property::u_ptr_t get_controls()
         {
-            if (auto ctrls = property_helper::create_array())
+            if (auto ctrls = property_helper::create_tree())
             {
                 if (get_controls(*ctrls) > 0)
                 {
@@ -540,8 +728,8 @@ public:
         bool result = false;
         auto device_params = m_device_params;
         if (device_params.load(input_params))
-        {
-            if (!is_open())
+        {           
+            if (!m_wrapped_device.is_open())
             {
                 m_device_params = device_params;
                 result = true;
@@ -561,26 +749,17 @@ public:
     {
         if (m_device_params.save(output_params))
         {
-            property_writer writer(output_params);
-
             if (m_wrapped_device.is_open())
             {
-                video_format_impl video_format;
-                if (m_wrapped_device.get_format(video_format))
-                {
-                    writer.set("format", video_format);
-                }
-
+                property_writer writer(output_params);
                 if (auto formats = m_wrapped_device.get_formats())
                 {
                     writer.set("formats", *formats);
                 }
-
                 if (auto controls = m_wrapped_device.get_controls())
                 {
                     writer.set("controls", *controls);
                 }
-
             }
             return true;
         }
@@ -606,6 +785,18 @@ public:
         return result;
     }
 
+    bool internal_command(const i_property* input_params
+                          , i_property* output_params)
+    {
+        if (input_params != nullptr
+                || output_params != nullptr)
+        {
+            return m_wrapped_device.command(input_params
+                                            , output_params);
+        }
+
+        return false;
+    }
 
     // i_channel interface
 public:
@@ -622,6 +813,10 @@ public:
             case channel_control_id_t::configure:
                 return internal_configure(control.input_params
                                           , control.output_params);
+            break;
+            case channel_control_id_t::command:
+                return internal_command(control.input_params
+                                        , control.output_params);
             break;
             default:;
         }

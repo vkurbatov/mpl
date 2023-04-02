@@ -158,4 +158,30 @@ bool property_writer::merge(const std::string &dst_key
     return false;
 }
 
+bool property_writer::clear()
+{
+    switch(m_property.property_type())
+    {
+        case property_type_t::object:
+            static_cast<i_property_tree&>(m_property).clear();
+            return true;
+        break;
+        case property_type_t::array:
+            static_cast<i_property_array&>(m_property).get_value().clear();
+            return true;
+        break;
+        case property_type_t::string:
+            static_cast<i_property_value<std::string>&>(m_property).get_value().clear();
+            return true;
+        break;
+        case property_type_t::octet_string:
+            static_cast<i_property_value<std::vector<std::uint8_t>>&>(m_property).get_value().clear();
+            return true;
+        break;
+        default:;
+    }
+
+    return false;
+}
+
 }
