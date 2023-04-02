@@ -1076,12 +1076,12 @@ void test16()
                                     , 30);
 
     audio_format_impl transcode_audio_format(audio_format_id_t::aac
-                                           , 0
-                                             , 0);
+                                           , 48000
+                                           , 2);
     video_format_impl transcode_video_format (video_format_id_t::h264
-                                              , 0
-                                              , 0
-                                              , 0);
+                                              , 1280
+                                              , 720
+                                              , 30);
 
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=30;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
     /*option_writer(video_format.options()).set(opt_codec_params, encoder_options);
@@ -1133,6 +1133,7 @@ void test16()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
+    /*
     if (auto params = property_helper::create_tree())
     {
         while(input_video_device->state() != channel_state_t::connected);
@@ -1166,10 +1167,52 @@ void test16()
             in_writer.clear();
         }
 
-
-
     }
+*/
 
+    std::size_t count = 1000;
+    while(input_video_device->state() != channel_state_t::connected);
+
+    if (auto params = property_helper::create_tree())
+    {
+        if (input_video_device->control(channel_control_t::get_config(params.get())))
+        {
+            property_reader params_reader(*params);
+            if (auto brightness = params_reader["controls.Brightness"])
+            {
+                property_reader sub_reader(*brightness);
+                auto min = sub_reader.get<std::int32_t>("min", 0);
+                auto max = sub_reader.get<std::int32_t>("max", 0);
+                auto step = sub_reader.get<std::int32_t>("step", 0);
+                auto value = sub_reader.get<std::int32_t>("value", 0);
+                std::int32_t vt = step;
+                while (count-- > 0)
+                {
+                    if (auto set_cmd = property_helper::create_tree())
+                    {
+                        if (value + vt >= max)
+                        {
+                            vt = -step;
+                        }
+                        if (value - vt <= min)
+                        {
+                            vt = step;
+                        }
+
+                        value += vt;
+
+                        property_writer set_writer(*set_cmd);
+                        set_writer.set("Brightness.value", value);
+
+                        input_video_device->control(channel_control_t::command(set_cmd.get()
+                                                                              , set_cmd.get()));
+
+                    }
+                    core::utils::sleep(durations::milliseconds(100));
+                }
+            }
+        }
+    }
 
 
     core::utils::sleep(durations::seconds(150));
