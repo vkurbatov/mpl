@@ -338,9 +338,12 @@ struct v4l2_input_device::context_t
         {
             for (auto& c : controls)
             {
-                if (m_v4l2_object->control(c))
+                if (c.id >= ctrl_base)
                 {
-                    result++;
+                    if (m_v4l2_object->control(c))
+                    {
+                        result++;
+                    }
                 }
             }
         }

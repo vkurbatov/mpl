@@ -1170,14 +1170,71 @@ void test16()
     }
 */
 
-    std::size_t count = 1000;
+    std::size_t count = 10000;
     while(input_video_device->state() != channel_state_t::connected);
+
+    // core::utils::sleep(durations::seconds(150));
 
     if (auto params = property_helper::create_tree())
     {
         if (input_video_device->control(channel_control_t::get_config(params.get())))
         {
             property_reader params_reader(*params);
+            if (auto controls = params_reader.get<i_property::array_t>("controls"))
+            {
+                for (const auto& c : *controls)
+                {
+                    if (c != nullptr)
+                    {
+                        property_reader reader(*c);
+                        if (reader.check<std::string>("description", "Brightness"))
+                        {
+                            auto id = reader.get<std::int32_t>("id", 0);
+                            auto min = reader.get<std::int32_t>("min", 0);
+                            auto max = reader.get<std::int32_t>("max", 0);
+                            auto step = reader.get<std::int32_t>("step", 0);
+                            auto value = reader.get<std::int32_t>("value", 0);
+
+                            std::int32_t vt = 8;
+
+                            while (count-- > 0)
+                            {
+                                if (auto set_cmd = property_helper::create_tree())
+                                {
+                                    if (value + vt >= max)
+                                    {
+                                        vt = -step;
+                                    }
+                                    if (value - vt <= min)
+                                    {
+                                        vt = step;
+                                    }
+
+                                    value += vt;
+
+                                    if (auto ctrl = property_helper::create_tree())
+                                    {
+                                        if (property_writer(*ctrl).set("id", id))
+                                        {
+                                            property_writer(*ctrl).set("value", value);
+                                            if (auto cmds = property_writer(*set_cmd).create_array("commands"))
+                                            {
+                                                static_cast<i_property_array&>(*cmds).get_value().emplace_back(std::move(ctrl));
+                                                input_video_device->control(channel_control_t::command(set_cmd.get()
+                                                                                                      , set_cmd.get()));
+                                            }
+                                        }
+                                    }
+
+                                }
+                                core::utils::sleep(durations::milliseconds(200));
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
             if (auto brightness = params_reader["controls.Brightness"])
             {
                 property_reader sub_reader(*brightness);
@@ -1185,7 +1242,7 @@ void test16()
                 auto max = sub_reader.get<std::int32_t>("max", 0);
                 auto step = sub_reader.get<std::int32_t>("step", 0);
                 auto value = sub_reader.get<std::int32_t>("value", 0);
-                std::int32_t vt = step;
+                std::int32_t vt = 8;
                 while (count-- > 0)
                 {
                     if (auto set_cmd = property_helper::create_tree())
@@ -1208,7 +1265,7 @@ void test16()
                                                                               , set_cmd.get()));
 
                     }
-                    core::utils::sleep(durations::milliseconds(100));
+                    core::utils::sleep(durations::milliseconds(200));
                 }
             }
         }

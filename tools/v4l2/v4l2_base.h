@@ -21,6 +21,9 @@ enum class streaming_event_t
 
 typedef std::vector<std::uint8_t> frame_data_t;
 
+
+extern const std::uint32_t ctrl_format;
+extern const std::uint32_t ctrl_base;
 extern const std::uint32_t ctrl_tilt_absolute;
 extern const std::uint32_t ctrl_pan_absolute;
 extern const std::uint32_t ctrl_zoom_absolute;

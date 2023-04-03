@@ -7,6 +7,7 @@
 #include "core/event_channel_state.h"
 #include "core/time_utils.h"
 #include "core/convert_utils.h"
+#include "core/enum_utils.h"
 
 #include "video_frame_impl.h"
 #include "message_frame_impl.h"
@@ -28,6 +29,92 @@ namespace mpl::media
 namespace detail
 {
 
+    std::size_t serialize_controls(const v4l2::control_info_t::map_t& controls
+                                   , i_property::array_t& property_controls)
+    {
+        for (const auto& c : controls)
+        {
+            if (auto ctrl = property_helper::create_tree())
+            {
+                property_writer writer(*ctrl);
+                const v4l2::control_info_t& control_info = c.second;
+
+                if (writer.set("id", control_info.id)
+                        && writer.set("description", control_info.name))
+                {
+                    switch(control_info.type())
+                    {
+                        case v4l2::control_type_t::boolean:
+                        {
+                            if (writer.set("value"
+                                           , static_cast<bool>(control_info.current_value)))
+                            {
+                                property_controls.emplace_back(std::move(ctrl));
+                            }
+
+                        }
+                        break;
+                        case v4l2::control_type_t::numeric:
+                        {
+                            if (writer.set("value"
+                                            , control_info.current_value))
+                            {
+                                writer.set("min"
+                                           , control_info.range.min);
+                                writer.set("max"
+                                           , control_info.range.max);
+                                writer.set("step"
+                                           , control_info.step);
+
+                                property_controls.emplace_back(std::move(ctrl));
+
+                            }
+
+
+                        }
+                        break;
+                        case v4l2::control_type_t::menu:
+                        {
+                            if (auto item = control_info.get_menu_item(control_info.current_value))
+                            {
+                                if (writer.set("value"
+                                                , item->name))
+                                {
+
+                                    writer.set("menu"
+                                               , control_info.menu_list());
+
+                                    property_controls.emplace_back(std::move(ctrl));
+                                }
+
+
+                            }
+                        }
+                        break;
+                        default:;
+                    }
+                }
+            }
+        }
+
+        return property_controls.size();
+    }
+
+    std::string get_format_string(const v4l2::frame_info_t& frame_info)
+    {
+        std::string result;
+
+        video_format_id_t format_id = utils::format_form_v4l2(frame_info.pixel_format);
+        if (format_id != video_format_id_t::undefined)
+        {
+            result.append(std::to_string(frame_info.size.width)).append("x")
+                    .append(std::to_string(frame_info.size.height)).append("@")
+                    .append(std::to_string(frame_info.fps)).append(":")
+                    .append(core::utils::enum_to_string(format_id));
+        }
+
+        return result;
+    }
 }
 
 class v4l2_device : public i_device
@@ -47,7 +134,7 @@ class v4l2_device : public i_device
 
         device_params_t(device_type_t device_type = device_type_t::v4l2_in
                 , const std::string_view& url = {}
-                , std::size_t buffers = 4)
+                , std::size_t buffers = 10)
             : device_type(device_type)
             , url(url)
             , buffers(buffers)
@@ -210,7 +297,7 @@ class v4l2_device : public i_device
 
             return false;
 
-        }        
+        }
 
         std::vector<video_format_impl> get_supported_formats(bool cached = false) const
         {
@@ -242,7 +329,7 @@ class v4l2_device : public i_device
             return formats;
         }
 
-        v4l2::control_info_t::map_t get_suppoted_controls(bool cached = false) const
+        v4l2::control_info_t::map_t get_supported_controls(bool cached = false) const
         {
             shared_lock_t lock(m_safe_mutex);
             if (!cached
@@ -273,97 +360,24 @@ class v4l2_device : public i_device
             return nullptr;
         }
 
-        std::size_t get_controls(i_property& params)
+        std::optional<v4l2::ctrl_command_t> create_command(const i_property& command
+                                                           , bool is_set) const
         {
-            std::size_t result = 0;
-            auto controls = get_suppoted_controls();
-            if (!controls.empty()
-                    && params.property_type() == property_type_t::object)
+            property_reader reader(command);
+
+            if (auto id = reader.get<std::uint32_t>("id"))
             {
-                // i_property::array_t controls_array;
-
-                property_writer writer(params);
-                for (const auto& c : controls)
+                if (auto it = m_cached_controls.find(*id); it != m_cached_controls.end())
                 {
-                    // if (auto ctrl = property_helper::create_tree())
-                    {
-                        // property_writer writer(*ctrl);
-                        const v4l2::control_info_t& control_info = c.second;
-                        std::string key = control_info.name;
-                        switch(control_info.type())
-                        {
-                            case v4l2::control_type_t::boolean:
-                            {
-                                if (writer.set(std::string(key).append(".value")
-                                               , static_cast<bool>(control_info.current_value)))
-                                {
-                                    result++;
-                                }
-
-                            }
-                            break;
-                            case v4l2::control_type_t::numeric:
-                            {
-                                if (writer.set(std::string(key).append(".value")
-                                                , control_info.current_value))
-                                {
-                                    writer.set(std::string(key).append(".min")
-                                               , control_info.range.min);
-                                    writer.set(std::string(key).append(".max")
-                                               , control_info.range.max);
-                                    writer.set(std::string(key).append(".step")
-                                               , control_info.step);
-
-                                    result++;
-
-                                }
-
-
-                            }
-                            break;
-                            case v4l2::control_type_t::menu:
-                            {
-                                if (auto item = control_info.get_menu_item(control_info.current_value))
-                                {
-                                    writer.set(std::string(key).append(".value")
-                                               , item->name);
-
-                                    writer.set(std::string(key).append(".menu")
-                                               , control_info.menu_list());
-
-                                    result++;
-                                }
-                            }
-                            break;
-                            default:;
-                        }
-                    }
-                }
-            }
-            return result;
-        }
-
-        v4l2::ctrl_command_t::array_t create_commands(const i_property& commands
-                                                      , bool is_set) const
-        {
-            v4l2::ctrl_command_t::array_t controls;
-
-            property_reader reader(commands);
-
-            for (const auto& c : m_cached_controls)
-            {
-                const v4l2::control_info_t& control_info = c.second;
-                if (auto property = reader[control_info.name])
-                {
-                    property_reader sub_reader(*property);
-                    auto delay = sub_reader.get<std::uint32_t>("delay", 0);
+                    const v4l2::control_info_t& control_info = it->second;
+                    auto delay = reader.get<std::uint32_t>("delay", 0);
                     if (!is_set)
                     {
-                        controls.emplace_back(control_info.id
-                                              , 0
-                                              , false
-                                              , false
-                                              , delay);
+                        return v4l2::ctrl_command_t{ control_info.id
+                                                  , 0
+                                                  , false
+                                                  , false
+                                                  , delay };
                     }
                     else
                     {
@@ -371,39 +385,39 @@ class v4l2_device : public i_device
                         {
                             case v4l2::control_type_t::boolean:
                             {
-                                if (auto value = sub_reader.get<bool>("value"))
+                                if (auto value = reader.get<bool>("value"))
                                 {
-                                    controls.emplace_back(control_info.id
-                                                          , static_cast<std::int32_t>(*value)
-                                                          , true
-                                                          , false
-                                                          , delay);
+                                    return v4l2::ctrl_command_t{ control_info.id
+                                                              , static_cast<std::int32_t>(*value)
+                                                              , true
+                                                              , false
+                                                              , delay };
                                 }
                             }
                             break;
                             case v4l2::control_type_t::numeric:
                             {
-                                if (auto value = sub_reader.get<std::int32_t>("value"))
+                                if (auto value = reader.get<std::int32_t>("value"))
                                 {
-                                    controls.emplace_back(control_info.id
-                                                          , *value
-                                                          , true
-                                                          , false
-                                                          , delay);
+                                    return v4l2::ctrl_command_t{ control_info.id
+                                                              , *value
+                                                              , true
+                                                              , false
+                                                              , delay };
                                 }
                             }
                             break;
                             case v4l2::control_type_t::menu:
                             {
-                                if (auto value = sub_reader.get<std::string>("value"))
+                                if (auto value = reader.get<std::string>("value"))
                                 {
                                     if (auto item = control_info.get_menu_item(*value))
                                     {
-                                        controls.emplace_back(control_info.id
-                                                              , item->id
-                                                              , true
-                                                              , false
-                                                              , delay);
+                                        return v4l2::ctrl_command_t{ control_info.id
+                                                                      , static_cast<std::int32_t>(item->id)
+                                                                      , true
+                                                                      , false
+                                                                      , delay };
                                     }
                                 }
                             }
@@ -414,7 +428,123 @@ class v4l2_device : public i_device
                 }
             }
 
+            return std::nullopt;
+        }
+
+        v4l2::ctrl_command_t::array_t create_commands(const i_property& commands
+                                                      , bool is_set) const
+        {
+            v4l2::ctrl_command_t::array_t controls;
+
+            if (commands.property_type() == property_type_t::array)
+            {
+                const auto& ctrls = static_cast<const i_property_array&>(commands).get_value();
+                for (const auto& c : ctrls)
+                {
+                    if (c != nullptr)
+                    {
+
+                        if (auto control = create_command(*c
+                                                            , is_set))
+                        {
+                            controls.emplace_back(std::move(*control));
+                        }
+                    }
+                }
+            }
+
             return controls;
+        }
+
+        bool send_commands(const i_property& input_params)
+        {
+            bool result = false;
+            property_reader reader(input_params);
+            if (auto commands = reader["commands"])
+            {
+                auto controls = create_commands(*commands
+                                                , true);
+
+                result |= m_native_device.controls(controls) > 0;
+            }
+
+            if (auto format = reader.get<video_format_impl>("format"))
+            {
+                v4l2::frame_info_t frame_info;
+                if (core::utils::convert<i_video_format>(*format
+                                                         , frame_info))
+                {
+                    result |= m_native_device.set_format(frame_info);
+                }
+            }
+
+            return result;
+        }
+
+        bool recv_commands(i_property& output_params)
+        {
+            bool result = false;
+            property_writer writer(output_params);
+
+            if (auto commands = writer["commands"])
+            {
+                if (commands->property_type() == property_type_t::array)
+                {
+                    for (auto& c : static_cast<i_property_array&>(*commands).get_value())
+                    {
+                        if (auto command = create_command(*c
+                                                          , false))
+                        {
+                            if (m_native_device.control(*command))
+                            {
+                                if (command->success)
+                                {
+                                    auto it = m_cached_controls.find(command->id);
+                                    if (it != m_cached_controls.end())
+                                    {
+                                        const v4l2::control_info_t& control_info = it->second;
+                                        property_writer cmd_writer(*c);
+
+                                        switch(control_info.type())
+                                        {
+                                            case v4l2::control_type_t::boolean:
+                                                result |= cmd_writer.set("value"
+                                                                        , static_cast<bool>(command->value));
+                                            break;
+                                            case v4l2::control_type_t::numeric:
+                                                result |= cmd_writer.set("value"
+                                                                        , command->value);
+                                            break;
+                                            case v4l2::control_type_t::menu:
+                                                if (auto item = control_info.get_menu_item(command->value))
+                                                {
+
+                                                    result |= cmd_writer.set("value"
+                                                                            , item->name);
+                                                }
+                                            break;
+                                            default:;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (writer.has_property("format"))
+            {
+                video_format_impl video_format;
+                if (core::utils::convert(m_native_device.get_format()
+                                         , video_format))
+                {
+                    result |= writer.set("format"
+                                         , video_format);
+                }
+            }
+
+            return result;
         }
 
         bool command(const i_property* input_params
@@ -426,76 +556,12 @@ class v4l2_device : public i_device
                 bool result = false;
                 if (input_params)
                 {
-                    property_reader reader(*input_params);
-
-                    auto controls = create_commands(*input_params
-                                                    , true);
-                    result = m_native_device.controls(controls) > 0;
-
-                    if (auto video_format = reader.get<video_format_impl>("format"))
-                    {
-                        v4l2::frame_info_t frame_info;
-                        if (mpl::core::utils::convert<i_video_format>(*video_format
-                                                                     , frame_info))
-                        {
-                            result |= m_native_device.set_format(frame_info);
-                        }
-                    }
+                    result = send_commands(*input_params);
                 }
 
                 if (output_params)
                 {
-                    property_writer writer(*output_params);
-                    auto controls = create_commands(*output_params
-                                                    , false);
-
-                    m_native_device.controls(controls);
-
-                    for (const auto& c : controls)
-                    {
-                        if (c.success
-                                && !c.is_set)
-                        {
-                            auto it = m_cached_controls.find(c.id);
-                            if (it != m_cached_controls.end())
-                            {
-                                const v4l2::control_info_t& control_info = it->second;
-                                switch(control_info.type())
-                                {
-                                    case v4l2::control_type_t::boolean:
-                                        result |= writer.set(control_info.name
-                                                             , static_cast<bool>(c.value));
-                                    break;
-                                    case v4l2::control_type_t::numeric:
-                                        result |= writer.set(control_info.name
-                                                             , c.value);
-                                    break;
-                                    case v4l2::control_type_t::menu:
-                                        if (auto item = control_info.get_menu_item(c.id))
-                                        {
-                                            result |= writer.set(control_info.name
-                                                                 , item->name);
-                                        }
-                                    break;
-                                    default:;
-                                }
-                            }
-                        }
-                    }
-
-                    if (writer.has_property("format"))
-                    {
-                        auto frame_info =  m_native_device.get_format();
-                        if (!frame_info.is_null())
-                        {
-                            video_format_impl video_format;
-                            if (mpl::core::utils::convert(frame_info
-                                                          , video_format))
-                            {
-                                result |= writer.set("format", video_format);
-                            }
-                        }
-                    }
+                    result = recv_commands(*output_params);
                 }
 
                 return result;
@@ -506,12 +572,13 @@ class v4l2_device : public i_device
 
         inline i_property::u_ptr_t get_controls()
         {
-            if (auto ctrls = property_helper::create_tree())
+            if (auto ctrls = property_helper::create_array())
             {
-                if (get_controls(*ctrls) > 0)
-                {
-                    return ctrls;
-                }
+                auto& control_array = static_cast<i_property_array&>(*ctrls).get_value();
+                detail::serialize_controls(get_supported_controls()
+                                           , control_array);
+
+                return ctrls;
             }
 
             return nullptr;
@@ -752,10 +819,10 @@ public:
             if (m_wrapped_device.is_open())
             {
                 property_writer writer(output_params);
-                if (auto formats = m_wrapped_device.get_formats())
+                /*if (auto formats = m_wrapped_device.get_formats())
                 {
                     writer.set("formats", *formats);
-                }
+                }*/
                 if (auto controls = m_wrapped_device.get_controls())
                 {
                     writer.set("controls", *controls);

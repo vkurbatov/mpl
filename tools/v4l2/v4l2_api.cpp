@@ -11,6 +11,8 @@
 
 #include <chrono>
 
+#include <iostream>
+
 
 namespace v4l2
 {
@@ -434,10 +436,10 @@ frame_data_t fetch_frame_data(handle_t handle
 
         buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buffer.memory = V4L2_MEMORY_MMAP;
-        buffer.index = mapped_buffer.index;
 
         if (xioctl(handle, VIDIOC_DQBUF, &buffer) >= 0)
         {
+            mapped_buffer.index = buffer.index;
             auto current = mapped_buffer.current();
             auto data = static_cast<const std::uint8_t*>(current.buffer);
             if (buffer.bytesused > 0
@@ -445,8 +447,6 @@ frame_data_t fetch_frame_data(handle_t handle
             {
                 frame_data = frame_data_t(data
                                           , data + buffer.bytesused);
-                mapped_buffer.next();
-
 
             }
 
