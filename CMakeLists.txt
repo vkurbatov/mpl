@@ -67,6 +67,7 @@ target_link_libraries(${PROJECT_NAME}
     srlwrp
     ocvwrp
     avwrp
+    ipcwrp
     ptbase
     ${OpenCV_LIBRARIES}
     ${AVCODEC_LIBRARIES}

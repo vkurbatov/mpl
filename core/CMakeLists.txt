@@ -8,6 +8,12 @@ set(SOURCES
     data_splitter.cpp
     smart_buffer.cpp
     smart_buffer_collection.cpp
+    fifo_writer_impl.cpp
+    fifo_reader_impl.cpp
+    cyclic_data_reader.cpp
+    cyclic_data_writer.cpp
+    shared_buffer_header.cpp
+    shared_data_impl.cpp
     utils.cpp
     time_utils.cpp
     property_helper.cpp
@@ -41,6 +47,7 @@ set(PUBLIC_HEADERS
     option_types.h
     event.h
     event_channel_state.h
+    shared_buffer_header.h
     i_property.h
     i_property_value.h
     i_property_tree.h
@@ -52,6 +59,10 @@ set(PUBLIC_HEADERS
     i_mapped_buffer.h
     i_dynamic_buffer.h
     i_buffer_collection.h
+    i_fifo_buffer.h
+    i_fifo_buffer_reader.h
+    i_fifo_buffer_writer.h
+    i_shared_data.h
     i_channel.h
     i_message.h
     i_message_sink.h
@@ -65,6 +76,11 @@ set(PRIVATE_HEADERS
     data_splitter.h
     smart_buffer.h
     smart_buffer_collection.h
+    fifo_writer_impl.h
+    fifo_reader_impl.h
+    cyclic_data_reader.h
+    cyclic_data_writer.h
+    shared_data_impl.h
     utils.h
     enum_utils.h
     enum_converter_defs.h

@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "core/test.h"
 #include "media/test.h"
 #include "tools/base/string_base.h"
 
@@ -7,6 +8,7 @@
 
 int main()
 {
-    mpl::media::tests();
+    // mpl::media::tests();
+    mpl::core_test();
 }
 
