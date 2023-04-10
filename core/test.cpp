@@ -21,7 +21,7 @@ void test1()
 
 void test2()
 {
-    std::vector<std::uint8_t>   array(1000);
+    std::vector<std::uint8_t>   array(100);
 
 
     shared_data_ref_impl    shared_data(array.data()
@@ -43,7 +43,7 @@ void test2()
                 std::cout << "Push data: " << test_string << " completed!" << std::endl;
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     };
 
@@ -55,25 +55,38 @@ void test2()
         while(counter-- > 0)
         {
             auto pending_size = reader.pending_size();
-            if (pending_size > 0)
+            switch(pending_size)
             {
-                std::string test_string;
-                test_string.resize(pending_size);
-                if (reader.pop_data(test_string.data(), test_string.size()))
+                case 0:
+                    std::cout << "Reader: no data" << std::endl;
+                break;
+                case i_fifo_buffer::overload:
+                    std::cout << "Reader: overload data" << std::endl;
+                    reader.reset();
+                break;
+                default:
                 {
-                    std::cout << "Pop data: " << test_string << " completed!" << std::endl;
+                    std::string test_string;
+                    test_string.resize(20);
+                    auto readed_size = reader.pop_data(test_string.data(), test_string.size());
+                    if (readed_size == i_fifo_buffer::overload)
+                    {
+                        std::cout << "Reader: queue overload" << std::endl;
+                        reader.reset();
+                    }
+                    else if (readed_size > 0)
+                    {
+                        std::cout << "Pop data: " << test_string << " completed!" << std::endl;
+                    }
+                    else
+                    {
+                        std::cout << "Reader: can't read from queue" << std::endl;
+                    }
                 }
-                else
-                {
-                    std::cout << "Reader: can't read from queue" << std::endl;
-                }
-            }
-            else
-            {
-                std::cout << "Reader: can't pending data" << std::endl;
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     };
 

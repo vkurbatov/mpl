@@ -2,6 +2,8 @@
 #include "shared_buffer_header.h"
 #include "cyclic_data_reader.h"
 
+#include <string>
+
 namespace mpl
 {
 
@@ -22,14 +24,16 @@ std::size_t fifo_reader_impl::capacity() const
     return internal_capacity();
 }
 
-bool fifo_reader_impl::read_data(void *data, std::size_t size) const
+std::size_t fifo_reader_impl::read_data(void *data, std::size_t size) const
 {
     return internal_read_data(data, size);
 }
 
-bool fifo_reader_impl::pop_data(void *data, std::size_t size)
+std::size_t fifo_reader_impl::pop_data(void *data, std::size_t size)
 {
-    if (internal_read_data(data, size))
+    auto read_size = internal_read_data(data, size);
+    if (read_size > 0
+            && read_size != overload)
     {
         m_position += size;
         return true;
@@ -40,7 +44,7 @@ bool fifo_reader_impl::pop_data(void *data, std::size_t size)
 
 std::size_t fifo_reader_impl::pending_size() const
 {
-    std::size_t result = override_size;
+    std::size_t result = overload;
     if (auto mapped_data = m_shared_data.map())
     {
 
@@ -75,14 +79,13 @@ void fifo_reader_impl::internal_reset()
     }
 }
 
-bool fifo_reader_impl::internal_read_data(void *data
-                                          , std::size_t size) const
+std::size_t fifo_reader_impl::internal_read_data(void *data
+                                                , std::size_t size) const
 {
-    bool result = false;
+    std::size_t result = 0u;
 
     if (auto mapped_data = m_shared_data.map())
     {
-
         const shared_buffer_header_t& header = *static_cast<const shared_buffer_header_t*>(mapped_data);
         auto buffer_data = static_cast<const std::uint8_t*>(mapped_data) + sizeof(shared_buffer_header_t);
         auto buffer_size = m_shared_data.size() - sizeof(shared_buffer_header_t);
@@ -90,15 +93,23 @@ bool fifo_reader_impl::internal_read_data(void *data
 
         if (unread_size < buffer_size)
         {
-            cyclic_data_reader reader(buffer_data
-                                      , buffer_size);
-
-            if (reader.read(m_position
-                            , data
-                            , size))
+            size = std::min(size, unread_size);
+            if (size > 0)
             {
-                result = true;
+                cyclic_data_reader reader(buffer_data
+                                          , buffer_size);
+
+                if (reader.read(m_position
+                                , data
+                                , size))
+                {
+                    result = size;
+                }
             }
+        }
+        else
+        {
+            result = overload;
         }
 
         m_shared_data.unmap();

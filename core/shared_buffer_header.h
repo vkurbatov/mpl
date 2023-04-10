@@ -13,8 +13,6 @@ struct shared_buffer_header_t
     struct state_t
     {
         std::uint32_t   packets;
-        std::uint32_t   writers;
-        std::uint32_t   readers;
 
         void reset();
     };

@@ -22,13 +22,13 @@ public:
 
     // i_fifo_buffer_reader interface
 public:
-    bool read_data(void *data, std::size_t size) const override;
-    bool pop_data(void *data, std::size_t size) override;
+    std::size_t read_data(void *data, std::size_t size) const override;
+    std::size_t pop_data(void *data, std::size_t size) override;
     std::size_t pending_size() const override;
 private:
     std::size_t internal_capacity() const;
     void internal_reset();
-    bool internal_read_data(void *data, std::size_t size) const;
+    std::size_t internal_read_data(void *data, std::size_t size) const;
 };
 
 }
