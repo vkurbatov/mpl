@@ -33,6 +33,7 @@ set(SOURCES
     event_channel_state.cpp
     message_event_impl.cpp
     message_sink_impl.cpp
+    ipc/ipc_manager_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -99,6 +100,7 @@ set(PRIVATE_HEADERS
     message_router_impl.h
     message_event_impl.h
     message_sink_impl.h
+    ipc/ipc_manager_impl.h
 )
 
 

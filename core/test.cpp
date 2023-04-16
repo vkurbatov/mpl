@@ -8,6 +8,8 @@
 #include <thread>
 #include <iostream>
 
+#include "tools/ipc/test.h"
+
 namespace mpl
 {
 
@@ -98,11 +100,17 @@ void test2()
 
 }
 
+void ipc_test()
+{
+    ipc::test();
+}
+
 }
 
 void core_test()
 {
-    test2();
+    // test2();
+    ipc_test();
 }
 
 }
