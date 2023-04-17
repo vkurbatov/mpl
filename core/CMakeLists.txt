@@ -64,6 +64,8 @@ set(PUBLIC_HEADERS
     i_fifo_buffer_reader.h
     i_fifo_buffer_writer.h
     i_shared_data.h
+    i_named_shared_data.h
+    i_shared_data_manager.h
     i_channel.h
     i_message.h
     i_message_sink.h

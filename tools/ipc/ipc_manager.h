@@ -7,6 +7,8 @@
 namespace ipc
 {
 
+class ipc_segment;
+
 class ipc_manager
 {
 public:
@@ -34,8 +36,11 @@ public:
     ipc_manager(const config_t& config);
     ~ipc_manager();
 
-    template<typename IPCObject>
-    IPCObject create_object();
+    ipc_segment create_segment(const std::string& name
+                               , std::size_t size);
+
+    /*template<typename IPCObject, class ...Args>
+    IPCObject create_object(Args&& ...args);*/
 
     std::string name() const;
 

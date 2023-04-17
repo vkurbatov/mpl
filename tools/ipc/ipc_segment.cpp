@@ -109,85 +109,71 @@ struct ipc_segment::segment_ctx_t
         }
     }
 
-    void wait(ipc_mutex_t& ipc_mutex)
+    void wait(ipc_mutex_t& ipc_mutex
+              , std::int32_t& trigger)
     {
+        auto ncounter = counter();
         boost::interprocess::scoped_lock<ipc_mutex_t> lock(ipc_mutex);
-        m_condition.wait(lock);
+        m_condition.wait(lock, [&]()
+        {
+            ncounter = counter();
+            return trigger != ncounter;
+        });
+        trigger = ncounter;
     }
 
     bool wait(ipc_mutex_t& ipc_mutex
+              , std::int32_t& trigger
               , timestamp_t timeout_ns)
     {
+        auto ncounter = counter();
         boost::interprocess::scoped_lock<ipc_mutex_t> lock(ipc_mutex);
-        return m_condition.timed_wait(lock
-                                      , boost::get_system_time() + boost::posix_time::microseconds(timeout_ns / 1000));
+        auto result = m_condition.timed_wait(lock
+                                             , boost::get_system_time() + boost::posix_time::microseconds(timeout_ns / 1000)
+                                             , [&]()
+        {
+            ncounter = counter();
+            return trigger != ncounter;
+        });
+        trigger = ncounter;
+        return result;
+    }
+
+    std::int32_t counter() const
+    {
+        return m_notify_counter.load(std::memory_order_acquire);
     }
 };
 
-ipc_segment::ipc_segment(const ipc_shmem_manager_ptr_t &manager)
+ipc_segment::ipc_segment(const ipc_shmem_manager_ptr_t &manager
+                         , const std::string& name
+                         , std::size_t size)
     : m_manager(manager)
-    , m_segment_ctx(nullptr)
+    , m_segment_ctx(segment_ctx_t::create(*m_manager
+                                          , name
+                                          , size))
+    , m_trigger(0)
 {
-
+    if (m_segment_ctx)
+    {
+        m_trigger = m_segment_ctx->counter();
+    }
 }
 
 ipc_segment::~ipc_segment()
 {
-    close();
-}
-
-bool ipc_segment::open(const std::string &name
-                       , std::size_t size)
-{
-    if (m_manager)
+    if (m_segment_ctx != nullptr)
     {
-        if (m_segment_ctx == nullptr)
+        if (m_segment_ctx->m_ref_counter-- < 2)
         {
-            if (!name.empty())
-            {
-                m_segment_ctx = segment_ctx_t::create(*m_manager
-                                                      , name
-                                                      , size);
-
-                return m_segment_ctx != nullptr;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool ipc_segment::close()
-{
-    if (m_manager)
-    {
-        if (m_segment_ctx != nullptr)
-        {
-            if (m_segment_ctx->m_ref_counter-- < 2)
+            if (m_manager)
             {
                 m_manager->destroy_ptr(m_segment_ctx);
             }
-
-            m_segment_ctx = nullptr;
         }
+
+        m_segment_ctx = nullptr;
     }
-
-    return false;
-}
-
-bool ipc_segment::is_open() const
-{
-    return m_segment_ctx != nullptr;
-}
-
-void *ipc_segment::try_map()
-{
-    if (m_segment_ctx)
-    {
-        return m_segment_ctx->try_map();
-    }
-
-    return nullptr;
 }
 
 void *ipc_segment::map(timestamp_t timeout_ns)
@@ -218,6 +204,16 @@ void ipc_segment::unmap()
     }
 }
 
+std::string ipc_segment::name() const
+{
+    if (m_segment_ctx)
+    {
+        return boost::interprocess::managed_shared_memory::get_instance_name(m_segment_ctx);
+    }
+
+    return {};
+}
+
 void ipc_segment::notify(bool all)
 {
     if (m_segment_ctx)
@@ -230,7 +226,8 @@ void ipc_segment::wait()
 {
     if (m_segment_ctx)
     {
-        m_segment_ctx->wait(m_sync_mutex);
+        m_segment_ctx->wait(m_sync_mutex
+                            , m_trigger);
     }
 }
 
@@ -239,6 +236,7 @@ bool ipc_segment::wait(timestamp_t timeout_ns)
     if (m_segment_ctx)
     {
         return m_segment_ctx->wait(m_sync_mutex
+                                   , m_trigger
                                     , timeout_ns);
     }
 
@@ -254,8 +252,7 @@ std::size_t ipc_segment::size() const
 
 bool ipc_segment::is_valid() const
 {
-    return m_manager != nullptr;
+    return m_segment_ctx != nullptr;
 }
-
 
 }

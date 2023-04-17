@@ -28,11 +28,10 @@ void test()
 
         if (manager.is_valid())
         {
-            ipc_segment segment = manager.create_object<ipc_segment>();
+            ipc_segment segment = manager.create_segment(segment_name
+                                                         , segment_size);
             if (segment.is_valid())
             {
-                if (segment.open(segment_name
-                                 , segment_size))
                 {
                     std::size_t count = 1000;
                     while(count-- > 0)
@@ -53,7 +52,6 @@ void test()
                         }
                         std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     }
-                    segment.close();
                 }
             }
         }
@@ -68,15 +66,14 @@ void test()
 
         if (manager.is_valid())
         {
-            ipc_segment segment = manager.create_object<ipc_segment>();
+            ipc_segment segment = manager.create_segment(segment_name
+                                                         , 0);
             if (segment.is_valid())
             {
-                if (segment.open(segment_name
-                                 , 0))
                 {
                     while(true)
                     {
-                        auto to = 150 * 1000 * 1000;
+                        auto to = 110 * 1000 * 1000;
                         if (segment.wait(to))
                         {
                             if (auto data = segment.map())
@@ -101,8 +98,6 @@ void test()
                             std::cout << "Wait timeout: " << std::endl;
                         }
                     }
-
-                    segment.close();
                 }
             }
         }

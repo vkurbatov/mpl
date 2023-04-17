@@ -15,7 +15,7 @@ class shared_data_ref_impl : public i_shared_data
 
     void*               m_data_ref;
     std::size_t         m_size_ref;
-public:
+public:  
     shared_data_ref_impl(void* data_ref
                          , std::size_t size_ref);
 
