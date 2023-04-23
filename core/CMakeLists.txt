@@ -33,6 +33,9 @@ set(SOURCES
     event_channel_state.cpp
     message_event_impl.cpp
     message_sink_impl.cpp
+    mapped_packet.cpp
+    packetizer.cpp
+    depacketizer.cpp
     ipc/ipc_manager_impl.cpp
 )
 
@@ -40,6 +43,7 @@ set(PUBLIC_HEADERS
     common_types.h
     type_info.h
     property_types.h
+    packet_types.h
     time_types.h
     message_types.h
     channel_types.h
@@ -64,7 +68,7 @@ set(PUBLIC_HEADERS
     i_fifo_buffer_reader.h
     i_fifo_buffer_writer.h
     i_shared_data.h
-    i_named_shared_data.h
+    i_sync_shared_data.h
     i_shared_data_manager.h
     i_channel.h
     i_message.h
@@ -102,6 +106,9 @@ set(PRIVATE_HEADERS
     message_router_impl.h
     message_event_impl.h
     message_sink_impl.h
+    mapped_packet.h
+    packetizer.h
+    depacketizer.h
     ipc/ipc_manager_impl.h
 )
 
