@@ -36,6 +36,7 @@ set(SOURCES
     mapped_packet.cpp
     packetizer.cpp
     depacketizer.cpp
+    packetize_impl.cpp
     ipc/ipc_manager_impl.cpp
 )
 

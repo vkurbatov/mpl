@@ -10,7 +10,7 @@ class i_dynamic_buffer : public i_mapped_buffer
 {
 public:
     using s_ptr_t = std::shared_ptr<i_dynamic_buffer>;
-    virtual void append_data(const void* data
+    virtual bool append_data(const void* data
                              , std::size_t size) = 0;
     virtual void resize(std::size_t new_size) = 0;
     virtual void clear() = 0;

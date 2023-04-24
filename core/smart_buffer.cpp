@@ -38,11 +38,12 @@ struct storage_context_t : public i_data_object
         return m_data.data();
     }
 
-    inline void append(const void* data, std::size_t size)
+    inline bool append(const void* data, std::size_t size)
     {
         m_data.insert(m_data.end()
                       , static_cast<const raw_array_t::value_type*>(data)
                       , static_cast<const raw_array_t::value_type*>(data) + size);
+        return true;
     }
 
     inline void resize(std::size_t new_size)
@@ -387,7 +388,7 @@ void smart_buffer::make_shared()
     }
 }
 
-void smart_buffer::append_data(const void *data, std::size_t size)
+bool smart_buffer::append_data(const void *data, std::size_t size)
 {
     make_store();
     return static_cast<storage_context_t&>(*m_storage_context).append(data, size);

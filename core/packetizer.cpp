@@ -31,10 +31,20 @@ namespace detail
     }
 }
 
-packetizer::packetizer(i_fifo_buffer_writer &writer)
-    : m_writer(writer)
+packetizer::packetizer(i_dynamic_buffer& buffer)
+    : m_buffer(buffer)
 {
 
+}
+
+bool packetizer::open_object()
+{
+    return add(field_type_t::object_begin);
+}
+
+bool packetizer::close_object()
+{
+    return add(field_type_t::object_end);
 }
 
 bool packetizer::add(field_type_t field_type
@@ -56,16 +66,9 @@ bool packetizer::add(field_type_t field_type
 bool packetizer::add_stream(const void *stream_data
                             , std::size_t stream_size)
 {
-    return m_writer.push_data(stream_data
-                              , stream_size);
+    return m_buffer.append_data(stream_data
+                               , stream_size);
 }
-
-template<typename T>
-bool packetizer::add_value(const T &value)
-{
-    return false;
-}
-
 
 
 }

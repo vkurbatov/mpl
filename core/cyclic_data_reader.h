@@ -15,7 +15,7 @@ public:
                        , std::size_t size_ref);
 
     bool read(std::size_t pos
-              , void* data
+              , void* data // null - drop
               , std::size_t size);
 };
 

@@ -91,7 +91,7 @@ public:
     void make_shared() override;
     // i_dynamic_buffer interface
 public:
-    void append_data(const void *data, std::size_t size) override;
+    bool append_data(const void *data, std::size_t size) override;
     void resize(std::size_t new_size) override;
     void clear() override;
 private:

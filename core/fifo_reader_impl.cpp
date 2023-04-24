@@ -36,10 +36,9 @@ std::size_t fifo_reader_impl::pop_data(void *data, std::size_t size)
             && read_size != overload)
     {
         m_position += size;
-        return true;
     }
 
-    return false;
+    return read_size;
 }
 
 std::size_t fifo_reader_impl::pending_size() const
@@ -59,6 +58,27 @@ std::size_t fifo_reader_impl::pending_size() const
 
         m_shared_data.unmap();
     }
+    return result;
+}
+
+std::size_t fifo_reader_impl::cursor() const
+{
+    return m_position;
+}
+
+bool fifo_reader_impl::seek(std::size_t cursor)
+{
+    bool result = false;
+    if (auto mapped_data = m_shared_data.map())
+    {
+        if (cursor <= static_cast<const shared_buffer_header_t*>(mapped_data)->position)
+        {
+            m_position = cursor;
+            result = true;
+        }
+        m_shared_data.unmap();
+    }
+
     return result;
 }
 
@@ -96,14 +116,21 @@ std::size_t fifo_reader_impl::internal_read_data(void *data
             size = std::min(size, unread_size);
             if (size > 0)
             {
-                cyclic_data_reader reader(buffer_data
-                                          , buffer_size);
-
-                if (reader.read(m_position
-                                , data
-                                , size))
+                if (data != nullptr)
                 {
                     result = size;
+                }
+                else
+                {
+                    cyclic_data_reader reader(buffer_data
+                                              , buffer_size);
+
+                    if (reader.read(m_position
+                                    , data
+                                    , size))
+                    {
+                        result = size;
+                    }
                 }
             }
         }

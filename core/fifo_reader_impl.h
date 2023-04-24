@@ -25,11 +25,14 @@ public:
     std::size_t read_data(void *data, std::size_t size) const override;
     std::size_t pop_data(void *data, std::size_t size) override;
     std::size_t pending_size() const override;
+    std::size_t cursor() const override;
+    bool seek(std::size_t cursor) override;
 
 private:
     std::size_t internal_capacity() const;
     void internal_reset();
     std::size_t internal_read_data(void *data, std::size_t size) const;
+
 };
 
 }

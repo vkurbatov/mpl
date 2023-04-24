@@ -16,6 +16,8 @@ public:
     virtual std::size_t read_data(void* data, std::size_t size) const = 0;
     virtual std::size_t pop_data(void* data, std::size_t size) = 0;
     virtual std::size_t pending_size() const = 0;
+    virtual std::size_t cursor() const = 0;
+    virtual bool seek(std::size_t cursor) = 0;
 };
 
 }

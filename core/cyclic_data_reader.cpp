@@ -24,12 +24,14 @@ bool cyclic_data_reader::read(std::size_t pos
                 ? m_size_ref - pos
                 : size;
 
+
         std::memcpy(data
-                    , static_cast<const std::uint8_t*>(m_data_ref) + pos
-                    , part_size);
+                   , static_cast<const std::uint8_t*>(m_data_ref) + pos
+                   , part_size);
 
         if (part_size < size)
         {
+
             std::memcpy(static_cast<std::uint8_t*>(data) + part_size
                         , m_data_ref
                         , size - part_size);
