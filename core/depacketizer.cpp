@@ -114,11 +114,18 @@ bool depacketizer::fetch(field_type_t field_type
 
         if (pending_size() >= packet_size)
         {
-            if (packet.read_packet(field_type
-                                   , payload_data
-                                   , payload_size) == payload_size)
+            auto read_size = packet.read_packet(field_type
+                                                , payload_data
+                                                , payload_size);
+            if (read_size > 0)
             {
                 m_cursor += packet_size;
+                if (read_size < payload_size)
+                {
+                    std::memset(static_cast<std::uint8_t*>(payload_data) + read_size
+                                , 0
+                                , payload_size - read_size);
+                }
                 return true;
             }
         }

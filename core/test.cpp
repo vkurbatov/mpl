@@ -4,6 +4,11 @@
 #include "fifo_writer_impl.h"
 #include "shared_data_impl.h"
 
+#include "smart_buffer.h"
+
+#include "packetizer.h"
+#include "depacketizer.h"
+
 #include <vector>
 #include <thread>
 #include <iostream>
@@ -195,6 +200,43 @@ void test3()
 
 }
 
+void test4()
+{
+    smart_buffer packet;
+
+    packetizer packer(packet);
+
+    std::int32_t n_value = 1;
+    double db_value = 2.0;
+    std::string s_value = "Vasiliy";
+    std::vector<std::uint16_t> a_value = { 1, 2, 3, 4, 5};
+
+
+    packer.add_value(n_value);
+    packer.add_value(db_value);
+    packer.add_value(s_value);
+    packer.add_value(a_value);
+
+    std::int32_t o_n_value = 0;
+    double o_db_value = 0.0f;
+    std::string o_s_value = {};
+    std::vector<std::uint16_t> o_a_value = {};
+
+    depacketizer depacker(packet);
+    depacker.fetch_value(o_n_value);
+    depacker.fetch_value(o_db_value);
+    depacker.fetch_value(o_s_value);
+    depacker.fetch_value(o_a_value);
+
+    bool cmp1 = n_value == o_n_value;
+    bool cmp2 = db_value == o_db_value;
+    bool cmp3 = s_value == o_s_value;
+    bool cmp4 = a_value == o_a_value;
+
+    return;
+
+}
+
 
 void ipc_test()
 {
@@ -205,7 +247,7 @@ void ipc_test()
 
 void core_test()
 {
-    test3();
+    test4();
 }
 
 }

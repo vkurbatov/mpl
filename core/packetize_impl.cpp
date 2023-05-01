@@ -79,18 +79,23 @@ __declare_field_type(char*, string)
     template bool packetizer::add_value(const type& value);\
     template bool depacketizer::fetch_value(type& value);
 
-__declare_packetize_type(std::int8_t)
-__declare_packetize_type(std::int16_t)
-__declare_packetize_type(std::int32_t)
-__declare_packetize_type(std::int64_t)
-__declare_packetize_type(std::uint8_t)
-__declare_packetize_type(std::uint16_t)
-__declare_packetize_type(std::uint32_t)
-__declare_packetize_type(std::uint64_t)
+#define __declare_packetize_array_type(type)\
+    __declare_packetize_type(type)\
+    template bool packetizer::add_value(const std::vector<type>& value);\
+    template bool depacketizer::fetch_value(std::vector<type>& value);
+
+__declare_packetize_array_type(std::int8_t)
+__declare_packetize_array_type(std::int16_t)
+__declare_packetize_array_type(std::int32_t)
+__declare_packetize_array_type(std::int64_t)
+__declare_packetize_array_type(std::uint8_t)
+__declare_packetize_array_type(std::uint16_t)
+__declare_packetize_array_type(std::uint32_t)
+__declare_packetize_array_type(std::uint64_t)
 __declare_packetize_type(bool)
-__declare_packetize_type(float)
-__declare_packetize_type(double)
-__declare_packetize_type(long double)
+__declare_packetize_array_type(float)
+__declare_packetize_array_type(double)
+__declare_packetize_array_type(long double)
 
 // simple types
 template<typename T>

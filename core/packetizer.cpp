@@ -54,7 +54,7 @@ bool packetizer::add(field_type_t field_type
     auto& packet = detail::create_packet_header(field_type
                                                 , payload_size);
 
-    if (add_stream(&packet, packet.payload_size()))
+    if (add_stream(&packet, packet.header.header_size()))
     {
         return payload_data == nullptr || add_stream(payload_data
                                                      , payload_size);
