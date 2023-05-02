@@ -38,6 +38,11 @@ set(SOURCES
     depacketizer.cpp
     packetize_impl.cpp
     ipc/ipc_manager_impl.cpp
+    seq/mapped_seq_header.cpp
+    seq/seq_packet_builder.cpp
+    seq/seq_packet.cpp
+    seq/seq_buffer.cpp
+    seq/seq_parser.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -111,6 +116,12 @@ set(PRIVATE_HEADERS
     packetizer.h
     depacketizer.h
     ipc/ipc_manager_impl.h
+    seq/mapped_seq_header.h
+    seq/seq_types.h
+    seq/seq_packet_builder.h
+    seq/seq_packet.h
+    seq/seq_buffer.h
+    seq/seq_parser.h
 )
 
 

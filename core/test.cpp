@@ -15,6 +15,9 @@
 
 #include "ipc/ipc_manager_impl.h"
 
+#include "seq/seq_packet_builder.h"
+#include "seq/seq_parser.h"
+
 #include "tools/ipc/test.h"
 
 namespace mpl
@@ -237,6 +240,54 @@ void test4()
 
 }
 
+void test5()
+{
+    constexpr std::size_t test_count = 200;
+    std::vector<std::uint8_t> test_array;
+
+    for (std::size_t n = 0; n < test_count; n++)
+    {
+        test_array.push_back(static_cast<std::uint8_t>(n));
+    }
+
+    seq::seq_packet_builder_t builder(0
+                                      , 0
+                                      , 50);
+
+    auto packets = builder.build_fragments(test_array.data()
+                                           , test_array.size());
+
+    smart_buffer stream_buffer;
+
+    for (const auto& p : packets)
+    {
+        stream_buffer.append_data(p.data()
+                                  , p.size());
+    }
+
+    auto packet_handler = [&](seq::seq_packet&& packet)
+    {
+        if (packet.is_valid())
+        {
+            std::vector<std::uint8_t> data(static_cast<const std::uint8_t*>(packet.payload_data())
+                                           , static_cast<const std::uint8_t*>(packet.payload_data()) + packet.payload_size());
+
+            std::cout << "Packet #" << packet.id() << ": size: " << data.size() << std::endl;
+        }
+    };
+
+    seq::seq_parser parser(packet_handler);
+
+    for (std::size_t i = 0; i < stream_buffer.size(); i++)
+    {
+        parser.push_stream(&stream_buffer[i]
+                           , 1);
+    }
+
+    return;
+
+}
+
 
 void ipc_test()
 {
@@ -247,7 +298,7 @@ void ipc_test()
 
 void core_test()
 {
-    test4();
+    test5();
 }
 
 }

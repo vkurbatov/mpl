@@ -34,7 +34,7 @@ class smart_buffer : public i_dynamic_buffer
 public:
     using u_ptr_t = std::unique_ptr<smart_buffer>;
     using s_ptr_t = std::shared_ptr<smart_buffer>;
-    using list_t = std::vector<smart_buffer>;
+    using array_t = std::vector<smart_buffer>;
 
 
     static u_ptr_t create();
