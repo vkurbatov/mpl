@@ -4,17 +4,17 @@
 #include "core/smart_buffer.h"
 #include <set>
 
-namespace mpl::seq
+namespace mpl::sq
 {
 
-struct seq_packet_builder_t
+struct sq_packet_builder_t
 {
     std::uint8_t    session_id;
     std::uint16_t   packet_id;
     std::uint32_t   max_fragment_size;
     std::size_t     max_nack_group_size;
 
-    seq_packet_builder_t(std::uint8_t session_id = 0
+    sq_packet_builder_t(std::uint8_t session_id = 0
                          , std::uint16_t packet_id = 0
                          , std::uint32_t max_fragment_size = 0
                          , std::size_t max_nack_group_size = 10);

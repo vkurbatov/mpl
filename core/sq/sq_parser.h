@@ -2,17 +2,16 @@
 #define MPL_SEQ_PARSER_H
 
 #include "core/smart_buffer.h"
-#include "seq_packet.h"
+#include "sq_packet.h"
 #include <functional>
 
-namespace mpl::seq
+namespace mpl::sq
 {
 
-class seq_parser
+class sq_parser
 {
 public:
-    static constexpr std::size_t default_fragment_pending_buffer = 0;
-    using packet_handler_t = std::function<void(seq_packet&&)>;
+    using packet_handler_t = std::function<void(sq_packet&&)>;
 private:
 
     smart_buffer            m_packet_buffer;
@@ -20,7 +19,7 @@ private:
 
 public:
 
-    seq_parser(const packet_handler_t& packet_handler);
+    sq_parser(const packet_handler_t& packet_handler);
 
     void push_stream(const void* stream_data
                      , std::size_t stream_size);

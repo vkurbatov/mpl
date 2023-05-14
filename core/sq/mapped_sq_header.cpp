@@ -1,6 +1,6 @@
-#include "mapped_seq_header.h"
+#include "mapped_sq_header.h"
 
-namespace mpl::seq
+namespace mpl::sq
 {
 
 mapped_packet_header_t::mapped_packet_header_t(packet_type_t packet_type

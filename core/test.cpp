@@ -15,8 +15,9 @@
 
 #include "ipc/ipc_manager_impl.h"
 
-#include "seq/seq_packet_builder.h"
-#include "seq/seq_parser.h"
+#include "sq/sq_packet_builder.h"
+#include "sq/sq_parser.h"
+#include "sq/sq_stitcher.h"
 
 #include "tools/ipc/test.h"
 
@@ -250,9 +251,9 @@ void test5()
         test_array.push_back(static_cast<std::uint8_t>(n));
     }
 
-    seq::seq_packet_builder_t builder(0
-                                      , 0
-                                      , 50);
+    sq::sq_packet_builder_t builder(0
+                                    , 0
+                                    , 50);
 
     auto packets = builder.build_fragments(test_array.data()
                                            , test_array.size());
@@ -265,7 +266,7 @@ void test5()
                                   , p.size());
     }
 
-    auto packet_handler = [&](seq::seq_packet&& packet)
+    auto packet_handler = [&](sq::sq_packet&& packet)
     {
         if (packet.is_valid())
         {
@@ -276,12 +277,12 @@ void test5()
         }
     };
 
-    seq::seq_parser parser(packet_handler);
+    sq::sq_parser parser(packet_handler);
 
-    for (std::size_t i = 0; i < stream_buffer.size(); i++)
+    for (std::size_t i = 0; i < stream_buffer.size() - 3; i += 4)
     {
         parser.push_stream(&stream_buffer[i]
-                           , 1);
+                           , 4);
     }
 
     return;

@@ -1,12 +1,12 @@
-#include "seq_packet_builder.h"
-#include "mapped_seq_header.h"
+#include "sq_packet_builder.h"
+#include "mapped_sq_header.h"
 
 #include <cstring>
 
-namespace mpl::seq
+namespace mpl::sq
 {
 
-seq_packet_builder_t::seq_packet_builder_t(uint8_t session_id
+sq_packet_builder_t::sq_packet_builder_t(uint8_t session_id
                                            , uint16_t packet_id
                                            , uint32_t max_fragment_size
                                            , std::size_t max_nack_group_size)
@@ -18,7 +18,7 @@ seq_packet_builder_t::seq_packet_builder_t(uint8_t session_id
 
 }
 
-smart_buffer::array_t seq_packet_builder_t::build_fragments(const void *data
+smart_buffer::array_t sq_packet_builder_t::build_fragments(const void *data
                                                                           , std::size_t size)
 {
     smart_buffer::array_t packet_list;
@@ -61,7 +61,7 @@ smart_buffer::array_t seq_packet_builder_t::build_fragments(const void *data
 
 }
 
-smart_buffer::array_t seq_packet_builder_t::build_nack_request(const std::set<uint16_t> &nack_ids)
+smart_buffer::array_t sq_packet_builder_t::build_nack_request(const std::set<uint16_t> &nack_ids)
 {
     smart_buffer::array_t packet_list;
 

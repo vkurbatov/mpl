@@ -1,13 +1,13 @@
 #ifndef MPL_SEQ_BUFFER_H
 #define MPL_SEQ_BUFFER_H
 
-namespace mpl::seq
+namespace mpl::sq
 {
 
-class seq_buffer
+class sq_buffer
 {
 public:
-    seq_buffer();
+    sq_buffer();
 
     void reset();
 

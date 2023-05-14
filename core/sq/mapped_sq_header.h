@@ -1,9 +1,9 @@
 #ifndef MPL_MAPPED_SEQ_HEADER_H
 #define MPL_MAPPED_SEQ_HEADER_H
 
-#include "seq_types.h"
+#include "sq_types.h"
 
-namespace mpl::seq
+namespace mpl::sq
 {
 
 #pragma pack(push, 1)

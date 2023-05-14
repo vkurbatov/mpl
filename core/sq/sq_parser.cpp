@@ -1,23 +1,23 @@
-#include "seq_parser.h"
-#include "mapped_seq_header.h"
+#include "sq_parser.h"
+#include "mapped_sq_header.h"
 
-namespace mpl::seq
+namespace mpl::sq
 {
 
-seq_parser::seq_parser(const packet_handler_t& packet_handler)
+sq_parser::sq_parser(const packet_handler_t& packet_handler)
     : m_packet_handler(packet_handler)
 {
 
 }
 
-void seq_parser::push_stream(const void *stream_data
+void sq_parser::push_stream(const void *stream_data
                              , std::size_t stream_size)
 {
     push_stream(smart_buffer(stream_data
                              , stream_size));
 }
 
-void seq_parser::push_stream(const smart_buffer &stream)
+void sq_parser::push_stream(const smart_buffer &stream)
 {
     auto ptr = static_cast<const std::uint8_t*>(stream.data());
     auto size = stream.size();
@@ -38,7 +38,7 @@ void seq_parser::push_stream(const smart_buffer &stream)
                         {
                             processed_size = std::min(header.packet_size(), size);
                             smart_buffer packet_buffer(ptr, processed_size);
-                            seq_packet packet(std::move(packet_buffer));
+                            sq_packet packet(std::move(packet_buffer));
                             if (packet.is_valid())
                             {
                                 m_packet_handler(std::move(packet));
@@ -80,7 +80,7 @@ void seq_parser::push_stream(const smart_buffer &stream)
 
                 if (packet_completed)
                 {
-                    seq_packet packet(std::move(m_packet_buffer));
+                    sq_packet packet(std::move(m_packet_buffer));
                     if (packet.is_valid())
                     {
                         m_packet_handler(std::move(packet));
@@ -98,7 +98,7 @@ void seq_parser::push_stream(const smart_buffer &stream)
     }
 }
 
-void seq_parser::reset()
+void sq_parser::reset()
 {
     m_packet_buffer.clear();
 }

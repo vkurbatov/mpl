@@ -3,13 +3,15 @@
 
 #include "core/time_types.h"
 
-namespace mpl::seq
+namespace mpl::sq
 {
 
 constexpr std::uint16_t default_seq_fragment_size = 1400;
 constexpr std::uint16_t defalt_seq_fragment_buffer_size = 1000;
 constexpr timestamp_t default_nack_request_period = durations::milliseconds(100);
 
+
+using packet_id_t = std::uint16_t;
 enum class packet_type_t
 {
     undefined = 0,
