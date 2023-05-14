@@ -30,6 +30,7 @@ set(SOURCES
     smart_transcoder_factory.cpp
     v4l2_device_factory.cpp
     v4l2_utils.cpp
+    ipc_input_device_factory.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -77,6 +78,7 @@ set(PRIVATE_HEADERS
     smart_transcoder_factory.h
     v4l2_device_factory.h
     v4l2_utils.h
+    ipc_input_device_factory.h
 )
 
 

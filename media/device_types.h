@@ -12,6 +12,8 @@ enum class device_type_t
     libav_in,
     libav_out,
     vnc,
+    ipc_in,
+    ipc_out,
     custom
 };
 

@@ -633,7 +633,7 @@ public:
 
     }
 
-    ~v4l2_device()
+    ~v4l2_device() override
     {
         close();
     }

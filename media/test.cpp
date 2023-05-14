@@ -11,9 +11,13 @@
 #include "core/convert_utils.h"
 #include "audio_format_impl.h"
 #include "video_format_impl.h"
+#include "audio_frame_impl.h"
+#include "video_frame_impl.h"
 #include "tools/base/any_base.h"
 
 #include "core/option_helper.h"
+#include "core/packetizer.h"
+#include "core/depacketizer.h"
 
 #include "v4l2_device_factory.h"
 #include "libav_input_device_factory.h"
@@ -1286,6 +1290,50 @@ void test16()
     return;
 }
 
+void test17()
+{
+
+    video_format_impl video_format(video_format_id_t::rgb24
+                                   , 640
+                                   , 480
+                                   , 30);
+
+    option_writer writer(video_format.options());
+    writer.set<std::int32_t>(opt_fmt_stream_id, 1);
+    writer.set<std::int32_t>(opt_fmt_device_id, 2);
+
+    raw_array_t buffer(640 * 480 * 3);
+    std::int8_t i = 0;
+    for (auto& v : buffer)
+    {
+        v = i++;
+    }
+
+    video_frame_impl video_frame(video_format
+                                 , 4
+                                 , 12345678
+                                 , video_frame_impl::frame_type_t::key_frame);
+
+    video_frame.smart_buffers().set_buffer(123, smart_buffer(std::move(buffer)));
+
+    smart_buffer packet_buffer;
+
+    packetizer packer(packet_buffer);
+    depacketizer depacker(packet_buffer);
+
+    if (packer.add_value(video_frame))
+    {
+        video_frame_impl video_frame2({});
+        if (depacker.fetch_value(video_frame2))
+        {
+            return;
+        }
+    }
+
+
+    return;
+}
+
 }
 
 void tests()
@@ -1294,7 +1342,8 @@ void tests()
     //test6();
     // test9();
     // test13();
-    test16(); // smart_transcoder
+    // test16(); // smart_transcoder
+    test17();
     // test15();
 }
 

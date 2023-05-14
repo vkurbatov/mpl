@@ -41,14 +41,14 @@ void depacketizer::seek(std::size_t cursor)
     m_cursor = std::min(cursor, m_buffer.size());
 }
 
-bool depacketizer::open_object()
+bool depacketizer::drop(field_type_t field_type)
 {
     auto save_cursor = cursor();
 
     data_field_t data_field;
 
     if (fetch(data_field)
-            && data_field.type == field_type_t::object_begin)
+            && data_field.type == field_type)
     {
         return true;
     }
@@ -57,20 +57,14 @@ bool depacketizer::open_object()
     return false;
 }
 
+bool depacketizer::open_object()
+{
+    return drop(field_type_t::object_begin);
+}
+
 bool depacketizer::close_object()
 {
-    auto save_cursor = cursor();
-
-    data_field_t data_field;
-
-    if (fetch(data_field)
-            && data_field.type == field_type_t::object_begin)
-    {
-        return true;
-    }
-
-    seek(save_cursor);
-    return false;
+    return drop(field_type_t::object_end);
 }
 
 bool depacketizer::fetch(data_field_t &field)

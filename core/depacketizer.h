@@ -27,8 +27,11 @@ public:
     std::size_t cursor() const;
     void seek(std::size_t cursor);
 
+    bool drop(field_type_t field_type);
+
     bool open_object();
     bool close_object();
+
 
     bool fetch(data_field_t& field);
 
