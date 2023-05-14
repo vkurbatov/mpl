@@ -8,9 +8,13 @@
 #include "core/convert_utils.h"
 #include "core/enum_utils.h"
 #include "core/ipc/ipc_manager_impl.h"
+#include "core/fifo_reader_impl.h"
 
 #include "core/packetizer.h"
 #include "core/depacketizer.h"
+
+#include "core/sq/sq_parser.h"
+#include "core/sq/sq_stitcher.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
@@ -24,6 +28,141 @@
 
 namespace mpl::media
 {
+
+class wrapped_device
+{
+    static constexpr std::size_t default_recv_buffer_size = 1024 * 1024;
+
+    i_sync_shared_data::s_ptr_t     m_shared_data;
+    i_message_sink&                 m_message_sink;
+    fifo_reader_impl                m_fifo_reader;
+    sq::sq_parser                   m_sq_parser;
+    sq::sq_stitcher                 m_sq_stitcher;
+    std::size_t                     m_frame_counter;
+
+    raw_array_t                     m_recv_buffer;
+
+public:
+
+    wrapped_device(i_sync_shared_data::s_ptr_t&& shared_data
+                   , i_message_sink& message_sink)
+        : m_shared_data(std::move(shared_data))
+        , m_message_sink(message_sink)
+        , m_fifo_reader(*m_shared_data)
+        , m_sq_parser([&](sq::sq_packet&& packet) { on_sq_packet(std::move(packet)); })
+        , m_sq_stitcher([&](smart_buffer&& frame) { on_frame(std::move(frame)); }
+                        , 4)
+        , m_frame_counter(0)
+        , m_recv_buffer(default_recv_buffer_size)
+    {
+
+    }
+
+    bool wait(timestamp_t timeout)
+    {
+        return m_shared_data->wait(timeout);
+    }
+
+    std::size_t frames() const
+    {
+        return m_frame_counter;
+    }
+
+    std::size_t read_data()
+    {
+        std::size_t result = 0;
+
+        while(auto size = m_fifo_reader.pop_data(m_recv_buffer.data()
+                                                 , m_recv_buffer.size()))
+        {
+            if (size == i_fifo_buffer::overload)
+            {
+                reset();
+                break;
+            }
+
+            m_sq_parser.push_stream(m_recv_buffer.data()
+                                    , size);
+            result += size;
+
+            if (size < m_recv_buffer.size())
+            {
+                break;
+            }
+        }
+
+
+        return result;
+    }
+
+    void notify()
+    {
+        m_shared_data->notify();
+    }
+
+    void reset()
+    {
+        m_frame_counter = 0;
+        m_fifo_reader.reset();
+        m_sq_parser.reset();
+        m_sq_stitcher.reset();
+    }
+
+private:
+
+    void on_sq_packet(sq::sq_packet&& packet)
+    {
+        if (packet.is_valid())
+        {
+            m_sq_stitcher.push_packet(std::move(packet));
+        }
+    }
+
+    void on_frame(smart_buffer&& buffer)
+    {
+        depacketizer depacker(buffer);
+        message_category_t category = message_category_t::undefined;
+
+        if (depacker.fetch_enum(category)
+                && category == message_category_t::frame)
+        {
+            auto save = depacker.cursor();
+            media_type_t media_type = media_type_t::undefined;
+            if (depacker.open_object()
+                    && depacker.fetch_enum(media_type))
+            {
+                depacker.seek(save);
+                switch(media_type)
+                {
+                    case media_type_t::audio:
+                    {
+                        audio_frame_impl audio_frame({});
+                        if (depacker.fetch_value(audio_frame))
+                        {
+                            message_frame_ref_impl message_frame(audio_frame);
+                            m_frame_counter++;
+                            m_message_sink.send_message(message_frame);
+                        }
+                    }
+                    break;
+                    case media_type_t::video:
+                    {
+                        video_frame_impl video_frame({});
+                        if (depacker.fetch_value(video_frame))
+                        {
+                            message_frame_ref_impl message_frame(video_frame);
+                            m_frame_counter++;
+                            m_message_sink.send_message(message_frame);
+                        }
+                    }
+                    break;
+                    default:;
+                }
+            }
+        }
+    }
+
+};
 
 class ipc_input_device : public i_device
 {
@@ -73,8 +212,8 @@ class ipc_input_device : public i_device
     };
 
     device_params_t             m_device_params;
-    i_shared_data::s_ptr_t      m_shared_data;
     message_router_impl         m_router;
+    wrapped_device              m_wrapped_device;
 
     std::thread                 m_thread;
 
@@ -104,7 +243,8 @@ public:
     ipc_input_device(device_params_t&& device_params
                      , i_sync_shared_data::s_ptr_t&& shared_data)
         : m_device_params(std::move(device_params))
-        , m_shared_data(std::move(shared_data))
+        , m_wrapped_device(std::move(shared_data)
+                           , m_router)
         , m_state(channel_state_t::ready)
         , m_running(false)
         , m_open(false)
@@ -131,7 +271,13 @@ public:
     {
         if (!m_open)
         {
+            change_state(channel_state_t::opening);
             m_open = true;
+            m_running.store(true, std::memory_order_release);
+
+
+            m_thread = std::thread([&]{ grabbing_thread(); });
+            return true;
 
         }
 
@@ -142,7 +288,18 @@ public:
     {
         if (m_open)
         {
+            change_state(channel_state_t::closing);
+
+            m_running.store(false, std::memory_order_release);
             m_open = false;
+            m_wrapped_device.notify();
+
+            if (m_thread.joinable())
+            {
+                m_thread.join();
+            }
+
+            change_state(channel_state_t::closed);
 
             return true;
         }
@@ -176,6 +333,37 @@ public:
         }
 
         return result;
+    }
+
+    void grabbing_thread()
+    {
+        change_state(channel_state_t::open);
+
+        while(is_running())
+        {
+            m_wrapped_device.reset();
+            change_state(channel_state_t::connecting);
+
+            bool connected = false;
+
+            do
+            {
+                m_wrapped_device.read_data();
+                if (connected == false
+                        && m_wrapped_device.frames() > 0)
+                {
+                    change_state(channel_state_t::connected);
+                }
+                m_wrapped_device.wait(durations::milliseconds(100));
+            }
+            while(is_running());
+
+            if (connected)
+            {
+                change_state(channel_state_t::disconnecting);
+                change_state(channel_state_t::disconnected);
+            }
+        }
     }
 
     // i_channel interface
