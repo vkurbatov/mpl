@@ -19,7 +19,10 @@
 #include "sq/sq_parser.h"
 #include "sq/sq_stitcher.h"
 
+#include "utils.h"
+
 #include "tools/ipc/test.h"
+#include "tools/base/random_base.h"
 
 namespace mpl
 {
@@ -289,6 +292,86 @@ void test5()
 
 }
 
+std::uint32_t calc_cs(const void* data, std::size_t size)
+{
+    std::uint32_t cs = 0;
+
+    while(size-- > 0)
+    {
+        cs += static_cast<const std::uint8_t*>(data)[size];
+    }
+
+    return cs;
+}
+
+void test6()
+{
+
+
+    auto frame_handler = [&](smart_buffer&& frame)
+    {
+        auto cs = calc_cs(frame.data()
+                            , frame.size());
+
+        std::cout << "on_frame: size: " << frame.size()
+                  << ", cs: " << cs << std::endl;
+    };
+
+    sq::sq_stitcher stitcher(frame_handler);
+
+    auto packet_handler = [&](sq::sq_packet&& packet)
+    {
+        if (packet.is_valid())
+        {
+            std::cout << "Packet #" << packet.id() << ": size: " << packet.payload_size() << std::endl;
+
+            stitcher.push_packet(std::move(packet));
+        }
+    };
+
+    sq::sq_parser parser(packet_handler);
+
+    auto test_count = 1000;
+
+
+    sq::sq_packet_builder_t builder(0
+                                    , 0
+                                    , 50);
+
+    builder.packet_id = 65501;
+
+    while (test_count-- > 0)
+    {
+        auto frame_size = 1 + base::utils::random<std::size_t>() % 199;
+        std::vector<std::uint8_t> test_array(frame_size);
+        std::uint32_t cs = 0;
+
+        for (auto& v : test_array)
+        {
+            v = base::utils::random<std::uint8_t>();
+            cs += v;
+        }
+
+        auto packets = builder.build_fragments(test_array.data()
+                                               , test_array.size());
+
+        std::cout << "frame create: size: " << test_array.size()
+                  << ", cs: " << cs
+                  << ", packets: " << packets.size() << std::endl;
+
+        for (auto& p : packets)
+        {
+            parser.push_stream(p.data()
+                               , p.size());
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+
+    return;
+}
+
 
 void ipc_test()
 {
@@ -299,7 +382,7 @@ void ipc_test()
 
 void core_test()
 {
-    test5();
+    test6();
 }
 
 }

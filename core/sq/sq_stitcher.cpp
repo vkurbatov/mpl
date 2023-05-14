@@ -44,9 +44,11 @@ bool sq_stitcher::push_packet(sq_packet &&packet)
     {
         auto packet_id = packet.id();
 
-        bool transit = m_packets == 0
-                        || packet_id == m_head_id
-                        || packet.is_full();
+        bool first = m_packets == 0;
+
+        bool transit = (first || packet_id == m_head_id)
+                        && packet.is_full();
+
 
         m_packets++;
 
@@ -59,9 +61,13 @@ bool sq_stitcher::push_packet(sq_packet &&packet)
         }
         else
         {
-            if (detail::is_overload(packet_id
-                                    , m_head_id
-                                    , m_reorder_buffer.size()))
+            if (first)
+            {
+                m_head_id = packet_id;
+            }
+            else if (detail::is_overload(packet_id
+                                        , m_head_id
+                                        , m_reorder_buffer.size()))
             {
                 m_head_id = packet_id - m_reorder_buffer.size() + 1;
             }
@@ -134,16 +140,19 @@ std::size_t sq_stitcher::process_buffer()
     for (const auto& r : get_full_packet_ranges())
     {
         smart_buffer frame;
-        for (auto packet_id = r.first; packet_id <= r.second; packet_id++)
+
+        for (auto packet_id = r.first; ; packet_id++)
         {
             auto idx = packet_id % size;
             auto& p = m_reorder_buffer[idx];
+
 
             if (p.is_full())
             {
                 m_frame_handler(smart_buffer(p.payload_data()
                                              , p.payload_size()
                                              ));
+                m_head_id = packet_id + 1;
                 break;
             }
             else
@@ -153,8 +162,16 @@ std::size_t sq_stitcher::process_buffer()
 
                 if (p.is_last())
                 {
+                    m_head_id = packet_id + 1;
+
                     m_frame_handler(std::move(frame));
+                    break;
                 }
+            }
+
+            if (packet_id == r.second)
+            {
+                break;
             }
         }
 
@@ -182,7 +199,6 @@ sq_stitcher::packet_ranges_t sq_stitcher::get_full_packet_ranges() const
 
     while(packet_id != tail_id)
     {
-
         packet_id_t idx = (packet_id) % size;
 
         const auto& p = m_reorder_buffer[idx];
@@ -205,6 +221,7 @@ sq_stitcher::packet_ranges_t sq_stitcher::get_full_packet_ranges() const
                 }
             }
 
+            packet_id++;
             continue;
         }
 
