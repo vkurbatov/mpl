@@ -19,7 +19,7 @@ sq_packet_builder_t::sq_packet_builder_t(uint8_t session_id
 }
 
 smart_buffer::array_t sq_packet_builder_t::build_fragments(const void *data
-                                                                          , std::size_t size)
+                                                           , std::size_t size)
 {
     smart_buffer::array_t packet_list;
 

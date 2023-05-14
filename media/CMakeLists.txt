@@ -31,6 +31,7 @@ set(SOURCES
     v4l2_device_factory.cpp
     v4l2_utils.cpp
     ipc_input_device_factory.cpp
+    ipc_output_device_factory.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -79,6 +80,7 @@ set(PRIVATE_HEADERS
     v4l2_device_factory.h
     v4l2_utils.h
     ipc_input_device_factory.h
+    ipc_output_device_factory.h
 )
 
 

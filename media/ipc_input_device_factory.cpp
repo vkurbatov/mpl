@@ -7,10 +7,8 @@
 #include "core/time_utils.h"
 #include "core/convert_utils.h"
 #include "core/enum_utils.h"
-#include "core/ipc/ipc_manager_impl.h"
 #include "core/fifo_reader_impl.h"
 
-#include "core/packetizer.h"
 #include "core/depacketizer.h"
 
 #include "core/sq/sq_parser.h"
@@ -171,12 +169,12 @@ class ipc_input_device : public i_device
     struct device_params_t
     {
         device_type_t       device_type = device_type_t::ipc_in;
-        std::string         input_channel_name;
+        std::string         channel_name;
 
         device_params_t(device_type_t device_type = device_type_t::ipc_in
-                        , const std::string& input_channel_name = {})
+                        , const std::string& channel_name = {})
             : device_type(device_type)
-            , input_channel_name(input_channel_name)
+            , channel_name(channel_name)
         {
 
         }
@@ -192,7 +190,7 @@ class ipc_input_device : public i_device
             property_reader reader(params);
             if (reader.get("device_type", device_type_t::ipc_in) == device_type_t::ipc_in)
             {
-                return reader.get("input_channel_name", input_channel_name);
+                return reader.get("channel_name", channel_name);
             }
             return false;
         }
@@ -201,13 +199,13 @@ class ipc_input_device : public i_device
         {
             property_writer writer(params);
             return writer.set("device_type", device_type_t::ipc_in)
-                    && writer.set("input_channel_name", input_channel_name);
+                    && writer.set("channel_name", channel_name);
         }
 
         bool is_valid() const
         {
             return device_type == device_type_t::ipc_in
-                    && !input_channel_name.empty();
+                    && !channel_name.empty();
         }
     };
 
@@ -229,7 +227,7 @@ public:
         device_params_t device_params(params);
         if (device_params.is_valid())
         {
-            if (auto shared_data = shared_data_manager.query_data(device_params.input_channel_name
+            if (auto shared_data = shared_data_manager.query_data(device_params.channel_name
                                                                   , 0))
             {
                 return std::make_unique<ipc_input_device>(std::move(device_params)

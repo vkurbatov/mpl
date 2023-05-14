@@ -213,7 +213,7 @@ bool depacketizer::fetch_value(video_format_impl& video_format)
     return false;
 }
 
-// media frame
+// media format
 template<>
 bool packetizer::add_value(const i_media_format& media_format)
 {
@@ -363,6 +363,24 @@ bool depacketizer::fetch_value(video_frame_impl& video_frame)
             return close_object();
         }
     }
+    return false;
+}
+
+// media format
+template<>
+bool packetizer::add_value(const i_media_frame& media_frame)
+{
+    switch(media_frame.media_type())
+    {
+        case media_type_t::audio:
+            return add_value<i_audio_frame>(static_cast<const i_audio_frame&>(media_frame));
+        break;
+        case media_type_t::video:
+            return add_value<i_video_frame>(static_cast<const i_video_frame&>(media_frame));
+        break;
+        default:;
+    }
+
     return false;
 }
 
