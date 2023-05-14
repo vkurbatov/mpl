@@ -19,6 +19,7 @@ set(SOURCES
     video_info.cpp
     video_frame_impl.cpp
     message_frame_impl.cpp
+    media_packetizer_impl.cpp
     libav_video_converter_factory.cpp
     libav_audio_converter_factory.cpp
     libav_transcoder_factory.cpp

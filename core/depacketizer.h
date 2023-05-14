@@ -54,7 +54,8 @@ public:
         std::int64_t e_value = {};
         if (fetch_value(e_value))
         {
-            return static_cast<E>(e_value);
+            value = static_cast<E>(e_value);
+            return true;
         }
         return false;
     }
