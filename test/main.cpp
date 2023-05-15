@@ -8,7 +8,7 @@
 
 int main()
 {
-    mpl::media::tests();
-    // mpl::core_test();
+    // mpl::media::tests();
+    mpl::core_test();
 }
 

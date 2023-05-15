@@ -40,15 +40,14 @@ sq_stitcher::sq_stitcher(const frame_handler_t &frame_handler
 
 bool sq_stitcher::push_packet(sq_packet &&packet)
 {
+
     if (packet.is_valid())
     {
         auto packet_id = packet.id();
 
         bool first = m_packets == 0;
-
         bool transit = (first || packet_id == m_head_id)
                         && packet.is_full();
-
 
         m_packets++;
 
@@ -79,6 +78,7 @@ bool sq_stitcher::push_packet(sq_packet &&packet)
         process_buffer();
 
         return true;
+
     }
 
     return false;
@@ -137,44 +137,50 @@ std::size_t sq_stitcher::process_buffer()
 
     auto size = m_reorder_buffer.size();
 
-    for (const auto& r : get_full_packet_ranges())
+    auto tail_id = m_head_id + size;
+
+    while(m_head_id != tail_id)
     {
-        smart_buffer frame;
+        packet_id_t idx = (m_head_id) % size;
+        auto& p = m_reorder_buffer[idx];
 
-        for (auto packet_id = r.first; ; packet_id++)
+        if (p.is_valid()
+                && p.id() == m_head_id)
         {
-            auto idx = packet_id % size;
-            auto& p = m_reorder_buffer[idx];
-
+            auto first = p.is_first();
+            if (first)
+            {
+                m_assembled_packet.clear();
+            }
 
             if (p.is_full())
             {
                 m_frame_handler(smart_buffer(p.payload_data()
                                              , p.payload_size()
                                              ));
-                m_head_id = packet_id + 1;
-                break;
             }
             else
             {
-                frame.append_data(p.payload_data()
-                                  , p.payload_size());
-
-                if (p.is_last())
+                if (first || !m_assembled_packet.is_empty())
                 {
-                    m_head_id = packet_id + 1;
+                    m_assembled_packet.append_data(p.payload_data()
+                                                   , p.payload_size());
+                }
 
-                    m_frame_handler(std::move(frame));
-                    break;
+                if (p.is_last()
+                        && !m_assembled_packet.is_empty())
+                {
+                    m_frame_handler(std::move(m_assembled_packet));
+                    m_assembled_packet.clear();
                 }
             }
+            m_head_id++;
+            result++;
 
-            if (packet_id == r.second)
-            {
-                break;
-            }
+            continue;
         }
 
+        break;
     }
 
     return result;

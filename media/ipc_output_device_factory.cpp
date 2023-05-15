@@ -24,7 +24,7 @@
 namespace mpl::media
 {
 
-class wrapped_device
+class wrapped_device: public i_message_sink
 {
     i_sync_shared_data::s_ptr_t     m_shared_data;
     fifo_writer_impl                m_fifo_writer;
@@ -91,6 +91,44 @@ public:
     void reset()
     {
         m_frame_counter = 0;
+    }
+
+    // i_message_sink interface
+public:
+    bool send_message(const i_message &message) override
+    {
+        switch(message.category())
+        {
+            case message_category_t::frame:
+                return send_frame(static_cast<const i_message_frame&>(message).frame());
+            break;
+            default:;
+        }
+
+        return false;
+    }
+
+private:
+    bool send_frame(const i_media_frame& frame)
+    {
+        m_frame_counter++;
+        m_frame_buffer.clear();
+        packetizer packer(m_frame_buffer);
+        if (packer.add_value(frame))
+        {
+            for (auto&& p : m_sq_builder.build_fragments(m_frame_buffer.data()
+                                                         , m_frame_buffer.size()))
+            {
+                m_fifo_writer.push_data(p.data()
+                                        , p.size());
+            }
+
+            notify();
+
+            return true;
+        }
+
+        return false;
     }
 };
 
@@ -203,6 +241,9 @@ public:
         {
             change_state(channel_state_t::opening);
             m_open = true;
+            change_state(channel_state_t::open);
+            change_state(channel_state_t::connecting);
+            change_state(channel_state_t::connected);
 
             return true;
 
@@ -218,6 +259,9 @@ public:
             change_state(channel_state_t::closing);
 
             m_open = false;
+
+            change_state(channel_state_t::disconnecting);
+            change_state(channel_state_t::disconnected);
 
             change_state(channel_state_t::closed);
 
@@ -285,7 +329,7 @@ public:
 public:
     i_message_sink *sink() override
     {
-        return nullptr;
+        return &m_wrapped_device;
     }
 
     i_message_source *source() override

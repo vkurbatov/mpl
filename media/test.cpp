@@ -39,10 +39,15 @@
 
 
 #include "i_message_frame.h"
+
+#include "core/ipc/ipc_manager_impl.h"
 #include "core/i_message_event.h"
 #include "core/i_message_source.h"
 
 #include "core/event_channel_state.h"
+
+#include "ipc_input_device_factory.h"
+#include "ipc_output_device_factory.h"
 
 #include "tools/ffmpeg/libav_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
@@ -1334,6 +1339,19 @@ void test17()
     return;
 }
 
+void test18()
+{
+    std::size_t manager_size = 1024 * 1024 * 1024;
+    if (auto ipc_manager = ipc_manager_factory::get_instance().create_shared_data_manager("mpl", manager_size))
+    {
+        ipc_input_device_factory in_device(*ipc_manager);
+        ipc_output_device_factory out_device(*ipc_manager);
+
+
+
+    }
+}
+
 }
 
 void tests()
@@ -1343,7 +1361,8 @@ void tests()
     // test9();
     // test13();
     // test16(); // smart_transcoder
-    test17();
+    // test17();
+    test18();
     // test15();
 }
 
