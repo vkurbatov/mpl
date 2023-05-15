@@ -23,6 +23,7 @@ private:
 
     sq_packet::array_t      m_reorder_buffer;
     frame_handler_t         m_frame_handler;
+    smart_buffer            m_assembled_packet;
 
     std::uint16_t           m_head_id;
     std::size_t             m_packets;

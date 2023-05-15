@@ -183,6 +183,7 @@ std::size_t sq_stitcher::process_buffer()
 void sq_stitcher::reset()
 {
     clear_buffer();
+    m_assembled_packet.clear();
     m_packets = 0;
 }
 
