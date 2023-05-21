@@ -144,7 +144,7 @@ bool video_format_impl::get_params(i_property &params) const
 
 i_property::u_ptr_t video_format_impl::get_params(const std::string &path) const
 {
-    if (auto params = property_helper::create_tree())
+    if (auto params = property_helper::create_object())
     {
         if (property_writer(*params).set(path, *this))
         {

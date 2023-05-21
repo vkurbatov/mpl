@@ -20,11 +20,12 @@
 #include <shared_mutex>
 #include <atomic>
 #include <thread>
+#include <iostream>
 
 namespace mpl::media
 {
 
-class wrapped_device: public i_message_sink
+class wrapped_out_device: public i_message_sink
 {
     i_sync_shared_data::s_ptr_t     m_shared_data;
     fifo_writer_impl                m_fifo_writer;
@@ -35,7 +36,7 @@ class wrapped_device: public i_message_sink
 
 public:
 
-    wrapped_device(i_sync_shared_data::s_ptr_t&& shared_data)
+    wrapped_out_device(i_sync_shared_data::s_ptr_t&& shared_data)
         : m_shared_data(std::move(shared_data))
         , m_fifo_writer(*m_shared_data)
         , m_frame_counter(0)
@@ -51,36 +52,6 @@ public:
     std::size_t frames() const
     {
         return m_frame_counter;
-    }
-
-    bool push_frame(const i_media_frame& frame)
-    {
-        m_frame_buffer.clear();
-        packetizer packer(m_frame_buffer);
-        switch(frame.media_type())
-        {
-            case media_type_t::audio:
-            case media_type_t::video:
-            {
-                if (packer.add_enum(message_category_t::frame)
-                        && packer.add_value(frame))
-                {
-                    m_frame_counter++;
-                    for (auto&& f : m_sq_builder.build_fragments(m_frame_buffer.data()
-                                                                 , m_frame_buffer.size()))
-                    {
-                        m_fifo_writer.push_data(f.data()
-                                                , f.size());
-                    }
-
-                    return true;
-                }
-            }
-            break;
-            default:;
-        }
-
-        return false;
     }
 
     void notify()
@@ -114,16 +85,17 @@ private:
         m_frame_counter++;
         m_frame_buffer.clear();
         packetizer packer(m_frame_buffer);
-        if (packer.add_value(frame))
+
+        if (packer.add_enum(message_category_t::frame)
+                && packer.add_value(frame))
         {
             for (auto&& p : m_sq_builder.build_fragments(m_frame_buffer.data()
                                                          , m_frame_buffer.size()))
             {
                 m_fifo_writer.push_data(p.data()
                                         , p.size());
+                notify();
             }
-
-            notify();
 
             return true;
         }
@@ -186,7 +158,7 @@ class ipc_output_device : public i_device
 
     device_params_t             m_device_params;
     message_router_impl         m_router;
-    wrapped_device              m_wrapped_device;
+    wrapped_out_device          m_wrapped_device;
 
     channel_state_t             m_state;
     bool                        m_open;

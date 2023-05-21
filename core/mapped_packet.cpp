@@ -102,13 +102,24 @@ std::size_t mapped_packet_t::read_packet(field_type_t type
 
     if (type == header.field_type)
     {
-        payload_size = std::min(payload_size, this->payload_size());
+        auto pack_size = std::min(payload_size
+                                  , this->payload_size());
 
         if (payload_data != nullptr)
         {
-            std::memcpy(payload_data
-                        , this->payload_data()
-                        , payload_size);
+            if (pack_size > 0)
+            {
+                std::memcpy(payload_data
+                            , this->payload_data()
+                            , pack_size);
+            }
+
+            if (pack_size < payload_size)
+            {
+                std::memset(static_cast<std::uint8_t*>(payload_data) + pack_size
+                            , 0
+                            , payload_size - pack_size);
+            }
         }
 
         result = payload_size;

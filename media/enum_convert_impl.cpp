@@ -17,6 +17,8 @@ declare_enum_converter_begin(device_type_t)
     declare_pair(device_type_t, libav_in),
     declare_pair(device_type_t, libav_out),
     declare_pair(device_type_t, vnc),
+    declare_pair(device_type_t, ipc_in),
+    declare_pair(device_type_t, ipc_out),
     declare_pair(device_type_t, custom)
 declare_enum_converter_end(device_type_t)
 

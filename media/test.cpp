@@ -15,6 +15,8 @@
 #include "video_frame_impl.h"
 #include "tools/base/any_base.h"
 
+#include "media_option_types.h"
+
 #include "core/option_helper.h"
 #include "core/packetizer.h"
 #include "core/depacketizer.h"
@@ -36,7 +38,7 @@
 #include "smart_transcoder_factory.h"
 
 #include "media_option_types.h"
-
+#include "message_frame_impl.h"
 
 #include "i_message_frame.h"
 
@@ -55,7 +57,7 @@
 #include "tools/ffmpeg/libav_input_format.h"
 #include "tools/base/url_base.h"
 
-
+#include <thread>
 #include <string>
 
 namespace mpl::media
@@ -66,7 +68,7 @@ namespace
 
 void test1()
 {
-    auto test_tree = property_helper::create_tree();
+    auto test_tree = property_helper::create_object();
     property_writer writer(*test_tree);
 
     writer.set<std::string>("name.first", "Vasiliy");
@@ -220,7 +222,7 @@ void test4()
 void test5()
 {
     std::string v4l2_url = "/dev/video0";
-    auto v4l2_params = property_helper::create_tree();
+    auto v4l2_params = property_helper::create_object();
     property_writer writer(*v4l2_params);
     writer.set<std::string>("url", v4l2_url);
 
@@ -298,7 +300,7 @@ void test6()
     auto s2 = core::utils::enum_to_string<device_type_t>(enum_value);
     auto e2 = core::utils::string_to_enum<device_type_t>(s2);
 
-    auto tree = property_helper::create_tree();
+    auto tree = property_helper::create_object();
     property_writer writer(*tree);
 
     writer.set("device_type", device_type_t::v4l2_in);
@@ -371,7 +373,7 @@ void test8()
 
     std::string libav_url = "rtsp://wowzaec2demo.streamlock.net/vod/mp4";
     std::string libav_options = "rtsp_transport=tcp";
-    auto libav_params = property_helper::create_tree();
+    auto libav_params = property_helper::create_object();
     property_writer writer(*libav_params);
     writer.set<std::string>("url", libav_url);
     writer.set<std::string>("options", libav_options);
@@ -500,14 +502,14 @@ void test9()
     std::string input_options = "rtsp_transport=tcp";
 
     std::string output_url = "rtmp://127.0.0.1/cam1/stream";
-    auto libav_input_device_params = property_helper::create_tree();
+    auto libav_input_device_params = property_helper::create_object();
     {
         property_writer writer(*libav_input_device_params);
         writer.set<std::string>("url", input_url);
         writer.set<std::string>("options", input_options);
     }
 
-    auto libav_output_device_params = property_helper::create_tree();
+    auto libav_output_device_params = property_helper::create_object();
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
@@ -523,7 +525,7 @@ void test9()
         //option_writer(video_format.options()).set<std::int32_t>(opt_fmt_stream_id, 1);
 
         i_property::array_t streams;
-        if (auto ap = property_helper::create_tree())
+        if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
             {
@@ -531,7 +533,7 @@ void test9()
             }
         }
 
-        if (auto vp = property_helper::create_tree())
+        if (auto vp = property_helper::create_object())
         {
             if (video_format.get_params(*vp))
             {
@@ -729,7 +731,7 @@ void test12()
 
     //std::string input_options = "rtsp_transport=tcp";
 
-    auto libav_input_device_params = property_helper::create_tree();
+    auto libav_input_device_params = property_helper::create_object();
     {
         property_writer writer(*libav_input_device_params);
         writer.set<std::string>("url", input_url);
@@ -825,13 +827,13 @@ void test13()
     std::string input_video_url = "/dev/video0";
     std::string output_url = "rtmp://127.0.0.1/cam1/stream";
 
-    auto libav_input_audio_params = property_helper::create_tree();
+    auto libav_input_audio_params = property_helper::create_object();
     {
         property_writer writer(*libav_input_audio_params);
         writer.set<std::string>("url", input_audio_url);
     }
 
-    auto v4l2_input_video_params = property_helper::create_tree();
+    auto v4l2_input_video_params = property_helper::create_object();
     {
         property_writer writer(*v4l2_input_video_params);
         writer.set<std::string>("url", input_video_url);
@@ -866,12 +868,12 @@ void test13()
     auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
 
-    auto libav_output_device_params = property_helper::create_tree();
+    auto libav_output_device_params = property_helper::create_object();
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
         i_property::array_t streams;
-        if (auto ap = property_helper::create_tree())
+        if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
             {
@@ -879,7 +881,7 @@ void test13()
             }
         }
 
-        if (auto vp = property_helper::create_tree())
+        if (auto vp = property_helper::create_object())
         {
             if (video_format.get_params(*vp))
             {
@@ -979,14 +981,14 @@ void test15()
     // std::string output_url = "pulse://alsa_output.usb-Logitech_USB_Headset_Logitech_USB_Headset-00.analog-stereo";
     std::string output_url = "pulse://alsa_output.pci-0000_00_05.0.analog-stereo";
     std::string output_options = "buffer_size=480";
-    auto libav_input_device_params = property_helper::create_tree();
+    auto libav_input_device_params = property_helper::create_object();
     {
         property_writer writer(*libav_input_device_params);
         writer.set<std::string>("url", input_url);
         writer.set<std::string>("options", input_options);
     }
 
-    auto libav_output_device_params = property_helper::create_tree();
+    auto libav_output_device_params = property_helper::create_object();
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
@@ -998,7 +1000,7 @@ void test15()
 
 
         i_property::array_t streams;
-        if (auto ap = property_helper::create_tree())
+        if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
             {
@@ -1052,13 +1054,13 @@ void test16()
     std::string output_url = "rtmp://127.0.0.1/cam1/stream";
     //std::string output_url = "/home/user/test.mp4";
 
-    auto libav_input_audio_params = property_helper::create_tree();
+    auto libav_input_audio_params = property_helper::create_object();
     {
         property_writer writer(*libav_input_audio_params);
         writer.set<std::string>("url", input_audio_url);
     }
 
-    auto v4l2_input_video_params = property_helper::create_tree();
+    auto v4l2_input_video_params = property_helper::create_object();
     {
         property_writer writer(*v4l2_input_video_params);
         writer.set<std::string>("url", input_video_url);
@@ -1103,13 +1105,13 @@ void test16()
     auto audio_transcoder = smart_factory.create_converter(*transcode_audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*transcode_video_format.get_params("format"));
 
-    auto libav_output_device_params = property_helper::create_tree();
+    auto libav_output_device_params = property_helper::create_object();
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
         i_property::array_t streams;
 
-        if (auto vp = property_helper::create_tree())
+        if (auto vp = property_helper::create_object())
         {
             if (video_format.get_params(*vp))
             {
@@ -1117,7 +1119,7 @@ void test16()
             }
         }
 
-        if (auto ap = property_helper::create_tree())
+        if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
             {
@@ -1185,7 +1187,7 @@ void test16()
 
     // core::utils::sleep(durations::seconds(150));
 
-    if (auto params = property_helper::create_tree())
+    if (auto params = property_helper::create_object())
     {
         if (input_video_device->control(channel_control_t::get_config(params.get())))
         {
@@ -1209,7 +1211,7 @@ void test16()
 
                             while (count-- > 0)
                             {
-                                if (auto set_cmd = property_helper::create_tree())
+                                if (auto set_cmd = property_helper::create_object())
                                 {
                                     if (value + vt >= max)
                                     {
@@ -1222,7 +1224,7 @@ void test16()
 
                                     value += vt;
 
-                                    if (auto ctrl = property_helper::create_tree())
+                                    if (auto ctrl = property_helper::create_object())
                                     {
                                         if (property_writer(*ctrl).set("id", id))
                                         {
@@ -1255,7 +1257,7 @@ void test16()
                 std::int32_t vt = 8;
                 while (count-- > 0)
                 {
-                    if (auto set_cmd = property_helper::create_tree())
+                    if (auto set_cmd = property_helper::create_object())
                     {
                         if (value + vt >= max)
                         {
@@ -1341,14 +1343,125 @@ void test17()
 
 void test18()
 {
-    std::size_t manager_size = 1024 * 1024 * 1024;
-    if (auto ipc_manager = ipc_manager_factory::get_instance().create_shared_data_manager("mpl", manager_size))
+    std::size_t manager_size = 1024 * 1024 * 100;
+    std::size_t channel_size = 1024 * 1024 * 10;
+    std::string channel_name = "test";
+    if (auto ipc_out_manager = ipc_manager_factory::get_instance().create_shared_data_manager("mpl", manager_size))
     {
-        ipc_input_device_factory in_device(*ipc_manager);
-        ipc_output_device_factory out_device(*ipc_manager);
+        if (auto ipc_in_manager = ipc_manager_factory::get_instance().create_shared_data_manager("mpl", 0))
+        {
+            ipc_output_device_factory out_device_factory(*ipc_out_manager);
+            ipc_input_device_factory in_device_factory(*ipc_in_manager);
+
+            auto out_params = property_helper::create_object();
+            auto in_params = property_helper::create_object();
+
+            if (out_params)
+            {
+                property_writer writer(*out_params);
+                writer.set("device_type", device_type_t::ipc_out);
+                writer.set("channel_name", channel_name);
+                writer.set("size", channel_size);
+            }
+
+            if (in_params)
+            {
+                property_writer writer(*in_params);
+                writer.set("device_type", device_type_t::ipc_in);
+                writer.set("channel_name", channel_name);
+            }
+
+            auto frame_handler = [&](const i_message& message)
+            {
+
+                switch(message.category())
+                {
+                    case message_category_t::event:
+                    {
+                        const auto& event = static_cast<const i_message_event&>(message).event();
+                        if (event.event_id == event_id_t::channel_state)
+                        {
+                            std::cout << "channel state: " << core::utils::enum_to_string(static_cast<const event_channel_state_t&>(event).state) << std::endl;
+                        }
+                    }
+                    break;
+                    case message_category_t::frame:
+                    {
+                        const auto& frame = static_cast<const i_message_frame&>(message).frame();
+                        auto buffer = frame.buffers().get_buffer(main_media_buffer_index);
+
+                        std::cout << "frame #" << frame.frame_id()
+                                  << ", timestamp: " << frame.timestamp()
+                                  << ", frame_size: " << buffer->size()
+                                  << std::endl;
+                    }
+                    break;
+                    default:;
+                }
+
+                return false;
+            };
+
+            message_sink_impl input_sink_impl(frame_handler);
+
+            video_format_impl video_format(video_format_id_t::rgb32
+                                            , 1280
+                                            , 720
+                                            , 30);
+
+            frame_id_t frame_id = 0;
+            timestamp_t timestamp = 0;
+
+            option_writer writer(video_format.options());
+            writer.set<std::int32_t>(mpl::media::opt_fmt_device_id, 1);
+            writer.set<std::int32_t>(mpl::media::opt_fmt_stream_id, 2);
+
+
+            auto out_device = out_device_factory.create_device(*out_params);
+            auto in_device = in_device_factory.create_device(*in_params);
+
+            if (out_device != nullptr
+                    && in_device != nullptr)
+            {
+                in_device->source()->add_sink(&input_sink_impl);
+
+                if (out_device->control(channel_control_t::open()))
+                {
+                    if (in_device->control(channel_control_t::open()))
+                    {
+
+                        for (auto i = 0; i < 100; i++)
+                        {
+                            raw_array_t buffer(video_format.width() * video_format.height() * 3);
+                            std::int8_t d = 0;
+
+                            for (auto& v : buffer)
+                            {
+                                v = d++;
+                            }
+
+                            video_frame_impl video_frame(video_format
+                                                         , frame_id++
+                                                         , timestamp += (90000 / video_format.frame_rate())
+                                                         , video_frame_impl::frame_type_t::key_frame);
 
 
 
+                            video_frame.smart_buffers().set_buffer(main_media_buffer_index
+                                                                   , smart_buffer(std::move(buffer)));
+
+                            message_frame_ref_impl message_frame(video_frame);
+
+                            out_device->sink()->send_message(message_frame);
+
+                            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                        }
+                    }
+                }
+            }
+
+            return;
+        }
     }
 }
 

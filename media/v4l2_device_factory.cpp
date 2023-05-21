@@ -34,7 +34,7 @@ namespace detail
     {
         for (const auto& c : controls)
         {
-            if (auto ctrl = property_helper::create_tree())
+            if (auto ctrl = property_helper::create_object())
             {
                 property_writer writer(*ctrl);
                 const v4l2::control_info_t& control_info = c.second;

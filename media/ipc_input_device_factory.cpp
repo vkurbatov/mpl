@@ -22,12 +22,13 @@
 #include <shared_mutex>
 #include <atomic>
 #include <thread>
+#include <iostream>
 
 
 namespace mpl::media
 {
 
-class wrapped_device
+class wrapped_in_device
 {
     static constexpr std::size_t default_recv_buffer_size = 1024 * 1024;
 
@@ -42,7 +43,7 @@ class wrapped_device
 
 public:
 
-    wrapped_device(i_sync_shared_data::s_ptr_t&& shared_data
+    wrapped_in_device(i_sync_shared_data::s_ptr_t&& shared_data
                    , i_message_sink& message_sink)
         : m_shared_data(std::move(shared_data))
         , m_message_sink(message_sink)
@@ -127,6 +128,7 @@ private:
             auto save = depacker.cursor();
             media_type_t media_type = media_type_t::undefined;
             if (depacker.open_object()
+                    && depacker.open_object()
                     && depacker.fetch_enum(media_type))
             {
                 depacker.seek(save);
@@ -211,7 +213,7 @@ class ipc_input_device : public i_device
 
     device_params_t             m_device_params;
     message_router_impl         m_router;
-    wrapped_device              m_wrapped_device;
+    wrapped_in_device           m_wrapped_device;
 
     std::thread                 m_thread;
 
@@ -352,7 +354,7 @@ public:
                 {
                     change_state(channel_state_t::connected);
                 }
-                m_wrapped_device.wait(durations::milliseconds(100));
+                m_wrapped_device.wait(durations::milliseconds(50));
             }
             while(is_running());
 

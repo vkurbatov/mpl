@@ -10,7 +10,7 @@ property_writer::property_writer(i_property &property)
 
 }
 
-i_property* property_writer::create_tree(const std::string &key, bool create_always)
+i_property* property_writer::create_object(const std::string &key, bool create_always)
 {
     if (!key.empty()
             && m_property.property_type() == property_type_t::object)
@@ -28,7 +28,7 @@ i_property* property_writer::create_tree(const std::string &key, bool create_alw
             }
         }
 
-        if (auto object = property_helper::create_tree())
+        if (auto object = property_helper::create_object())
         {
             tree.set(key
                               , std::move(object));
@@ -137,7 +137,7 @@ bool property_writer::merge(const std::string &key
     auto object = operator [](key);
     if (!object)
     {
-        object = create_tree(key);
+        object = create_object(key);
     }
 
     return object != nullptr

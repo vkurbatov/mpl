@@ -103,7 +103,7 @@ namespace detail
                     case media_type_t::audio:
                     {
                         const audio_format_impl& audio_format = static_cast<const audio_format_impl&>(*s);
-                        if (auto p = property_helper::create_tree())
+                        if (auto p = property_helper::create_object())
                         {
                             if (audio_format.get_params(*p))
                             {
@@ -115,7 +115,7 @@ namespace detail
                     case media_type_t::video:
                     {
                         const video_format_impl& video_format = static_cast<const video_format_impl&>(*s);
-                        if (auto p = property_helper::create_tree())
+                        if (auto p = property_helper::create_object())
                         {
                             if (video_format.get_params(*p))
                             {

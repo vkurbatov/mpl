@@ -35,7 +35,65 @@ __declare_serializer_type(long double)
 __declare_serializer_type(std::string)
 __declare_serializer_type(octet_string_t)
 
-i_property::u_ptr_t property_helper::create_tree()
+i_property::u_ptr_t property_helper::create_property(property_type_t type)
+{
+    switch(type)
+    {
+        case property_type_t::object:
+            return property_tree::create();
+        break;
+        case property_type_t::array:
+            return property_value<i_property::array_t>::create();
+        break;
+        case property_type_t::i8:
+            return property_value<std::int8_t>::create();
+        break;
+        case property_type_t::i16:
+            return property_value<std::int16_t>::create();
+        break;
+        case property_type_t::i32:
+            return property_value<std::int32_t>::create();
+        break;
+        case property_type_t::i64:
+            return property_value<std::int64_t>::create();
+        break;
+        case property_type_t::u8:
+            return property_value<std::uint8_t>::create();
+        break;
+        case property_type_t::u16:
+            return property_value<std::uint16_t>::create();
+        break;
+        case property_type_t::u32:
+            return property_value<std::uint32_t>::create();
+        break;
+        case property_type_t::u64:
+            return property_value<std::uint64_t>::create();
+        break;
+        case property_type_t::r32:
+            return property_value<float>::create();
+        break;
+        case property_type_t::r64:
+            return property_value<double>::create();
+        break;
+        case property_type_t::r96:
+            return property_value<long double>::create();
+        break;
+        case property_type_t::boolean:
+            return property_value<bool>::create();
+        break;
+        case property_type_t::string:
+            return property_value<std::string>::create();
+        break;
+        case property_type_t::octet_string:
+            return property_value<octet_string_t>::create();
+        break;
+        default:;
+    }
+
+    return nullptr;
+}
+
+i_property::u_ptr_t property_helper::create_object()
 {
     return property_tree::create();
 }

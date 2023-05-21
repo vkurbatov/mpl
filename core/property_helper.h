@@ -18,7 +18,8 @@ class property_helper
 {
     const i_property&   m_property;
 public:
-    static i_property::u_ptr_t create_tree();
+    static i_property::u_ptr_t create_property(property_type_t type);
+    static i_property::u_ptr_t create_object();
     static i_property::u_ptr_t create_array(i_property::array_t&& values = {});
 
     template<class T>
@@ -111,7 +112,7 @@ public:
     template<class T>
     static i_property::u_ptr_t serialize(const T& value)
     {
-        if (auto object = create_tree())
+        if (auto object = create_object())
         {
             if (serialize(value
                           , *object))
@@ -249,7 +250,7 @@ public:
     template<class K, class T>
     static i_property::u_ptr_t serialize(const std::map<K,T>& value)
     {
-        if (auto object = create_tree())
+        if (auto object = create_object())
         {
             for (const auto& v : value)
             {

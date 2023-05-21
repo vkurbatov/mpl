@@ -28,7 +28,7 @@ using frame_id_t = std::int32_t;
 constexpr frame_id_t frame_id_undefined = -1;
 constexpr std::uint32_t video_sample_rate = 90000;
 constexpr std::int64_t main_media_buffer_index = 0;
-constexpr std::int64_t external_media_data = 1;
+constexpr std::int64_t external_media_data_index = 1;
 
 }
 

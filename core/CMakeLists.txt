@@ -4,6 +4,7 @@ set(TARGET mplcore)
 
 set(SOURCES
     test.cpp
+    enum_convert_impl.cpp
     type_info.cpp
     data_splitter.cpp
     smart_buffer.cpp

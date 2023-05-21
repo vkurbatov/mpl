@@ -29,6 +29,7 @@ void sq_parser::push_stream(const smart_buffer &stream)
         {
             if (*ptr == fragment_signature)
             {
+                bool handled = false;
                 if (size >= sizeof(mapped_packet_header_t))
                 {
                     const mapped_packet_header_t& header = *reinterpret_cast<const mapped_packet_header_t*>(ptr);
@@ -41,12 +42,14 @@ void sq_parser::push_stream(const smart_buffer &stream)
                             sq_packet packet(std::move(packet_buffer));
                             if (packet.is_valid())
                             {
+                                handled = true;
                                 m_packet_handler(std::move(packet));
                             }
                         }
                     }
                 }
-                else
+
+                if (!handled)
                 {
                     processed_size = size;
                     m_packet_buffer.append_data(ptr

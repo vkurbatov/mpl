@@ -35,7 +35,7 @@ std::size_t fifo_reader_impl::pop_data(void *data, std::size_t size)
     if (read_size > 0
             && read_size != overload)
     {
-        m_position += size;
+        m_position += read_size;
     }
 
     return read_size;
@@ -116,7 +116,7 @@ std::size_t fifo_reader_impl::internal_read_data(void *data
             size = std::min(size, unread_size);
             if (size > 0)
             {
-                if (data != nullptr)
+                if (data == nullptr)
                 {
                     result = size;
                 }
