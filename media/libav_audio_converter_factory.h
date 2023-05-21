@@ -9,6 +9,9 @@ namespace mpl::media
 class libav_audio_converter_factory : public i_media_converter_factory
 {
 public:
+
+    static libav_audio_converter_factory& get_instance();
+
     libav_audio_converter_factory();
 
     // i_media_converter_factory interface

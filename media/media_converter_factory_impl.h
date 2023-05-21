@@ -12,6 +12,8 @@ class media_converter_factory_impl : public i_media_converter_factory
     i_media_converter_factory&  m_video_converter_factory;
 public:
 
+    static media_converter_factory_impl& builtin_converter_factory();
+
     media_converter_factory_impl(i_media_converter_factory& audio_converter_factory
                                  , i_media_converter_factory& video_converter_factory);
     // i_media_converter_factory interface

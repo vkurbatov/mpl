@@ -10,6 +10,8 @@ class libav_video_converter_factory : public i_media_converter_factory
 {
 public:
 
+    static libav_video_converter_factory& get_instance();
+
     libav_video_converter_factory();
 
     // i_media_converter_factory interface

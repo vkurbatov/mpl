@@ -1,9 +1,18 @@
 #include "media_converter_factory_impl.h"
+#include "libav_audio_converter_factory.h"
+#include "libav_video_converter_factory.h"
 #include "core/property_reader.h"
 
 namespace mpl::media
 {
 
+
+media_converter_factory_impl &media_converter_factory_impl::builtin_converter_factory()
+{
+    static media_converter_factory_impl single_media_converter_factory(libav_audio_converter_factory::get_instance()
+                                                                       , libav_video_converter_factory::get_instance());
+    return single_media_converter_factory;
+}
 
 media_converter_factory_impl::media_converter_factory_impl(i_media_converter_factory &audio_converter_factory
                                                            , i_media_converter_factory &video_converter_factory)

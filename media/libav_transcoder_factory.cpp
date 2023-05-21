@@ -500,6 +500,18 @@ libav_transcoder_factory::libav_transcoder_factory(bool encoder_factory)
 
 }
 
+libav_transcoder_factory &libav_transcoder_factory::encoder_factory()
+{
+    static libav_transcoder_factory single_encoder_factory(false);
+    return single_encoder_factory;
+}
+
+libav_transcoder_factory &libav_transcoder_factory::decoder_factory()
+{
+    static libav_transcoder_factory single_decoder_factory(true);
+    return single_decoder_factory;
+}
+
 i_media_converter::u_ptr_t libav_transcoder_factory::create_converter(const i_property& params)
 {
     property_reader reader(params);

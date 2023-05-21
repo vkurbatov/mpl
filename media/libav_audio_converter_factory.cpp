@@ -162,6 +162,12 @@ public:
     }
 };
 
+libav_audio_converter_factory &libav_audio_converter_factory::get_instance()
+{
+    static libav_audio_converter_factory single_audio_converter_factory;
+    return single_audio_converter_factory;
+}
+
 libav_audio_converter_factory::libav_audio_converter_factory()
 {
 

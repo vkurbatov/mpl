@@ -13,6 +13,9 @@ public:
 
     libav_transcoder_factory(bool encoder_factory = true);
 
+    static libav_transcoder_factory& encoder_factory();
+    static libav_transcoder_factory& decoder_factory();
+
     // i_media_converter_factory interface
 public:
     i_media_converter::u_ptr_t create_converter(const i_property& params) override;

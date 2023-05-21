@@ -7,6 +7,12 @@ set(TEST_PROJECT_NAME
     "${PROJECT_NAME}_test"
     )
 
+set(IPC_SRV_PROJECT_NAME
+    "ipc_srv")
+
+set(IPC_CLI_PROJECT_NAME
+    "ipc_cli")
+
 find_package(PkgConfig REQUIRED)
 
 pkg_search_module(AVCODEC REQUIRED libavcodec)
@@ -82,20 +88,34 @@ set(TEST_SOURCES
     test/main.cpp
 )
 
-set(TEST_PUBLIC_HEADERS
-)
-
-set(TEST_PRIVATE_HEADERS
-)
-
 
 add_executable(${TEST_PROJECT_NAME}
     ${TEST_SOURCES}
-    ${TEST_PUBLIC_HEADERS}
-    ${TEST_PRIVATE_HEADERS}
 )
 
 target_link_libraries(${TEST_PROJECT_NAME}
+    ${PROJECT_NAME}
+    )
+
+set(IPC_SRV_SOURCES
+    ipc_srv/main.cpp)
+
+add_executable(${IPC_SRV_PROJECT_NAME}
+    ${IPC_SRV_SOURCES}
+)
+
+target_link_libraries(${IPC_SRV_PROJECT_NAME}
+    ${PROJECT_NAME}
+    )
+
+set(IPC_CLI_SOURCES
+    ipc_cli/main.cpp)
+
+add_executable(${IPC_CLI_PROJECT_NAME}
+    ${IPC_CLI_SOURCES}
+)
+
+target_link_libraries(${IPC_CLI_PROJECT_NAME}
     ${PROJECT_NAME}
     )
 
