@@ -133,7 +133,7 @@ struct ipc_segment::segment_ctx_t
                                              , [&]()
         {
             ncounter = counter();
-            return trigger != ncounter;
+            return trigger == ncounter;
         });
         trigger = ncounter;
         return result;

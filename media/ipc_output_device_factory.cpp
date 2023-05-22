@@ -89,6 +89,7 @@ private:
         if (packer.add_enum(message_category_t::frame)
                 && packer.add_value(frame))
         {
+            std::cout << "IPC: Send " << mpl::core::utils::enum_to_string(frame.media_type()) << " frame " << frame.frame_id() << std::endl;
             for (auto&& p : m_sq_builder.build_fragments(m_frame_buffer.data()
                                                          , m_frame_buffer.size()))
             {

@@ -1249,6 +1249,7 @@ bool libav_register()
 {
     if (!libav_register_flag)
     {
+        libav_register_flag = true;
         avcodec_register_all();
         avdevice_register_all();
         avformat_network_init();

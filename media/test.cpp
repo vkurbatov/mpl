@@ -1472,10 +1472,10 @@ void tests()
     //test1();
     //test6();
     // test9();
-    // test13();
+    test13();
     // test16(); // smart_transcoder
     // test17();
-    test18();
+    // test18();
     // test15();
 }
 

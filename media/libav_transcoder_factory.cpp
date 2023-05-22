@@ -502,13 +502,13 @@ libav_transcoder_factory::libav_transcoder_factory(bool encoder_factory)
 
 libav_transcoder_factory &libav_transcoder_factory::encoder_factory()
 {
-    static libav_transcoder_factory single_encoder_factory(false);
+    static libav_transcoder_factory single_encoder_factory(true);
     return single_encoder_factory;
 }
 
 libav_transcoder_factory &libav_transcoder_factory::decoder_factory()
 {
-    static libav_transcoder_factory single_decoder_factory(true);
+    static libav_transcoder_factory single_decoder_factory(false);
     return single_decoder_factory;
 }
 

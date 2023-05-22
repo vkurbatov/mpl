@@ -110,7 +110,7 @@ int main()
         audio_device->control(mpl::channel_control_t::open());
         video_device->control(mpl::channel_control_t::open());
 
-        std::this_thread::sleep_for(std::chrono::minutes(5));
+        std::this_thread::sleep_for(std::chrono::minutes(60));
     }
 
     return 0;

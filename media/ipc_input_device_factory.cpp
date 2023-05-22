@@ -140,6 +140,7 @@ private:
                         if (depacker.fetch_value(audio_frame))
                         {
                             message_frame_ref_impl message_frame(audio_frame);
+                            std::cout << "IPC: Recv audio frame " << audio_frame.frame_id() << std::endl;
                             m_frame_counter++;
                             m_message_sink.send_message(message_frame);
                         }
@@ -151,6 +152,7 @@ private:
                         if (depacker.fetch_value(video_frame))
                         {
                             message_frame_ref_impl message_frame(video_frame);
+                            std::cout << "IPC: Recv video frame " << video_frame.frame_id() << std::endl;
                             m_frame_counter++;
                             m_message_sink.send_message(message_frame);
                         }

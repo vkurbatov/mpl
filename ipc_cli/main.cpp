@@ -5,6 +5,7 @@
 #include "core/i_message_source.h"
 #include "core/message_sink_impl.h"
 #include "core/property_writer.h"
+#include "core/option_helper.h"
 
 #include "media/libav_audio_converter_factory.h"
 #include "media/libav_video_converter_factory.h"
@@ -17,6 +18,7 @@
 #include "media/video_format_impl.h"
 #include "media/audio_frame_impl.h"
 #include "media/video_frame_impl.h"
+#include "media/media_option_types.h"
 
 #include "media/libav_output_device_factory.h"
 
@@ -47,6 +49,9 @@ int main()
                                                , 720
                                                , 30);
 
+    mpl::option_writer(audio_format.options()).set(mpl::media::opt_fmt_stream_id, 0);
+    mpl::option_writer(video_format.options()).set(mpl::media::opt_fmt_stream_id, 1);
+
     auto libav_params = mpl::property_helper::create_object();
     if (libav_params)
     {
@@ -58,36 +63,11 @@ int main()
         writer.set("streams", streams);
     }
 
-    mpl::media::smart_transcoder_factory smart_factory(mpl::media::libav_transcoder_factory::decoder_factory()
-                                                        , mpl::media::libav_transcoder_factory::encoder_factory()
-                                                        , mpl::media::media_converter_factory_impl::builtin_converter_factory());
-
     mpl::media::libav_output_device_factory output_device_factory;
     mpl::media::ipc_input_device_factory ipc_input_device_factory(*ipc_in_manager);
 
     if (auto output_device = output_device_factory.create_device(*libav_params))
     {
-
-        auto handler = [&](const mpl::i_message& message)
-        {
-            switch(message.category())
-            {
-                case mpl::message_category_t::frame:
-                    return output_device->sink()->send_message(message);
-                break;
-            }
-
-            return false;
-        };
-
-        mpl::message_sink_impl sink(handler);
-
-        auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
-        auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
-
-        audio_transcoder->set_sink(&sink);
-        video_transcoder->set_sink(&sink);
-
         auto ipc_params = mpl::property_helper::create_object();
         if (ipc_params != nullptr)
         {
@@ -98,8 +78,8 @@ int main()
 
         if (auto ipc_input_device = ipc_input_device_factory.create_device(*ipc_params))
         {
-            ipc_input_device->source()->add_sink(audio_transcoder.get());
-            ipc_input_device->source()->add_sink(video_transcoder.get());
+
+            ipc_input_device->source()->add_sink(output_device->sink());
 
             output_device->control(mpl::channel_control_t::open());
             ipc_input_device->control(mpl::channel_control_t::open());
