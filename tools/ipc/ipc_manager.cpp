@@ -42,10 +42,9 @@ ipc_manager::ipc_shmem_manager_ptr_t ipc_manager::create_native_manager(const co
         {
             if (config.size > 0)
             {
+                //remove_by_name(config.name);
 
-                remove_by_name(config.name);
-
-                return std::make_shared<ipc_shmem_manager_t>(boost::interprocess::create_only
+                return std::make_shared<ipc_shmem_manager_t>(boost::interprocess::open_or_create
                                                              , config.name.c_str()
                                                              , config.size);
 
@@ -85,7 +84,7 @@ ipc_manager::ipc_manager(const config_t &config)
 
 ipc_manager::~ipc_manager()
 {
-    /*
+/*
     bool need_remove = m_native_manager != nullptr
             && m_config.has_create();
     m_native_manager.reset();

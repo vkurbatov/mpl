@@ -8,6 +8,7 @@ extern "C"
 #include <libavutil/opt.h>
 }
 
+#include <iostream>
 
 namespace ffmpeg
 {
@@ -102,11 +103,15 @@ struct libav_output_format::context_t
         struct AVFormatContext*     m_context;
         stream_info_t::list_t       m_streams;
         bool                        m_write_header;
+        std::int64_t                m_pts_offset;
+        std::int64_t                m_last_pts;
 
 
         native_context_t()
             : m_context(nullptr)
             , m_write_header(false)
+            , m_pts_offset(0)
+            , m_last_pts(0)
         {
 
         }
@@ -132,6 +137,8 @@ struct libav_output_format::context_t
                                                    , url_format.url.c_str());
                     if (m_context != nullptr)
                     {
+                        m_pts_offset = 0;
+                        m_last_pts = 0;
                         m_streams.clear();
 
                         do
@@ -277,6 +284,7 @@ struct libav_output_format::context_t
                     av_packet.pts = frame.info.pts;
                     av_packet.dts = frame.info.dts;
 
+
                     switch(av_stream.codecpar->codec_type)
                     {
                         case AVMEDIA_TYPE_AUDIO:
@@ -284,19 +292,41 @@ struct libav_output_format::context_t
                             av_packet_rescale_ts(&av_packet
                                                  , { 1, static_cast<std::int32_t>(stream_info.media_info.audio_info.sample_rate) }
                                                  , av_stream.time_base);
+
                         }
                         break;
                         case AVMEDIA_TYPE_VIDEO:
                         {
                             av_packet_rescale_ts(&av_packet
-                                                 , { 1, 90000 }
+                                                 , { 1, video_sample_rate }
                                                  , av_stream.time_base);
+
                         }
                         break;
                         default:;
                     }
 
+                    auto dt = av_packet.pts - m_last_pts;
 
+                    if (std::abs(dt) > 1000)
+                    {
+                        m_pts_offset -= dt;
+                    }
+
+                    m_last_pts = av_packet.pts;
+
+                    if (m_pts_offset != 0)
+                    {
+                        if (av_packet.pts != AV_NOPTS_VALUE)
+                        {
+                            av_packet.pts += m_pts_offset;
+                        }
+
+                        if (av_packet.dts != AV_NOPTS_VALUE)
+                        {
+                            av_packet.dts += m_pts_offset;
+                        }
+                    }
 
                     auto ret = av_interleaved_write_frame(m_context, &av_packet);
 

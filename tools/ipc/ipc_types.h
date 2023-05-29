@@ -15,6 +15,8 @@ using ipc_shmem_manager_t = boost::interprocess::managed_shared_memory;
 using ipc_shared_mutex_t = boost::interprocess::interprocess_sharable_mutex;
 using ipc_mutex_t = boost::interprocess::interprocess_mutex;
 using ipc_cond_t = boost::interprocess::interprocess_condition;
+template<typename T>
+using ipc_lock_t = boost::interprocess::scoped_lock<T>;
 using timestamp_t = std::uint64_t;
 
 template<typename T = std::uint8_t>

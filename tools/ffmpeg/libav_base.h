@@ -176,6 +176,18 @@ extern const std::string libav_param_name_level;
 extern const std::string libav_param_name_qmin;
 extern const std::string libav_param_name_qmax;
 
+enum class log_level_t
+{
+    quiet = -1,
+    fatal,
+    error,
+    warning,
+    info,
+    verbose,
+    debug,
+    trace
+};
+
 
 custom_parameter_t check_custom_param(const std::string param_name);
 
@@ -616,8 +628,11 @@ typedef std::function<bool(const stream_info_t& stream_info
 
 typedef std::function<void(const streaming_event_t& streaming_event)> stream_event_handler_t;
 
+void set_log_level(log_level_t level);
+
 bool is_registered();
 bool libav_register();
+
 
 }
 

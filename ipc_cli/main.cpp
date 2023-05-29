@@ -26,9 +26,40 @@
 #include <string>
 #include <thread>
 
+int test()
+{
+    std::string ipc_manager_name = "mpl";
+    std::string ipc_channel_name = "test";
+    auto ipc_out_manager = mpl::ipc_manager_factory::get_instance().create_shared_data_manager(ipc_manager_name, 0);
+    mpl::i_sync_shared_data::s_ptr_t channel = ipc_out_manager->query_data(ipc_channel_name
+                                                                            , 0);
+
+    std::size_t count = 10;
+    if (channel)
+    {
+        while(count-- > 0)
+        {
+            if (channel->wait(mpl::durations::milliseconds(200)))
+            {
+                std::cout << "notyfy success" << std::endl;
+            }
+            else
+            {
+                std::cout << "notyfy timeout" << std::endl;
+            }
+
+        }
+    }
+
+    return 0;
+}
+
 int main()
 {
+    //return test();
     ffmpeg::libav_register();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     std::string output_url = "rtmp://127.0.0.1/cam1/stream";
     std::string ipc_manager_name = "mpl";
     std::string ipc_channel_name = "test";
@@ -84,7 +115,7 @@ int main()
             output_device->control(mpl::channel_control_t::open());
             ipc_input_device->control(mpl::channel_control_t::open());
 
-            std::this_thread::sleep_for(std::chrono::minutes(5));
+            std::this_thread::sleep_for(std::chrono::minutes(360));
         }
 
     }

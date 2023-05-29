@@ -1301,6 +1301,11 @@ media_data_t frame_ref_t::get_media_data() const
     return {};
 }
 
+void set_log_level(log_level_t level)
+{
+    av_log_set_level(static_cast<std::int32_t>(level) * 8);
+}
+
 
 
 }

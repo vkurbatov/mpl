@@ -48,10 +48,13 @@ declare_property_type(i_property::array_t, array)
 raw_array_t create_raw_array(const void *ref_data
                              , std::size_t ref_size)
 {
-    return ref_data == nullptr
-            ? raw_array_t(ref_size)
-            : raw_array_t(static_cast<const raw_array_t::value_type*>(ref_data)
-                          , static_cast<const raw_array_t::value_type*>(ref_data) + ref_size / sizeof(raw_array_t::value_type));
+    if (ref_data == nullptr)
+    {
+        return raw_array_t(ref_size);
+    }
+
+    return raw_array_t(static_cast<const raw_array_t::value_type*>(ref_data)
+                        , static_cast<const raw_array_t::value_type*>(ref_data) + ref_size / sizeof(raw_array_t::value_type));
 }
 
 }

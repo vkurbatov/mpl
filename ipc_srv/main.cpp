@@ -6,6 +6,7 @@
 #include "core/message_sink_impl.h"
 #include "core/property_writer.h"
 #include "core/option_helper.h"
+#include "core/event_channel_state.h"
 
 #include "media/libav_audio_converter_factory.h"
 #include "media/libav_video_converter_factory.h"
@@ -14,6 +15,8 @@
 #include "media/smart_transcoder_factory.h"
 #include "media/ipc_output_device_factory.h"
 #include "media/media_option_types.h"
+#include "media/i_message_frame.h"
+#include "media/i_video_frame.h"
 
 #include "media/audio_format_impl.h"
 #include "media/video_format_impl.h"
@@ -27,8 +30,35 @@
 #include <string>
 #include <thread>
 
+int test()
+{
+    std::string ipc_manager_name = "mpl";
+    std::size_t ipc_manager_size = 1024 * 1024 * 100;
+    std::string ipc_channel_name = "test";
+    std::size_t ipc_channel_size = 1024 * 1024 * 10;
+    auto ipc_out_manager = mpl::ipc_manager_factory::get_instance().create_shared_data_manager(ipc_manager_name
+                                                                                               , ipc_manager_size);
+    mpl::i_sync_shared_data::s_ptr_t channel = ipc_out_manager->query_data(ipc_channel_name
+                                                                            , ipc_channel_size);
+    if (channel)
+    {
+        std::size_t notyfy_counter = 0;
+        while(true)
+        {
+            channel->notify();
+            std::cout << "notyfy: " << notyfy_counter << std::endl;
+            notyfy_counter++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+
+    return 0;
+}
+
 int main()
 {
+    // return test();
+    ffmpeg::set_log_level(ffmpeg::log_level_t::quiet);
     ffmpeg::libav_register();
     std::string input_audio_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     std::string input_video_url = "/dev/video0";
@@ -100,17 +130,19 @@ int main()
 
     if (auto ipc_output_device = ipc_output_device_factory.create_device(*ipc_params))
     {
+        mpl::message_sink_safe_impl sink(ipc_output_device->sink());
+
         audio_device->source()->add_sink(audio_transcoder.get());
         video_device->source()->add_sink(video_transcoder.get());
 
-        audio_transcoder->set_sink(ipc_output_device->sink());
-        video_transcoder->set_sink(ipc_output_device->sink());
+        audio_transcoder->set_sink(&sink);
+        video_transcoder->set_sink(&sink);
 
         ipc_output_device->control(mpl::channel_control_t::open());
         audio_device->control(mpl::channel_control_t::open());
         video_device->control(mpl::channel_control_t::open());
 
-        std::this_thread::sleep_for(std::chrono::minutes(60));
+        std::this_thread::sleep_for(std::chrono::minutes(360));
     }
 
     return 0;

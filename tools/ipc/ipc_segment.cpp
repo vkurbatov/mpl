@@ -3,6 +3,7 @@
 #include <boost/thread/thread_time.hpp>
 
 #include <atomic>
+#include <iostream>
 
 namespace ipc
 {
@@ -113,7 +114,7 @@ struct ipc_segment::segment_ctx_t
               , std::int32_t& trigger)
     {
         auto ncounter = counter();
-        boost::interprocess::scoped_lock<ipc_mutex_t> lock(ipc_mutex);
+        ipc_lock_t lock(ipc_mutex);
         m_condition.wait(lock, [&]()
         {
             ncounter = counter();
@@ -127,13 +128,14 @@ struct ipc_segment::segment_ctx_t
               , timestamp_t timeout_ns)
     {
         auto ncounter = counter();
-        boost::interprocess::scoped_lock<ipc_mutex_t> lock(ipc_mutex);
+        ipc_lock_t lock(ipc_mutex);
+
         auto result = m_condition.timed_wait(lock
                                              , boost::get_system_time() + boost::posix_time::microseconds(timeout_ns / 1000)
                                              , [&]()
         {
             ncounter = counter();
-            return trigger == ncounter;
+            return trigger != ncounter;
         });
         trigger = ncounter;
         return result;
@@ -164,7 +166,7 @@ ipc_segment::~ipc_segment()
 {
     if (m_segment_ctx != nullptr)
     {
-        if (m_segment_ctx->m_ref_counter-- < 2)
+        if (m_segment_ctx->m_ref_counter.fetch_sub(1) == 1)
         {
             if (m_manager)
             {
