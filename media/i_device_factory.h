@@ -1,5 +1,5 @@
-#ifndef MPL_I_DEVICE_FACTORY_H
-#define MPL_I_DEVICE_FACTORY_H
+#ifndef MPL_MEDIA_I_DEVICE_FACTORY_H
+#define MPL_MEDIA_I_DEVICE_FACTORY_H
 
 #include "i_device.h"
 
@@ -25,4 +25,4 @@ public:
 
 }
 
-#endif // MPL_I_DEVICE_FACTORY_H
+#endif // MPL_MEDIA_I_DEVICE_FACTORY_H

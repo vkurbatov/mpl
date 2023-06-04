@@ -1,5 +1,5 @@
-#ifndef MPL_I_MESSAGE_FRAME_H
-#define MPL_I_MESSAGE_FRAME_H
+#ifndef MPL_MEDIA_I_MESSAGE_FRAME_H
+#define MPL_MEDIA_I_MESSAGE_FRAME_H
 
 #include "core/i_message.h"
 
@@ -28,4 +28,4 @@ public:
 
 }
 
-#endif // MPL_I_MESSAGE_FRAME_H
+#endif // MPL_MEDIA_I_MESSAGE_FRAME_H

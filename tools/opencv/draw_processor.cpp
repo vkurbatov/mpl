@@ -240,95 +240,7 @@ struct ocv_context_t
         }
 
 
-        /*
 
-        auto channels = output.channels();
-        if (channels == 4
-                && input.channels() == channels)
-        {
-            auto tp = std::chrono::high_resolution_clock::now();
-
-            if (!mask.empty())
-            {
-                std::vector<cv::Mat> mat_channels;
-                cv::split(input, mat_channels);
-
-                cv::Mat tmp;
-                cv::bitwise_and(mat_channels[3], mask, mat_channels[3]);
-                cv::addWeighted(input
-                                , opacity
-                                , output
-                                , 1.0 - opacity
-                                , 0.0
-                                , tmp);
-                tmp.copyTo(output
-                           , mat_channels[3]);
-            }
-            else
-            {
-                input.copyTo(output);
-            }
-
-            auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - tp).count();
-
-            std::cout << "Draw image delay: " << dt << std::endl;
-
-            std::int32_t input_step = input.step;
-            std::int32_t output_step = output.step;
-
-            std::int32_t mask_step = 0;
-
-            if (!mask.empty()
-                    && mask.channels() == 1)
-            {
-                mask_step = mask.step;
-            }
-
-            auto tp = std::chrono::high_resolution_clock::now();
-
-            for (std::int32_t y = 0; y < input.rows; y++)
-            {
-                const auto* overlay_data = input.data + y * input_step;
-                auto src_data = output.data + y * output_step;
-                const std::uint8_t* mask_data = mask_step > 0
-                                                ? mask.data + y * mask_step
-                                                : nullptr;
-
-                for (std::int32_t x = 0; x < input.cols; x++)
-                {
-                    double alpha = opacity * (static_cast<double>(overlay_data[3]) / 255.0);
-
-                    if (mask_data != nullptr)
-                    {
-                        double mask = static_cast<double>(*mask_data) / 255.0;
-                        alpha = mask * alpha;
-
-                        mask_data += 1;
-                    }
-
-                    if (alpha > 0.0)
-                    {
-                        for (std::int32_t c = 0; c < channels; c++)
-                        {
-                            src_data[c] = src_data[c] * (1.0 - alpha) + overlay_data[c] * alpha;
-                        }
-                    }
-
-                    overlay_data += channels;
-                    src_data += channels;
-                }
-            }
-
-            auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - tp).count();
-
-            std::cout << "Draw image delay: " << dt << std::endl;
-
-        }
-        else
-        {
-            input.copyTo(output);
-        }
-        */
 
     }
 
@@ -369,30 +281,6 @@ struct ocv_context_t
                             , output
                             , opacity
                             , create_mask(output.cols, output.rows, figure));
-        /*
-        if (input.channels() != 4)
-        {
-            if (opacity == 1.0)
-            {
-                input.copyTo(output);
-            }
-            else if (opacity > 0.0)
-            {
-                cv::addWeighted(input
-                                , opacity
-                                , output
-                                , 1.0 - opacity
-                                , 0.0
-                                , output);
-            }
-        }
-        else
-        {
-            transparent_overlay(input
-                                , output
-                                , opacity
-                                , create_mask(output.cols, output.rows, figure));
-        }*/
     }
 
     void draw_image(const frame_point_t& pos

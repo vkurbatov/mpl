@@ -1,5 +1,5 @@
-#ifndef VIDEO_FORMAT_IMPL_H
-#define VIDEO_FORMAT_IMPL_H
+#ifndef MPL_VIDEO_FORMAT_IMPL_H
+#define MPL_VIDEO_FORMAT_IMPL_H
 
 #include "i_video_format.h"
 #include "core/option_impl.h"
@@ -77,4 +77,4 @@ public:
 
 }
 
-#endif // VIDEO_FORMAT_IMPL_H
+#endif // MPL_VIDEO_FORMAT_IMPL_H

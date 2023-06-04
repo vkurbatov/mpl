@@ -1,5 +1,5 @@
-#ifndef MPL_I_DEVICE_H
-#define MPL_I_DEVICE_H
+#ifndef MPL_MEDIA_I_DEVICE_H
+#define MPL_MEDIA_I_DEVICE_H
 
 #include "device_types.h"
 #include "core/i_message_channel.h"
@@ -19,4 +19,4 @@ public:
 
 }
 
-#endif // MPL_I_DEVICE_H
+#endif // MPL_MEDIA_I_DEVICE_H

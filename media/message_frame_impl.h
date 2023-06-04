@@ -1,9 +1,8 @@
-#ifndef MPL_MESSAGE_FRAME_IMPL_H
-#define MPL_MESSAGE_FRAME_IMPL_H
+#ifndef MPL_MEDIA_MESSAGE_FRAME_IMPL_H
+#define MPL_MEDIA_MESSAGE_FRAME_IMPL_H
 
 #include "i_message_frame.h"
 #include "i_media_frame.h"
-#include "stream_info.h"
 #include "core/option_impl.h"
 
 namespace mpl::media
@@ -95,4 +94,4 @@ public:
 
 }
 
-#endif // MPL_MESSAGE_FRAME_IMPL_H
+#endif // MPL_MEDIA_MESSAGE_FRAME_IMPL_H

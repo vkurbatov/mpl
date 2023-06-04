@@ -1,5 +1,5 @@
-#ifndef MPL_IPC_INPUT_DEVICE_FACTORY_H
-#define MPL_IPC_INPUT_DEVICE_FACTORY_H
+#ifndef MPL_MEDIA_IPC_INPUT_DEVICE_FACTORY_H
+#define MPL_MEDIA_IPC_INPUT_DEVICE_FACTORY_H
 
 #include "core/i_shared_data_manager.h"
 #include "i_device_factory.h"
@@ -27,4 +27,4 @@ public:
 
 }
 
-#endif // MPL_IPC_INPUT_DEVICE_FACTORY_H
+#endif // MPL_MEDIA_IPC_INPUT_DEVICE_FACTORY_H

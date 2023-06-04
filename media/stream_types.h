@@ -1,5 +1,5 @@
-#ifndef MPL_STREAM_TYPES_H
-#define MPL_STREAM_TYPES_H
+#ifndef MPL_MEDIA_STREAM_TYPES_H
+#define MPL_MEDIA_STREAM_TYPES_H
 
 #include <cstdint>
 
@@ -16,4 +16,4 @@ namespace mpl::media
     constexpr stream_id_t stream_id_undefined = -1;
 }
 
-#endif // MPL_STREAM_TYPES_H
+#endif // MPL_MEDIA_STREAM_TYPES_H

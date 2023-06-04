@@ -6,7 +6,6 @@ set(SOURCES
     test.cpp
     enum_convert_impl.cpp
     enum_serialize_impl.cpp
-    stream_info.cpp
     media_utils.cpp
     format_utils.cpp
     libav_format_utils.cpp
@@ -32,6 +31,8 @@ set(SOURCES
     v4l2_utils.cpp
     ipc_input_device_factory.cpp
     ipc_output_device_factory.cpp
+    draw_options.cpp
+    video_image_builder.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -40,8 +41,8 @@ set(PUBLIC_HEADERS
     audio_types.h
     audio_info.h
     video_types.h
+    video_frame_types.h
     video_info.h
-    stream_info.h
     stream_types.h
     media_option_types.h
     i_message_frame.h
@@ -56,6 +57,7 @@ set(PUBLIC_HEADERS
     i_video_frame.h
     i_device.h
     i_device_factory.h
+    i_frame_buffer.h
     )
 
 set(PRIVATE_HEADERS
@@ -81,6 +83,8 @@ set(PRIVATE_HEADERS
     v4l2_utils.h
     ipc_input_device_factory.h
     ipc_output_device_factory.h
+    draw_options.h
+    video_image_builder.h
 )
 
 

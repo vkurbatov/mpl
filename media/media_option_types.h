@@ -6,9 +6,14 @@
 namespace mpl::media
 {
 
-constexpr option_id_t opt_media_base    = opt_other_base;
-constexpr option_id_t opt_fmt_base      = opt_media_base;
-constexpr option_id_t opt_codec_base    = opt_fmt_base + 0x00010000;
+
+constexpr option_id_t opt_media_base    =       opt_other_base;
+constexpr option_id_t opt_fmt_base      =       opt_media_base;
+constexpr option_id_t opt_media_step    =       0x00010000;
+
+constexpr option_id_t opt_codec_base    =       opt_fmt_base + opt_media_step;
+constexpr option_id_t opt_frm_base      =       opt_codec_base + opt_media_step;
+
 
 constexpr option_id_t opt_fmt_stream_id =       opt_fmt_base + 0;
 constexpr option_id_t opt_fmt_device_id =       opt_fmt_base + 1;

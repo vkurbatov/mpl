@@ -1,5 +1,5 @@
-#ifndef MPL_DEVICE_TYPES_H
-#define MPL_DEVICE_TYPES_H
+#ifndef MPL_MEDIA_DEVICE_TYPES_H
+#define MPL_MEDIA_DEVICE_TYPES_H
 
 namespace mpl::media
 {
@@ -19,4 +19,4 @@ enum class device_type_t
 
 }
 
-#endif // MPL_DEVICE_TYPES_H
+#endif // MPL_MEDIA_DEVICE_TYPES_H
