@@ -34,6 +34,8 @@ set(SOURCES
     draw_options.cpp
     image_frame.cpp
     video_image_builder.cpp
+    image_composer.cpp
+    media_composer_factory_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -52,6 +54,9 @@ set(PUBLIC_HEADERS
     i_media_frame.h
     i_media_converter_factory.h
     i_media_converter.h
+    i_compose_stream.h
+    i_media_composer_factory.h
+    i_media_composer.h
     i_audio_format.h
     i_video_format.h
     i_audio_frame.h
@@ -87,6 +92,8 @@ set(PRIVATE_HEADERS
     draw_options.h
     image_frame.h
     video_image_builder.h
+    image_composer.h
+    media_composer_factory_impl.h
 )
 
 

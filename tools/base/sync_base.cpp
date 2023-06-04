@@ -5,6 +5,8 @@
 namespace base
 {
 
+constexpr std::size_t idle_length = 100000;
+
 spin_lock::spin_lock()
     : m_spin(ATOMIC_FLAG_INIT)
     , m_count(0)
@@ -20,9 +22,13 @@ spin_lock::~spin_lock()
 
 void spin_lock::lock()
 {
+    size_t idl = 0;
     while (m_spin.test_and_set(std::memory_order_acquire))
     {
-        std::this_thread::yield();
+        if (++idl % idle_length == 0)
+        {
+            std::this_thread::yield();
+        }
     }
 }
 
