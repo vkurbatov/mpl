@@ -17,8 +17,8 @@ struct frame_point_base_t
     T   x;
     T   y;
 
-    frame_point_base_t(T x = 0
-                       , T y = 0);
+    frame_point_base_t(T x = {}
+                        , T y = {});
 
     bool is_null() const;
 
@@ -37,8 +37,8 @@ struct frame_size_base_t
     T   width;
     T   height;
 
-    frame_size_base_t(T width = 0
-                      , T height = 0);
+    frame_size_base_t(T width = {}
+                        , T height = {});
 
     std::size_t size() const;
     bool is_null() const;
@@ -62,8 +62,8 @@ struct frame_rect_base_t
     static void aspect_ratio(const value_type& input_rect
                              , value_type& output_rect);
 
-    frame_rect_base_t(const frame_point_base_t<T>& offset = { 0, 0 }
-                      , const frame_size_base_t<T>& size = { 0, 0 });
+    frame_rect_base_t(const frame_point_base_t<T>& offset = { }
+                      , const frame_size_base_t<T>& size = { });
 
     frame_rect_base_t(T x
                      , T y

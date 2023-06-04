@@ -10,9 +10,9 @@ using frame_point_t = base::frame_point_t;
 using frame_size_t = base::frame_size_t;
 using frame_rect_t = base::frame_rect_t;
 
-using relative_frame_point_t = base::frame_point_t;
-using relative_frame_size_t = base::frame_size_t;
-using relative_frame_rect_t = base::frame_rect_t;
+using relative_frame_point_t = base::frame_point_float_t;
+using relative_frame_size_t = base::frame_size_float_t;
+using relative_frame_rect_t = base::frame_rect_float_t;
 
 }
 

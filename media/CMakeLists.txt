@@ -32,6 +32,7 @@ set(SOURCES
     ipc_input_device_factory.cpp
     ipc_output_device_factory.cpp
     draw_options.cpp
+    image_frame.cpp
     video_image_builder.cpp
 )
 
@@ -84,6 +85,7 @@ set(PRIVATE_HEADERS
     ipc_input_device_factory.h
     ipc_output_device_factory.h
     draw_options.h
+    image_frame.h
     video_image_builder.h
 )
 

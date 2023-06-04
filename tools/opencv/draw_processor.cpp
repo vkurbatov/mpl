@@ -6,6 +6,7 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <cstring>
 
 namespace ocv
 {
@@ -40,13 +41,13 @@ namespace
     }
 }
 
-struct ocv_context_t
+struct draw_processor::context_t
 {
     draw_format_t                       m_draw_format;
     cv::Ptr<cv::freetype::FreeType2>    m_custom_font;
     cv::Mat                             m_output_mat;
 
-    ocv_context_t(const frame_info_t& format
+    context_t(const frame_info_t& format
                   , void *pixels)
         : m_draw_format{}
         , m_custom_font(nullptr)
@@ -54,7 +55,7 @@ struct ocv_context_t
 
     }
 
-    ~ocv_context_t()
+    ~context_t()
     {
 
     }
@@ -394,6 +395,14 @@ struct ocv_context_t
         }
     }
 
+    void blackout()
+    {
+        if (auto pixels = m_output_mat.data)
+        {
+            std::memset(pixels, 0, m_output_mat.size.dims());
+        }
+    }
+
     frame_size_t get_text_size(const std::string& text) const
     {
         std::int32_t lines = 0;
@@ -409,6 +418,7 @@ struct ocv_context_t
         }
         return m_draw_format.font_format.text_size(text);
     }
+
 
     void display()
     {
@@ -431,8 +441,13 @@ struct ocv_context_t
 
 draw_processor::draw_processor(const frame_info_t& format
                                , void *pixels)
-    : m_context(std::make_shared<ocv_context_t>(format
-                                                , pixels))
+    : m_context(std::make_unique<context_t>(format
+                                            , pixels))
+{
+
+}
+
+draw_processor::~draw_processor()
 {
 
 }
@@ -447,11 +462,13 @@ bool draw_processor::set_cutom_font(const std::string &font_path)
     return m_context->set_cutom_font(font_path);
 }
 
-void draw_processor::set_output_image(const frame_info_t &format, void *pixels)
+void draw_processor::set_output_image(const frame_info_t &format
+                                      , void *pixels)
 {
     m_context->set_output_image(format
                                 , pixels);
 }
+
 
 void draw_processor::draw_text(const frame_point_t &pos
                               , const std::string &text)
@@ -518,6 +535,11 @@ void draw_processor::draw_image(const frame_rect_t &rect_to
 void draw_processor::draw_poly(const frame_point_list_t &point_list)
 {
     m_context->draw_poly(point_list);
+}
+
+void draw_processor::blackout()
+{
+    m_context->blackout();
 }
 
 frame_size_t draw_processor::get_text_size(const std::string& text) const
