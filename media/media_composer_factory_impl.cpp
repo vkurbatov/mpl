@@ -6,16 +6,18 @@
 
 #include "core/message_router_impl.h"
 #include "core/message_sink_impl.h"
-
+#include "core/time_utils.h"
 
 #include "tools/base/sync_base.h"
 #include <shared_mutex>
 #include <thread>
 #include <queue>
-#include <map>
+#include <unordered_map>
 
 namespace mpl::media
 {
+
+constexpr std::size_t default_max_frame_queue = 5;
 
 class media_composer : public i_media_composer
 {
@@ -37,7 +39,6 @@ class media_composer : public i_media_composer
             using frame_queue_t = std::queue<i_message_frame::s_ptr_t>;
             mutable mutex_t             m_safe_mutex;
 
-            composer_stream&            m_owner;
             message_sink_impl           m_message_sink;
             i_media_converter::u_ptr_t  m_media_converter;
 
@@ -46,10 +47,8 @@ class media_composer : public i_media_composer
 
         public:
 
-            media_track(composer_stream& owner
-                        , i_media_converter::u_ptr_t&& media_converter)
-                : m_owner(owner)
-                , m_message_sink([&](const auto& message_frame) { return on_converter_message(message_frame); })
+            media_track(i_media_converter::u_ptr_t&& media_converter)
+                : m_message_sink([&](const auto& message_frame) { return on_converter_message(message_frame); })
                 , m_media_converter(std::move(media_converter))
             {
                 if (m_media_converter)
@@ -66,13 +65,54 @@ class media_composer : public i_media_composer
                 }
             }
 
+            bool push_frame(const i_message_frame& message_frame)
+            {
+                if (m_media_converter)
+                {
+                    return m_media_converter->send_message(message_frame);
+                }
+
+                return on_converter_frame(message_frame);
+            }
+
+            i_message_frame::s_ptr_t pop_frame()
+            {
+                {
+                    lock_t lock(m_safe_mutex);
+                    if (!m_frame_queue.empty())
+                    {
+                        m_last_frame = std::move(m_frame_queue.front());
+                        m_frame_queue.pop();
+                    }
+                }
+
+                return m_last_frame;
+            }
+
+            void clear()
+            {
+                lock_t lock(m_safe_mutex);
+                m_frame_queue = {};
+            }
+
         private:
+
 
             bool on_converter_frame(const i_message_frame& message_frame)
             {
-                lock_t lock(m_safe_mutex);
+                if (auto clone_frame = std::static_pointer_cast<i_message_frame>(i_message::s_ptr_t(message_frame.clone())))
+                {
+                    lock_t lock(m_safe_mutex);
+                    m_frame_queue.emplace(std::move(clone_frame));
+
+                    while (m_frame_queue.size() > default_max_frame_queue)
+                    {
+                        m_frame_queue.pop();
+                    }
+                }
                 return false;
             }
+
 
             bool on_converter_message(const i_message& message)
             {
@@ -81,12 +121,8 @@ class media_composer : public i_media_composer
                     case message_category_t::frame:
                         return on_converter_frame(static_cast<const i_message_frame&>(message));
                     break;
+                    default:;
                 }
-
-                /*if (auto clone_frame = i_message_frame::s_ptr_t(message_frame.clone()))
-                {
-                    m_frame_queue.push(std::move(clone_frame));
-                }*/
 
                 return false;
             }
@@ -95,13 +131,17 @@ class media_composer : public i_media_composer
         stream_manager&         m_manager;
         message_router_impl     m_router;
 
+        media_track             m_audio_track;
+        media_track             m_video_track;
+
         stream_id_t             m_stream_id;
 
     public:
 
         using s_ptr_t = std::shared_ptr<composer_stream>;
         using w_ptr_t = std::weak_ptr<composer_stream>;
-        using map_t = std::map<stream_id_t, w_ptr_t>;
+        using s_array_t = std::vector<s_ptr_t>;
+        using map_t = std::unordered_map<stream_id_t, w_ptr_t>;
 
         static s_ptr_t create(stream_manager& manager
                               , const i_property& stream_params)
@@ -113,6 +153,8 @@ class media_composer : public i_media_composer
         composer_stream(stream_manager& manager
                         , const i_property& stream_params)
             : m_manager(manager)
+            , m_audio_track(nullptr)
+            , m_video_track(nullptr)
             , m_stream_id(manager.next_stream_id())
         {
 
@@ -123,15 +165,42 @@ class media_composer : public i_media_composer
             m_manager.on_remove_stream(this);
         }
 
+        const i_video_frame* pop_video_frame()
+        {
+            if (auto message_frame = m_video_track.pop_frame())
+            {
+                if (message_frame->frame().media_type() == media_type_t::video)
+                {
+                    return static_cast<const i_video_frame*>(&message_frame->frame());
+                }
+            }
+
+            return nullptr;
+        }
+
+        const i_audio_frame* pop_audio_frame()
+        {
+            if (auto message_frame = m_audio_track.pop_frame())
+            {
+                if (message_frame->frame().media_type() == media_type_t::audio)
+                {
+                    return static_cast<const i_audio_frame*>(&message_frame->frame());
+                }
+            }
+
+            return nullptr;
+        }
+
+
         bool push_frame(const i_message_frame& message_frame)
         {
             switch(message_frame.frame().media_type())
             {
                 case media_type_t::audio:
-
+                    return m_audio_track.push_frame(message_frame);
                 break;
                 case media_type_t::video:
-
+                    return m_video_track.push_frame(message_frame);
                 break;
                 default:;
             }
@@ -228,6 +297,21 @@ class media_composer : public i_media_composer
             return nullptr;
         }
 
+        composer_stream::s_array_t active_streams() const
+        {
+            composer_stream::s_array_t array;
+            shared_lock_t lock(m_safe_mutex);
+            for (const auto& s : m_streams)
+            {
+                if (auto stream = s.second.lock())
+                {
+                    array.emplace_back(std::move(stream));
+                }
+            }
+
+            return array;
+        }
+
     private:
 
         void on_remove_stream(composer_stream* stream)
@@ -238,6 +322,7 @@ class media_composer : public i_media_composer
 
     };
 
+    stream_manager          m_stream_manager;
     message_router_impl     m_router;
 
     bool                    m_started;
@@ -258,14 +343,27 @@ public:
 
     ~media_composer()
     {
+        media_composer::stop();
+    }
 
+    void compose_video(composer_stream::s_array_t& streams)
+    {
+        for (auto& s : streams)
+        {
+            if (auto video_frame = s->pop_video_frame())
+            {
+
+            }
+        }
     }
 
     void compose_proc()
     {
         while(m_started)
         {
-
+            auto streams = m_stream_manager.active_streams();
+            compose_video(streams);
+            mpl::core::utils::sleep(durations::milliseconds(50));
         }
     }
 
@@ -284,12 +382,12 @@ public:
 public:
     i_media_stream::s_ptr_t add_stream(const i_property &stream_property) override
     {
-        return nullptr;
+        return m_stream_manager.add_stream(stream_property);
     }
 
     i_media_stream::s_ptr_t get_stream(stream_id_t stream_id) const override
     {
-        return nullptr;
+        return m_stream_manager.get_stream(stream_id);
     }
 
     bool start() override
