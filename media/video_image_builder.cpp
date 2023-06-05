@@ -68,7 +68,7 @@ struct video_image_builder::context_t
         : m_config(config)
         , m_output_frame(output_frame)
         , m_draw_processor(detail::create_frame_info(m_output_frame)
-                           , m_output_frame->pixels())
+                           , output_frame != nullptr ? m_output_frame->pixels() : nullptr)
     {
 
     }
@@ -96,7 +96,7 @@ struct video_image_builder::context_t
     }
 
     bool draw_image_frame(const image_frame_t& input_frame
-                          , const draw_image_options_t& draw_options)
+                          , const draw_options_t& draw_options)
     {
         if (input_frame.is_valid())
         {
@@ -174,7 +174,7 @@ const video_image_builder::config_t &video_image_builder::config() const
 }
 
 bool video_image_builder::draw_image_frame(const image_frame_t &input_frame
-                                           , const draw_image_options_t &draw_options)
+                                           , const draw_options_t &draw_options)
 {
     return m_context->draw_image_frame(input_frame
                                        , draw_options);

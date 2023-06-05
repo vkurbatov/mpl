@@ -30,6 +30,7 @@ struct image_frame_t
     const void* pixels() const;
     void* pixels();
 
+    bool tune();
 
     bool is_valid() const;
     bool is_empty() const;

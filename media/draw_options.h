@@ -7,16 +7,16 @@
 namespace mpl::media
 {
 
-struct draw_image_options_t
+struct draw_options_t
 {
     relative_frame_rect_t   target_rect;
     double                  opacity;
 
-    draw_image_options_t(const relative_frame_rect_t& target_rect = {}
+    draw_options_t(const relative_frame_rect_t& target_rect = {}
                          , double opacity = 1.0);
 
-    bool operator == (const draw_image_options_t& other) const;
-    bool operator != (const draw_image_options_t& other) const;
+    bool operator == (const draw_options_t& other) const;
+    bool operator != (const draw_options_t& other) const;
 };
 
 }

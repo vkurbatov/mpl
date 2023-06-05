@@ -7,7 +7,7 @@ namespace mpl::media
 {
 
 struct image_frame_t;
-struct draw_image_options_t;
+struct draw_options_t;
 
 class video_image_builder
 {
@@ -33,7 +33,7 @@ public:
     const config_t& config() const;
 
     bool draw_image_frame(const image_frame_t& input_frame
-                          , const draw_image_options_t& draw_options);
+                          , const draw_options_t& draw_options);
 
     bool blackout();
     bool is_valid() const;

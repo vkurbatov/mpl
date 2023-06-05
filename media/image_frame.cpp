@@ -51,6 +51,22 @@ void *image_frame_t::pixels()
     return image_data.map();
 }
 
+bool image_frame_t::tune()
+{
+    if (video_format_info_t::get_info(format_id).convertable)
+    {
+        if (auto fsize = frame_size())
+        {
+            if (fsize != image_data.size())
+            {
+                image_data.resize(fsize);
+            }
+        }
+    }
+
+    return false;
+}
+
 bool image_frame_t::is_valid() const
 {
    return video_format_info_t::get_info(format_id).convertable
