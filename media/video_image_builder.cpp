@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+
 namespace mpl::media
 {
 
@@ -21,8 +22,14 @@ ocv::frame_info_t create_frame_info(const image_frame_t& image_frame)
         case video_format_id_t::bgr24:
             frame_info.format = ocv::frame_format_t::bgr;
         break;
+        case video_format_id_t::rgb24:
+            frame_info.format = ocv::frame_format_t::rgb;
+        break;
         case video_format_id_t::bgra32:
             frame_info.format = ocv::frame_format_t::bgra;
+        break;
+        case video_format_id_t::rgba32:
+            frame_info.format = ocv::frame_format_t::rgba;
         break;
         default:;
     }
@@ -102,7 +109,9 @@ struct video_image_builder::context_t
         {
             m_draw_processor.draw_format().draw_opacity = draw_options.opacity;
             auto dst_rect = base::frame_utils::rect_from_relative(draw_options.target_rect
-                                                                 , m_output_frame->size);
+                                                                 , m_output_frame->size
+                                                                  , draw_options.margin);
+
             if (dst_rect.is_null())
             {
                 dst_rect.size = input_frame.size;
@@ -113,6 +122,7 @@ struct video_image_builder::context_t
             {
                 frame_rect_t src_rect = { 0, 0, input_frame.size.width, input_frame.size.height };
                 src_rect.aspect_ratio(dst_rect);
+
                 m_draw_processor.draw_image(dst_rect
                                             , src_rect
                                             , detail::create_frame_info(input_frame)

@@ -11,9 +11,11 @@ struct draw_options_t
 {
     relative_frame_rect_t   target_rect;
     double                  opacity;
+    double                  margin;
 
     draw_options_t(const relative_frame_rect_t& target_rect = {}
-                         , double opacity = 1.0);
+                         , double opacity = 1.0
+                         , double margin = 0.0);
 
     bool operator == (const draw_options_t& other) const;
     bool operator != (const draw_options_t& other) const;

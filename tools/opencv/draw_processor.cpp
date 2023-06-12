@@ -18,9 +18,11 @@ namespace
         switch(format)
         {
             case frame_format_t::bgr:
+            case frame_format_t::rgb:
                 return CV_8UC3;
             break;
             case frame_format_t::bgra:
+            case frame_format_t::rgba:
                 return CV_8UC4;
             break;
             default:
@@ -227,21 +229,30 @@ struct draw_processor::context_t
             }
             else
             {
-                cv::Mat tmp;
-                cv::addWeighted(input
-                                , opacity
-                                , output
-                                , 1.0 - opacity
-                                , 0.0
-                                , tmp);
+                if (mask.empty())
+                {
+                    cv::addWeighted(input
+                                    , opacity
+                                    , output
+                                    , 1.0 - opacity
+                                    , 0.0
+                                    , output);
+                }
+                else
+                {
+                    cv::Mat tmp;
+                    cv::addWeighted(input
+                                    , opacity
+                                    , output
+                                    , 1.0 - opacity
+                                    , 0.0
+                                    , tmp);
+                    tmp.copyTo(output
+                               , mask);
+                }
 
-                tmp.copyTo(output
-                           , mask);
             }
         }
-
-
-
 
     }
 

@@ -4,6 +4,7 @@
 
 #include "audio_format_impl.h"
 #include "video_format_impl.h"
+#include "video_frame_types.h"
 
 namespace mpl
 {
@@ -15,19 +16,6 @@ template<>
 bool property_helper::serialize(const audio_format_impl& value, i_property& property)
 {
     return value.get_params(property);
-    /*
-    property_writer writer(property);
-
-    if (writer.set("media_type", value.media_type())
-            && writer.set("format", value.format_id())
-            && writer.set("sample_rate", value.sample_rate())
-            && writer.set("channels", value.channels()))
-    {
-        utils::convert_format_options(value.options(), property);
-        return true;
-    }
-
-    return false;*/
 }
 
 template<>
@@ -35,15 +23,8 @@ bool property_helper::deserialize(audio_format_impl& value
                                   , const i_property& property)
 {
     return value.set_params(property);
-    /*
-    property_reader reader(property);
-
-    return reader.get("media_type", value.media_type())
-            | reader.get("format", value.format_id())
-            | reader.get("sample_rate", value.sample_rate())
-            | reader.get("channels", value.channels())
-            | utils::convert_format_options(property, value.options());*/
 }
+
 
 // video_format_impl
 template<>
@@ -51,20 +32,7 @@ bool property_helper::serialize(const video_format_impl& value
                                 , i_property& property)
 {
     return value.get_params(property);
-    /*
-    property_writer writer(property);
 
-    if (writer.set("media_type", value.media_type())
-            && writer.set("format", value.format_id())
-            && writer.set("width", value.width())
-            && writer.set("height", value.height())
-            && writer.set("frame_rate", value.frame_rate()))
-    {
-        utils::convert_format_options(value.options(), property);
-        return true;
-    }
-
-    return false;*/
 }
 
 template<>
@@ -72,17 +40,127 @@ bool property_helper::deserialize(video_format_impl& value
                                   , const i_property& property)
 {
     return value.set_params(property);
-    /*
-    property_reader reader(property);
-
-    return reader.get("media_type", value.media_type())
-            | reader.get("format", value.format_id())
-            | reader.get("width", value.width())
-            | reader.get("height", value.height())
-            | reader.get("frame_rate", value.frame_rate())
-            | utils::convert_format_options(property, value.options());*/
 }
 
+// frame_point_t
+template<>
+bool property_helper::serialize(const frame_point_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("x", value.x)
+            && writer.set("y", value.y);
+
+}
+
+template<>
+bool property_helper::deserialize(frame_point_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("x", value.x)
+            | reader.get("y", value.y);
+}
+
+// frame_size_t
+template<>
+bool property_helper::serialize(const frame_size_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("width", value.width)
+            && writer.set("height", value.height);
+
+}
+
+template<>
+bool property_helper::deserialize(frame_size_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("width", value.width)
+            | reader.get("height", value.height);
+}
+
+// frame_rect_t
+template<>
+bool property_helper::serialize(const frame_rect_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("offset", value.offset)
+            && writer.set("size", value.size);
+
+}
+
+template<>
+bool property_helper::deserialize(frame_rect_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("offset", value.offset)
+            | reader.get("size", value.size);
+}
+
+// relative_frame_point_t
+template<>
+bool property_helper::serialize(const relative_frame_point_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("x", value.x)
+            && writer.set("y", value.y);
+
+}
+
+template<>
+bool property_helper::deserialize(relative_frame_point_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("x", value.x)
+            | reader.get("y", value.y);
+}
+
+// relative_frame_size_t
+template<>
+bool property_helper::serialize(const relative_frame_size_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("width", value.width)
+            && writer.set("height", value.height);
+
+}
+
+template<>
+bool property_helper::deserialize(relative_frame_size_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("width", value.width)
+            | reader.get("height", value.height);
+}
+
+// relative_frame_rect_t
+template<>
+bool property_helper::serialize(const relative_frame_rect_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("offset", value.offset)
+            && writer.set("size", value.size);
+
+}
+
+template<>
+bool property_helper::deserialize(relative_frame_rect_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("offset", value.offset)
+            | reader.get("size", value.size);
+}
 
 
 /*

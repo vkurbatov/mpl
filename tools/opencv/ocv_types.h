@@ -26,7 +26,10 @@ enum class frame_format_t
 {
     undefined = -1,
     bgr,
-    bgra
+    bgra,
+    rgb,
+    rgba
+
 };
 
 enum class draw_figure_t

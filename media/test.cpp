@@ -39,6 +39,8 @@
 #include "smart_transcoder_factory.h"
 #include "media_composer_factory_impl.h"
 
+#include "video_frame_types.h"
+
 #include "media_option_types.h"
 #include "message_frame_impl.h"
 
@@ -1456,44 +1458,72 @@ void test19()
                                                         , mpl::media::media_converter_factory_impl::builtin_converter_factory());
 
     media_composer_factory_impl composer_factory(smart_factory);
+
+    video_format_impl compose_video_format(video_format_id_t::rgb24
+                                            , 1920
+                                            , 1080
+                                            , 30);
+
     auto composer_params = property_helper::create_object();
+
+    if (composer_params)
+    {
+        property_writer writer(*composer_params);
+        writer.set("video_params.format", compose_video_format);
+    }
 
     auto media_composer = composer_factory.create_composer(*composer_params);
 
-    auto stream1 = media_composer->add_stream(*composer_params);
-    auto stream2 = media_composer->add_stream(*composer_params);
-    auto stream3 = media_composer->add_stream(*composer_params);
-    auto stream4 = media_composer->add_stream(*composer_params);
-    auto stream5 = media_composer->add_stream(*composer_params);
-    auto stream6 = media_composer->add_stream(*composer_params);
-    auto stream7 = media_composer->add_stream(*composer_params);
-    auto stream8 = media_composer->add_stream(*composer_params);
-    auto stream9 = media_composer->add_stream(*composer_params);
+    auto stream_params = property_helper::create_object();
 
+    if (stream_params)
+    {
+        property_writer writer(*stream_params);
+        writer.set("order", 1);
+    }
 
+    auto stream1 = media_composer->add_stream(*stream_params);
+    auto stream2 = media_composer->add_stream(*stream_params);
+    auto stream3 = media_composer->add_stream(*stream_params);
+    auto stream4 = media_composer->add_stream(*stream_params);
+    auto stream5 = media_composer->add_stream(*stream_params);
+    auto stream6 = media_composer->add_stream(*stream_params);
+    auto stream7 = media_composer->add_stream(*stream_params);
+    auto stream8 = media_composer->add_stream(*stream_params);
+    auto stream9 = media_composer->add_stream(*stream_params);
+
+    if (stream_params)
+    {
+        relative_frame_rect_t frame_rect = { 0.0, 0.0, 1.0, 1.0};
+        property_writer writer(*stream_params);
+        writer.set("rect", frame_rect);
+        writer.set("order", 0);
+    }
+
+    auto stream10 = media_composer->add_stream(*stream_params);
 
     audio_format_impl audio_format(audio_format_id_t::aac
                                    , 48000
                                    , 2);
     video_format_impl video_format (video_format_id_t::h264
-                                    , 1280
-                                    , 720
-                                    , 30);
+                                    , compose_video_format.width()
+                                    , compose_video_format.height()
+                                    , compose_video_format.frame_rate());
 
     audio_format_impl transcode_audio_format(audio_format_id_t::aac
                                            , 48000
                                            , 2);
     video_format_impl transcode_video_format (video_format_id_t::h264
-                                              , 1280
-                                              , 720
-                                              , 30);
+                                              , compose_video_format.width()
+                                              , compose_video_format.height()
+                                              , compose_video_format.frame_rate());
 
-    video_format_impl v4l2_video_format(video_format_id_t::bgr24
+    video_format_impl v4l2_video_format(compose_video_format.format_id()
                                          , 0
                                          , 0
                                          , 0);
 
-    std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=1";
+    std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0";
 
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
     option_writer(transcode_video_format.options()).set(opt_fmt_stream_id, 0);
@@ -1526,7 +1556,6 @@ void test19()
             }
         }
 
-
         writer.set("streams", streams);
     }
 
@@ -1549,6 +1578,7 @@ void test19()
     compose_router.add_sink(stream7->sink());
     compose_router.add_sink(stream8->sink());
     compose_router.add_sink(stream9->sink());
+    compose_router.add_sink(stream10->sink());
 
     v4l2_transcoder->set_sink(&compose_router);
 
@@ -1584,7 +1614,7 @@ void test19()
 
 }
 
-void tests()
+void  tests()
 {
     //test1();
     //test6();
@@ -1594,7 +1624,7 @@ void tests()
     // test17();
     // test18();
     // test15();
-    test19();
+    test19(); // compouser
 }
 
 }

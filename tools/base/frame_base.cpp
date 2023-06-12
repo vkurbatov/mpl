@@ -236,12 +236,14 @@ namespace frame_utils
 {
 
 frame_rect_t rect_from_relative(const frame_rect_float_t &relative_rect
-                                , const frame_size_t &frame_size)
+                                , const frame_size_t &frame_size
+                                , double margin)
 {
-    frame_rect_t rect(frame_size.width * relative_rect.offset.x
-                      , frame_size.height * relative_rect.offset.y
-                      , frame_size.width * relative_rect.size.width
-                      , frame_size.height * relative_rect.size.height);
+    auto real_magrin = std::max(frame_size.width, frame_size.height) * margin;
+    frame_rect_t rect(frame_size.width * relative_rect.offset.x + real_magrin
+                      , frame_size.height * relative_rect.offset.y + real_magrin
+                      , frame_size.width * relative_rect.size.width - real_magrin / 2
+                      , frame_size.height * relative_rect.size.height - real_magrin / 2);
 
     return rect.fit(frame_size);
 }

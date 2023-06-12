@@ -95,7 +95,7 @@ bool is_key_frame(const i_media_frame& frame)
     {
         auto frame_type = static_cast<const i_video_frame&>(frame).frame_type();
         return frame_type == i_video_frame::frame_type_t::key_frame
-                || !video_format_info_t::get_info(static_cast<const i_video_frame&>(frame).format().format_id()).motion;
+                && video_format_info_t::get_info(static_cast<const i_video_frame&>(frame).format().format_id()).motion;
     }
     return false;
 }
@@ -372,6 +372,7 @@ public:
                 auto flag = key_frame
                         ? ffmpeg::transcode_flag_t::key_frame
                         : ffmpeg::transcode_flag_t::none;
+
 
                 if (m_wait_first_frame)
                 {

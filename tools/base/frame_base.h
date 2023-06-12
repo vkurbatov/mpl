@@ -95,7 +95,8 @@ typedef frame_rect_base_t<double> frame_rect_float_t;
 namespace frame_utils
 {
     frame_rect_t rect_from_relative(const frame_rect_float_t& relative_rect
-                                    , const frame_size_t& frame_size);
+                                    , const frame_size_t& frame_size
+                                    , double margin = 0.0);
 }
 
 }

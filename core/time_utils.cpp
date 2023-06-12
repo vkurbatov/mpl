@@ -60,5 +60,17 @@ void sleep(timestamp_t wait_time, bool clock_align)
     std::this_thread::sleep_for(std::chrono::nanoseconds(wait_time));
 }
 
+timestamp_t get_ticks(timestamp_t duration)
+{
+    struct timespec ts = {};
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    auto ticks = static_cast<timestamp_t>(ts.tv_sec) * durations::second
+            + static_cast<timestamp_t>(ts.tv_nsec);
+
+    return duration > 1
+            ? ticks / duration
+            : ticks;
+}
+
 
 }
