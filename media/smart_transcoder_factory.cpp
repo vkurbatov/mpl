@@ -7,15 +7,28 @@
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 
+#include "core/task_manager_impl.h"
 
 #include "media_option_types.h"
 
+#include <queue>
+#include "shared_mutex"
+
+#include "tools/base/sync_base.h"
 
 namespace mpl::media
 {
 
+
+
 namespace detail
 {
+
+i_task_manager& get_single_task_manager()
+{
+    static auto single_task_manager = task_manager_factory::get_instance().create_manager({});
+    return *single_task_manager;
+}
 
 template<media_type_t MediaType>
 struct format_types_t;
@@ -205,10 +218,13 @@ public:
 template<media_type_t MediaType>
 class smart_transcoder : public i_media_converter
 {
+
+    using mutex_t = base::spin_lock;
     using i_format_t = typename detail::format_types_t<MediaType>::i_format_t;
     using i_frame_t = typename detail::format_types_t<MediaType>::i_frame_t;
     using format_impl_t = typename detail::format_types_t<MediaType>::format_impl_t;
     using frame_impl_t = typename detail::format_types_t<MediaType>::frame_impl_t;
+    using frame_queue_t = std::queue<i_media_frame::u_ptr_t>;
 
     enum class transcoder_state_t
     {
@@ -222,8 +238,11 @@ class smart_transcoder : public i_media_converter
     struct params_t
     {
         bool    transcode_always;
-        params_t(bool transcode_always = false)
+        bool    transcode_async;
+        params_t(bool transcode_always = false
+                , bool transcode_async = true)
             : transcode_always(transcode_always)
+            , transcode_async(transcode_async)
         {
 
         }
@@ -237,15 +256,105 @@ class smart_transcoder : public i_media_converter
         bool load(const i_property& params)
         {
             property_reader reader(params);
-            return reader.get("transcode_always", transcode_always);
+            return reader.get("transcode_always", transcode_always)
+                    | reader.get("transcode_async", transcode_async);
         }
 
         bool store(i_property& params) const
         {
             property_writer writer(params);
-            return writer.set("transcode_always", transcode_always, false);
+            return writer.set("transcode_always", transcode_always, false)
+                    && writer.set("transcode_async", transcode_async, false);
         }
     };
+
+    class async_frame_manager
+    {
+        mutable mutex_t                 m_safe_mutex;
+        mutable mutex_t                 m_exec_mutex;
+
+        i_task_manager&                 m_task_manager;
+        smart_transcoder&               m_owner;
+
+        frame_queue_t                   m_frame_queue;
+        task_id_t                       m_task_id;
+        i_task_manager::task_handler_t  m_task_handler;
+        bool                            m_remove;
+
+public:
+
+        async_frame_manager(smart_transcoder& owner)
+            : m_task_manager(detail::get_single_task_manager())
+            , m_owner(owner)
+            , m_task_id(task_id_none)
+            , m_task_handler([&] { on_task_execute(); })
+            , m_remove(false)
+        {
+
+        }
+
+        ~async_frame_manager()
+        {
+            m_remove = true;
+            if (m_task_id != task_id_none)
+            {
+                m_task_manager.remove_task(m_task_id);
+            }
+        }
+
+        bool push_frame(const i_frame_t& frame)
+        {
+            if (auto clone_frame = frame.clone())
+            {
+                std::lock_guard lock(m_safe_mutex);
+
+                m_frame_queue.emplace(std::move(clone_frame));
+
+                while (m_frame_queue.size() > 10)
+                {
+                    m_frame_queue.pop();
+                }
+
+                if (m_task_id == task_id_none)
+                {
+                    m_task_id = m_task_manager.add_task(m_task_handler);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        typename i_media_frame::u_ptr_t fetch_frame()
+        {
+            std::lock_guard lock(m_safe_mutex);
+            if (!m_frame_queue.empty())
+            {
+                auto frame = std::move(m_frame_queue.front());
+                m_frame_queue.pop();
+                return frame;
+            }
+
+            return nullptr;
+        }
+
+        void on_task_execute()
+        {
+            while (auto frame = fetch_frame())
+            {
+                if (m_remove)
+                {
+                    break;
+                }
+
+                std::lock_guard lock(m_exec_mutex);
+                m_owner.on_transcode_frame(static_cast<const i_frame_t&>(*frame));
+            }
+            m_task_id = task_id_none;
+        }
+    };
+
 
     detail::converter_manager<MediaType>    m_converter_manager;
 
@@ -264,6 +373,7 @@ class smart_transcoder : public i_media_converter
     detail::frame_sink<MediaType>           m_converter_sink;
 
     i_message_sink*                         m_output_sink;
+    async_frame_manager                     m_async_manager;
 
     bool                                    m_is_init;
     bool                                    m_is_transit;
@@ -311,6 +421,7 @@ public:
         , m_converter_sink([&](const auto& frame, const auto& options)
                         { return on_converter_frame(frame, options); } )
         , m_output_sink(nullptr)
+        , m_async_manager(*this)
         , m_is_init(false)
         , m_is_transit(true)
     {
@@ -435,7 +546,24 @@ public:
         return false;
     }
 
-    bool on_message_frame(const i_frame_t& media_frame)
+    bool on_media_frame(const i_media_frame& media_frame)
+    {
+        if (media_frame.media_type() == MediaType)
+        {
+            if (m_params.transcode_async == false)
+            {
+                return on_transcode_frame(static_cast<const i_frame_t&>(media_frame));
+            }
+            else
+            {
+                return m_async_manager.push_frame(static_cast<const i_frame_t&>(media_frame));
+            }
+        }
+
+        return false;
+    }
+
+    bool on_transcode_frame(const i_frame_t& media_frame)
     {
         if (!m_input_format.is_compatible(media_frame.format())
                 || !m_is_init)
@@ -505,17 +633,14 @@ public:
                 && m_encoder == nullptr;
     }
 
+
     // i_message_sink interface
 public:
     bool send_message(const i_message &message) override
     {
         if (message.category() == message_category_t::frame)
         {
-            const auto& frame = static_cast<const i_message_frame&>(message).frame();
-            if (frame.media_type() == MediaType)
-            {
-                return on_message_frame(static_cast<const i_frame_t&>(frame));
-            }
+            return on_media_frame(static_cast<const i_message_frame&>(message).frame());
         }
 
         return false;

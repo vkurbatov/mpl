@@ -1672,8 +1672,8 @@ void  tests()
     // test17();
     // test18();
     // test15();
-    // test19(); // composer
-    test20();
+    test19(); // composer
+    // test20();
 }
 
 }

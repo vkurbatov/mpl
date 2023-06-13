@@ -322,6 +322,7 @@ class media_composer : public i_media_composer
             }
         };
 
+        mutable mutex_t         m_safe_mutex;
 
         stream_params_t         m_params;
         stream_manager&         m_manager;
@@ -393,6 +394,7 @@ class media_composer : public i_media_composer
 
         bool push_frame(const i_message_frame& message_frame)
         {
+            lock_t lock(m_safe_mutex);
             switch(message_frame.frame().media_type())
             {
                 case media_type_t::audio:
