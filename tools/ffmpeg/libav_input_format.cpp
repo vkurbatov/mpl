@@ -11,6 +11,8 @@ extern "C"
 
 #include "tools/base/url_base.h"
 
+#include <iostream>
+
 namespace ffmpeg
 {
 
@@ -235,6 +237,16 @@ struct libav_input_format::context_t
 
                     result = m_packet.stream_index;
                 }
+                else
+                {
+                    switch(result)
+                    {
+                        case AVERROR_EOF:
+                            seek(0);
+                        break;
+                        default:;
+                    }
+                }
             }
 
             return result;
@@ -352,6 +364,14 @@ struct libav_input_format::context_t
         return false;
     }
 
+    void seek(timestamp_t timestamp)
+    {
+        if (m_native_context != nullptr)
+        {
+            m_native_context->seek(timestamp);
+        }
+    }
+
     bool read(frame_t& frame)
     {
         if (m_native_context != nullptr)
@@ -430,6 +450,11 @@ bool libav_input_format::is_open() const
 bool libav_input_format::cancel()
 {
     return m_context->cancel();
+}
+
+void libav_input_format::seek(timestamp_t timestamp)
+{
+    m_context->seek(timestamp);
 }
 
 bool libav_input_format::read(frame_t &frame)

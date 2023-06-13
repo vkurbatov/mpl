@@ -10,6 +10,8 @@
 namespace mpl::media
 {
 
+constexpr ocv::color_t default_pen_color = 0x7fff0000;
+
 namespace detail
 {
 
@@ -123,10 +125,27 @@ struct video_image_builder::context_t
                 frame_rect_t src_rect = { 0, 0, input_frame.size.width, input_frame.size.height };
                 src_rect.aspect_ratio(dst_rect);
 
+
+
                 m_draw_processor.draw_image(dst_rect
                                             , src_rect
                                             , detail::create_frame_info(input_frame)
                                             , input_frame.pixels());
+
+                if (draw_options.border > 0)
+                {
+                    m_draw_processor.draw_format().pen_color = default_pen_color;
+
+                    m_draw_processor.draw_format().line_weight = draw_options.border;
+
+                    dst_rect.offset.x += draw_options.border / 2 - 1;
+                    dst_rect.offset.y += draw_options.border / 2 - 1;
+                    dst_rect.size.width -= draw_options.border - 2;
+                    dst_rect.size.height -= draw_options.border - 2;
+
+                    m_draw_processor.draw_figure(dst_rect
+                                                 , ocv::draw_figure_t::rectangle);
+                }
 
                 return true;
             }

@@ -41,6 +41,8 @@ public:
     bool is_open() const;
     bool cancel();
 
+    void seek(timestamp_t timestamp);
+
     bool read(frame_t& frame);
     bool read(frame_ref_t& ref_frame);
 };

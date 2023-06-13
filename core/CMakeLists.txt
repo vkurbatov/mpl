@@ -9,6 +9,7 @@ set(SOURCES
     data_splitter.cpp
     smart_buffer.cpp
     smart_buffer_collection.cpp
+    task_manager_impl.cpp
     fifo_writer_impl.cpp
     fifo_reader_impl.cpp
     cyclic_data_reader.cpp
@@ -61,6 +62,8 @@ set(PUBLIC_HEADERS
     event.h
     event_channel_state.h
     shared_buffer_header.h
+    i_task.h
+    i_task_manager.h
     i_property.h
     i_property_value.h
     i_property_tree.h
@@ -91,6 +94,7 @@ set(PRIVATE_HEADERS
     data_splitter.h
     smart_buffer.h
     smart_buffer_collection.h
+    task_manager_impl.h
     fifo_writer_impl.h
     fifo_reader_impl.h
     cyclic_data_reader.h

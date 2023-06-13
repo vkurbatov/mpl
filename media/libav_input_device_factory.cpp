@@ -26,8 +26,10 @@ struct stream_t
 {
     using list_t = std::vector<stream_t>;
     ffmpeg::stream_info_t   stream_info;
-    timestamp_t             timestamp;
+    timestamp_t             start_timestamp;
     frame_id_t              frame_id;
+    timestamp_t             last_timestamp;
+    timestamp_t             real_timestamp;
 
     static stream_t::list_t create_list(ffmpeg::stream_info_t::list_t&& streams)
     {
@@ -43,16 +45,20 @@ struct stream_t
 
     stream_t(ffmpeg::stream_info_t&& stream_info)
         : stream_info(std::move(stream_info))
-        , timestamp(0)
+        , start_timestamp(0)
         , frame_id(0)
+        , last_timestamp(0)
+        , real_timestamp(0)
     {
 
     }
 
     void reset()
     {
-        timestamp = 0;
+        start_timestamp = 0;
         frame_id = 0;
+        last_timestamp = 0;
+        real_timestamp = 0;
     }
 
     void next()
@@ -62,13 +68,31 @@ struct stream_t
 
     timestamp_t push_timestamp(timestamp_t native_timestamp)
     {
-        if (frame_id == 0)
+        auto dt = native_timestamp - last_timestamp;
+        if (frame_id == 0
+                || native_timestamp < start_timestamp
+                || std::abs(dt) > stream_info.media_info.sample_rate())
         {
-            timestamp = native_timestamp;
-            return 0;
+            start_timestamp = native_timestamp;
+            real_timestamp = mpl::core::utils::get_ticks();
         }
 
-        return native_timestamp - timestamp;
+        last_timestamp = native_timestamp;
+
+        return native_timestamp - start_timestamp;
+    }
+
+    void sync(timestamp_t native_timestamp) const
+    {
+        auto rdt = mpl::core::utils::get_ticks() - real_timestamp;
+        auto pdt = native_timestamp - start_timestamp;
+
+        pdt = durations::milliseconds(pdt * 1000) / stream_info.media_info.sample_rate();
+
+        if (pdt > rdt)
+        {
+            mpl::core::utils::sleep(pdt - rdt);
+        }
     }
 
 };
@@ -243,6 +267,7 @@ public:
             {
                 auto streams = stream_t::create_list(native_input_device.streams());
                 change_state(channel_state_t::connected);
+                error_counter = 0;
 
                 while(is_open()
                       && error_counter < 10)
@@ -254,6 +279,11 @@ public:
                         error_counter = 0;
                         on_native_frame(stream
                                         , libav_frame);
+
+                        if (libav_frame.info.stream_id == 0)
+                        {
+                            stream.sync(libav_frame.info.timestamp());
+                        }
                         stream.next();
                     }
                     else
@@ -301,7 +331,7 @@ public:
                     {
                         audio_frame_impl frame(format
                                                , stream.frame_id
-                                               , libav_frame.info.timestamp());
+                                               , stream.push_timestamp(libav_frame.info.timestamp()));
 
                         frame.smart_buffers().set_buffer(main_media_buffer_index
                                                          , smart_buffer(libav_frame.data
@@ -330,7 +360,7 @@ public:
 
                         video_frame_impl frame(format
                                                , stream.frame_id
-                                               , libav_frame.info.timestamp()
+                                               , stream.push_timestamp(libav_frame.info.timestamp())
                                                , frame_type);
 
                         frame.smart_buffers().set_buffer(main_media_buffer_index

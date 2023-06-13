@@ -1432,10 +1432,14 @@ void test18()
 void test19()
 {
     ffmpeg::libav_register();
-    libav_input_device_factory input_audio_factory;
-    v4l2_device_factory input_video_factory;
+    libav_input_device_factory libav_input_factory;
+    v4l2_device_factory v4l2_input_factory;
 
     libav_output_device_factory output_device_factory;
+
+
+    std::string bg_url = "/home/user/My/sportrecs/test_bckgrnd.mp4";
+    //std::string bg_options = "rtsp_transport=tcp";
 
     std::string input_audio_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     std::string input_video_url = "/dev/video0";
@@ -1451,6 +1455,13 @@ void test19()
     {
         property_writer writer(*v4l2_input_video_params);
         writer.set<std::string>("url", input_video_url);
+    }
+
+    auto bg_video_params = property_helper::create_object();
+    {
+        property_writer writer(*bg_video_params);
+        writer.set<std::string>("url", bg_url);
+        //writer.set<std::string>("options", bg_options);
     }
 
     mpl::media::smart_transcoder_factory smart_factory(mpl::media::libav_transcoder_factory::decoder_factory()
@@ -1476,21 +1487,35 @@ void test19()
 
     auto stream_params = property_helper::create_object();
 
-    if (stream_params)
+    std::size_t stream_count = 9;
+
+
+    i_media_stream::s_array_t streams;
+
+    double opacity = 1.0;
+
+    for (std::size_t i = 0; i < stream_count; i++)
     {
         property_writer writer(*stream_params);
         writer.set("order", 1);
-    }
+        writer.set("opacity", opacity);
 
-    auto stream1 = media_composer->add_stream(*stream_params);
-    auto stream2 = media_composer->add_stream(*stream_params);
-    auto stream3 = media_composer->add_stream(*stream_params);
-    auto stream4 = media_composer->add_stream(*stream_params);
-    auto stream5 = media_composer->add_stream(*stream_params);
-    auto stream6 = media_composer->add_stream(*stream_params);
-    auto stream7 = media_composer->add_stream(*stream_params);
-    auto stream8 = media_composer->add_stream(*stream_params);
-    auto stream9 = media_composer->add_stream(*stream_params);
+        if (i == 4)
+        {
+            writer.set("border_weight", 2);
+        }
+        else
+        {
+            writer.set("border_weight", 0);
+        }
+
+        opacity -= 0.1;
+
+        if (auto stream = media_composer->add_stream(*stream_params))
+        {
+            streams.emplace_back(stream);
+        }
+    }
 
     if (stream_params)
     {
@@ -1498,6 +1523,7 @@ void test19()
         property_writer writer(*stream_params);
         writer.set("rect", frame_rect);
         writer.set("order", 0);
+        writer.set<double>("opacity", 1.0);
     }
 
     auto stream10 = media_composer->add_stream(*stream_params);
@@ -1559,8 +1585,9 @@ void test19()
         writer.set("streams", streams);
     }
 
-    auto input_audio_device = input_audio_factory.create_device(*libav_input_audio_params);
-    auto input_video_device = input_video_factory.create_device(*v4l2_input_video_params);
+    auto input_audio_device = libav_input_factory.create_device(*libav_input_audio_params);
+    auto input_video_device = v4l2_input_factory.create_device(*v4l2_input_video_params);
+    auto bg_video_device = libav_input_factory.create_device(*bg_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
     input_audio_device->source()->add_sink(audio_transcoder.get());
@@ -1569,16 +1596,12 @@ void test19()
 
     message_router_impl compose_router;
 
-    compose_router.add_sink(stream1->sink());
-    compose_router.add_sink(stream2->sink());
-    compose_router.add_sink(stream3->sink());
-    compose_router.add_sink(stream4->sink());
-    compose_router.add_sink(stream5->sink());
-    compose_router.add_sink(stream6->sink());
-    compose_router.add_sink(stream7->sink());
-    compose_router.add_sink(stream8->sink());
-    compose_router.add_sink(stream9->sink());
-    compose_router.add_sink(stream10->sink());
+    for (auto s : streams)
+    {
+        compose_router.add_sink(s->sink());
+    }
+
+    bg_video_device->source()->add_sink(stream10->sink());
 
     v4l2_transcoder->set_sink(&compose_router);
 
@@ -1594,15 +1617,17 @@ void test19()
     output_device->control(channel_control_t::open());
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
+    bg_video_device->control(channel_control_t::open());
 
     while(input_video_device->state() != channel_state_t::connected);
 
-    core::utils::sleep(durations::seconds(150));
+    core::utils::sleep(durations::seconds(900));
 
     media_composer->stop();
 
     input_audio_device->control(channel_control_t::close());
     input_video_device->control(channel_control_t::close());
+    bg_video_device->control(channel_control_t::close());
 
     output_device->control(channel_control_t::close());
 

@@ -282,14 +282,17 @@ class media_composer : public i_media_composer
         {
             relative_frame_rect_t   rect;
             std::int32_t            order;
-            std::int32_t            border_width;
+            std::int32_t            border_weight;
+            double                  opacity;
 
             stream_params_t(const relative_frame_rect_t& rect = {}
                             , std::int32_t order = 0
-                            , std::int32_t border_width = 0)
+                            , std::int32_t weight = 0
+                            , double opacity = 1.0)
                 : rect(rect)
                 , order(order)
-                , border_width(border_width)
+                , border_weight(border_weight)
+                , opacity(opacity)
             {
 
             }
@@ -305,7 +308,8 @@ class media_composer : public i_media_composer
                 property_reader reader(params);
                 return reader.get("rect", rect)
                         | reader.get("order", order)
-                        | reader.get("border_width", border_width);
+                        | reader.get("border_weight", border_weight)
+                        | reader.get("opacity", opacity);
             }
 
             bool save(i_property& params) const
@@ -313,7 +317,8 @@ class media_composer : public i_media_composer
                 property_writer writer(params);
                 return writer.set("rect", rect)
                         && writer.set("order", order)
-                        && writer.set("border_width", border_width);
+                        && writer.set("border_weight", border_weight)
+                        && writer.set("opacity", opacity);
             }
         };
 
@@ -410,6 +415,16 @@ class media_composer : public i_media_composer
         inline const relative_frame_rect_t& rect() const
         {
             return m_params.rect;
+        }
+
+        inline double opacity() const
+        {
+            return m_params.opacity;
+        }
+
+        inline std::int32_t border_weight() const
+        {
+            return m_params.border_weight;
         }
 
         // i_parametrizable interface
@@ -538,7 +553,7 @@ class media_composer : public i_media_composer
             {
                 static auto compare_handler = [](const auto& lhs, const auto& rhs)
                 {
-                    return lhs->order() < rhs->order();
+                    return lhs->order() <= rhs->order();
                 };
                 std::sort(array.begin(), array.end(), compare_handler);
             }
@@ -566,6 +581,7 @@ class media_composer : public i_media_composer
 
         frame_id_t              m_frame_id;
         timestamp_t             m_timestamp;
+        timestamp_t             m_start_time;
 
     public:
 
@@ -577,6 +593,7 @@ class media_composer : public i_media_composer
             , m_output_frame(m_format)
             , m_frame_id(0)
             , m_timestamp(0)
+            , m_start_time(0)
         {
             m_output_image.tune();
             m_image_builder.set_output_frame(&m_output_image);
@@ -609,13 +626,33 @@ class media_composer : public i_media_composer
         {
             if (!m_output_image.is_empty())
             {
+                auto now = mpl::core::utils::get_ticks();
+
+                if (m_start_time == 0)
+                {
+                    m_start_time = now;
+                }
+
+                auto elapsed_time = now - m_start_time;
+
                 m_output_frame.set_frame_id(m_frame_id);
                 m_output_frame.set_timestamp(m_timestamp);
                 m_output_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                           , m_output_image.image_data);
 
                 m_frame_id++;
-                m_timestamp += video_sample_rate / m_format.frame_rate();
+
+
+
+                //m_timestamp += video_sample_rate / m_format.frame_rate();
+
+                m_timestamp = (elapsed_time * video_sample_rate) / durations::seconds(1);
+
+                if (m_format.frame_rate())
+                {
+                    timestamp_t duration = video_sample_rate / m_format.frame_rate();
+                    m_timestamp -= m_timestamp % (duration / 2);
+                }
 
                 return &m_output_frame;
             }
@@ -753,7 +790,6 @@ public:
 
     i_media_converter::u_ptr_t create_video_converter()
     {
-        return nullptr;
         video_format_impl format(m_composer_params.video_format);
         format.set_width(0);
         format.set_height(0);
@@ -789,6 +825,8 @@ public:
                 if (auto video_frame = s->pop_video_frame())
                 {
                     draw_options_t options;
+                    options.opacity = s->opacity();
+                    options.border = s->border_weight();
 
                     if (is_custom)
                     {
@@ -797,8 +835,7 @@ public:
                     else
                     {
                         options.target_rect = layout[idx];
-                        options.margin = 0.01;
-                        options.opacity = 0.5;
+                        options.margin = 0.005;
                     }
 
                     m_video_composer.push_frame(*video_frame
