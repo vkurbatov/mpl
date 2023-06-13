@@ -100,11 +100,6 @@ class task_manager_impl : public i_task_manager
             std::mutex                      wait_mutex;
             std::unique_lock<std::mutex>    wait_lock(wait_mutex);
 
-            auto predicate = [&]
-            {
-                return !m_manager.is_running();
-            };
-
             while(m_manager.is_running())
             {
                 if (auto handler = m_manager.m_task_queue.fetch_task())
@@ -113,13 +108,12 @@ class task_manager_impl : public i_task_manager
                 }
                 else
                 {
-                    m_manager.m_signal.wait(wait_lock, predicate);
+                    m_manager.m_signal.wait(wait_lock);
                 }
             }
         }
     };
 
-    mutable mutex_t                     m_safe_mutex;
     config_t                            m_config;
 
     task_queue_t                        m_task_queue;
@@ -137,7 +131,7 @@ public:
 
     task_manager_impl(const config_t &config)
         : m_config(config)
-        , m_running(false)
+        , m_running(true)
     {
         auto worker_count = m_config.max_workers;
         if (worker_count == 0)

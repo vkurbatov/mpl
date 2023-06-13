@@ -6,6 +6,7 @@
 #include "core/property_value_impl.h"
 #include "core/property_tree_impl.h"
 #include "core/message_router_impl.h"
+#include "core/task_manager_impl.h"
 
 #include "core/property_writer.h"
 
@@ -1637,6 +1638,28 @@ void test19()
     return;
 }
 
+void test20()
+{
+    {
+        auto manager = task_manager_factory::get_instance().create_manager({});
+
+        for (std::size_t i = 0; i < 20; i++)
+        {
+            auto handler = [i]()
+            {
+                std::clog << "task exec #" << std::this_thread::get_id() << ": " << i << std::endl;
+                //mpl::core::utils::sleep(durations::microseconds(10));
+            };
+
+            std::clog << "task push: " << i << std::endl;
+
+            manager->add_task(handler);
+        }
+        mpl::core::utils::sleep(durations::milliseconds(10));
+    }
+    return;
+}
+
 }
 
 void  tests()
@@ -1649,7 +1672,8 @@ void  tests()
     // test17();
     // test18();
     // test15();
-    test19(); // compouser
+    // test19(); // composer
+    test20();
 }
 
 }
