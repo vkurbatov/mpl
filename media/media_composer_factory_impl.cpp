@@ -241,6 +241,7 @@ class media_composer : public i_media_composer
             {
                 lock_t lock(m_safe_mutex);
                 m_frame_queue = {};
+                m_last_frame.reset();
             }
 
         private:
@@ -287,7 +288,7 @@ class media_composer : public i_media_composer
 
             stream_params_t(const relative_frame_rect_t& rect = {}
                             , std::int32_t order = 0
-                            , std::int32_t weight = 0
+                            , std::int32_t border_weight = 0
                             , double opacity = 1.0)
                 : rect(rect)
                 , order(order)
@@ -321,8 +322,6 @@ class media_composer : public i_media_composer
                         && writer.set("opacity", opacity);
             }
         };
-
-        mutable mutex_t         m_safe_mutex;
 
         stream_params_t         m_params;
         stream_manager&         m_manager;
@@ -394,7 +393,6 @@ class media_composer : public i_media_composer
 
         bool push_frame(const i_message_frame& message_frame)
         {
-            lock_t lock(m_safe_mutex);
             switch(message_frame.frame().media_type())
             {
                 case media_type_t::audio:
@@ -640,7 +638,7 @@ class media_composer : public i_media_composer
                 m_output_frame.set_frame_id(m_frame_id);
                 m_output_frame.set_timestamp(m_timestamp);
                 m_output_frame.smart_buffers().set_buffer(main_media_buffer_index
-                                                          , m_output_image.image_data);
+                                                          , smart_buffer(&m_output_image.image_data));
 
                 m_frame_id++;
 

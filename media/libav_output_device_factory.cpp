@@ -25,6 +25,8 @@
 #include <atomic>
 #include <queue>
 
+#include <iostream>
+
 namespace mpl::media
 {
 
@@ -566,6 +568,14 @@ public:
                 libav_frame.info.pts = frame.timestamp();
                 libav_frame.info.dts = frame.timestamp();
                 libav_frame.info.key_frame = frame.frame_type() == i_video_frame::frame_type_t::key_frame;
+
+                std::uint32_t cs = 0;
+                /*for (const auto& f : libav_frame.media_data)
+                {
+                    cs += f;
+                }*/
+
+                std::clog << "output frame #: " << frame.frame_id() << ", sz : " << libav_frame.media_data.size() << std::endl;
 
                 m_frame_manager.push_frame(std::move(libav_frame));
 

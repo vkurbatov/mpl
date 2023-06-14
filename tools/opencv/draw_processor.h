@@ -27,6 +27,8 @@ public:
     void set_output_image(const frame_info_t& format
                           , void *pixels);
 
+    void set_output_data(void *pixels);
+
     void draw_text(const frame_point_t& pos
                    , const std::string& text);
     void draw_rect(const frame_rect_t& rect);

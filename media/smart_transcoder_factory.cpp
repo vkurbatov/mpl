@@ -16,6 +16,9 @@
 
 #include "tools/base/sync_base.h"
 
+#include <cstring>
+#include <iostream>
+
 namespace mpl::media
 {
 
@@ -240,7 +243,7 @@ class smart_transcoder : public i_media_converter
         bool    transcode_always;
         bool    transcode_async;
         params_t(bool transcode_always = false
-                , bool transcode_async = true)
+                , bool transcode_async = false)
             : transcode_always(transcode_always)
             , transcode_async(transcode_async)
         {
@@ -279,7 +282,8 @@ class smart_transcoder : public i_media_converter
         frame_queue_t                   m_frame_queue;
         task_id_t                       m_task_id;
         i_task_manager::task_handler_t  m_task_handler;
-        bool                            m_remove;
+
+        std::atomic_bool                m_processed;
 
 public:
 
@@ -288,18 +292,16 @@ public:
             , m_owner(owner)
             , m_task_id(task_id_none)
             , m_task_handler([&] { on_task_execute(); })
-            , m_remove(false)
+            , m_processed(false)
         {
 
         }
 
         ~async_frame_manager()
         {
-            m_remove = true;
-            if (m_task_id != task_id_none)
-            {
-                m_task_manager.remove_task(m_task_id);
-            }
+            m_task_manager.remove_task(m_task_id);
+            m_processed.store(false, std::memory_order_release);
+            std::lock_guard lock(m_exec_mutex);
         }
 
         bool push_frame(const i_frame_t& frame)
@@ -308,6 +310,14 @@ public:
             {
                 std::lock_guard lock(m_safe_mutex);
 
+                std::size_t refs = 0;
+                if (auto buffer = frame.buffers().get_buffer(0))
+                {
+                    refs = buffer->refs();
+                }
+
+                // std::clog << "push frame #: " << frame.frame_id() << ", refs: " << refs << std::endl;
+
                 m_frame_queue.emplace(std::move(clone_frame));
 
                 while (m_frame_queue.size() > 10)
@@ -315,7 +325,8 @@ public:
                     m_frame_queue.pop();
                 }
 
-                if (m_task_id == task_id_none)
+                bool flag = false;
+                if (m_processed.compare_exchange_strong(flag, true))
                 {
                     m_task_id = m_task_manager.add_task(m_task_handler);
                 }
@@ -326,10 +337,16 @@ public:
             return false;
         }
 
-        typename i_media_frame::u_ptr_t fetch_frame()
+        inline bool is_processed() const
+        {
+            return m_processed.load(std::memory_order_acquire);
+        }
+
+        i_media_frame::u_ptr_t fetch_frame()
         {
             std::lock_guard lock(m_safe_mutex);
-            if (!m_frame_queue.empty())
+            if (is_processed()
+                    && !m_frame_queue.empty())
             {
                 auto frame = std::move(m_frame_queue.front());
                 m_frame_queue.pop();
@@ -341,17 +358,15 @@ public:
 
         void on_task_execute()
         {
+            std::lock_guard lock(m_exec_mutex);
             while (auto frame = fetch_frame())
             {
-                if (m_remove)
-                {
-                    break;
-                }
 
-                std::lock_guard lock(m_exec_mutex);
                 m_owner.on_transcode_frame(static_cast<const i_frame_t&>(*frame));
+                // std::clog << "transcode frame #: " << frame->frame_id() << ", sz: " << size << std::endl;
             }
-            m_task_id = task_id_none;
+
+            m_processed.store(false, std::memory_order_release);
         }
     };
 
@@ -587,7 +602,7 @@ public:
 
         if (m_is_init)
         {
-            convert_and_write_frame(media_frame);
+            return convert_and_write_frame(media_frame);
         }
 
         return false;

@@ -97,7 +97,15 @@ struct draw_processor::context_t
                                    , format.size.width
                                    , type
                                    , pixels);
+            return;
+
         }
+    }
+
+    void set_output_data(void *pixels)
+    {
+        m_output_mat.data = static_cast<u_char*>(pixels);
+        return;
     }
 
     void draw_text(const frame_point_t& pos
@@ -480,6 +488,10 @@ void draw_processor::set_output_image(const frame_info_t &format
                                 , pixels);
 }
 
+void draw_processor::set_output_data(void *pixels)
+{
+    m_context->set_output_data(pixels);
+}
 
 void draw_processor::draw_text(const frame_point_t &pos
                               , const std::string &text)

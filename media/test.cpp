@@ -1474,7 +1474,7 @@ void test19()
     video_format_impl compose_video_format(video_format_id_t::rgb24
                                             , 1920
                                             , 1080
-                                            , 30);
+                                            , 60);
 
     auto composer_params = property_helper::create_object();
 
@@ -1546,11 +1546,11 @@ void test19()
                                               , compose_video_format.frame_rate());
 
     video_format_impl v4l2_video_format(compose_video_format.format_id()
-                                         , 0
-                                         , 0
-                                         , 0);
+                                        , compose_video_format.width()
+                                        , compose_video_format.height()
+                                        , 0);
 
-    std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0";
+    std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
 
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
     option_writer(transcode_video_format.options()).set(opt_fmt_stream_id, 0);
@@ -1559,7 +1559,16 @@ void test19()
     auto v4l2_transcoder = smart_factory.create_converter(*v4l2_video_format.get_params("format"));
 
     auto audio_transcoder = smart_factory.create_converter(*transcode_audio_format.get_params("format"));
-    auto video_transcoder = smart_factory.create_converter(*transcode_video_format.get_params("format"));
+
+    auto video_transcoder_params = transcode_video_format.get_params("format");
+
+    if (video_transcoder_params)
+    {
+        property_writer writer(*video_transcoder_params);
+        writer.set("transcode_async", true);
+    }
+
+    auto video_transcoder = smart_factory.create_converter(*video_transcoder_params);
 
     auto libav_output_device_params = property_helper::create_object();
     {
@@ -1593,7 +1602,6 @@ void test19()
 
     input_audio_device->source()->add_sink(audio_transcoder.get());
     input_video_device->source()->add_sink(v4l2_transcoder.get());
-
 
     message_router_impl compose_router;
 
