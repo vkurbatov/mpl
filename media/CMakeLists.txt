@@ -35,6 +35,7 @@ set(SOURCES
     image_frame.cpp
     video_image_builder.cpp
     image_composer.cpp
+    layout_manager_mosaic_impl.cpp
     media_composer_factory_impl.cpp
 )
 
@@ -54,6 +55,8 @@ set(PUBLIC_HEADERS
     i_media_frame.h
     i_media_converter_factory.h
     i_media_converter.h
+    i_layout.h
+    i_layout_manager.h
     i_compose_stream.h
     i_media_composer_factory.h
     i_media_composer.h
@@ -93,6 +96,7 @@ set(PRIVATE_HEADERS
     image_frame.h
     video_image_builder.h
     image_composer.h
+    layout_manager_mosaic_impl.h
     media_composer_factory_impl.h
 )
 

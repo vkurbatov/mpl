@@ -11,6 +11,7 @@ namespace mpl::media
 {
 
 constexpr ocv::color_t default_pen_color = 0x7fff0000;
+constexpr double default_font_size = 0.1;
 
 namespace detail
 {
@@ -89,10 +90,13 @@ struct video_image_builder::context_t
 
     inline void set_output_frame(image_frame_t* output_frame)
     {
-        m_output_frame = output_frame;
-        void* pixels = m_output_frame ? m_output_frame->pixels() : nullptr;
-        m_draw_processor.set_output_image(detail::create_frame_info(m_output_frame)
-                                          , pixels);
+        if (m_output_frame != output_frame)
+        {
+            m_output_frame = output_frame;
+            void* pixels = m_output_frame ? m_output_frame->pixels() : nullptr;
+            m_draw_processor.set_output_image(detail::create_frame_info(m_output_frame)
+                                              , pixels);
+        }
     }
     inline const image_frame_t* output_frame() const
     {
@@ -145,6 +149,25 @@ struct video_image_builder::context_t
 
                     m_draw_processor.draw_figure(dst_rect
                                                  , ocv::draw_figure_t::rectangle);
+                }
+
+                if (!draw_options.label.empty())
+                {
+                    auto font_size = default_font_size * dst_rect.size.height;
+                    if (font_size < 2)
+                    {
+                        font_size = 2;
+                    }
+
+                    auto text_size = m_draw_processor.get_text_size(draw_options.label);
+                    auto point = dst_rect.center();
+                    point.x -= text_size.width / 2;
+                    point.y = dst_rect.br_point().y - font_size - 2;
+
+                    m_draw_processor.draw_format().font_color = 0xffffff00;
+                    m_draw_processor.draw_format().font_format.weight = m_draw_processor.is_truefont() ? -1 : 1;
+                    m_draw_processor.draw_format().font_format.height = font_size;
+                    m_draw_processor.draw_text(point, draw_options.label);
                 }
 
                 return true;

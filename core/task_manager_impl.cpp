@@ -7,6 +7,9 @@
 #include "tools/base/sync_base.h"
 #include <list>
 #include <map>
+#include <future>
+
+#include <iostream>
 
 namespace mpl
 {
@@ -18,22 +21,135 @@ class task_manager_impl : public i_task_manager
 
     struct task_queue_t
     {
-        using task_handler_map_t = std::map<task_id_t, task_handler_t>;
         mutable mutex_t             m_safe_mutex;
 
-        task_id_t                   m_task_id;
-        task_handler_map_t          m_tasks;
-
-        task_id_t add_task(const task_handler_t& task_handler)
+        struct task_impl : public i_task
         {
-            if (task_handler != nullptr)
+            using s_ptr_t = std::shared_ptr<task_impl>;
+            using map_t = std::map<task_id_t, task_impl::s_ptr_t>;
+            using promise_t = std::promise<void>;
+            using future_t = std::future<void>;
+
+            task_queue_t&               m_owner;
+            task_id_t                   m_task_id;
+            task_handler_t              m_handler;
+
+            std::atomic<task_state_t>   m_state;
+
+            promise_t                   m_promise;
+
+            static s_ptr_t create(task_queue_t& owner
+                                  , task_id_t task_id
+                                  , const task_handler_t& handler)
             {
-                std::lock_guard lock(m_safe_mutex);
-                m_tasks[++m_task_id] = task_handler;
+                if (handler != nullptr)
+                {
+                    return std::make_shared<task_impl>(owner
+                                                       , task_id
+                                                       , handler);
+                }
+
+                return nullptr;
+            }
+
+
+            task_impl(task_queue_t& owner
+                      , task_id_t task_id
+                      , const task_handler_t& handler)
+                : m_owner(owner)
+                , m_task_id(task_id)
+                , m_handler(handler)
+                , m_state(task_state_t::ready)
+            {
+
+            }
+
+            void execute()
+            {
+                task_state_t need_state = task_state_t::ready;
+                if (m_state.compare_exchange_strong(need_state
+                                                    , task_state_t::execute))
+                {
+                    m_handler();
+                    completed();
+                }
+            }
+
+            inline void completed(task_state_t state = task_state_t::completed)
+            {
+                m_state.store(state, std::memory_order_release);
+                m_promise.set_value();
+            }
+
+            inline bool is_process() const
+            {
+                switch(m_state.load(std::memory_order_acquire))
+                {
+                    case task_state_t::ready:
+                    case task_state_t::execute:
+                        return true;
+                    break;
+                    default:;
+                }
+
+                return false;
+            }
+            // i_task interface
+
+        public:
+            task_id_t task_id() const override
+            {
                 return m_task_id;
             }
 
-            return task_id_none;
+            bool wait() override
+            {
+                auto future = m_promise.get_future();
+                if (is_process())
+                {
+                    future.wait();
+                    return true;
+                }
+
+                return false;
+            }
+
+            void cancel() override
+            {
+                // completed(task_state_t::cancelled);
+                m_owner.remove_task(m_task_id);
+            }
+
+            task_state_t state() const override
+            {
+                return m_state;
+            }
+        };
+
+        task_id_t                   m_task_id;
+
+        task_impl::map_t            m_tasks;
+
+        task_queue_t()
+            : m_task_id(0)
+        {
+
+        }
+
+        task_impl::s_ptr_t add_task(const task_handler_t& task_handler)
+        {
+            std::lock_guard lock(m_safe_mutex);
+            if (auto task = task_impl::create(*this
+                                              , m_task_id
+                                              , task_handler))
+            {
+
+                m_tasks[m_task_id] = task;
+                m_task_id++;
+                return task;
+            }
+
+            return nullptr;
         }
 
         bool remove_task(task_id_t task_id)
@@ -48,15 +164,15 @@ class task_manager_impl : public i_task_manager
             return m_tasks.size();
         }
 
-        task_handler_t fetch_task()
+        task_impl::s_ptr_t fetch_task()
         {
             std::lock_guard lock(m_safe_mutex);
 
             if (auto it = m_tasks.begin(); it != m_tasks.end())
             {
-                auto handler = std::move(it->second);
+                auto task = std::move(it->second);
                 m_tasks.erase(it);
-                return handler;
+                return task;
             }
             return nullptr;
         }
@@ -102,9 +218,10 @@ class task_manager_impl : public i_task_manager
 
             while(m_manager.is_running())
             {
-                if (auto handler = m_manager.m_task_queue.fetch_task())
+                if (auto task = m_manager.m_task_queue.fetch_task())
                 {
-                    handler();
+                    task->execute();
+                    // std::clog << "exec task #" << task->task_id() << std::endl;
                 }
                 else
                 {
@@ -113,6 +230,8 @@ class task_manager_impl : public i_task_manager
             }
         }
     };
+
+    // mutable std::mutex                  m_sync_mutex;
 
     config_t                            m_config;
 
@@ -161,24 +280,20 @@ public:
 
     // i_task_manager interface
 public:
-    task_id_t add_task(const task_handler_t &task_handler) override
+    i_task::s_ptr_t add_task(const task_handler_t &task_handler) override
     {
         if (is_running())
         {
-            auto task_id = m_task_queue.add_task(task_handler);
-            if (task_id != task_id_none)
+            if (auto task = m_task_queue.add_task(task_handler))
             {
                 m_signal.notify_one();
+                return task;
             }
         }
 
-        return task_id_none;
+        return nullptr;
     }
 
-    bool remove_task(task_id_t task_id) override
-    {
-        return m_task_queue.remove_task(task_id);
-    }
 
     void reset() override
     {
@@ -200,6 +315,12 @@ task_manager_factory &task_manager_factory::get_instance()
 {
     static task_manager_factory single_factory;
     return single_factory;
+}
+
+i_task_manager &task_manager_factory::singe_manager()
+{
+    static task_manager_impl single_manager({});
+    return single_manager;
 }
 
 i_task_manager::u_ptr_t task_manager_factory::create_manager(const config_t &config)

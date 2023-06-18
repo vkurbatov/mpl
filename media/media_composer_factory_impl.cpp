@@ -1,6 +1,7 @@
 #include "media_composer_factory_impl.h"
 #include "i_media_converter_factory.h"
 #include "i_message_frame.h"
+#include "i_layout_manager.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
@@ -10,6 +11,8 @@
 #include "core/message_sink_impl.h"
 #include "core/time_utils.h"
 #include "core/property_writer.h"
+#include "core/task_manager_impl.h"
+#include "core/adaptive_delay.h"
 
 #include "media_types.h"
 #include "image_frame.h"
@@ -32,122 +35,11 @@
 namespace mpl::media
 {
 
-using layout_t = std::vector<relative_frame_rect_t>;
-using layout_array_t = std::vector<layout_t>;
 
 constexpr std::size_t default_max_frame_queue = 2;
 
 namespace detail
 {
-
-class adaptive_delay
-{
-    static constexpr timestamp_t drift_size = 3; // delay periods
-
-    timestamp_t     m_target_time;
-public:
-    adaptive_delay()
-    {
-        reset();
-    }
-
-    void reset(timestamp_t delay = 0)
-    {
-        m_target_time = mpl::core::utils::get_ticks() + delay;
-    }
-
-    void wait(timestamp_t delay)
-    {
-        auto now = mpl::core::utils::get_ticks();
-
-        timestamp_t max_drift = delay * default_max_frame_queue;
-
-        auto dt = m_target_time - now;
-
-        // std::clog << "dt: " << durations::to_microseconds(dt) << " us" << std::endl;
-
-        if (std::abs(dt) > max_drift)
-        {
-            m_target_time = now + delay;
-            dt = delay / 2;
-        }
-        else
-        {
-            m_target_time += delay;
-
-            if (dt < 0)
-            {
-                dt = 0;
-            }
-        }
-
-        mpl::core::utils::sleep(dt);
-    }
-};
-
-layout_t generate_mosaic_layout(std::size_t streams)
-{
-    layout_t layouts;
-
-    if (streams < 2)
-    {
-        layouts.emplace_back(0.0, 0.0, 1.0, 1.0);
-    }
-    else if (streams == 2)
-    {
-        layouts.emplace_back(0.0, 0.25, 0.5, 0.5);
-        layouts.emplace_back(0.5, 0.25, 0.5, 0.5);
-    }
-    else
-    {
-        auto col_count = static_cast<std::int32_t>(std::sqrt(streams) + 0.999);
-        auto last_col_count = streams % col_count;
-        auto row_count = static_cast<std::int32_t>(streams) / col_count + static_cast<std::int32_t>(last_col_count != 0);
-
-        double l_width = 1.0 / col_count;
-        double l_heigth = 1.0 / row_count;
-
-        for (auto row = 0; row < row_count; row ++)
-        {
-            auto l_y = static_cast<double>(row) * l_heigth;
-
-            auto x_offset = 0.0;
-
-            if ((row + 1 == row_count) && (last_col_count != 0))
-            {
-                x_offset = (static_cast<double>(col_count - last_col_count) * l_width) / 2.0;
-            }
-
-            for (auto col = 0; col < col_count && layouts.size() < streams; col++)
-            {
-                auto l_x = x_offset + static_cast<double>(col) * l_width;
-                layouts.emplace_back(l_x
-                                    , l_y
-                                    , l_width
-                                    , l_heigth);
-            }
-        }
-    }
-
-    return layouts;
-}
-
-const layout_t& get_mosaic_layouts(std::size_t streams)
-{
-    static layout_array_t static_layouts;
-    static base::spin_lock safe_mutex;
-
-    if (static_layouts.size() <= streams)
-    {
-        std::lock_guard lock(safe_mutex);
-        while (static_layouts.size() <= (streams + 5))
-        {
-            static_layouts.emplace_back(generate_mosaic_layout(static_layouts.size()));
-        }
-    }
-
-    return static_layouts[streams];
-}
 
 image_frame_t create_image(const i_video_frame& frame)
 {
@@ -174,6 +66,8 @@ class media_composer : public i_media_composer
     using shared_lock_t = std::shared_lock<T>;
     template<typename T>
     using lock_t = std::lock_guard<T>;
+
+    using task_queue_t = std::queue<i_task::s_ptr_t>;
 
     class stream_manager;
 
@@ -285,15 +179,18 @@ class media_composer : public i_media_composer
             std::int32_t            order;
             std::int32_t            border_weight;
             double                  opacity;
+            std::string             label;
 
             stream_params_t(const relative_frame_rect_t& rect = {}
                             , std::int32_t order = 0
                             , std::int32_t border_weight = 0
-                            , double opacity = 1.0)
+                            , double opacity = 1.0
+                            , const std::string_view& label = {})
                 : rect(rect)
                 , order(order)
                 , border_weight(border_weight)
                 , opacity(opacity)
+                , label(label)
             {
 
             }
@@ -310,7 +207,8 @@ class media_composer : public i_media_composer
                 return reader.get("rect", rect)
                         | reader.get("order", order)
                         | reader.get("border_weight", border_weight)
-                        | reader.get("opacity", opacity);
+                        | reader.get("opacity", opacity)
+                        | reader.get("label", label);
             }
 
             bool save(i_property& params) const
@@ -319,7 +217,8 @@ class media_composer : public i_media_composer
                 return writer.set("rect", rect)
                         && writer.set("order", order)
                         && writer.set("border_weight", border_weight)
-                        && writer.set("opacity", opacity);
+                        && writer.set("opacity", opacity)
+                        && writer.set("label", label);
             }
         };
 
@@ -331,6 +230,8 @@ class media_composer : public i_media_composer
         media_track             m_audio_track;
         media_track             m_video_track;
 
+        video_image_builder     m_image_builder;
+
         stream_id_t             m_stream_id;
 
     public:
@@ -341,18 +242,22 @@ class media_composer : public i_media_composer
         using map_t = std::unordered_map<stream_id_t, w_ptr_t>;
 
         static s_ptr_t create(stream_manager& manager
-                              , const i_property& stream_params)
+                              , const i_property& stream_params
+                              , image_frame_t* output_image = nullptr)
         {
             return std::make_shared<composer_stream>(manager
-                                                     , stream_params);
+                                                     , stream_params
+                                                     , output_image);
         }
 
         composer_stream(stream_manager& manager
-                        , const i_property& stream_params)
+                        , const i_property& stream_params
+                        , image_frame_t* output_image = nullptr)
             : m_params(stream_params)
             , m_manager(manager)
             , m_audio_track(manager.create_converter(media_type_t::audio))
             , m_video_track(manager.create_converter(media_type_t::video))
+            , m_image_builder({}, output_image)
             , m_stream_id(manager.next_stream_id())
         {
 
@@ -361,6 +266,11 @@ class media_composer : public i_media_composer
         ~composer_stream()
         {
             m_manager.on_remove_stream(this);
+        }
+
+        void set_output_image(image_frame_t* image)
+        {
+            m_image_builder.set_output_frame(image);
         }
 
         const i_video_frame* pop_video_frame()
@@ -376,6 +286,7 @@ class media_composer : public i_media_composer
 
             return nullptr;
         }
+
 
         const i_audio_frame* pop_audio_frame()
         {
@@ -407,24 +318,40 @@ class media_composer : public i_media_composer
             return false;
         }
 
+        bool compose_image(const relative_frame_rect_t& target_rect = {})
+        {
+            draw_options_t options;
+            options.target_rect = m_params.rect.is_null() ? target_rect : m_params.rect;
+
+            if (!options.target_rect.size.is_null())
+            {
+                options.opacity = m_params.opacity;
+                options.border = m_params.border_weight;
+                options.label = m_params.label;
+
+                if (auto video_frame = pop_video_frame())
+                {
+                    auto image = detail::create_image(*video_frame);
+                    if (image.is_valid())
+                    {
+                        return m_image_builder.draw_image_frame(image
+                                                                , options);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+
         inline std::int32_t order() const
         {
             return m_params.order;
         }
 
-        inline const relative_frame_rect_t& rect() const
+        inline bool is_custom() const
         {
-            return m_params.rect;
-        }
-
-        inline double opacity() const
-        {
-            return m_params.opacity;
-        }
-
-        inline std::int32_t border_weight() const
-        {
-            return m_params.border_weight;
+            return !m_params.rect.is_null();
         }
 
         // i_parametrizable interface
@@ -515,7 +442,8 @@ class media_composer : public i_media_composer
         composer_stream::s_ptr_t add_stream(const i_property& stream_params)
         {
             if (auto stream = composer_stream::create(*this
-                                                      , stream_params))
+                                                      , stream_params
+                                                      , &m_owner.m_video_composer.output_image()))
             {
                 lock_t lock(m_safe_mutex);
                 m_streams[stream->stream_id()] = stream;
@@ -551,9 +479,9 @@ class media_composer : public i_media_composer
 
             if (sort_by_order)
             {
-                static auto compare_handler = [](const auto& lhs, const auto& rhs)
+                static auto compare_handler = [](const composer_stream::s_ptr_t& lhs, const composer_stream::s_ptr_t& rhs)
                 {
-                    return lhs->order() <= rhs->order();
+                    return lhs->order() < rhs->order();
                 };
                 std::sort(array.begin(), array.end(), compare_handler);
             }
@@ -597,29 +525,23 @@ class media_composer : public i_media_composer
         {
             m_output_image.tune();
             m_image_builder.set_output_frame(&m_output_image);
+            m_output_frame.smart_buffers().set_buffer(main_media_buffer_index
+                                                      , smart_buffer(&m_output_image.image_data));
         }
 
-        const i_video_format& format() const
+        inline const i_video_format& format() const
         {
             return m_format;
         }
 
-        bool blackout()
+        inline bool blackout()
         {
             return m_image_builder.blackout();
         }
 
-        bool push_frame(const i_video_frame& frame
-                        , const draw_options_t& draw_options)
+        inline image_frame_t& output_image()
         {
-            auto image = detail::create_image(frame);
-            if (image.is_valid())
-            {
-                return m_image_builder.draw_image_frame(image
-                                                        , draw_options);
-            }
-
-            return false;
+            return m_output_image;
         }
 
         const i_video_frame* compose_frame()
@@ -637,11 +559,8 @@ class media_composer : public i_media_composer
 
                 m_output_frame.set_frame_id(m_frame_id);
                 m_output_frame.set_timestamp(m_timestamp);
-                m_output_frame.smart_buffers().set_buffer(main_media_buffer_index
-                                                          , smart_buffer(&m_output_image.image_data));
 
                 m_frame_id++;
-
 
 
                 //m_timestamp += video_sample_rate / m_format.frame_rate();
@@ -731,12 +650,13 @@ class media_composer : public i_media_composer
     };
 
     i_media_converter_factory&  m_converter_factory;
+    i_layout_manager&           m_layout_manager;
     composer_params_t           m_composer_params;
     stream_manager              m_stream_manager;
     video_frame_composer        m_video_composer;
     message_router_impl         m_router;
 
-    detail::adaptive_delay      m_video_compose_delay;
+    adaptive_delay              m_video_compose_delay;
 
     std::thread                 m_compose_thread;
 
@@ -746,12 +666,14 @@ public:
     using u_ptr_t = std::unique_ptr<media_composer>;
 
     static u_ptr_t create(i_media_converter_factory& converter_factory
+                          , i_layout_manager& layout_manager
                           , const i_property &params)
     {
         composer_params_t composer_params(params);
         if (composer_params.is_valid())
         {
             return std::make_unique<media_composer>(converter_factory
+                                                    , layout_manager
                                                     , std::move(composer_params));
         }
 
@@ -759,8 +681,10 @@ public:
     }
 
     media_composer(i_media_converter_factory& converter_factory
+                   , i_layout_manager& layout_manager
                    , composer_params_t&& composer_params)
         : m_converter_factory(converter_factory)
+        , m_layout_manager(layout_manager)
         , m_composer_params(std::move(composer_params))
         , m_stream_manager(*this)
         , m_video_composer(composer_params.video_format)
@@ -774,18 +698,18 @@ public:
         media_composer::stop();
     }
 
-    const layout_t& get_layout(const composer_stream::s_array_t& streams)
+    const i_layout* get_layout(const composer_stream::s_array_t& streams)
     {
         std::size_t result = 0;
         for (const auto& s: streams)
         {
-            if (s->rect().is_null())
+            if (!s->is_custom())
             {
                 result++;
             }
         }
 
-        return detail::get_mosaic_layouts(result);
+        return m_layout_manager.query_layout(result);
     }
 
     i_media_converter::u_ptr_t create_video_converter()
@@ -815,39 +739,22 @@ public:
 
             m_video_composer.blackout();
 
-            auto tp = mpl::core::utils::now();
-
             std::size_t idx = 0;
+
+            auto tp = mpl::core::utils::now();
 
             for (auto& s : streams)
             {
-                bool is_custom = !s->rect().is_null();
-                if (auto video_frame = s->pop_video_frame())
+                if (s->is_custom())
                 {
-                    draw_options_t options;
-                    options.opacity = s->opacity();
-                    options.border = s->border_weight();
-
-                    if (is_custom)
-                    {
-                        options.target_rect = s->rect();
-                    }
-                    else
-                    {
-                        options.target_rect = layout[idx];
-                        options.margin = 0.005;
-                    }
-
-                    m_video_composer.push_frame(*video_frame
-                                                , options);
+                    s->compose_image();
+                }
+                else if (layout)
+                {
+                    s->compose_image(layout->get_rect(idx++));
                 }
 
-                if (!is_custom)
-                {
-                    idx++;
-                }
             }
-
 
             auto dt = mpl::core::utils::now() - tp;
             auto sdt = mpl::core::utils::now();
@@ -876,8 +783,6 @@ public:
 
             auto streams = m_stream_manager.active_streams(true);
             compose_video(streams);
-
-            //mpl::core::utils::sleep(video_delay);
 
             m_video_compose_delay.wait(video_delay);
             frames++;
@@ -959,13 +864,17 @@ public:
     }
 };
 
-media_composer_factory_impl::u_ptr_t media_composer_factory_impl::create(i_media_converter_factory &media_converter_factory)
+media_composer_factory_impl::u_ptr_t media_composer_factory_impl::create(i_media_converter_factory &media_converter_factory
+                                                                         , i_layout_manager& layout_manager)
 {
-    return std::make_unique<media_composer_factory_impl>(media_converter_factory);
+    return std::make_unique<media_composer_factory_impl>(media_converter_factory
+                                                         , layout_manager);
 }
 
-media_composer_factory_impl::media_composer_factory_impl(i_media_converter_factory &media_converter_factory)
+media_composer_factory_impl::media_composer_factory_impl(i_media_converter_factory &media_converter_factory
+                                                         , i_layout_manager& layout_manager)
     : m_media_converter_factory(media_converter_factory)
+    , m_layout_manager(layout_manager)
 {
 
 }
@@ -973,6 +882,7 @@ media_composer_factory_impl::media_composer_factory_impl(i_media_converter_facto
 i_media_composer::u_ptr_t media_composer_factory_impl::create_composer(const i_property &params)
 {
     return media_composer::create(m_media_converter_factory
+                                  , m_layout_manager
                                   , params);
 }
 

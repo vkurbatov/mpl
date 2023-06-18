@@ -39,6 +39,7 @@
 #include "libav_transcoder_factory.h"
 #include "smart_transcoder_factory.h"
 #include "media_composer_factory_impl.h"
+#include "layout_manager_mosaic_impl.h"
 
 #include "video_frame_types.h"
 
@@ -1469,12 +1470,13 @@ void test19()
                                                         , mpl::media::libav_transcoder_factory::encoder_factory()
                                                         , mpl::media::media_converter_factory_impl::builtin_converter_factory());
 
-    media_composer_factory_impl composer_factory(smart_factory);
+    media_composer_factory_impl composer_factory(smart_factory
+                                                 , layout_manager_mosaic_impl::get_instance());
 
     video_format_impl compose_video_format(video_format_id_t::rgb24
                                             , 1920
                                             , 1080
-                                            , 60);
+                                            , 30);
 
     auto composer_params = property_helper::create_object();
 
@@ -1488,7 +1490,7 @@ void test19()
 
     auto stream_params = property_helper::create_object();
 
-    std::size_t stream_count = 9;
+    std::size_t stream_count = 100;
 
 
     i_media_stream::s_array_t streams;
@@ -1501,7 +1503,7 @@ void test19()
         writer.set("order", 1);
         writer.set("opacity", opacity);
 
-        if (i == 4)
+        if (i % 4 == 0)
         {
             writer.set("border_weight", 2);
         }
@@ -1510,7 +1512,12 @@ void test19()
             writer.set("border_weight", 0);
         }
 
-        opacity -= 0.1;
+        std::string label = "stream #";
+        label.append(std::to_string(i));
+
+        writer.set("label", label);
+
+        //opacity -= 0.1;
 
         if (auto stream = media_composer->add_stream(*stream_params))
         {
@@ -1546,8 +1553,8 @@ void test19()
                                               , compose_video_format.frame_rate());
 
     video_format_impl v4l2_video_format(compose_video_format.format_id()
-                                        , compose_video_format.width()
-                                        , compose_video_format.height()
+                                        , 0 // compose_video_format.width()
+                                        , 0 // compose_video_format.height()
                                         , 0);
 
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";

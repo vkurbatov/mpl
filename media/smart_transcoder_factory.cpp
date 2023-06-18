@@ -29,8 +29,11 @@ namespace detail
 
 i_task_manager& get_single_task_manager()
 {
+    /*
     static auto single_task_manager = task_manager_factory::get_instance().create_manager({});
-    return *single_task_manager;
+    return *single_task_manager;*/
+
+    return task_manager_factory::singe_manager();
 }
 
 template<media_type_t MediaType>
@@ -280,7 +283,7 @@ class smart_transcoder : public i_media_converter
         smart_transcoder&               m_owner;
 
         frame_queue_t                   m_frame_queue;
-        task_id_t                       m_task_id;
+        i_task::s_ptr_t                 m_task;
         i_task_manager::task_handler_t  m_task_handler;
 
         std::atomic_bool                m_processed;
@@ -290,7 +293,7 @@ public:
         async_frame_manager(smart_transcoder& owner)
             : m_task_manager(detail::get_single_task_manager())
             , m_owner(owner)
-            , m_task_id(task_id_none)
+            , m_task(nullptr)
             , m_task_handler([&] { on_task_execute(); })
             , m_processed(false)
         {
@@ -299,7 +302,6 @@ public:
 
         ~async_frame_manager()
         {
-            m_task_manager.remove_task(m_task_id);
             m_processed.store(false, std::memory_order_release);
             std::lock_guard lock(m_exec_mutex);
         }
@@ -328,7 +330,7 @@ public:
                 bool flag = false;
                 if (m_processed.compare_exchange_strong(flag, true))
                 {
-                    m_task_id = m_task_manager.add_task(m_task_handler);
+                    m_task = m_task_manager.add_task(m_task_handler);
                 }
 
                 return true;

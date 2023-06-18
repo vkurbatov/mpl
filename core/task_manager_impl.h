@@ -18,6 +18,7 @@ public:
     };
 
     static task_manager_factory& get_instance();
+    static i_task_manager& singe_manager();
 
     i_task_manager::u_ptr_t create_manager(const config_t& config);
 };

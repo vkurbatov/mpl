@@ -18,6 +18,7 @@ set(SOURCES
     shared_data_impl.cpp
     utils.cpp
     time_utils.cpp
+    adaptive_delay.cpp
     property_helper.cpp
     property_reader.cpp
     property_writer.cpp
@@ -105,6 +106,7 @@ set(PRIVATE_HEADERS
     enum_converter_defs.h
     enum_serialize_defs.h
     time_utils.h
+    adaptive_delay.h
     property_helper.h
     property_reader.h
     property_writer.h

@@ -54,7 +54,7 @@ struct draw_processor::context_t
         : m_draw_format{}
         , m_custom_font(nullptr)
     {
-
+        set_output_image(format, pixels);
     }
 
     ~context_t()
