@@ -41,7 +41,8 @@ enum class draw_figure_t
 struct format_info_t
 {
     std::string name;
-    std::size_t bits_per_second = 0;
+    std::size_t bps = 0;
+    std::int32_t type = 0;
 };
 
 }

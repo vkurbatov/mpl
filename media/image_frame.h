@@ -4,6 +4,7 @@
 #include "video_types.h"
 #include "video_frame_types.h"
 #include "core/smart_buffer.h"
+#include <string>
 
 namespace mpl::media
 {
@@ -34,6 +35,9 @@ struct image_frame_t
 
     bool is_valid() const;
     bool is_empty() const;
+
+    bool load(const std::string& path
+              , video_format_id_t format_id = video_format_id_t::rgb24);
 };
 
 }

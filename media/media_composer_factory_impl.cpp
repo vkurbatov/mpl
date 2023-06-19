@@ -86,12 +86,14 @@ class media_composer : public i_media_composer
 
             frame_queue_t               m_frame_queue;
             i_media_frame::s_ptr_t      m_last_frame;
+            timestamp_t                 m_last_frame_time;
 
         public:
 
             media_track(i_media_converter::u_ptr_t&& media_converter)
                 : m_message_sink([&](const auto& message_frame) { return on_converter_message(message_frame); })
                 , m_media_converter(std::move(media_converter))
+                , m_last_frame_time(0)
             {
                 if (m_media_converter)
                 {
@@ -124,6 +126,7 @@ class media_composer : public i_media_composer
                     if (!m_frame_queue.empty())
                     {
                         m_last_frame = std::move(m_frame_queue.front());
+                        m_last_frame_time = core::utils::get_ticks();
                         m_frame_queue.pop();
                     }
                 }
@@ -138,8 +141,12 @@ class media_composer : public i_media_composer
                 m_last_frame.reset();
             }
 
-        private:
+            timestamp_t elapsed_frame_time() const
+            {
+                return core::utils::get_ticks() - m_last_frame_time;
+            }
 
+        private:
 
             bool on_converter_frame(const i_media_frame& media_frame)
             {
@@ -175,22 +182,15 @@ class media_composer : public i_media_composer
 
         struct stream_params_t
         {
-            relative_frame_rect_t   rect;
             std::int32_t            order;
-            std::int32_t            border_weight;
-            double                  opacity;
-            std::string             label;
+            draw_options_t          draw_options;
+            timestamp_t             timeout;
+            std::string             user_image_path;
 
-            stream_params_t(const relative_frame_rect_t& rect = {}
-                            , std::int32_t order = 0
-                            , std::int32_t border_weight = 0
-                            , double opacity = 1.0
-                            , const std::string_view& label = {})
-                : rect(rect)
-                , order(order)
-                , border_weight(border_weight)
-                , opacity(opacity)
-                , label(label)
+            stream_params_t(std::int32_t order = 0
+                            , const draw_options_t& draw_options = {})
+                : order(order)
+                , draw_options(draw_options)
             {
 
             }
@@ -204,21 +204,27 @@ class media_composer : public i_media_composer
             bool load(const i_property& params)
             {
                 property_reader reader(params);
-                return reader.get("rect", rect)
-                        | reader.get("order", order)
-                        | reader.get("border_weight", border_weight)
-                        | reader.get("opacity", opacity)
-                        | reader.get("label", label);
+                return reader.get("order", order)
+                        | reader.get("rect", draw_options.target_rect)
+                        | reader.get("border.weight", draw_options.border)
+                        | reader.get("opacity", draw_options.opacity)
+                        | reader.get("label", draw_options.label)
+                        | reader.get("elliptic", draw_options.elliptic)
+                        | reader.get("timeout", timeout)
+                        | reader.get("user_img", user_image_path);
             }
 
             bool save(i_property& params) const
             {
                 property_writer writer(params);
-                return writer.set("rect", rect)
-                        && writer.set("order", order)
-                        && writer.set("border_weight", border_weight)
-                        && writer.set("opacity", opacity)
-                        && writer.set("label", label);
+                return writer.set("order", order)
+                        && writer.set("rect", draw_options.target_rect)
+                        && writer.set("border.weight", draw_options.border)
+                        && writer.set("opacity", draw_options.opacity)
+                        && writer.set("label", draw_options.label)
+                        && writer.set("elliptic", draw_options.elliptic)
+                        && writer.set("timeout", timeout)
+                        && writer.set("user_img", user_image_path, {});
             }
         };
 
@@ -226,6 +232,7 @@ class media_composer : public i_media_composer
         stream_manager&         m_manager;
         message_router_impl     m_router;
 
+        image_frame_t           m_user_image;
 
         media_track             m_audio_track;
         media_track             m_video_track;
@@ -260,7 +267,11 @@ class media_composer : public i_media_composer
             , m_image_builder({}, output_image)
             , m_stream_id(manager.next_stream_id())
         {
-
+            if (!m_params.user_image_path.empty())
+            {
+                m_user_image.load(m_params.user_image_path
+                                  , output_image->format_id);
+            }
         }
 
         ~composer_stream()
@@ -275,6 +286,11 @@ class media_composer : public i_media_composer
 
         const i_video_frame* pop_video_frame()
         {
+            if (m_stream_id == 45)
+            {
+                return nullptr;
+            }
+
             if (auto media_frame = m_video_track.pop_frame())
             {
                 if (media_frame->media_type() == media_type_t::video)
@@ -320,15 +336,14 @@ class media_composer : public i_media_composer
 
         bool compose_image(const relative_frame_rect_t& target_rect = {})
         {
-            draw_options_t options;
-            options.target_rect = m_params.rect.is_null() ? target_rect : m_params.rect;
+            draw_options_t options = m_params.draw_options;
+            if (!target_rect.is_null())
+            {
+                options.target_rect = target_rect;
+            }
 
             if (!options.target_rect.size.is_null())
             {
-                options.opacity = m_params.opacity;
-                options.border = m_params.border_weight;
-                options.label = m_params.label;
-
                 if (auto video_frame = pop_video_frame())
                 {
                     auto image = detail::create_image(*video_frame);
@@ -337,6 +352,11 @@ class media_composer : public i_media_composer
                         return m_image_builder.draw_image_frame(image
                                                                 , options);
                     }
+                }
+                else if (m_user_image.is_valid())
+                {
+                    return m_image_builder.draw_image_frame(m_user_image
+                                                            , options);
                 }
             }
 
@@ -351,7 +371,14 @@ class media_composer : public i_media_composer
 
         inline bool is_custom() const
         {
-            return !m_params.rect.is_null();
+            return !m_params.draw_options.target_rect.is_null();
+        }
+
+        inline bool compare(const composer_stream& other) const
+        {
+            return m_params.order < other.m_params.order
+                    || (m_params.order == other.m_params.order
+                        && m_stream_id < other.m_stream_id);
         }
 
         // i_parametrizable interface
@@ -481,7 +508,7 @@ class media_composer : public i_media_composer
             {
                 static auto compare_handler = [](const composer_stream::s_ptr_t& lhs, const composer_stream::s_ptr_t& rhs)
                 {
-                    return lhs->order() < rhs->order();
+                    return lhs->compare(*rhs);
                 };
                 std::sort(array.begin(), array.end(), compare_handler);
             }
@@ -584,6 +611,7 @@ class media_composer : public i_media_composer
     {
         audio_format_impl   audio_format;
         video_format_impl   video_format;
+        std::string         user_img_path;
 
         composer_params_t(const i_property& params)
         {
@@ -616,6 +644,8 @@ class media_composer : public i_media_composer
                 result = true;
             }
 
+            result |= reader.get("user_img", user_img_path);
+
             return result;
         }
 
@@ -624,11 +654,12 @@ class media_composer : public i_media_composer
             property_writer writer(params);
 
             return writer.set("audio_params.format", audio_format)
-                    | writer.set("video_params.format", video_format);
+                    & writer.set("video_params.format", video_format)
+                    & writer.set("user_img", user_img_path, {});
 
         }
 
-        inline bool is_valid() const
+        inline bool has_video() const
         {
             if (video_format.is_valid()
                     && video_format.frame_rate() > 0)
@@ -646,6 +677,17 @@ class media_composer : public i_media_composer
             }
 
             return false;
+        }
+
+        inline bool has_audio() const
+        {
+            return false;
+        }
+
+        inline bool is_valid() const
+        {
+            return has_video()
+                    || has_audio();
         }
     };
 

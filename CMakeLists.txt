@@ -24,7 +24,7 @@ pkg_search_module(SWSCALE REQUIRED libswscale)
 pkg_search_module(V4L2 QUIET libv4l2>=0.8.8)
 
 set(OpenCV_STATIC ON)
-find_package(OpenCV REQUIRED COMPONENTS core imgproc freetype)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs freetype)
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 

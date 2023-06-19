@@ -116,7 +116,7 @@ struct video_image_builder::context_t
             m_draw_processor.draw_format().draw_opacity = draw_options.opacity;
             auto dst_rect = base::frame_utils::rect_from_relative(draw_options.target_rect
                                                                  , m_output_frame->size
-                                                                  , draw_options.margin);
+                                                                 , draw_options.margin);
 
             if (dst_rect.is_null())
             {
@@ -126,15 +126,27 @@ struct video_image_builder::context_t
 
             if (!dst_rect.is_null())
             {
+                auto figure = draw_options.elliptic ? ocv::draw_figure_t::ellipse : ocv::draw_figure_t::rectangle;
+
+                if (figure == ocv::draw_figure_t::ellipse)
+                {
+                    auto diametr = std::min(dst_rect.size.width, dst_rect.size.height);
+                    auto center = dst_rect.center();
+
+                    dst_rect.size.width = diametr;
+                    dst_rect.size.height = diametr;
+                    dst_rect.offset.x = center.x - diametr / 2;
+                    dst_rect.offset.y = center.y - diametr / 2;
+                }
+
                 frame_rect_t src_rect = { 0, 0, input_frame.size.width, input_frame.size.height };
                 src_rect.aspect_ratio(dst_rect);
-
-
 
                 m_draw_processor.draw_image(dst_rect
                                             , src_rect
                                             , detail::create_frame_info(input_frame)
-                                            , input_frame.pixels());
+                                            , input_frame.pixels()
+                                            , figure);
 
                 if (draw_options.border > 0)
                 {
@@ -148,7 +160,7 @@ struct video_image_builder::context_t
                     dst_rect.size.height -= draw_options.border - 2;
 
                     m_draw_processor.draw_figure(dst_rect
-                                                 , ocv::draw_figure_t::rectangle);
+                                                 , figure);
                 }
 
                 if (!draw_options.label.empty())

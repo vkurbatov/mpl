@@ -2,6 +2,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/freetype.hpp>
 #include <opencv2/highgui.hpp>
+#include "ocv_utils.h"
 
 #include <chrono>
 #include <iostream>
@@ -15,21 +16,7 @@ namespace
 {
     std::int32_t get_image_type(const frame_format_t& format)
     {
-        switch(format)
-        {
-            case frame_format_t::bgr:
-            case frame_format_t::rgb:
-                return CV_8UC3;
-            break;
-            case frame_format_t::bgra:
-            case frame_format_t::rgba:
-                return CV_8UC4;
-            break;
-            default:
-            {}
-        }
-
-        return 0;
+        return utils::get_format_info(format).type;
     }
 
     cv::Scalar scalar_from_color(color_t color)

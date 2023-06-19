@@ -1,8 +1,37 @@
 #include "image_frame.h"
 #include "video_info.h"
 
+#include "tools/opencv/image.h"
+
 namespace mpl::media
 {
+
+namespace detail
+{
+
+inline ocv::frame_format_t get_ocv_format(video_format_id_t format_id)
+{
+    switch(format_id)
+    {
+        case video_format_id_t::bgr24:
+            return ocv::frame_format_t::bgr;
+        break;
+        case video_format_id_t::bgra32:
+            return ocv::frame_format_t::bgra;
+        break;
+        case video_format_id_t::rgb24:
+            return ocv::frame_format_t::rgb;
+        break;
+        case video_format_id_t::rgba32:
+            return ocv::frame_format_t::rgba;
+        break;
+        default:;
+    }
+
+    return ocv::frame_format_t::undefined;
+}
+
+}
 
 image_frame_t::image_frame_t(video_format_id_t format_id
                              , const frame_size_t& size
@@ -77,5 +106,24 @@ bool image_frame_t::is_empty() const
 {
     return image_data.is_empty();
 }
+
+bool image_frame_t::load(const std::string &path
+                         , video_format_id_t format_id)
+{
+    ocv::image_t image;
+    if (!path.empty()
+            && image.load(path, detail::get_ocv_format(format_id))
+            && image.is_valid())
+    {
+        this->format_id = format_id;
+        size = image.info.size;
+        image_data.assign(std::move(image.data));
+
+        return true;
+    }
+
+    return false;
+}
+
 
 }

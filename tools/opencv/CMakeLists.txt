@@ -8,6 +8,7 @@ set(SOURCES
     font_format.cpp
     draw_format.cpp
     draw_processor.cpp
+    image.cpp
     test.cpp
 )
 
@@ -18,6 +19,7 @@ set(PUBLIC_HEADERS
     font_format.h
     draw_format.h
     draw_processor.h
+    image.h
     test.h
 )
 

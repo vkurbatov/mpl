@@ -1,6 +1,6 @@
 #include "frame_base.h"
 #include <algorithm>
-
+#include <cmath>
 
 namespace base
 {
@@ -48,6 +48,12 @@ frame_point_base_t<T>& frame_point_base_t<T>::operator +=(const frame_point_base
     y += frame_point.y;
 
     return *this;
+}
+
+template<typename T>
+T frame_point_base_t<T>::distance(const value_type &frame_point) const
+{
+    return std::sqrt(std::pow(frame_point.x - x, 2) + std::pow(frame_point.y - y, 2));
 }
 
 template<typename T>

@@ -13,7 +13,7 @@ struct frame_size_base_t; //fwd
 template<typename T>
 struct frame_point_base_t
 {
-    typedef frame_point_base_t<T> value_type;
+    using value_type = frame_point_base_t<T>;
     T   x;
     T   y;
 
@@ -27,12 +27,14 @@ struct frame_point_base_t
 
     value_type& operator +=(const value_type& frame_point);
     value_type& operator +=(const frame_size_base_t<T>& frame_size);
+
+    T distance(const value_type& frame_point) const;
 };
 
 template<typename T>
 struct frame_size_base_t
 {
-    typedef frame_size_base_t<T> value_type;
+    using value_type = frame_size_base_t<T>;
 
     T   width;
     T   height;
@@ -53,8 +55,7 @@ struct frame_size_base_t
 template<typename T>
 struct frame_rect_base_t
 {
-    typedef frame_rect_base_t<T> value_type;
-
+    using value_type = frame_rect_base_t<T>;
 
     frame_point_base_t<T>   offset;
     frame_size_base_t<T>    size;

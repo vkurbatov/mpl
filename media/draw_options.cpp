@@ -7,12 +7,14 @@ draw_options_t::draw_options_t(const relative_frame_rect_t &target_rect
                                , double opacity
                                , std::int32_t border
                                , double margin
-                               , const std::string& label)
+                               , const std::string& label
+                               , bool elliptic)
     : target_rect(target_rect)
     , opacity(opacity)
     , border(border)
     , margin(margin)
     , label(label)
+    , elliptic(elliptic)
 {
 
 }
@@ -23,7 +25,8 @@ bool draw_options_t::operator ==(const draw_options_t &other) const
             && opacity == other.opacity
             && border == other.border
             && margin == other.margin
-            && label == other.label;
+            && label == other.label
+            && elliptic == other.elliptic;
 }
 
 bool draw_options_t::operator !=(const draw_options_t &other) const

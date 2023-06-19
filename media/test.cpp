@@ -1505,19 +1505,21 @@ void test19()
 
         if (i % 4 == 0)
         {
-            writer.set("border_weight", 2);
+            writer.set("border.weight", 2);
         }
         else
         {
-            writer.set("border_weight", 0);
+            writer.set("border.weight", 0);
         }
 
         std::string label = "stream #";
         label.append(std::to_string(i));
 
         writer.set("label", label);
+        writer.set<std::string>("user_img", "/home/user/test.jpg");
+        // writer.set("elliptic", true);
 
-        //opacity -= 0.1;
+        // opacity -= 0.005;
 
         if (auto stream = media_composer->add_stream(*stream_params))
         {
@@ -1532,6 +1534,11 @@ void test19()
         writer.set("rect", frame_rect);
         writer.set("order", 0);
         writer.set<double>("opacity", 1.0);
+        writer.remove("label");
+        writer.remove("elliptic");
+        writer.remove("border");
+        writer.remove("user_img");
+
     }
 
     auto stream10 = media_composer->add_stream(*stream_params);

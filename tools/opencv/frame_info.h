@@ -14,6 +14,9 @@ struct frame_info_t
     frame_info_t(const frame_format_t& format = frame_format_t::undefined
                  , const frame_size_t& size = {});
 
+    bool operator == (const frame_info_t& other) const;
+    bool operator != (const frame_info_t& other) const;
+
     std::size_t frame_size() const;
     const std::string& format_name() const;
     bool is_valid() const;
