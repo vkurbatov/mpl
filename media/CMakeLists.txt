@@ -15,6 +15,7 @@ set(SOURCES
     audio_frame_impl.cpp
     audio_format_helper.cpp
     audio_mixer.cpp
+    audio_level.cpp
     video_format_impl.cpp
     video_info.cpp
     video_frame_impl.cpp
@@ -82,6 +83,7 @@ set(PRIVATE_HEADERS
     video_frame_impl.h
     audio_format_helper.h
     audio_mixer.h
+    audio_level.h
     message_frame_impl.h
     libav_video_converter_factory.h
     libav_audio_converter_factory.h
