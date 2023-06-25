@@ -101,6 +101,7 @@ class media_composer : public i_media_composer
 
             }
 
+
             bool push_data(const void* sample_data
                            , std::size_t samples
                            , double level)
@@ -146,6 +147,7 @@ class media_composer : public i_media_composer
                                                 , samples
                                                 , audio_mixer::mix_method_t::demix) == samples;
             }
+
 
             void reset()
             {
