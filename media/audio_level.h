@@ -34,7 +34,7 @@ public:
 
     bool push_frame(const i_media_format& format
                     , const void* data
-                    , std::size_t size);
+                    , std::size_t samples);
     void reset(bool only_level = false);
 
     double max_level() const;

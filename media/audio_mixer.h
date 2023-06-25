@@ -70,6 +70,10 @@ public:
                           , mix_method_t method = mix_method_t::set
                           , double volume = 1.0);
 
+    std::size_t copy_data(audio_mixer& mixer
+                          , std::size_t samples
+                          , double volume = 1.0);
+
     bool drop(std::size_t samples);
 
     void reset();

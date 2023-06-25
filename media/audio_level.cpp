@@ -141,16 +141,15 @@ audio_level::audio_level(const config_t& config)
 
 bool audio_level::push_frame(const i_media_format &format
                              , const void *data
-                             , std::size_t size)
+                             , std::size_t samples)
 {
     if (format.media_type() == media_type_t::audio
             && format.is_convertable()
-            && size > 0)
+            && samples > 0)
     {
         const i_audio_format& audio_format = static_cast<const i_audio_format&>(format);
         audio_format_helper helper(audio_format);
 
-        auto samples = helper.samples_from_size(size);
         auto duration = helper.duration_form_samples(samples);
 
         if (samples > 0)

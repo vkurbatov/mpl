@@ -341,6 +341,42 @@ std::size_t audio_mixer::pop_data(void *data
 
 }
 
+std::size_t audio_mixer::copy_data(audio_mixer &mixer
+                                   , std::size_t samples
+                                   , double volume)
+{
+    if (!m_audio_format.is_equal(mixer.m_audio_format))
+    {
+        return 0;
+    }
+
+    if (samples <= pending())
+    {
+        std::size_t result = 0;
+
+        auto cap = capacity();
+
+        auto idx = m_read_cursor % cap;
+        auto part = std::min(samples, cap - idx);
+        volume = utils::normalize_level(volume_log_base, volume);
+
+        result += mixer.push_data(m_audio_data.data() + idx * m_sample_size
+                                  , part);
+
+        if (part < samples)
+        {
+
+            result += mixer.push_data(m_audio_data.data()
+                                      , samples - part);
+
+        }
+
+        return result;
+    }
+
+    return 0;
+}
+
 
 bool audio_mixer::drop(std::size_t samples)
 {

@@ -20,6 +20,9 @@
 #include "video_image_builder.h"
 #include "message_frame_impl.h"
 
+#include "audio_mixer.h"
+#include "audio_level.h"
+#include "audio_format_helper.h"
 
 #include "tools/base/sync_base.h"
 
@@ -37,6 +40,7 @@ namespace mpl::media
 
 
 constexpr std::size_t default_max_frame_queue = 2;
+constexpr timestamp_t default_audio_duration = durations::milliseconds(500);
 
 namespace detail
 {
@@ -75,6 +79,81 @@ class media_composer : public i_media_composer
             , i_message_sink
             , std::enable_shared_from_this<composer_stream>
     {
+
+        class audio_composer
+        {
+
+            composer_stream&    m_owner;
+            audio_mixer         m_input_mixer;
+            audio_mixer         m_output_mixer;
+            audio_level         m_audio_level;
+
+            audio_composer(composer_stream& owner
+                           , const i_audio_format& audio_format
+                           , timestamp_t durations)
+                : m_owner(owner)
+                , m_input_mixer(audio_format
+                                , audio_format_helper(audio_format).duration_form_samples(durations))
+                , m_output_mixer(audio_format
+                                 , audio_format_helper(audio_format).duration_form_samples(durations))
+                , m_audio_level(audio_level::config_t{})
+            {
+
+            }
+
+            bool push_data(const void* sample_data
+                           , std::size_t samples
+                           , double level)
+            {
+                if (m_input_mixer.overrun() > 0)
+                {
+                    m_input_mixer.reset();
+                    m_output_mixer.reset();
+                }
+
+                if (m_input_mixer.push_data(sample_data
+                                               , samples
+                                               , level) == samples)
+                {
+                    m_audio_level.push_frame(m_input_mixer.format()
+                                             , sample_data
+                                             , samples);
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            bool mix(void* data
+                     , std::size_t samples)
+            {
+                if (m_input_mixer.copy_data(m_output_mixer
+                                            , samples) == samples)
+                {
+                    return m_input_mixer.pop_data(data
+                                                , samples
+                                                , audio_mixer::mix_method_t::mix) == samples;
+                }
+
+                return false;
+            }
+
+            bool demix(void* data
+                       , std::size_t samples)
+            {
+                return m_output_mixer.pop_data(data
+                                                , samples
+                                                , audio_mixer::mix_method_t::demix) == samples;
+            }
+
+            void reset()
+            {
+                m_input_mixer.reset();
+                m_output_mixer.reset();
+            }
+
+        };
 
         class media_track
         {
