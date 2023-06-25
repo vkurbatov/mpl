@@ -194,8 +194,8 @@ audio_mixer::audio_mixer(const media::i_audio_format &audio_format
     : m_audio_format(audio_format)
     , m_audio_data(audio_format_helper(audio_format).size_from_samples(buffer_size + 1))
     , m_sample_size(audio_format_helper(m_audio_format).sample_size())
-    , m_write_timestamp(0)
-    , m_read_timestamp(0)
+    , m_write_cursor(0)
+    , m_read_cursor(0)
     , m_overrun(0)
 {
 
@@ -223,7 +223,7 @@ const media::i_audio_format &audio_mixer::format() const
 
 std::size_t audio_mixer::pending() const
 {
-    return m_write_timestamp - m_read_timestamp;
+    return m_write_cursor - m_read_cursor;
 }
 
 std::size_t audio_mixer::capacity() const
@@ -238,7 +238,7 @@ std::size_t audio_mixer::overrun() const
 
 bool audio_mixer::is_empty() const
 {
-    return m_write_timestamp == m_read_timestamp;
+    return m_write_cursor == m_read_cursor;
 }
 
 std::size_t audio_mixer::push_data(const void* data
@@ -248,7 +248,7 @@ std::size_t audio_mixer::push_data(const void* data
     auto cap = capacity();
     if (samples < cap)
     {
-        auto idx = m_write_timestamp % cap;
+        auto idx = m_write_cursor % cap;
         auto part = std::min(samples, cap - idx);
 
         if (volume != 1.0)
@@ -267,13 +267,13 @@ std::size_t audio_mixer::push_data(const void* data
                         , part * m_sample_size);
         }
 
-        m_write_timestamp += part;
+        m_write_cursor += part;
 
         auto pen = pending();
         if (pen > cap)
         {
             m_overrun += pen - cap;
-            m_read_timestamp = m_write_timestamp - cap + 1;
+            m_read_cursor = m_write_cursor - cap + 1;
         }
 
         if (part < samples)
@@ -298,7 +298,7 @@ std::size_t audio_mixer::read_data(void *data
     {
         auto cap = capacity();
 
-        auto idx = m_read_timestamp % cap;
+        auto idx = m_read_cursor % cap;
         auto part = std::min(samples, cap - idx);
         volume = utils::normalize_level(volume_log_base, volume);
 
@@ -314,7 +314,7 @@ std::size_t audio_mixer::read_data(void *data
 
             process_samples(m_audio_format.format_id()
                             , m_audio_data.data()
-                            , data + part * m_sample_size
+                            , static_cast<std::uint8_t*>(data) + part * m_sample_size
                             , (samples - part) * m_audio_format.channels()
                             , operation
                             , volume);
@@ -344,10 +344,10 @@ std::size_t audio_mixer::pop_data(void *data
 
 bool audio_mixer::drop(std::size_t samples)
 {
-    if (m_read_timestamp + samples <= m_write_timestamp)
+    if (m_read_cursor + samples <= m_write_cursor)
     {
         m_overrun = 0;
-        m_read_timestamp += samples;
+        m_read_cursor += samples;
         return true;
     }
 
@@ -356,21 +356,21 @@ bool audio_mixer::drop(std::size_t samples)
 
 void audio_mixer::reset()
 {
-    m_write_timestamp = 0;
-    m_read_timestamp = 0;
+    m_write_cursor = 0;
+    m_read_cursor = 0;
     m_overrun = 0;
 }
 
 
-void audio_mixer::sync_timestamps()
+void audio_mixer::sync_cursors()
 {
-    if (m_read_timestamp > m_write_timestamp)
+    if (m_read_cursor > m_write_cursor)
     {
-        m_write_timestamp = m_read_timestamp;
+        m_write_cursor = m_read_cursor;
     }
     else if (pending() > capacity())
     {
-        m_read_timestamp = m_write_timestamp - capacity() + 1;
+        m_read_cursor = m_write_cursor - capacity() + 1;
     }
 }
 

@@ -1,7 +1,6 @@
 #ifndef MPL_AUDIO_MIXER_H
 #define MPL_AUDIO_MIXER_H
 
-#include "core/time_types.h"
 #include "audio_format_impl.h"
 
 #include <vector>
@@ -16,8 +15,8 @@ class audio_mixer
     audio_format_impl       m_audio_format;
     sample_data_t           m_audio_data;
     std::size_t             m_sample_size;
-    timestamp_t             m_write_timestamp;
-    timestamp_t             m_read_timestamp;
+    std::size_t             m_write_cursor;
+    std::size_t             m_read_cursor;
     std::size_t             m_overrun;
 public:
 
@@ -75,7 +74,7 @@ public:
 
     void reset();
 private:
-    void sync_timestamps();
+    void sync_cursors();
 };
 
 }
