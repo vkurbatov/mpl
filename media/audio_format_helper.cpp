@@ -11,6 +11,26 @@ audio_format_helper::audio_format_helper(const i_audio_format &audio_format)
 
 }
 
+std::size_t audio_format_helper::bits_per_sample(audio_format_id_t format_id)
+{
+    return audio_format_info_t::get_info(format_id).bps;
+}
+
+std::size_t audio_format_helper::bytes_per_sample(audio_format_id_t format_id)
+{
+    return bits_per_sample(format_id) / 8;
+}
+
+bool audio_format_helper::is_encoded(audio_format_id_t format_id)
+{
+    return audio_format_info_t::get_info(format_id).encoded;
+}
+
+bool audio_format_helper::is_planar(audio_format_id_t format_id)
+{
+    return audio_format_info_t::get_info(format_id).planar;
+}
+
 bool audio_format_helper::is_planar() const
 {
     return audio_format_info_t::get_info(m_audio_format.format_id()).planar;
@@ -18,7 +38,7 @@ bool audio_format_helper::is_planar() const
 
 std::size_t audio_format_helper::bits_per_sample() const
 {
-    return audio_format_info_t::get_info(m_audio_format.format_id()).bps;
+    return bits_per_sample(m_audio_format.format_id());
 }
 
 std::size_t audio_format_helper::sample_size() const
