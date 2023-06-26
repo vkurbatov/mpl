@@ -1490,7 +1490,7 @@ void test19()
 
     auto stream_params = property_helper::create_object();
 
-    std::size_t stream_count = 100;
+    std::size_t stream_count = 9;
 
 
     i_media_stream::s_array_t streams;
