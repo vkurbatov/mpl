@@ -30,15 +30,15 @@ struct audio_sample_t
 
     std::size_t samples() const;
 
-    const void* pixels() const;
-    void* pixels();
+    void resize(std::size_t new_samples);
 
-    bool tune();
+    const void* data() const;
+    void* data();
+
+    bool clear();
 
     bool is_valid() const;
     bool is_empty() const;
-
-    audio_sample_t();
 };
 
 }

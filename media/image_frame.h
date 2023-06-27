@@ -32,6 +32,7 @@ struct image_frame_t
     void* pixels();
 
     bool tune();
+    bool blackout();
 
     bool is_valid() const;
     bool is_empty() const;

@@ -21,8 +21,6 @@ public:
     virtual bool start() = 0;
     virtual bool stop() = 0;
     virtual bool is_started() const = 0;
-
-    virtual i_message_source* source() = 0;
 };
 
 }

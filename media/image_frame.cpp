@@ -96,6 +96,19 @@ bool image_frame_t::tune()
     return false;
 }
 
+bool image_frame_t::blackout()
+{
+    if (!image_data.is_empty())
+    {
+        std::memset(image_data.map()
+                    , 0
+                    , image_data.size());
+        return true;
+    }
+
+    return false;
+}
+
 bool image_frame_t::is_valid() const
 {
    return video_format_info_t::get_info(format_id).convertable

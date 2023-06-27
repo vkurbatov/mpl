@@ -361,13 +361,15 @@ std::size_t audio_mixer::copy_data(audio_mixer &mixer
         volume = utils::normalize_level(volume_log_base, volume);
 
         result += mixer.push_data(m_audio_data.data() + idx * m_sample_size
-                                  , part);
+                                  , part
+                                  , volume);
 
         if (part < samples)
         {
 
             result += mixer.push_data(m_audio_data.data()
-                                      , samples - part);
+                                      , samples - part
+                                      , volume);
 
         }
 

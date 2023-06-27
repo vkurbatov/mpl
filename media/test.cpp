@@ -1473,16 +1473,24 @@ void test19()
     media_composer_factory_impl composer_factory(smart_factory
                                                  , layout_manager_mosaic_impl::get_instance());
 
+    audio_format_impl compose_audio_format(audio_format_id_t::pcm16
+                                            , 48000
+                                            , 2);
+
+
     video_format_impl compose_video_format(video_format_id_t::rgb24
                                             , 1920
                                             , 1080
-                                            , 30);
+                                            , 60);
+
 
     auto composer_params = property_helper::create_object();
 
     if (composer_params)
     {
         property_writer writer(*composer_params);
+        writer.set("audio_params.format", compose_audio_format);
+        writer.set("audio_params.duration", durations::milliseconds(10));
         writer.set("video_params.format", compose_video_format);
     }
 
@@ -1503,6 +1511,7 @@ void test19()
         writer.set("order", 1);
         writer.set("opacity", opacity);
 
+        /*
         if (i % 4 == 0)
         {
             writer.set("border.weight", 2);
@@ -1510,7 +1519,7 @@ void test19()
         else
         {
             writer.set("border.weight", 0);
-        }
+        }*/
 
         std::string label = "stream #";
         label.append(std::to_string(i));
@@ -1614,7 +1623,6 @@ void test19()
     auto bg_video_device = libav_input_factory.create_device(*bg_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
-    input_audio_device->source()->add_sink(audio_transcoder.get());
     input_video_device->source()->add_sink(v4l2_transcoder.get());
 
     message_router_impl compose_router;
@@ -1626,9 +1634,14 @@ void test19()
 
     bg_video_device->source()->add_sink(stream10->sink());
 
+    input_audio_device->source()->add_sink(&compose_router);
     v4l2_transcoder->set_sink(&compose_router);
 
-    media_composer->source()->add_sink(video_transcoder.get());
+    //media_composer->source()->add_sink(video_transcoder.get());
+
+
+    streams[0]->source()->add_sink(video_transcoder.get());
+    streams[0]->source()->add_sink(audio_transcoder.get());
 
     media_composer->start();
 
