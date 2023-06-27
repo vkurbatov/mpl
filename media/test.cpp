@@ -1657,7 +1657,43 @@ void test19()
 
     while(input_video_device->state() != channel_state_t::connected);
 
-    core::utils::sleep(durations::seconds(900));
+    std::size_t count = 1000;
+
+    while(count-- > 0)
+    {
+        for (auto& s : streams)
+        {
+            if (s->stream_id() % 2 == 0)
+            {
+                continue;
+            }
+
+            auto stream_property = property_helper::create_object();
+            if (count % 10 == 0)
+            {
+                if (s->get_params(*stream_property))
+                {
+                    property_writer writer(*stream_property);
+                    writer.set("audio_enabled", false);
+                    writer.set("video_enabled", false);
+
+                    s->set_params(*stream_property);
+                }
+            }
+            else if (count % 5 == 0)
+            {
+                if (s->get_params(*stream_property))
+                {
+                    property_writer writer(*stream_property);
+                    writer.set("audio_enabled", true);
+                    writer.set("video_enabled", true);
+
+                    s->set_params(*stream_property);
+                }
+            }
+        }
+        core::utils::sleep(durations::seconds(1));
+    }
 
     media_composer->stop();
 

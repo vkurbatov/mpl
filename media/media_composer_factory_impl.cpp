@@ -63,6 +63,28 @@ image_frame_t create_image(const i_video_frame& frame)
     return image;
 }
 
+double animation(double lhs, double rhs, double k, double min_delta)
+{
+    auto delta = rhs - lhs;
+    if (std::abs(delta) < min_delta)
+    {
+        return rhs;
+    }
+
+    return lhs + delta * k;
+}
+
+void animation(relative_frame_rect_t& dst_rect
+               , const relative_frame_rect_t& src_rect
+               , double k
+               , double min_delta)
+{
+    dst_rect.offset.x = animation(dst_rect.offset.x, src_rect.offset.x, k, min_delta);
+    dst_rect.offset.y = animation(dst_rect.offset.y, src_rect.offset.y, k, min_delta);
+    dst_rect.size.width = animation(dst_rect.size.width, src_rect.size.width, k, min_delta);
+    dst_rect.size.height = animation(dst_rect.size.height, src_rect.size.height, k, min_delta);
+}
+
 }
 
 
@@ -95,6 +117,8 @@ class media_composer : public i_media_composer
             audio_mixer                 m_output_mixer;
             audio_level                 m_audio_level;
 
+            double                      m_volume;
+
         public:
 
             audio_track(i_media_converter::u_ptr_t&& media_converter
@@ -107,6 +131,7 @@ class media_composer : public i_media_composer
                 , m_output_mixer(audio_format
                                  , buffer_size)
                 , m_audio_level(audio_level::config_t{})
+                , m_volume(1.0)
             {
                 if (m_media_converter)
                 {
@@ -120,6 +145,11 @@ class media_composer : public i_media_composer
                 {
                     m_media_converter->set_sink(nullptr);
                 }
+            }
+
+            inline void set_volume(double volume)
+            {
+                m_volume = volume;
             }
             
             bool push_frame(const i_message_frame& message_frame)
@@ -138,13 +168,12 @@ class media_composer : public i_media_composer
             }
 
             bool push_audio_data(const void* sample_data
-                               , std::size_t samples
-                               , double level = 1.0)
+                               , std::size_t samples)
             {
                 lock_t lock(m_safe_mutex);
                 if (m_input_mixer.push_data(sample_data
                                             , samples
-                                            , level) == samples)
+                                            , m_volume) == samples)
                 {
                     m_audio_level.push_frame(m_input_mixer.format()
                                              , sample_data
@@ -254,6 +283,8 @@ class media_composer : public i_media_composer
             image_frame_t               m_user_image;
             video_image_builder         m_image_builder;
 
+            relative_frame_rect_t       m_last_rect;
+
             frame_queue_t               m_frame_queue;
             i_media_frame::s_ptr_t      m_last_frame;
             timestamp_t                 m_last_frame_time;
@@ -324,8 +355,23 @@ class media_composer : public i_media_composer
             bool compose(const draw_options_t& options
                          , image_frame_t* output_image)
             {
+                double animation_speed = 0.1;
+
                 if (!options.target_rect.size.is_null())
                 {
+                    if (m_last_rect != options.target_rect)
+                    {
+                        detail::animation(m_last_rect
+                                          , options.target_rect
+                                          , animation_speed
+                                          , 0.001);
+
+                    }
+
+                    auto new_options = options;
+
+                    new_options.target_rect = m_last_rect;
+
                     m_image_builder.set_output_frame(output_image);
                     if (auto video_frame = pop_frame())
                     {
@@ -333,13 +379,13 @@ class media_composer : public i_media_composer
                         if (image.is_valid())
                         {
                             return m_image_builder.draw_image_frame(image
-                                                                    , options);
+                                                                    , new_options);
                         }
                     }
                     else if (m_user_image.is_valid())
                     {
                         return m_image_builder.draw_image_frame(m_user_image
-                                                                , options);
+                                                                , new_options);
                     }
                 }
 
@@ -386,11 +432,24 @@ class media_composer : public i_media_composer
             draw_options_t          draw_options;
             timestamp_t             timeout;
             std::string             user_image_path;
+            bool                    audio_enabled;
+            bool                    video_enabled;
+            double                  volume;
 
             stream_params_t(std::int32_t order = 0
-                            , const draw_options_t& draw_options = {})
+                            , const draw_options_t& draw_options = {}
+                            , timestamp_t timeout = 0
+                            , const std::string& user_image_path = {}
+                            , bool audio_enabled = true
+                            , bool video_enabled = true
+                            , double volume = 1.0)
                 : order(order)
                 , draw_options(draw_options)
+                , timeout(timeout)
+                , user_image_path(user_image_path)
+                , audio_enabled(audio_enabled)
+                , video_enabled(video_enabled)
+                , volume(volume)
             {
 
             }
@@ -411,7 +470,10 @@ class media_composer : public i_media_composer
                         | reader.get("label", draw_options.label)
                         | reader.get("elliptic", draw_options.elliptic)
                         | reader.get("timeout", timeout)
-                        | reader.get("user_img", user_image_path);
+                        | reader.get("user_img", user_image_path)
+                        | reader.get("audio_enabled", audio_enabled)
+                        | reader.get("video_enabled", video_enabled)
+                        | reader.get("volume", volume);
             }
 
             bool save(i_property& params) const
@@ -424,7 +486,10 @@ class media_composer : public i_media_composer
                         && writer.set("label", draw_options.label)
                         && writer.set("elliptic", draw_options.elliptic)
                         && writer.set("timeout", timeout)
-                        && writer.set("user_img", user_image_path, {});
+                        && writer.set("user_img", user_image_path, {})
+                        && writer.set("audio_enabled", audio_enabled)
+                        && writer.set("video_enabled", video_enabled)
+                        && writer.set("volume", volume);
             }
         };
 
@@ -477,7 +542,7 @@ class media_composer : public i_media_composer
                                          , manager.composer_params().video_params.format.format_id()))
             , m_stream_id(manager.next_stream_id())
         {
-
+            m_audio_track.set_volume(m_params.volume);
         }
 
         ~composer_stream()
@@ -538,7 +603,6 @@ class media_composer : public i_media_composer
         {
             if (auto frame_buffer = compose_frame.buffers().get_buffer(main_media_buffer_index))
             {
-
                 smart_buffer stream_buffer(frame_buffer->data()
                                            , frame_buffer->size()
                                            , true);
@@ -553,6 +617,11 @@ class media_composer : public i_media_composer
                     stream_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                             , std::move(stream_buffer));
                     message_frame_ref_impl message_frame(stream_frame);
+                    return m_router.send_message(message_frame);
+                }
+                else
+                {
+                    message_frame_ref_impl message_frame(compose_frame);
                     return m_router.send_message(message_frame);
                 }
             }
@@ -577,11 +646,33 @@ class media_composer : public i_media_composer
                         && m_stream_id < other.m_stream_id);
         }
 
+        inline bool is_audio_enabled() const
+        {
+            return m_params.audio_enabled;
+        }
+
+        inline bool is_video_enabled() const
+        {
+            return m_params.video_enabled;
+        }
+
+        inline bool is_enabled() const
+        {
+            return m_params.audio_enabled
+                    || m_params.video_enabled;
+        }
+
         // i_parametrizable interface
     public:
         bool set_params(const i_property &params) override
         {
-            return m_params.load(params);
+            if (m_params.load(params))
+            {
+                m_audio_track.set_volume(m_params.volume);
+                return true;
+            }
+
+            return false;
         }
 
         bool get_params(i_property &params) const override
@@ -699,7 +790,10 @@ class media_composer : public i_media_composer
                 {
                     if (auto stream = s.second.lock())
                     {
-                        array.emplace_back(std::move(stream));
+                        if (stream->is_enabled())
+                        {
+                            array.emplace_back(std::move(stream));
+                        }
                     }
                 }
             }
@@ -1155,7 +1249,7 @@ public:
         {
             timestamp_t video_delay = durations::second / m_video_composer.format().frame_rate();
 
-            auto streams = m_stream_manager.active_streams(true);
+            auto streams = m_stream_manager.active_streams();
             m_video_composer.compose_streams(streams);
             m_video_compose_delay.wait(video_delay);
             frames++;
