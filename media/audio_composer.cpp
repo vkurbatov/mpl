@@ -7,8 +7,10 @@
 namespace mpl::media
 {
 
-audio_composer::config_t::config_t(const sample_info_t &sample_info)
+audio_composer::config_t::config_t(const sample_info_t &sample_info
+                                   , std::size_t samples)
     : sample_info(sample_info)
+    , samples(samples)
 
 {
 
@@ -38,6 +40,11 @@ struct audio_composer::pimpl_t
         compose_options_t   m_compose_options;
         audio_sample_t      m_stream_sample;
 
+        audio_mixer         m_audio_mixer;
+
+        audio_level         m_audio_level;
+        std::size_t         m_frame_count;
+
     public:
         using set_t = std::set<compose_stream_impl*>;
 
@@ -52,6 +59,11 @@ struct audio_composer::pimpl_t
                             , const compose_options_t& compose_options)
             : m_owner(owner)
             , m_compose_options(compose_options)
+            , m_stream_sample(m_owner.m_compose_sample.sample_info)
+            , m_audio_mixer(m_stream_sample.sample_info
+                            , m_stream_sample.sample_info.sample_rate / 2)
+            , m_frame_count(0)
+
         {
 
         }
@@ -61,18 +73,46 @@ struct audio_composer::pimpl_t
             m_owner.on_remove_stream(this);
         }
 
+        inline bool is_overrun()
+        {
+            return m_audio_mixer.overrun();
+        }
+
         inline bool has_enabled() const
         {
             return m_compose_options.enabled;
         }
 
+        inline bool mix(void* data, std::size_t samples)
+        {
+            if (is_overrun())
+            {
+                m_audio_mixer.reset();
+                m_audio_level.reset();
+
+                return false;
+            }
+
+            return m_audio_mixer.read_data(data
+                                          , samples
+                                          , audio_mixer::mix_method_t::mix) == samples;
+
+        }
+
         inline bool compose()
         {
-            if (m_stream_sample.is_valid())
+            if (m_owner.m_compose_sample.is_valid())
             {
-                /*
-                return m_image_builder.draw_image_frame(m_stream_image
-                                                        , m_compose_options.draw_options);*/
+                m_stream_sample = m_owner.m_compose_sample;
+                auto samples = m_stream_sample.samples();
+
+                m_audio_mixer.pop_data(m_stream_sample.data()
+                                       , samples
+                                       , audio_mixer::mix_method_t::demix);
+
+                m_frame_count++;
+
+                return true;
             }
 
             return false;
@@ -82,11 +122,19 @@ struct audio_composer::pimpl_t
     public:
         double level() const override
         {
-            return 0;
+            return m_audio_level.level();
         }
 
         bool push_stream_sample(audio_sample_t &&sample) override
         {
+            if (has_enabled()
+                    && sample.is_valid()
+                    && sample.sample_info == m_audio_mixer.sample_info())
+            {
+                return m_audio_mixer.push_data(sample.sample_data.data()
+                                              , sample.samples()
+                                              , m_compose_options.volume);
+            }
             return false;
         }
 
@@ -103,6 +151,11 @@ struct audio_composer::pimpl_t
         const audio_sample_t *compose_sample() const override
         {
             return &m_stream_sample;
+        }
+
+        std::size_t frame_count() const override
+        {
+            return m_frame_count;
         }
     };
 
@@ -127,15 +180,17 @@ struct audio_composer::pimpl_t
     {
         if (m_compose_sample.is_valid())
         {
-
-            // m_compose_image.blackout();
+            m_compose_sample.clear();
 
             for (const auto& s : m_streams)
             {
-                if (s->has_enabled())
-                {
-                    s->compose();
-                }
+                s->mix(m_compose_sample.data()
+                       , m_compose_sample.samples());
+            }
+
+            for (const auto& s : m_streams)
+            {
+                s->compose();
             }
 
             return &m_compose_sample;
@@ -159,7 +214,6 @@ struct audio_composer::pimpl_t
     void on_remove_stream(compose_stream_impl* stream)
     {
         m_streams.erase(stream);
-        //
     }
 };
 

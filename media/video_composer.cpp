@@ -47,6 +47,8 @@ struct video_composer::pimpl_t
 
         video_image_builder m_image_builder;
 
+        std::size_t         m_frame_count;
+
     public:
 
         using set_t = std::set<compose_stream_impl*, comparator_t>;
@@ -64,6 +66,7 @@ struct video_composer::pimpl_t
             , m_compose_options(compose_options)
             , m_image_builder({}
                               , &m_owner.m_compose_image)
+            , m_frame_count(0)
         {
 
         }
@@ -82,6 +85,7 @@ struct video_composer::pimpl_t
         {
             if (m_stream_image.is_valid())
             {
+                m_frame_count++;
                 return m_image_builder.draw_image_frame(m_stream_image
                                                         , m_compose_options.draw_options);
             }
@@ -117,6 +121,10 @@ struct video_composer::pimpl_t
             return &m_owner.m_compose_image;
         }
 
+        std::size_t frame_count() const override
+        {
+            return m_frame_count;
+        }
     };
 
     config_t                    m_config;

@@ -44,6 +44,7 @@ public:
         virtual const compose_options_t& options() const = 0;
         virtual compose_options_t& options() = 0;
         virtual const image_frame_t* compose_image() const = 0;
+        virtual std::size_t frame_count() const = 0;
     };
 
 private:

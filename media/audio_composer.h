@@ -12,8 +12,10 @@ public:
 
     struct config_t
     {
-        sample_info_t    sample_info;
-        config_t(const sample_info_t& sample_info);
+        sample_info_t   sample_info;
+        std::size_t     samples;
+        config_t(const sample_info_t& sample_info = {}
+                 , std::size_t samples = 0);
     };
 
     struct compose_options_t
@@ -40,6 +42,7 @@ public:
         virtual const compose_options_t& options() const = 0;
         virtual compose_options_t& options() = 0;
         virtual const audio_sample_t* compose_sample() const = 0;
+        virtual std::size_t frame_count() const = 0;
 
     };
 
