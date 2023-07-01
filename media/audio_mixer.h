@@ -1,18 +1,20 @@
 #ifndef MPL_AUDIO_MIXER_H
 #define MPL_AUDIO_MIXER_H
 
-#include "audio_format_impl.h"
+//#include "audio_format_impl.h"
+#include "audio_sample.h"
 
 #include <vector>
 
 namespace mpl::media
 {
 
+
 class audio_mixer
 {
     using sample_data_t = std::vector<std::uint8_t>;
 
-    audio_format_impl       m_audio_format;
+    sample_info_t           m_sample_info;
     sample_data_t           m_audio_data;
     std::size_t             m_sample_size;
     std::size_t             m_write_cursor;
@@ -41,13 +43,13 @@ public:
                                        , mix_method_t method = mix_method_t::set
                                        , double volume = 1.0);
 
-    audio_mixer(const i_audio_format& audio_format
+    audio_mixer(const sample_info_t& sample_info
                      , std::size_t buffer_size);
 
-    void setup(const i_audio_format& audio_format
+    void setup(const sample_info_t& sample_info
                , std::size_t buffer_size);
 
-    const i_audio_format& format() const;
+    const sample_info_t& sample_info() const;
     std::size_t pending() const;
     std::size_t capacity() const;
     std::size_t overrun() const;

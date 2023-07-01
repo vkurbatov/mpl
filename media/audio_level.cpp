@@ -2,6 +2,7 @@
 
 #include "i_audio_format.h"
 #include "audio_format_helper.h"
+#include "audio_sample.h"
 
 #include <limits>
 #include <algorithm>
@@ -139,22 +140,19 @@ audio_level::audio_level(const config_t& config)
     reset();
 }
 
-bool audio_level::push_frame(const i_media_format &format
+bool audio_level::push_frame(const sample_info_t& sample_info
                              , const void *data
                              , std::size_t samples)
 {
-    if (format.media_type() == media_type_t::audio
-            && format.is_convertable()
+    if (sample_info.is_valid()
             && samples > 0)
     {
-        const i_audio_format& audio_format = static_cast<const i_audio_format&>(format);
-        audio_format_helper helper(audio_format);
 
-        auto duration = helper.duration_form_samples(samples);
+        auto duration = sample_info.duration_from_samples(samples);
 
         if (samples > 0)
         {
-            auto abs_value = detail::max_abs_value(audio_format.format_id()
+            auto abs_value = detail::max_abs_value(sample_info.format_id
                                                    , data
                                                    , samples);
 

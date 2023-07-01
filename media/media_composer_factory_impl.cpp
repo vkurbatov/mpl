@@ -176,7 +176,7 @@ class media_composer : public i_media_composer
                                             , samples
                                             , m_volume) == samples)
                 {
-                    m_audio_level.push_frame(m_input_mixer.format()
+                    m_audio_level.push_frame(m_input_mixer.sample_info()
                                              , sample_data
                                              , samples);
 
@@ -240,7 +240,7 @@ class media_composer : public i_media_composer
                 if (media_frame.media_type() == media_type_t::audio)
                 {
                     const i_audio_frame& audio_frame = static_cast<const i_audio_frame&>(media_frame);
-                    if (audio_frame.format().is_compatible(m_input_mixer.format()))
+                    if (m_input_mixer.sample_info() == audio_frame.format())
                     {
                         if (auto buffer = audio_frame.buffers().get_buffer(main_media_buffer_index))
                         {

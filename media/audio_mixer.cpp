@@ -115,9 +115,9 @@ double audio_mixer::normalize_volume(double volume)
 }
 
 void audio_mixer::change_audio_level(audio_format_id_t sample_format
-                                        , void *audio_samples
-                                        , std::size_t samples
-                                        , double volume)
+                                     , void *audio_samples
+                                     , std::size_t samples
+                                     , double volume)
 {
     switch(sample_format)
     {
@@ -189,11 +189,11 @@ std::size_t audio_mixer::process_samples(audio_format_id_t sample_format
     return 0;
 }
 
-audio_mixer::audio_mixer(const media::i_audio_format &audio_format
+audio_mixer::audio_mixer(const sample_info_t& sample_info
                            , std::size_t buffer_size)
-    : m_audio_format(audio_format)
-    , m_audio_data(audio_format_helper(audio_format).size_from_samples(buffer_size + 1))
-    , m_sample_size(audio_format_helper(m_audio_format).sample_size())
+    : m_sample_info(sample_info)
+    , m_audio_data(m_sample_info.size_from_samples(buffer_size + 1))
+    , m_sample_size(m_sample_info.sample_size())
     , m_write_cursor(0)
     , m_read_cursor(0)
     , m_overrun(0)
@@ -201,24 +201,23 @@ audio_mixer::audio_mixer(const media::i_audio_format &audio_format
 
 }
 
-void audio_mixer::setup(const media::i_audio_format &audio_format
+void audio_mixer::setup(const sample_info_t& sample_info
                              , std::size_t buffer_size)
 {
-    audio_format_helper helper(audio_format);
-    auto data_size = helper.size_from_samples(buffer_size + 1);
-    if (!m_audio_format.is_compatible(audio_format)
+    auto data_size = sample_info.size_from_samples(buffer_size + 1);
+    if (m_sample_info != sample_info
             || data_size != m_audio_data.size())
     {
-        m_audio_format.assign(audio_format);
-        m_audio_data.resize(helper.size_from_samples(buffer_size + 1));
-        m_sample_size = helper.sample_size();
+        m_sample_info = sample_info;
+        m_audio_data.resize(sample_info.size_from_samples(buffer_size + 1));
+        m_sample_size = sample_info.sample_size();
         reset();
     }
 }
 
-const media::i_audio_format &audio_mixer::format() const
+const sample_info_t& audio_mixer::sample_info() const
 {
-    return m_audio_format;
+    return m_sample_info;
 }
 
 std::size_t audio_mixer::pending() const
@@ -228,7 +227,7 @@ std::size_t audio_mixer::pending() const
 
 std::size_t audio_mixer::capacity() const
 {
-    return audio_format_helper(m_audio_format).samples_from_size(m_audio_data.size());
+    return m_sample_info.samples_from_size(m_audio_data.size());
 }
 
 std::size_t audio_mixer::overrun() const
@@ -253,10 +252,10 @@ std::size_t audio_mixer::push_data(const void* data
 
         if (volume != 1.0)
         {
-            process_samples(m_audio_format.format_id()
+            process_samples(m_sample_info.format_id
                             , data
                             , m_audio_data.data() + idx * m_sample_size
-                            , part * m_audio_format.channels()
+                            , part * m_sample_info.channels
                             , audio_mixer::mix_method_t::set
                             , utils::normalize_level(volume_log_base, volume));
         }
@@ -302,20 +301,20 @@ std::size_t audio_mixer::read_data(void *data
         auto part = std::min(samples, cap - idx);
         volume = utils::normalize_level(volume_log_base, volume);
 
-        process_samples(m_audio_format.format_id()
+        process_samples(m_sample_info.format_id
                         , m_audio_data.data() + idx * m_sample_size
                         , data
-                        , part * m_audio_format.channels()
+                        , part * m_sample_info.channels
                         , operation
                         , volume);
 
         if (part < samples)
         {
 
-            process_samples(m_audio_format.format_id()
+            process_samples(m_sample_info.format_id
                             , m_audio_data.data()
                             , static_cast<std::uint8_t*>(data) + part * m_sample_size
-                            , (samples - part) * m_audio_format.channels()
+                            , (samples - part) * m_sample_info.channels
                             , operation
                             , volume);
 
@@ -345,7 +344,7 @@ std::size_t audio_mixer::copy_data(audio_mixer &mixer
                                    , std::size_t samples
                                    , double volume)
 {
-    if (!m_audio_format.is_equal(mixer.m_audio_format))
+    if (m_sample_info != mixer.m_sample_info)
     {
         return 0;
     }
