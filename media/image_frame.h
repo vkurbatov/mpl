@@ -1,4 +1,4 @@
-#ifndef MPL_MEDIA_IMAGE_FRAME_H
+﻿#ifndef MPL_MEDIA_IMAGE_FRAME_H
 #define MPL_MEDIA_IMAGE_FRAME_H
 
 #include "video_types.h"
@@ -9,24 +9,34 @@
 namespace mpl::media
 {
 
+struct image_info_t
+{
+    video_format_id_t   format_id;
+    frame_size_t        size;
+
+    image_info_t(video_format_id_t format_id = video_format_id_t::undefined
+                 , const frame_size_t& size = {});
+
+    bool operator == (const image_info_t& other) const;
+    bool operator != (const image_info_t& other) const;
+
+    std::size_t frame_size() const;
+    bool is_valid() const;
+};
+
 struct image_frame_t
 {
-    video_format_id_t       format_id;
-    frame_size_t            size;
+    image_info_t            image_info;
     smart_buffer            image_data;
 
-    image_frame_t(video_format_id_t format_id = video_format_id_t::undefined
-                 , const frame_size_t& size = {}
+    image_frame_t(const image_info_t& image_info = {}
                  , smart_buffer&& image_data = {});
 
-    image_frame_t(video_format_id_t format_id
-                 , const frame_size_t& size
+    image_frame_t(const image_info_t& image_info
                  , const smart_buffer& image_data);
 
     bool operator == (const image_frame_t& other) const;
     bool operator != (const image_frame_t& other) const;
-
-    std::size_t frame_size() const;
 
     const void* pixels() const;
     void* pixels();

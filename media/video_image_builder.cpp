@@ -16,11 +16,11 @@ constexpr double default_font_size = 0.1;
 namespace detail
 {
 
-ocv::frame_info_t create_frame_info(const image_frame_t& image_frame)
+ocv::frame_info_t create_frame_info(const image_info_t& image_info)
 {
     ocv::frame_info_t frame_info;
 
-    switch(image_frame.format_id)
+    switch(image_info.format_id)
     {
         case video_format_id_t::bgr24:
             frame_info.format = ocv::frame_format_t::bgr;
@@ -37,7 +37,7 @@ ocv::frame_info_t create_frame_info(const image_frame_t& image_frame)
         default:;
     }
 
-    frame_info.size = image_frame.size;
+    frame_info.size = image_info.size;
 
     return frame_info;
 }
@@ -46,7 +46,7 @@ ocv::frame_info_t create_frame_info(const image_frame_t* image_frame)
 {
     if (image_frame)
     {
-        return create_frame_info(*image_frame);
+        return create_frame_info(image_frame->image_info);
     }
 
     return {};
@@ -115,13 +115,13 @@ struct video_image_builder::context_t
         {
             m_draw_processor.draw_format().draw_opacity = draw_options.opacity;
             auto dst_rect = base::frame_utils::rect_from_relative(draw_options.target_rect
-                                                                 , m_output_frame->size
+                                                                 , m_output_frame->image_info.size
                                                                  , draw_options.margin);
 
             if (dst_rect.is_null())
             {
-                dst_rect.size = input_frame.size;
-                dst_rect.fit(m_output_frame->size);
+                dst_rect.size = input_frame.image_info.size;
+                dst_rect.fit(m_output_frame->image_info.size);
             }
 
             if (!dst_rect.is_null())
@@ -139,12 +139,12 @@ struct video_image_builder::context_t
                     dst_rect.offset.y = center.y - diametr / 2;
                 }
 
-                frame_rect_t src_rect = { 0, 0, input_frame.size.width, input_frame.size.height };
+                frame_rect_t src_rect = { 0, 0, input_frame.image_info.size.width, input_frame.image_info.size.height };
                 src_rect.aspect_ratio(dst_rect);
 
                 m_draw_processor.draw_image(dst_rect
                                             , src_rect
-                                            , detail::create_frame_info(input_frame)
+                                            , detail::create_frame_info(input_frame.image_info)
                                             , input_frame.pixels()
                                             , figure);
 
@@ -203,7 +203,7 @@ struct video_image_builder::context_t
     {
         return m_output_frame != nullptr
                 && m_output_frame->is_valid()
-                && m_output_frame->format_id == video_format_id_t::bgr32;
+                && m_output_frame->image_info.format_id == video_format_id_t::bgr32;
     }
 };
 

@@ -50,8 +50,9 @@ namespace detail
 
 image_frame_t create_image(const i_video_frame& frame)
 {
-    image_frame_t image(frame.format().format_id()
-                        , { frame.format().width(), frame.format().height() });
+    image_frame_t image({ frame.format().format_id()
+                        , { frame.format().width(), frame.format().height() }
+                        });
 
     if (const auto buffer = frame.buffers().get_buffer(main_media_buffer_index))
     {
@@ -839,8 +840,9 @@ class media_composer : public i_media_composer
                              , const i_video_format& video_format)
             : m_layout_manager(layout_manager)
             , m_format(video_format)
-            , m_output_image(video_format.format_id()
-                             , { video_format.width(), video_format.height() })
+            , m_output_image({ video_format.format_id()
+                             , { video_format.width(), video_format.height() }
+                             })
             , m_image_builder({}, nullptr)
             , m_output_frame(m_format)
             , m_frame_id(0)

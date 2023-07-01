@@ -33,21 +33,47 @@ inline ocv::frame_format_t get_ocv_format(video_format_id_t format_id)
 
 }
 
-image_frame_t::image_frame_t(video_format_id_t format_id
-                             , const frame_size_t& size
-                             , smart_buffer &&image_data)
+
+image_info_t::image_info_t(video_format_id_t format_id
+                           , const frame_size_t &size)
     : format_id(format_id)
     , size(size)
+{
+
+}
+
+bool image_info_t::operator ==(const image_info_t &other) const
+{
+    return format_id == other.format_id
+            && size == other.size;
+}
+
+bool image_info_t::operator !=(const image_info_t &other) const
+{
+    return ! operator == (other);
+}
+
+std::size_t image_info_t::frame_size() const
+{
+    return (size.size() * video_format_info_t::get_info(format_id).bpp) / 8;
+}
+
+bool image_info_t::is_valid() const
+{
+    return frame_size() > 0;
+}
+
+image_frame_t::image_frame_t(const image_info_t& image_info
+                             , smart_buffer &&image_data)
+    : image_info(image_info)
     , image_data(std::move(image_data))
 {
 
 }
 
-image_frame_t::image_frame_t(video_format_id_t format_id
-                             , const frame_size_t &size
+image_frame_t::image_frame_t(const image_info_t& image_info
                              , const smart_buffer &image_data)
-    : format_id(format_id)
-    , size(size)
+    : image_info(image_info)
     , image_data(image_data)
 {
 
@@ -55,8 +81,7 @@ image_frame_t::image_frame_t(video_format_id_t format_id
 
 bool image_frame_t::operator ==(const image_frame_t &other) const
 {
-    return format_id == other.format_id
-            && size == other.size
+    return image_info == other.image_info
             && image_data == other.image_data;
 }
 
@@ -65,10 +90,6 @@ bool image_frame_t::operator !=(const image_frame_t &other) const
     return ! operator == (other);
 }
 
-std::size_t image_frame_t::frame_size() const
-{
-    return (size.size() * video_format_info_t::get_info(format_id).bpp) / 8;
-}
 
 const void *image_frame_t::pixels() const
 {
@@ -82,9 +103,9 @@ void *image_frame_t::pixels()
 
 bool image_frame_t::tune()
 {
-    if (video_format_info_t::get_info(format_id).convertable)
+    if (image_info.is_valid())
     {
-        if (auto fsize = frame_size())
+        if (auto fsize = image_info.frame_size())
         {
             if (fsize != image_data.size())
             {
@@ -111,8 +132,8 @@ bool image_frame_t::blackout()
 
 bool image_frame_t::is_valid() const
 {
-   return video_format_info_t::get_info(format_id).convertable
-           && frame_size() <= image_data.size();
+   return image_info.is_valid()
+           && image_info.frame_size() <= image_data.size();
 }
 
 bool image_frame_t::is_empty() const
@@ -128,8 +149,8 @@ bool image_frame_t::load(const std::string &path
             && image.load(path, detail::get_ocv_format(format_id))
             && image.is_valid())
     {
-        this->format_id = format_id;
-        size = image.info.size;
+        this->image_info.format_id = format_id;
+        image_info.size = image.info.size;
         image_data.assign(std::move(image.data));
 
         return true;
