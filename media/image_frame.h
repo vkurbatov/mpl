@@ -9,6 +9,8 @@
 namespace mpl::media
 {
 
+class i_video_format;
+
 struct image_info_t
 {
     video_format_id_t   format_id;
@@ -17,10 +19,14 @@ struct image_info_t
     image_info_t(video_format_id_t format_id = video_format_id_t::undefined
                  , const frame_size_t& size = {});
 
+    image_info_t(const i_video_format& video_format);
+
     bool operator == (const image_info_t& other) const;
     bool operator != (const image_info_t& other) const;
 
+    std::size_t bpp() const;
     std::size_t frame_size() const;
+
     bool is_valid() const;
 };
 
