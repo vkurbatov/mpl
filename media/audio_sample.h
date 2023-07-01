@@ -46,7 +46,7 @@ struct audio_sample_t
 
     smart_buffer        sample_data;
 
-    audio_sample_t(const sample_info_t& sample_info
+    audio_sample_t(const sample_info_t& sample_info = {}
                  , smart_buffer&& sample_data = {});
 
     audio_sample_t(const sample_info_t& sample_info
