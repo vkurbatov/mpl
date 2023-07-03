@@ -34,6 +34,7 @@ public:
     class i_compose_stream
     {
     public:
+
         using u_ptr_t = std::unique_ptr<i_compose_stream>;
         using s_ptr_t = std::shared_ptr<i_compose_stream>;
         using w_ptr_t = std::weak_ptr<i_compose_stream>;

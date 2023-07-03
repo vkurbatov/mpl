@@ -173,6 +173,7 @@ struct audio_composer::pimpl_t
         : m_config(config)
         , m_compose_sample(m_config.sample_info)
     {
+        m_compose_sample.resize(config.samples);
         // m_compose_sample.tune();
     }
 

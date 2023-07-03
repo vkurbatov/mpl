@@ -6,6 +6,9 @@
 #include "video_format_impl.h"
 #include "video_frame_types.h"
 
+#include "image_frame.h"
+#include "audio_sample.h"
+
 namespace mpl
 {
 
@@ -162,6 +165,49 @@ bool property_helper::deserialize(relative_frame_rect_t& value
             | reader.get("size", value.size);
 }
 
+// image_info_t
+template<>
+bool property_helper::serialize(const image_info_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("format_id", value.format_id)
+            && writer.set("width", value.size.width)
+            && writer.set("height", value.size.height);
+
+}
+
+template<>
+bool property_helper::deserialize(image_info_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("format_id", value.format_id)
+            | reader.get("width", value.size.width)
+            | reader.get("height", value.size.height);
+}
+
+// sample_info_t
+template<>
+bool property_helper::serialize(const sample_info_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("format_id", value.format_id)
+            && writer.set("sample_rate", value.sample_rate)
+            && writer.set("channels", value.channels);
+
+}
+
+template<>
+bool property_helper::deserialize(sample_info_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("format_id", value.format_id)
+            | reader.get("sample_rate", value.sample_rate)
+            | reader.get("channels", value.channels);
+}
 
 /*
 template<typename E>

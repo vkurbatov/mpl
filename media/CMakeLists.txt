@@ -22,6 +22,7 @@ set(SOURCES
     video_frame_impl.cpp
     message_frame_impl.cpp
     media_packetizer_impl.cpp
+    timestamp_calculator.cpp
     libav_video_converter_factory.cpp
     libav_audio_converter_factory.cpp
     libav_transcoder_factory.cpp
@@ -88,6 +89,7 @@ set(PRIVATE_HEADERS
     audio_level.h
     audio_sample.h
     message_frame_impl.h
+    timestamp_calculator.h
     libav_video_converter_factory.h
     libav_audio_converter_factory.h
     libav_transcoder_factory.h
