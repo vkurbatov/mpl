@@ -123,6 +123,10 @@ class media_composer : public i_media_composer
             , i_message_sink
             , std::enable_shared_from_this<composer_stream>
     {
+    public:
+        struct stream_params_t;
+
+    private:
 
         class audio_track
         {
@@ -139,6 +143,10 @@ class media_composer : public i_media_composer
 
             frame_queue_t               m_frame_queue;
             audio_frame_impl            m_audio_frame;
+
+            timestamp_t                 m_timestamp;
+            frame_id_t                  m_frame_id;
+
             timestamp_calculator        m_timestamp_calculator;
 
         public:
@@ -152,6 +160,8 @@ class media_composer : public i_media_composer
                 , m_audio_frame(audio_format
                                 , 0
                                 , 0)
+                , m_timestamp(0)
+                , m_frame_id(0)
                 , m_timestamp_calculator(audio_format.sample_rate())
             {
                 if (m_media_converter)
@@ -201,6 +211,12 @@ class media_composer : public i_media_composer
                 }
 
                 return nullptr;
+            }
+
+            void update_params(const stream_params_t& new_params)
+            {
+                m_compose_stream->options().volume = new_params.volume;
+                m_compose_stream->options().enabled = new_params.audio_enabled;
             }
 
             void prepare_inputs()
@@ -254,8 +270,11 @@ class media_composer : public i_media_composer
                     m_audio_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                              , smart_buffer(&sample->sample_data));
 
-                    m_audio_frame.set_timestamp(m_audio_frame.timestamp() + sample->samples());
-                    m_audio_frame.set_frame_id(m_compose_stream->frame_count());
+                    m_audio_frame.set_timestamp(m_timestamp);
+                    m_audio_frame.set_frame_id(m_frame_id);
+
+                    m_timestamp += sample->samples();
+                    m_frame_id++;
 
                     return &m_audio_frame;
                 }
@@ -283,6 +302,9 @@ class media_composer : public i_media_composer
             timestamp_t                 m_last_frame_time;
 
             video_frame_impl            m_video_frame;
+
+            timestamp_t                 m_timestamp;
+            frame_id_t                  m_frame_id;
             timestamp_calculator        m_timestamp_calculator;
 
         public:
@@ -299,6 +321,8 @@ class media_composer : public i_media_composer
                 , m_video_frame(video_format
                                 , 0
                                 , 0)
+                , m_timestamp(0)
+                , m_frame_id(0)
                 , m_timestamp_calculator(video_sample_rate)
             {
                 if (m_media_converter)
@@ -338,6 +362,13 @@ class media_composer : public i_media_composer
                 }
 
                 return m_last_frame;
+            }
+
+            void update_params(const stream_params_t& new_params)
+            {
+                m_compose_stream->options().draw_options.target_rect = new_params.draw_options.target_rect;
+                m_compose_stream->options().order = new_params.order;
+                m_compose_stream->options().enabled = new_params.video_enabled;
             }
 
             void clear()
@@ -397,11 +428,15 @@ class media_composer : public i_media_composer
                 if (auto compose_image = m_compose_stream->compose_image())
                 {
 
-                    m_video_frame.set_frame_id(m_video_frame.frame_id() + 1);
-                    m_video_frame.set_timestamp(m_timestamp_calculator.calc_timestamp(frame_time()));
-
                     m_video_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                              , smart_buffer(&compose_image->image_data));
+
+                    m_timestamp = m_timestamp_calculator.calc_timestamp(frame_time());
+
+                    m_video_frame.set_timestamp(m_timestamp);
+                    m_video_frame.set_frame_id(m_frame_id);
+
+                    m_frame_id++;
 
                     return &m_video_frame;
                 }
@@ -680,6 +715,8 @@ class media_composer : public i_media_composer
         {
             if (m_params.load(params))
             {
+                m_audio_track.update_params(m_params);
+                m_video_track.update_params(m_params);
                 // m_audio_track.set_volume(m_params.volume);
                 return true;
             }

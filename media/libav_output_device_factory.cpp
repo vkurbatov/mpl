@@ -544,6 +544,8 @@ public:
                 libav_frame.info.pts = frame.timestamp();
                 libav_frame.info.dts = frame.timestamp();
 
+                std::clog << "audio #" << frame.frame_id() << ", ts: " << frame.timestamp() << std::endl;
+
                 m_frame_manager.push_frame(std::move(libav_frame));
 
                 return true;
@@ -568,6 +570,8 @@ public:
                 libav_frame.info.pts = frame.timestamp();
                 libav_frame.info.dts = frame.timestamp();
                 libav_frame.info.key_frame = frame.frame_type() == i_video_frame::frame_type_t::key_frame;
+
+                std::clog << "video #" << frame.frame_id() << ", ts: " << frame.timestamp() << std::endl;
 
                 m_frame_manager.push_frame(std::move(libav_frame));
 

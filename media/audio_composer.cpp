@@ -46,7 +46,7 @@ struct audio_composer::pimpl_t
         std::size_t         m_frame_count;
 
     public:
-        using set_t = std::set<compose_stream_impl*>;
+        using set_t = std::multiset<compose_stream_impl*>;
 
         static s_ptr_t create(pimpl_t& owner
                               , const compose_options_t& compose_options)
@@ -131,8 +131,13 @@ struct audio_composer::pimpl_t
                     && sample.is_valid()
                     && sample.sample_info == m_audio_mixer.sample_info())
             {
-                return m_audio_mixer.push_data(sample.sample_data.data()
-                                              , sample.samples()
+                auto data = sample.data();
+                auto samples = sample.samples();
+                m_audio_level.push_frame(sample.sample_info
+                                         , data
+                                         , samples);
+                return m_audio_mixer.push_data(data
+                                              , samples
                                               , m_compose_options.volume);
             }
             return false;
@@ -166,7 +171,7 @@ struct audio_composer::pimpl_t
 
     static u_ptr_t create(const config_t& config)
     {
-        return nullptr;
+        return std::make_unique<pimpl_t>(config);
     }
 
     pimpl_t(const config_t& config)

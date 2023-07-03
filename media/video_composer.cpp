@@ -51,7 +51,7 @@ struct video_composer::pimpl_t
 
     public:
 
-        using set_t = std::set<compose_stream_impl*, comparator_t>;
+        using set_t = std::multiset<compose_stream_impl*, comparator_t>;
 
         static s_ptr_t create(pimpl_t& owner
                               , const compose_options_t& compose_options)
@@ -134,7 +134,7 @@ struct video_composer::pimpl_t
 
     static u_ptr_t create(const config_t& config)
     {
-        return nullptr;
+        return std::make_unique<pimpl_t>(config);
     }
 
     pimpl_t(const config_t& config)

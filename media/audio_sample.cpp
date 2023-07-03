@@ -136,7 +136,7 @@ std::size_t audio_sample_t::samples() const
 
 void audio_sample_t::resize(std::size_t new_samples)
 {
-    if (is_valid())
+    if (sample_info.is_valid())
     {
         sample_data.resize(sample_info.size_from_samples(new_samples));
     }
