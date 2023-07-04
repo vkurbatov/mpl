@@ -18,7 +18,7 @@
 #include "image_frame.h"
 #include "audio_sample.h"
 #include "draw_options.h"
-#include "video_image_builder.h"
+#include "image_builder.h"
 #include "message_frame_impl.h"
 #include "timestamp_calculator.h"
 
@@ -368,6 +368,7 @@ class media_composer : public i_media_composer
             {
                 m_compose_stream->options().draw_options.target_rect = new_params.draw_options.target_rect;
                 m_compose_stream->options().order = new_params.order;
+                m_compose_stream->options().animation = new_params.animation;
                 m_compose_stream->options().enabled = new_params.video_enabled;
             }
 
@@ -484,6 +485,7 @@ class media_composer : public i_media_composer
         {
             std::int32_t            order;
             draw_options_t          draw_options;
+            double                  animation;
             timestamp_t             timeout;
             std::string             user_image_path;
             bool                    audio_enabled;
@@ -492,6 +494,7 @@ class media_composer : public i_media_composer
 
             stream_params_t(std::int32_t order = 0
                             , const draw_options_t& draw_options = {}
+                            , double animation = 0.0
                             , timestamp_t timeout = 0
                             , const std::string& user_image_path = {}
                             , bool audio_enabled = true
@@ -499,6 +502,7 @@ class media_composer : public i_media_composer
                             , double volume = 1.0)
                 : order(order)
                 , draw_options(draw_options)
+                , animation(animation)
                 , timeout(timeout)
                 , user_image_path(user_image_path)
                 , audio_enabled(audio_enabled)
@@ -523,6 +527,7 @@ class media_composer : public i_media_composer
                         | reader.get("opacity", draw_options.opacity)
                         | reader.get("label", draw_options.label)
                         | reader.get("elliptic", draw_options.elliptic)
+                        | reader.get("animation", animation)
                         | reader.get("timeout", timeout)
                         | reader.get("user_img", user_image_path)
                         | reader.get("audio_enabled", audio_enabled)
@@ -539,6 +544,7 @@ class media_composer : public i_media_composer
                         && writer.set("opacity", draw_options.opacity)
                         && writer.set("label", draw_options.label)
                         && writer.set("elliptic", draw_options.elliptic)
+                        && writer.set("animation", animation)
                         && writer.set("timeout", timeout)
                         && writer.set("user_img", user_image_path, {})
                         && writer.set("audio_enabled", audio_enabled)
@@ -848,6 +854,7 @@ class media_composer : public i_media_composer
         {
             video_composer::compose_options_t options(stream_params.draw_options
                                                       , stream_params.order
+                                                      , stream_params.animation
                                                       , stream_params.video_enabled);
 
             return m_video_composer.add_stream(options);

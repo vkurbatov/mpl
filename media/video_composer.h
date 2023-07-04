@@ -23,10 +23,12 @@ public:
     {
         draw_options_t      draw_options;
         std::int32_t        order;
+        double              animation;
         bool                enabled;
 
         compose_options_t(const draw_options_t& draw_options = {}
                           , std::int32_t order = 0
+                          , double animation = 0
                           , bool enabled = true);
 
     };

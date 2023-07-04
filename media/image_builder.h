@@ -1,5 +1,5 @@
-#ifndef MPL_VIDEO_IMAGE_BUILDER_H
-#define MPL_VIDEO_IMAGE_BUILDER_H
+#ifndef MPL_MEDIA_IMAGE_BUILDER_H
+#define MPL_MEDIA_IMAGE_BUILDER_H
 
 #include <memory>
 
@@ -9,7 +9,7 @@ namespace mpl::media
 struct image_frame_t;
 struct draw_options_t;
 
-class video_image_builder
+class image_builder
 {
 public:
     struct config_t
@@ -24,9 +24,9 @@ public:
 
 public:
 
-    video_image_builder(const config_t& config
+    image_builder(const config_t& config
                         , image_frame_t* output_frame);
-    ~video_image_builder();
+    ~image_builder();
 
     void set_output_frame(image_frame_t* output_frame);
     const image_frame_t* output_frame() const;
@@ -42,4 +42,4 @@ public:
 
 }
 
-#endif // MPL_VIDEO_IMAGE_BUILDER_H
+#endif // MPL_MEDIA_IMAGE_BUILDER_H

@@ -1510,6 +1510,7 @@ void test19()
         property_writer writer(*stream_params);
         writer.set("order", 1);
         writer.set("opacity", opacity);
+        writer.set("animation", 0.1);
 
         /*
         if (i % 4 == 0)
@@ -1547,6 +1548,7 @@ void test19()
         writer.remove("elliptic");
         writer.remove("border");
         writer.remove("user_img");
+        writer.remove("animation");
 
     }
 
@@ -1658,6 +1660,15 @@ void test19()
     while(input_video_device->state() != channel_state_t::connected);
 
     std::size_t count = 1000;
+
+    auto sp = property_helper::create_object();
+
+    if (stream10->get_params(*sp))
+    {
+        property_writer writer(*sp);
+        writer.set("order", 1);
+        // stream10->set_params(*sp);
+    }
 
     while(count-- > 0)
     {

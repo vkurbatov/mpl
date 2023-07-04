@@ -46,7 +46,7 @@ struct audio_composer::pimpl_t
         std::size_t         m_frame_count;
 
     public:
-        using set_t = std::multiset<compose_stream_impl*>;
+        using set_t = std::set<compose_stream_impl*>;
 
         static s_ptr_t create(pimpl_t& owner
                               , const compose_options_t& compose_options)

@@ -1,9 +1,43 @@
 #include "video_composer.h"
-#include "video_image_builder.h"
+#include "image_builder.h"
+
+#include <algorithm>
 #include <set>
 
 namespace mpl::media
 {
+
+namespace detail
+{
+
+double animation(double lhs, double rhs, double k, double min_delta)
+{
+    if (k <= 0.0 || k >= 1.0)
+    {
+        return rhs;
+    }
+
+    auto delta = rhs - lhs;
+    if (std::abs(delta) < min_delta)
+    {
+        return rhs;
+    }
+
+    return lhs + delta * k;
+}
+
+void animation(relative_frame_rect_t& dst_rect
+               , const relative_frame_rect_t& src_rect
+               , double k
+               , double min_delta)
+{
+    dst_rect.offset.x = animation(dst_rect.offset.x, src_rect.offset.x, k, min_delta);
+    dst_rect.offset.y = animation(dst_rect.offset.y, src_rect.offset.y, k, min_delta);
+    dst_rect.size.width = animation(dst_rect.size.width, src_rect.size.width, k, min_delta);
+    dst_rect.size.height = animation(dst_rect.size.height, src_rect.size.height, k, min_delta);
+}
+
+}
 
 video_composer::config_t::config_t(const image_info_t &frame_info)
     : frame_info(frame_info)
@@ -13,9 +47,11 @@ video_composer::config_t::config_t(const image_info_t &frame_info)
 
 video_composer::compose_options_t::compose_options_t(const draw_options_t &draw_options
                                                      , int32_t order
+                                                     , double animation
                                                      , bool enabled)
     : draw_options(draw_options)
     , order(order)
+    , animation(animation)
     , enabled(enabled)
 {
 
@@ -33,40 +69,55 @@ struct video_composer::pimpl_t
         using s_ptr_t = std::shared_ptr<compose_stream_impl>;
         using w_ptr_t = std::weak_ptr<compose_stream_impl>;
 
+        pimpl_t&                m_owner;
+        compose_options_t       m_compose_options;
+        image_frame_t           m_stream_image;
+
+        relative_frame_rect_t   m_rect;
+
+        image_builder           m_image_builder;
+
+        std::size_t             m_frame_count;
+        std::size_t             m_id;
+
+    public:
+
+        using array_ptr_t = std::vector<compose_stream_impl*>;
         struct comparator_t
         {
+            static comparator_t& get_instance()
+            {
+                static comparator_t instance;
+                return instance;
+            }
+
             bool operator() (const compose_stream_impl* lhs, const compose_stream_impl* rhs) const
             {
                 return *lhs < *rhs;
             }
         };
 
-        pimpl_t&            m_owner;
-        compose_options_t   m_compose_options;
-        image_frame_t       m_stream_image;
-
-        video_image_builder m_image_builder;
-
-        std::size_t         m_frame_count;
-
-    public:
-
-        using set_t = std::multiset<compose_stream_impl*, comparator_t>;
+        using set_t = std::set<compose_stream_impl*>;
 
         static s_ptr_t create(pimpl_t& owner
-                              , const compose_options_t& compose_options)
+                              , const compose_options_t& compose_options
+                              , std::size_t id)
         {
             return std::make_shared<compose_stream_impl>(owner
-                                                         , compose_options);
+                                                         , compose_options
+                                                         , id);
         }
 
         compose_stream_impl(pimpl_t& owner
-                            , const compose_options_t& compose_options)
+                            , const compose_options_t& compose_options
+                            , std::size_t id)
             : m_owner(owner)
             , m_compose_options(compose_options)
+            , m_rect(m_compose_options.draw_options.target_rect)
             , m_image_builder({}
                               , &m_owner.m_compose_image)
             , m_frame_count(0)
+            , m_id(id)
         {
 
         }
@@ -81,13 +132,31 @@ struct video_composer::pimpl_t
             return m_compose_options.enabled;
         }
 
+
         inline bool compose()
         {
             if (m_stream_image.is_valid())
             {
                 m_frame_count++;
+
+                detail::animation(m_rect
+                                  , m_compose_options.draw_options.target_rect
+                                  , m_compose_options.animation
+                                  , 0.001);
+                bool is_animation = m_rect != m_compose_options.draw_options.target_rect;
+
+                draw_options_t animation_options;
+
+                if (is_animation)
+                {
+                    animation_options = m_compose_options.draw_options;
+                    animation_options.target_rect = m_rect;
+                }
+
                 return m_image_builder.draw_image_frame(m_stream_image
-                                                        , m_compose_options.draw_options);
+                                                        , is_animation
+                                                            ? animation_options
+                                                            : m_compose_options.draw_options);
             }
 
             return false;
@@ -95,7 +164,9 @@ struct video_composer::pimpl_t
 
         inline bool operator < (const compose_stream_impl& other) const
         {
-            return m_compose_options.order < other.m_compose_options.order;
+            return m_compose_options.order < other.m_compose_options.order
+                    || (m_compose_options.order == other.m_compose_options.order
+                        && m_id < other.m_id);
         }
 
         // i_compose_stream interface
@@ -131,6 +202,8 @@ struct video_composer::pimpl_t
     image_frame_t               m_compose_image;
     compose_stream_impl::set_t  m_streams;
 
+    std::size_t                 m_ids;
+
 
     static u_ptr_t create(const config_t& config)
     {
@@ -140,6 +213,7 @@ struct video_composer::pimpl_t
     pimpl_t(const config_t& config)
         : m_config(config)
         , m_compose_image(m_config.frame_info)
+        , m_ids(0)
     {
         m_compose_image.tune();
     }
@@ -150,12 +224,9 @@ struct video_composer::pimpl_t
         {
             m_compose_image.blackout();
 
-            for (const auto& s : m_streams)
+            for (const auto& s : active_streams())
             {
-                if (s->has_enabled())
-                {
-                    s->compose();
-                }
+                s->compose();
             }
 
             return &m_compose_image;
@@ -164,10 +235,28 @@ struct video_composer::pimpl_t
         return nullptr;
     }
 
+    compose_stream_impl::array_ptr_t active_streams() const
+    {
+        compose_stream_impl::array_ptr_t streams;
+
+        for (auto s : m_streams)
+        {
+            if (s->has_enabled())
+            {
+                streams.emplace_back(s);
+            }
+        }
+
+        std::sort(streams.begin(), streams.end(), compose_stream_impl::comparator_t::get_instance());
+
+        return streams;
+    }
+
     video_composer::i_compose_stream::s_ptr_t add_stream(const video_composer::compose_options_t &options)
     {
         if (auto stream = compose_stream_impl::create(*this
-                                                      , options))
+                                                      , options
+                                                      , m_ids++))
         {
             m_streams.insert(stream.get());
             return stream;

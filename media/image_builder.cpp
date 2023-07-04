@@ -1,4 +1,4 @@
-#include "video_image_builder.h"
+#include "image_builder.h"
 #include "image_frame.h"
 #include "draw_options.h"
 
@@ -54,12 +54,12 @@ ocv::frame_info_t create_frame_info(const image_frame_t* image_frame)
 
 }
 
-struct video_image_builder::context_t
+struct image_builder::context_t
 {
-    using config_t = video_image_builder::config_t;
-    using u_ptr_t = video_image_builder::context_ptr_t;
+    using config_t = image_builder::config_t;
+    using u_ptr_t = image_builder::context_ptr_t;
 
-    video_image_builder::config_t   m_config;
+    image_builder::config_t   m_config;
     image_frame_t*                  m_output_frame;
     ocv::draw_processor             m_draw_processor;
 
@@ -209,7 +209,7 @@ struct video_image_builder::context_t
 
 //-----------------------------------------------------------------------
 
-video_image_builder::video_image_builder(const config_t& config
+image_builder::image_builder(const config_t& config
                                          , image_frame_t *output_frame)
     : m_context(context_t::create(config
                                   , output_frame))
@@ -217,39 +217,39 @@ video_image_builder::video_image_builder(const config_t& config
 
 }
 
-video_image_builder::~video_image_builder()
+image_builder::~image_builder()
 {
 
 }
 
-void video_image_builder::set_output_frame(image_frame_t *output_frame)
+void image_builder::set_output_frame(image_frame_t *output_frame)
 {
     m_context->set_output_frame(output_frame);
 }
 
-const image_frame_t *video_image_builder::output_frame() const
+const image_frame_t *image_builder::output_frame() const
 {
     return m_context->output_frame();
 }
 
-const video_image_builder::config_t &video_image_builder::config() const
+const image_builder::config_t &image_builder::config() const
 {
     return m_context->config();
 }
 
-bool video_image_builder::draw_image_frame(const image_frame_t &input_frame
+bool image_builder::draw_image_frame(const image_frame_t &input_frame
                                            , const draw_options_t &draw_options)
 {
     return m_context->draw_image_frame(input_frame
                                        , draw_options);
 }
 
-bool video_image_builder::blackout()
+bool image_builder::blackout()
 {
     return m_context->blackout();
 }
 
-bool video_image_builder::is_valid() const
+bool image_builder::is_valid() const
 {
     return m_context->is_valid();
 }

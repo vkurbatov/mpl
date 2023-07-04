@@ -60,10 +60,10 @@ T max_abs_value(const void* data
                 , std::size_t samples)
 {
     const T* ptr = static_cast<const T*>(data);
-    T result = min_level<T>();
+    T result = {}; //min_level<T>();
     while(samples-- > 0)
     {
-        result = std::max<T>(result, *ptr);
+        result = std::max<T>(result, std::abs(*ptr));
         ptr++;
     }
 
@@ -168,7 +168,8 @@ bool audio_level::push_frame(const sample_info_t& sample_info
                 m_abs_max /= 4;
             }
 
-            double double_duration = static_cast<double>(duration)/durations::milliseconds(1);
+            double double_duration = static_cast<double>(duration)
+                    / durations::milliseconds(1);
 
             double addition_energy = m_level;
             addition_energy *= addition_energy;

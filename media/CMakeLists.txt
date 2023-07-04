@@ -37,7 +37,7 @@ set(SOURCES
     ipc_output_device_factory.cpp
     draw_options.cpp
     image_frame.cpp
-    video_image_builder.cpp
+    image_builder.cpp
     audio_composer.cpp
     video_composer.cpp
     layout_manager_mosaic_impl.cpp
@@ -103,7 +103,7 @@ set(PRIVATE_HEADERS
     ipc_output_device_factory.h
     draw_options.h
     image_frame.h
-    video_image_builder.h
+    image_builder.h
     audio_composer.h
     video_composer.h
     layout_manager_mosaic_impl.h
