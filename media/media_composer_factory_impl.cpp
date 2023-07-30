@@ -239,7 +239,7 @@ class media_composer : public i_media_composer
                     lock_t lock(m_safe_mutex);
                     m_frame_queue.emplace(std::move(clone_frame));
 
-                    while (m_frame_queue.size() > 5)
+                    while (m_frame_queue.size() > 50)
                     {
                         m_frame_queue.pop();
                     }
@@ -826,6 +826,8 @@ class media_composer : public i_media_composer
 
             if (auto params = format.get_params("format"))
             {
+                property_writer writer(*params);
+                writer.set("transcode_async", true);
                 return m_converter_factory.create_converter(*params);
             }
 

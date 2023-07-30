@@ -75,6 +75,7 @@ target_link_libraries(${PROJECT_NAME}
     avwrp
     ipcwrp
     ptbase
+    vncclient
     ${OpenCV_LIBRARIES}
     ${AVCODEC_LIBRARIES}
     ${SWRESAMPLE_LIBRARIES}

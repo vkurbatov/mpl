@@ -40,6 +40,7 @@
 #include "smart_transcoder_factory.h"
 #include "media_composer_factory_impl.h"
 #include "layout_manager_mosaic_impl.h"
+#include "vnc_device_factory.h"
 
 #include "video_frame_types.h"
 
@@ -925,6 +926,113 @@ void test13()
     return;
 }
 
+void test13_2()
+{
+    ffmpeg::libav_register();
+    libav_input_device_factory input_audio_factory;
+    vnc_device_factory input_video_factory;
+
+    libav_output_device_factory output_device_factory;
+
+    std::string input_audio_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
+    //std::string input_video_url = "/dev/video0";
+    std::string output_url = "rtmp://127.0.0.1/cam1/stream";
+
+    auto libav_input_audio_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_input_audio_params);
+        writer.set<std::string>("url", input_audio_url);
+    }
+
+    auto vnc_input_video_params = property_helper::create_object();
+    {
+        property_writer writer(*vnc_input_video_params);
+        writer.set<std::string>("host", "192.168.0.101");
+        writer.set<std::uint16_t>("port", 5900);
+        writer.set<std::string>("password", "123123123");
+        writer.set<std::uint32_t>("fps", 30);
+    }
+
+    libav_audio_converter_factory audio_converter_factory;
+    libav_video_converter_factory video_converter_factory;
+    media_converter_factory_impl media_converter_factory(audio_converter_factory
+                                                         , video_converter_factory);
+
+    libav_transcoder_factory decoder_factory(false);
+    libav_transcoder_factory encoder_factory(true);
+
+
+    smart_transcoder_factory smart_factory(decoder_factory
+                                           , encoder_factory
+                                           , media_converter_factory);
+
+    audio_format_impl audio_format(audio_format_id_t::aac
+                                   , 48000
+                                   , 2);
+    video_format_impl video_format (video_format_id_t::h264
+                                    , 1280
+                                    , 720
+                                    , 15);
+
+
+    std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
+    option_writer(video_format.options()).set(opt_codec_params, encoder_options);
+    option_writer(video_format.options()).set(opt_fmt_stream_id, 1);
+
+    auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
+    auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
+
+    auto libav_output_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        i_property::array_t streams;
+        if (auto ap = property_helper::create_object())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
+        if (auto vp = property_helper::create_object())
+        {
+            if (video_format.get_params(*vp))
+            {
+                streams.emplace_back(std::move(vp));
+            }
+        }
+
+        writer.set("streams", streams);
+    }
+
+    auto input_audio_device = input_audio_factory.create_device(*libav_input_audio_params);
+    auto input_video_device = input_video_factory.create_device(*vnc_input_video_params);
+    auto output_device = output_device_factory.create_device(*libav_output_device_params);
+
+    input_audio_device->source()->add_sink(audio_transcoder.get());
+    input_video_device->source()->add_sink(video_transcoder.get());
+
+    audio_transcoder->set_sink(output_device->sink());
+    video_transcoder->set_sink(output_device->sink());
+
+    output_device->control(channel_control_t::open());
+    input_audio_device->control(channel_control_t::open());
+    input_video_device->control(channel_control_t::open());
+
+    core::utils::sleep(durations::seconds(600));
+
+    input_audio_device->control(channel_control_t::close());
+    input_video_device->control(channel_control_t::close());
+
+    output_device->control(channel_control_t::close());
+
+    audio_transcoder->set_sink(nullptr);
+    video_transcoder->set_sink(nullptr);
+
+    return;
+}
+
 void test14()
 {
     ffmpeg::libav_register();
@@ -1722,6 +1830,309 @@ void test19()
 
 void test20()
 {
+    ffmpeg::libav_register();
+    libav_input_device_factory libav_input_factory;
+    v4l2_device_factory v4l2_input_factory;
+
+    libav_output_device_factory output_device_factory;
+
+
+    std::string bg_url = "/home/user/My/sportrecs/test_bckgrnd.mp4";
+    //std::string bg_options = "rtsp_transport=tcp";
+
+    std::string input_audio_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
+    std::string input_video_url = "/dev/video0";
+
+    std::vector<std::string> input_urls =
+    {
+        "/home/user/My/sportrecs/basket_streaming_video.mp4",
+        "/home/user/My/sportrecs/fight.mp4",
+        "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov",
+    ///    "/home/user/My/sportrecs/sample.mp4",
+        "/home/user/My/sportrecs/basket_streaming_video.mp4",
+        "/home/user/My/sportrecs/fight.mp4",
+        "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov",
+   ///     "/home/user/My/sportrecs/sample.mp4"
+
+    };
+
+
+    std::string output_url = "rtmp://127.0.0.1/cam1/stream";
+
+    auto libav_input_audio_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_input_audio_params);
+        writer.set<std::string>("url", input_audio_url);
+    }
+
+    auto v4l2_input_video_params = property_helper::create_object();
+    {
+        property_writer writer(*v4l2_input_video_params);
+        writer.set<std::string>("url", input_video_url);
+    }
+
+    auto bg_video_params = property_helper::create_object();
+    {
+        property_writer writer(*bg_video_params);
+        writer.set<std::string>("url", bg_url);
+    }
+
+    mpl::media::smart_transcoder_factory smart_factory(mpl::media::libav_transcoder_factory::decoder_factory()
+                                                        , mpl::media::libav_transcoder_factory::encoder_factory()
+                                                        , mpl::media::media_converter_factory_impl::builtin_converter_factory());
+
+    media_composer_factory_impl composer_factory(smart_factory
+                                                 , layout_manager_mosaic_impl::get_instance());
+
+    audio_format_impl compose_audio_format(audio_format_id_t::pcm16
+                                            , 48000
+                                            , 2);
+
+
+    video_format_impl compose_video_format(video_format_id_t::rgb24
+                                            , 1280
+                                            , 720
+                                            , 30);
+
+
+    auto composer_params = property_helper::create_object();
+
+    if (composer_params)
+    {
+        property_writer writer(*composer_params);
+        writer.set("audio_params.format", compose_audio_format);
+        writer.set("audio_params.duration", durations::milliseconds(10));
+        writer.set("video_params.format", compose_video_format);
+    }
+
+    auto media_composer = composer_factory.create_composer(*composer_params);
+
+    auto stream_params = property_helper::create_object();
+
+    std::size_t stream_count = input_urls.size() + 1;
+
+    i_media_stream::s_array_t streams;
+
+    double opacity = 1.0;
+
+    for (std::size_t i = 0; i < stream_count; i++)
+    {
+        property_writer writer(*stream_params);
+        writer.set("order", 1);
+        writer.set("opacity", opacity);
+        writer.set("animation", 0.1);
+
+        std::string label = "stream #";
+        label.append(std::to_string(i));
+
+        writer.set("label", label);
+        writer.set<std::string>("user_img", "/home/user/test.jpg");
+
+        if (auto stream = media_composer->add_stream(*stream_params))
+        {
+            streams.emplace_back(stream);
+        }
+    }
+
+    if (stream_params)
+    {
+        relative_frame_rect_t frame_rect = { 0.0, 0.0, 1.0, 1.0};
+        property_writer writer(*stream_params);
+        writer.set("rect", frame_rect);
+        writer.set("order", 0);
+        writer.set<double>("opacity", 1.0);
+        writer.remove("label");
+        writer.remove("elliptic");
+        writer.remove("border");
+        writer.remove("user_img");
+        writer.remove("animation");
+
+    }
+
+    auto stream10 = media_composer->add_stream(*stream_params);
+
+    audio_format_impl audio_format(audio_format_id_t::aac
+                                   , 48000
+                                   , 2);
+    video_format_impl video_format (video_format_id_t::h264
+                                    , compose_video_format.width()
+                                    , compose_video_format.height()
+                                    , compose_video_format.frame_rate());
+
+    audio_format_impl transcode_audio_format(audio_format_id_t::aac
+                                           , 48000
+                                           , 2);
+    video_format_impl transcode_video_format (video_format_id_t::h264
+                                              , compose_video_format.width()
+                                              , compose_video_format.height()
+                                              , compose_video_format.frame_rate());
+
+    std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
+
+    option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
+    option_writer(transcode_video_format.options()).set(opt_fmt_stream_id, 0);
+    option_writer(transcode_audio_format.options()).set(opt_fmt_stream_id, 1);
+
+    auto audio_transcoder = smart_factory.create_converter(*transcode_audio_format.get_params("format"));
+
+    auto video_transcoder_params = transcode_video_format.get_params("format");
+
+    if (video_transcoder_params)
+    {
+        property_writer writer(*video_transcoder_params);
+        writer.set("transcode_async", true);
+    }
+
+    auto video_transcoder = smart_factory.create_converter(*video_transcoder_params);
+
+    auto libav_output_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        i_property::array_t streams;
+
+        if (auto vp = property_helper::create_object())
+        {
+            if (video_format.get_params(*vp))
+            {
+                streams.emplace_back(std::move(vp));
+            }
+        }
+
+        if (auto ap = property_helper::create_object())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
+        writer.set("streams", streams);
+    }
+
+    auto input_audio_device = libav_input_factory.create_device(*libav_input_audio_params);
+    auto input_video_device = v4l2_input_factory.create_device(*v4l2_input_video_params);
+    auto bg_video_device = libav_input_factory.create_device(*bg_video_params);
+    auto output_device = output_device_factory.create_device(*libav_output_device_params);
+
+    std::vector<i_device::s_ptr_t> devices;
+
+    auto i = 1;
+
+    for (const auto& url : input_urls)
+    {
+        if (auto device_params = property_helper::create_object())
+        {
+            property_writer writer(*device_params);
+            writer.set<std::string>("url", url);
+
+            if (auto device = libav_input_factory.create_device(*device_params))
+            {
+                device->source()->add_sink(streams[i]->sink());
+                devices.emplace_back(std::move(device));
+                i++;
+            }
+        }
+    }
+
+    bg_video_device->source()->add_sink(stream10->sink());
+
+    input_audio_device->source()->add_sink(streams[0]->sink());
+    input_video_device->source()->add_sink(streams[0]->sink());
+
+
+    streams[0]->source()->add_sink(video_transcoder.get());
+    streams[0]->source()->add_sink(audio_transcoder.get());
+
+
+    audio_transcoder->set_sink(output_device->sink());
+    video_transcoder->set_sink(output_device->sink());
+
+    media_composer->start();
+
+    output_device->control(channel_control_t::open());
+    input_audio_device->control(channel_control_t::open());
+    input_video_device->control(channel_control_t::open());
+    bg_video_device->control(channel_control_t::open());
+
+    for (auto& d : devices)
+    {
+        d->control(channel_control_t::open());
+    }
+
+    while(input_video_device->state() != channel_state_t::connected);
+
+    std::size_t count = 1000;
+
+    auto sp = property_helper::create_object();
+
+    if (stream10->get_params(*sp))
+    {
+        property_writer writer(*sp);
+        writer.set("order", 1);
+        // stream10->set_params(*sp);
+    }
+
+    while(count-- > 0)
+    {
+        for (auto& s : streams)
+        {
+            if (s->stream_id() % 2 == 0)
+            {
+                continue;
+            }
+
+            auto stream_property = property_helper::create_object();
+            if (count % 10 == 0)
+            {
+                if (s->get_params(*stream_property))
+                {
+                    property_writer writer(*stream_property);
+                    writer.set("audio_enabled", false);
+                    writer.set("video_enabled", false);
+
+                    s->set_params(*stream_property);
+                }
+            }
+            else if (count % 5 == 0)
+            {
+                if (s->get_params(*stream_property))
+                {
+                    property_writer writer(*stream_property);
+                    writer.set("audio_enabled", true);
+                    writer.set("video_enabled", true);
+
+                    s->set_params(*stream_property);
+                }
+            }
+        }
+        core::utils::sleep(durations::seconds(1));
+    }
+
+    media_composer->stop();
+
+    input_audio_device->control(channel_control_t::close());
+    input_video_device->control(channel_control_t::close());
+    bg_video_device->control(channel_control_t::close());
+
+    for (auto& d : devices)
+    {
+        d->control(channel_control_t::close());
+    }
+
+    output_device->control(channel_control_t::close());
+
+
+
+    audio_transcoder->set_sink(nullptr);
+    video_transcoder->set_sink(nullptr);
+
+    return;
+}
+
+
+void test21()
+{
     {
         auto manager = task_manager_factory::get_instance().create_manager({});
 
@@ -1750,12 +2161,14 @@ void  tests()
     //test6();
     // test9();
     // test13();
+    test13_2(); // vnc
     // test16(); // smart_transcoder
     // test17();
     // test18();
     // test15();
-    test19(); // composer
-    // test20();
+    // test19(); // composer
+    // test20(); // composer2
+    // test21();
 }
 
 }

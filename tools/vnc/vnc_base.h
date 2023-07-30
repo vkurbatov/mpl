@@ -67,9 +67,9 @@ struct frame_t
 
 };
 
-typedef std::queue<frame_t> frame_queue_t;
+using frame_queue_t = std::queue<frame_t>;
 
-typedef std::function<bool(frame_t&& frame)> frame_handler_t;
+using frame_handler_t =  std::function<bool(frame_t&& frame)>;
 
 }
 

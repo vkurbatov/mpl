@@ -130,14 +130,14 @@ class libav_input_device : public i_device
         {
             property_reader reader(params);
             return reader.get("url", url)
-                    && reader.get("options", options);
+                    | reader.get("options", options);
         }
 
         bool save(i_property& params) const
         {
             property_writer writer(params);
             return writer.set("url", url)
-                    | writer.set("options", options);
+                    && writer.set("options", options);
         }
 
         bool is_valid() const

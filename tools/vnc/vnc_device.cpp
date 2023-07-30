@@ -122,7 +122,7 @@ static bool set_scale_setting(rfbClient& rfb_client)
 
 struct vnc_client_t
 {
-    rfbClient               *rfb_client;
+    rfbClient*              native_client;
     vnc_server_config_t     server_config;
     std::size_t             frame_counter;
     std::mutex              mutex;
@@ -132,7 +132,7 @@ struct vnc_client_t
     frame_t                 frame;
 
     vnc_client_t(const vnc_server_config_t& server_config)
-        : rfb_client(nullptr)
+        : native_client(nullptr)
         , server_config(server_config)
         , frame_counter(0)
         , is_init(false)
@@ -143,32 +143,31 @@ struct vnc_client_t
 
     ~vnc_client_t()
     {
-        if (rfb_client != nullptr)
+        if (native_client != nullptr)
         {
-            if (rfb_client->sock >= 0)
+            if (native_client->sock >= 0)
             {
-                ::close(rfb_client->sock);
+                ::close(native_client->sock);
             }
 
-            rfb_client->frameBuffer = nullptr;
-            rfb_client->serverHost = nullptr;
+            native_client->frameBuffer = nullptr;
+            native_client->serverHost = nullptr;
         }
 
-        rfbClientCleanup(rfb_client);
-        rfb_client = nullptr;
+        rfbClientCleanup(native_client);
+        native_client = nullptr;
     }
 
     bool init(const vnc_server_config_t& config)
     {
-        rfb_client = rfbGetClient(RFB_PIXEL_FORMAT_32);
+        native_client = rfbGetClient(RFB_PIXEL_FORMAT_32);
 
-        if (rfb_client != nullptr)
+        if (native_client != nullptr)
         {
-            rfb_client->MallocFrameBuffer = [](rfbClient* client) -> rfbBool
+            native_client->MallocFrameBuffer = [](rfbClient* client) -> rfbBool
             {
-                auto vnc_client = static_cast<vnc_client_t*>(rfbClientGetClientData(client
-                                                                                    , &owner_tag));
-                if (vnc_client != nullptr)
+                if (auto vnc_client = static_cast<vnc_client_t*>(rfbClientGetClientData(client
+                                                                                        , &owner_tag)))
                 {
                     std::lock_guard<std::mutex> lg(vnc_client->mutex);
 
@@ -189,27 +188,23 @@ struct vnc_client_t
                 return false;
             };
 
-            rfb_client->GotFrameBufferUpdate = [](rfbClient* client
+            native_client->GotFrameBufferUpdate = [](rfbClient* client
                                                   , int x
                                                   , int y
                                                   , int width
                                                   , int height)
             {
-                auto vnc_client = static_cast<vnc_client_t*>(rfbClientGetClientData(client
-                                                                                    , &owner_tag));
-
-                if (vnc_client != nullptr)
+                if (auto vnc_client = static_cast<vnc_client_t*>(rfbClientGetClientData(client
+                                                                                        , &owner_tag)))
                 {
                     vnc_client->frame_counter++;
                 }
             };
 
-            rfb_client->GetPassword = [](rfbClient* client) -> char*
+            native_client->GetPassword = [](rfbClient* client) -> char*
             {
-                auto vnc_client = static_cast<vnc_client_t*>(rfbClientGetClientData(client
-                                                                                    , &owner_tag));
-
-                if (vnc_client != nullptr)
+                if (auto vnc_client = static_cast<vnc_client_t*>(rfbClientGetClientData(client
+                                                                                        , &owner_tag)))
                 {
                     return strdup(vnc_client->server_config.password.c_str());
                 }
@@ -217,18 +212,18 @@ struct vnc_client_t
                 return nullptr;
             };
 
-            rfb_client->canHandleNewFBSize = true;
-            rfb_client->frameBuffer = nullptr;
-            rfb_client->programName = nullptr;
-            rfb_client->serverHost = const_cast<char*>(config.host.c_str());
-            rfb_client->serverPort = config.port;            
+            native_client->canHandleNewFBSize = true;
+            native_client->frameBuffer = nullptr;
+            native_client->programName = nullptr;
+            native_client->serverHost = const_cast<char*>(config.host.c_str());
+            native_client->serverPort = config.port;
 
-            rfbClientSetClientData(rfb_client
+            rfbClientSetClientData(native_client
                                    , &owner_tag
                                    , this);
 
-            return connect(*rfb_client)
-                    && set_scale_setting(*rfb_client);
+            return connect(*native_client)
+                    && set_scale_setting(*native_client);
 
         }
 
@@ -239,7 +234,7 @@ struct vnc_client_t
     {
         if (is_init)
         {
-            return SendKeyEvent(rfb_client
+            return SendKeyEvent(native_client
                                 , key_state.first
                                 , rfbBool(key_state.second));
         }
@@ -253,10 +248,10 @@ struct vnc_client_t
     {
         if (is_init)
         {
-            auto result = WaitForMessage(rfb_client, timeout * 1000);
+            auto result = WaitForMessage(native_client, timeout * 1000);
 
             if(result > 0
-                    && HandleRFBServerMessage(rfb_client))
+                    && HandleRFBServerMessage(native_client))
             {
                 std::lock_guard<std::mutex> lg(mutex);
                 frame = this->frame;
@@ -396,6 +391,7 @@ struct vnc_device_context_t
 
                 if (vnc_client->is_init)
                 {
+                    m_established.store(true, std::memory_order_release);
                     bool is_complete = false;
 
                     while (is_open()
@@ -444,6 +440,8 @@ struct vnc_device_context_t
                 }
             }
 
+            m_established.store(false, std::memory_order_release);
+
             if (is_open())
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -452,15 +450,15 @@ struct vnc_device_context_t
     }    
 };
 
-void vnc_device_context_deleter_t::operator()(vnc_device_context_t *vnc_device_context_ptr)
-{
-    delete vnc_device_context_ptr;
-}
-
 vnc_device::vnc_device(frame_handler_t frame_handler
                        , const vnc_config_t& config)
     : m_vnc_device_context(new vnc_device_context_t(frame_handler
                                                     , config))
+{
+
+}
+
+vnc_device::~vnc_device()
 {
 
 }

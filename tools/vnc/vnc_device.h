@@ -10,9 +10,7 @@ namespace vnc
 {
 
 struct vnc_device_context_t;
-struct vnc_device_context_deleter_t { void operator()(vnc_device_context_t* vnc_device_context_ptr); };
-
-typedef std::unique_ptr<vnc_device_context_t, vnc_device_context_deleter_t>  vnc_device_context_ptr_t;
+using vnc_device_context_ptr_t = std::unique_ptr<vnc_device_context_t>;
 
 class vnc_device
 {
@@ -21,6 +19,8 @@ public:
 
     vnc_device(frame_handler_t frame_handler = nullptr
             , const vnc_config_t& config = vnc_config_t());
+
+    ~vnc_device();
 
     bool open(const vnc_server_config_t& server_config);
     bool open(const std::string& uri);
