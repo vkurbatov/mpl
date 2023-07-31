@@ -947,7 +947,7 @@ void test13_2()
     auto vnc_input_video_params = property_helper::create_object();
     {
         property_writer writer(*vnc_input_video_params);
-        writer.set<std::string>("host", "192.168.0.101");
+        writer.set<std::string>("host", "192.168.0.103");
         writer.set<std::uint16_t>("port", 5900);
         writer.set<std::string>("password", "123123123");
         writer.set<std::uint32_t>("fps", 30);
@@ -1833,6 +1833,7 @@ void test20()
     ffmpeg::libav_register();
     libav_input_device_factory libav_input_factory;
     v4l2_device_factory v4l2_input_factory;
+    vnc_device_factory vnc_factory;
 
     libav_output_device_factory output_device_factory;
 
@@ -1848,11 +1849,11 @@ void test20()
         "/home/user/My/sportrecs/basket_streaming_video.mp4",
         "/home/user/My/sportrecs/fight.mp4",
         "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov",
-    ///    "/home/user/My/sportrecs/sample.mp4",
+       /* "/home/user/My/sportrecs/sample.mp4",
         "/home/user/My/sportrecs/basket_streaming_video.mp4",
         "/home/user/My/sportrecs/fight.mp4",
-        "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov",
-   ///     "/home/user/My/sportrecs/sample.mp4"
+        "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov",*/
+        "/home/user/My/sportrecs/sample.mp4"
 
     };
 
@@ -1875,6 +1876,15 @@ void test20()
     {
         property_writer writer(*bg_video_params);
         writer.set<std::string>("url", bg_url);
+    }
+
+    auto vnc_input_video_params = property_helper::create_object();
+    {
+        property_writer writer(*vnc_input_video_params);
+        writer.set<std::string>("host", "192.168.0.103");
+        writer.set<std::uint16_t>("port", 5900);
+        writer.set<std::string>("password", "123123123");
+        writer.set<std::uint32_t>("fps", 30);
     }
 
     mpl::media::smart_transcoder_factory smart_factory(mpl::media::libav_transcoder_factory::decoder_factory()
@@ -1909,7 +1919,7 @@ void test20()
 
     auto stream_params = property_helper::create_object();
 
-    std::size_t stream_count = input_urls.size() + 1;
+    std::size_t stream_count = input_urls.size() + 2;
 
     i_media_stream::s_array_t streams;
 
@@ -2013,11 +2023,12 @@ void test20()
     auto input_audio_device = libav_input_factory.create_device(*libav_input_audio_params);
     auto input_video_device = v4l2_input_factory.create_device(*v4l2_input_video_params);
     auto bg_video_device = libav_input_factory.create_device(*bg_video_params);
+    auto vnc_device = vnc_factory.create_device(*vnc_input_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
     std::vector<i_device::s_ptr_t> devices;
 
-    auto i = 1;
+    auto i = 2;
 
     for (const auto& url : input_urls)
     {
@@ -2037,6 +2048,8 @@ void test20()
 
     bg_video_device->source()->add_sink(stream10->sink());
 
+    vnc_device->source()->add_sink(streams[1]->sink());
+
     input_audio_device->source()->add_sink(streams[0]->sink());
     input_video_device->source()->add_sink(streams[0]->sink());
 
@@ -2053,6 +2066,7 @@ void test20()
     output_device->control(channel_control_t::open());
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
+    vnc_device->control(channel_control_t::open());
     bg_video_device->control(channel_control_t::open());
 
     for (auto& d : devices)
@@ -2073,6 +2087,10 @@ void test20()
         // stream10->set_params(*sp);
     }
 
+    core::utils::sleep(durations::seconds(120));
+
+
+    /*
     while(count-- > 0)
     {
         for (auto& s : streams)
@@ -2108,12 +2126,13 @@ void test20()
         }
         core::utils::sleep(durations::seconds(1));
     }
-
+*/
     media_composer->stop();
 
     input_audio_device->control(channel_control_t::close());
     input_video_device->control(channel_control_t::close());
     bg_video_device->control(channel_control_t::close());
+    vnc_device->control(channel_control_t::close());
 
     for (auto& d : devices)
     {
@@ -2121,8 +2140,6 @@ void test20()
     }
 
     output_device->control(channel_control_t::close());
-
-
 
     audio_transcoder->set_sink(nullptr);
     video_transcoder->set_sink(nullptr);
@@ -2161,13 +2178,13 @@ void  tests()
     //test6();
     // test9();
     // test13();
-    test13_2(); // vnc
+    // test13_2(); // vnc
     // test16(); // smart_transcoder
     // test17();
     // test18();
     // test15();
-    // test19(); // composer
-    // test20(); // composer2
+    //test19(); // composer
+    test20(); // composer2
     // test21();
 }
 

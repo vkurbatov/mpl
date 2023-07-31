@@ -730,7 +730,7 @@ public:
 
             message_frame_ref_impl message_frame(video_frame);
 
-            return m_router.send_message(message_frame);
+            m_router.send_message(message_frame);
 
         }
 
