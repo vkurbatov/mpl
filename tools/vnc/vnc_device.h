@@ -17,24 +17,22 @@ class vnc_device
     vnc_device_context_ptr_t      m_vnc_device_context;
 public:
 
-    vnc_device(frame_handler_t frame_handler = nullptr
-            , const vnc_config_t& config = vnc_config_t());
+    vnc_device(const vnc_config_t& config = vnc_config_t());
 
     ~vnc_device();
 
-    bool open(const vnc_server_config_t& server_config);
-    bool open(const std::string& uri);
+    bool open();
     bool close();
     bool is_opened() const;
-    bool is_established() const;
 
     const vnc_config_t& config() const;
     bool set_config(const vnc_config_t& config);
 
-    void send_key_event(std::uint32_t virtual_key
+    bool send_key_event(std::uint32_t virtual_key
                         , bool is_down);
 
-    frame_queue_t fetch_frame_queue();
+    io_result_t fetch_frame(frame_t& frame
+                            , std::uint32_t timeout = 0);
 
 };
 

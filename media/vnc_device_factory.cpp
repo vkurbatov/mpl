@@ -115,7 +115,7 @@ class vnc_device : public i_device
                     && fps > 0;
         }
 
-        vnc::vnc_server_config_t native_config()
+        vnc::vnc_config_t native_config()
         {
             return { host, password, port };
         }
@@ -131,6 +131,8 @@ class vnc_device : public i_device
     timestamp_t                 m_real_timestamp;
 
     timestamp_t                 m_start_time;
+
+    std::thread                 m_thread;
 
     channel_state_t             m_state;
     std::atomic_bool            m_running;
@@ -151,8 +153,7 @@ public:
 
     vnc_device(const device_params_t& device_params)
         : m_device_params(device_params)
-        , m_native_device([&](auto&& frame) { return on_native_frame(std::move(frame)); }
-                         , { m_device_params.fps })
+        , m_native_device(m_device_params.native_config())
         , m_frame_counter(0)
         , m_frame_timestamp(0)
         , m_real_timestamp(0)
@@ -183,17 +184,12 @@ public:
         if (!m_open)
         {
             m_open = true;
+            m_running.store(true, std::memory_order_release);
+
             change_state(channel_state_t::opening);
 
-            if (m_native_device.open(m_device_params.native_config()))
-            {
-                change_state(channel_state_t::open);
-                change_state(channel_state_t::connecting);
-                change_state(channel_state_t::connected);
-                return true;
-            }
-
-            change_state(channel_state_t::failed);
+            m_thread = std::thread([&]{ grabbing_thread(); });
+            return true;
         }
 
         return false;
@@ -204,9 +200,13 @@ public:
         if (m_open)
         {
             change_state(channel_state_t::closing);
+            m_running.store(false, std::memory_order_release);
             m_open = false;
 
-            m_native_device.close();
+            if (m_thread.joinable())
+            {
+                m_thread.join();
+            }
 
             change_state(channel_state_t::closed);
             return true;
@@ -243,8 +243,7 @@ public:
     {
         video_format_impl video_format(detail::format_form_bpp(frame.bpp)
                                        , frame.frame_size.width
-                                       , frame.frame_size.height
-                                       , frame.fps);
+                                       , frame.frame_size.height);
 
         if (video_format.format_id() != video_format_id_t::undefined
                 && !frame.frame_data.empty())
@@ -258,7 +257,7 @@ public:
                                                    , smart_buffer(std::move(frame.frame_data)));
 
             m_frame_counter++;
-            process_timesatamp(frame.fps);
+            process_timesatamp(m_device_params.fps);
 
             message_frame_ref_impl message_frame(video_frame);
 
@@ -268,17 +267,77 @@ public:
         return false;
     }
 
+    void grabbing_thread()
+    {
+        change_state(channel_state_t::open);
+
+        std::size_t error_counter = 0;
+
+        std::uint32_t frame_time = 1000 / m_device_params.fps;
+
+        while(is_running())
+        {
+            change_state(channel_state_t::connecting);
+            if (m_native_device.open())
+            {
+                change_state(channel_state_t::connected);
+
+                error_counter = 0;
+
+                while (is_running()
+                       && error_counter < 10)
+                {
+                    vnc::frame_t v4l2_frame;
+                    switch(m_native_device.fetch_frame(v4l2_frame
+                                                       , frame_time * 2))
+                    {
+                        case vnc::io_result_t::complete:
+                        {
+                            error_counter = 0;
+                            on_native_frame(std::move(v4l2_frame));
+                        }
+                        break;
+                        case vnc::io_result_t::timeout:
+                            error_counter++;
+                        break;
+                        case vnc::io_result_t::error:
+                        case vnc::io_result_t::not_ready:
+                            error_counter = 11;
+                        break;
+                    }
+
+                    if (is_running())
+                    {
+                        core::utils::sleep(durations::milliseconds(frame_time));
+                    }
+                }
+
+                change_state(channel_state_t::disconnecting);
+                m_native_device.close();
+                change_state(channel_state_t::disconnected);
+            }
+        }
+    }
+
+
+    bool is_running() const
+    {
+        return m_running.load(std::memory_order_acquire);
+    }
+
     bool set_params(const i_property& input_params)
     {
         bool result = false;
+
         auto device_params = m_device_params;
+
         if (device_params.load(input_params)
                 && device_params.is_valid())
         {
-            if (!m_native_device.is_opened())
+            if (!m_native_device.is_opened()
+                    && m_native_device.set_config(device_params.native_config()))
             {
                 m_device_params = device_params;
-                m_native_device.set_config({ device_params.fps });
                 result = true;
             }
         }
@@ -336,10 +395,12 @@ public:
 
         return false;
     }
+
     bool is_open() const override
     {
         return m_open;
     }
+
     channel_state_t state() const override
     {
         return m_state;

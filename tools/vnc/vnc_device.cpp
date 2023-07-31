@@ -122,23 +122,40 @@ static bool set_scale_setting(rfbClient& rfb_client)
 
 struct vnc_client_t
 {
+    using u_ptr_t = std::unique_ptr<vnc_client_t>;
+
     rfbClient*              native_client;
-    vnc_server_config_t     server_config;
+    vnc_config_t            config;
     std::size_t             frame_counter;
-    std::mutex              mutex;
 
     bool                    is_init;
 
     frame_t                 frame;
 
-    vnc_client_t(const vnc_server_config_t& server_config)
+    static u_ptr_t create(const vnc_config_t& config)
+    {
+        if (config.is_valid())
+        {
+            if (auto client = std::make_unique<vnc_client_t>(config))
+            {
+                if (client->is_init)
+                {
+                    return client;
+                }
+            }
+        }
+
+        return nullptr;
+    }
+
+    vnc_client_t(const vnc_config_t& config)
         : native_client(nullptr)
-        , server_config(server_config)
+        , config(config)
         , frame_counter(0)
         , is_init(false)
     {
         //rfbClientLog = rfbClientErr = rfb_logging;
-        is_init = init(this->server_config);
+        is_init = init(this->config);
     }
 
     ~vnc_client_t()
@@ -158,7 +175,7 @@ struct vnc_client_t
         native_client = nullptr;
     }
 
-    bool init(const vnc_server_config_t& config)
+    bool init(const vnc_config_t& config)
     {
         native_client = rfbGetClient(RFB_PIXEL_FORMAT_32);
 
@@ -169,8 +186,6 @@ struct vnc_client_t
                 if (auto vnc_client = static_cast<vnc_client_t*>(rfbClientGetClientData(client
                                                                                         , &owner_tag)))
                 {
-                    std::lock_guard<std::mutex> lg(vnc_client->mutex);
-
                     vnc_client->frame.frame_size.width = client->width;
                     vnc_client->frame.frame_size.height = client->height;
                     vnc_client->frame.bpp = client->format.bitsPerPixel;
@@ -206,7 +221,7 @@ struct vnc_client_t
                 if (auto vnc_client = static_cast<vnc_client_t*>(rfbClientGetClientData(client
                                                                                         , &owner_tag)))
                 {
-                    return strdup(vnc_client->server_config.password.c_str());
+                    return strdup(vnc_client->config.password.c_str());
                 }
 
                 return nullptr;
@@ -253,7 +268,6 @@ struct vnc_client_t
             if(result > 0
                     && HandleRFBServerMessage(native_client))
             {
-                std::lock_guard<std::mutex> lg(mutex);
                 frame = this->frame;
 
                 return io_result_t::complete;
@@ -270,29 +284,14 @@ struct vnc_client_t
 
 struct vnc_device_context_t
 {
-    frame_handler_t                 m_frame_handler;
     vnc_config_t                    m_config;
 
-    std::thread                     m_stream_thread;
-    mutable std::mutex              m_mutex;
+    vnc_client_t::u_ptr_t           m_client;
 
-    std::atomic_bool                m_running;
-    std::atomic_bool                m_established;
-
-    std::unique_ptr<vnc_client_t>   m_client;
     frame_queue_t                   m_frame_queue;
-    key_state_queue_t               m_key_state_queue;
-    bool                            m_key_send;
-    std::atomic_bool                m_open;
 
-    vnc_device_context_t(frame_handler_t frame_handler
-                         , const vnc_config_t& config)
-        : m_frame_handler(frame_handler)
-        , m_config(config)
-        , m_running(false)
-        , m_established(false)
-        , m_key_send(false)
-        , m_open(false)
+    vnc_device_context_t(const vnc_config_t& config)
+        : m_config(config)
     {
 
     }
@@ -302,32 +301,13 @@ struct vnc_device_context_t
         close();
     }
 
-    bool open(const vnc_server_config_t &server_config)
+    bool open()
     {
-        bool flag = false;
-        if (m_open.compare_exchange_strong(flag
-                                           , true))
+        if (!is_open())
         {
-            m_stream_thread = std::thread(&vnc_device_context_t::stream_proc
-                                          , this
-                                          , server_config);
-
-            return true;
-
-        }
-
-        return false;
-    }
-
-    bool close()
-    {
-        bool flag = true;
-        if (m_open.compare_exchange_strong(flag
-                                           , false))
-        {
-            if (m_stream_thread.joinable())
+            if (auto client = vnc_client_t::create(m_config))
             {
-                m_stream_thread.join();
+                m_client = std::move(client);
                 return true;
             }
         }
@@ -335,125 +315,60 @@ struct vnc_device_context_t
         return false;
     }
 
+    bool close()
+    {
+        if (is_open())
+        {
+            m_client.reset();
+            return true;
+        }
+
+        return false;
+    }
+
     bool is_open() const
     {
-        return m_open.load(std::memory_order_acquire);
+        return m_client != nullptr;
     }
 
-    bool is_established() const
+    bool set_config(const vnc_config_t& config)
     {
-        return is_open()
-                && m_established.load(std::memory_order_acquire);
-    }
-
-    void process_frame(frame_t&& frame)
-    {
-        if (m_frame_handler == nullptr
-                || m_frame_handler(std::move(frame)) == false)
+        if (config.is_valid()
+                && !is_open())
         {
-            std::lock_guard<std::mutex> lg(m_mutex);
-            m_frame_queue.emplace(std::move(frame));
-
-            while (m_frame_queue.size() > max_frame_queue_size)
-            {
-                m_frame_queue.pop();
-            }
+            m_config = config;
         }
+
+        return false;
     }
 
-    frame_queue_t fetch_frame_queue()
-    {
-        std::lock_guard<std::mutex> lg(m_mutex);
-        return std::move(m_frame_queue);
-    }
 
-    void send_key_event(uint32_t virtual_key
+    bool send_key_event(uint32_t virtual_key
                         , bool is_down)
     {
-        std::lock_guard<std::mutex> lg(m_mutex);
-        m_key_state_queue.emplace(virtual_key
-                                  , is_down);
-
-        if (m_key_state_queue.size() > max_key_state_queue_size)
+        if (auto client = m_client.get())
         {
-            m_key_state_queue.pop();
+            return client->send_key_state({virtual_key, is_down});
         }
 
-        m_key_send = true;
+        return false;
     }
 
-    void stream_proc(const vnc_server_config_t &server_config)
+    io_result_t fetch_frame(frame_t& frame
+                     , std::uint32_t timeout)
     {
-        while (is_open())
+        if (auto client = m_client.get())
         {
-            {
-                std::unique_ptr<vnc_client_t> vnc_client(new vnc_client_t(server_config));
-
-                if (vnc_client->is_init)
-                {
-                    m_established.store(true, std::memory_order_release);
-                    bool is_complete = false;
-
-                    while (is_open()
-                           && is_complete == false)
-                    {
-                        const auto frame_time = 1000 / m_config.fps;
-
-                        if (m_key_send)
-                        {
-                            std::lock_guard<std::mutex> lg(m_mutex);
-                            while (!m_key_state_queue.empty())
-                            {
-                                vnc_client->send_key_state(m_key_state_queue.front());
-                                m_key_state_queue.pop();
-                            }
-                            m_key_send = false;
-                        }
-
-                        frame_t frame;
-                        auto io_result = vnc_client->fetch_frame(frame
-                                                                 , frame_time * 2);
-
-                        frame.fps = m_config.fps;
-
-                        switch (io_result)
-                        {
-                            case io_result_t::complete:
-                            {
-                                process_frame(std::move(frame));
-                            }
-                            break;
-                            case io_result_t::timeout:
-                                // nothing
-                            break;
-                            default:
-                            {
-                                is_complete = true;
-                            }
-                        }
-
-                        if (is_complete == false)
-                        {
-                            std::this_thread::sleep_for(std::chrono::milliseconds(frame_time));
-                        }
-                    }
-                }
-            }
-
-            m_established.store(false, std::memory_order_release);
-
-            if (is_open())
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            }
+            return client->fetch_frame(frame
+                                      , timeout);
         }
-    }    
+
+        return io_result_t::not_ready;
+    }
 };
 
-vnc_device::vnc_device(frame_handler_t frame_handler
-                       , const vnc_config_t& config)
-    : m_vnc_device_context(new vnc_device_context_t(frame_handler
-                                                    , config))
+vnc_device::vnc_device(const vnc_config_t& config)
+    : m_vnc_device_context(new vnc_device_context_t(config))
 {
 
 }
@@ -463,15 +378,11 @@ vnc_device::~vnc_device()
 
 }
 
-bool vnc_device::open(const vnc_server_config_t &server_config)
+bool vnc_device::open()
 {
-    return m_vnc_device_context->open(server_config);
+    return m_vnc_device_context->open();
 }
 
-bool vnc_device::open(const std::string &uri)
-{
-    return m_vnc_device_context->open(vnc_server_config_t::from_uri(uri));
-}
 
 bool vnc_device::close()
 {
@@ -483,11 +394,6 @@ bool vnc_device::is_opened() const
     return m_vnc_device_context->is_open();
 }
 
-bool vnc_device::is_established() const
-{
-    return m_vnc_device_context->m_established;
-}
-
 const vnc_config_t &vnc_device::config() const
 {
     return m_vnc_device_context->m_config;
@@ -495,21 +401,21 @@ const vnc_config_t &vnc_device::config() const
 
 bool vnc_device::set_config(const vnc_config_t &config)
 {
-    m_vnc_device_context->m_config = config;
-    return true;
+    return m_vnc_device_context->set_config(config);
 }
 
-void vnc_device::send_key_event(uint32_t virtual_key
+bool vnc_device::send_key_event(uint32_t virtual_key
                                 , bool is_down)
 {
     return m_vnc_device_context->send_key_event(virtual_key
                                                 , is_down);
 }
 
-frame_queue_t vnc_device::fetch_frame_queue()
+io_result_t vnc_device::fetch_frame(frame_t &frame
+                                    , std::uint32_t timeout)
 {
-    return std::move(m_vnc_device_context->fetch_frame_queue());
+    return m_vnc_device_context->fetch_frame(frame
+                                             , timeout);
 }
-
 
 }

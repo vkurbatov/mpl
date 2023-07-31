@@ -972,7 +972,7 @@ void test13_2()
     video_format_impl video_format (video_format_id_t::h264
                                     , 1280
                                     , 720
-                                    , 15);
+                                    , 30);
 
 
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
@@ -2178,13 +2178,13 @@ void  tests()
     //test6();
     // test9();
     // test13();
-    // test13_2(); // vnc
+    test13_2(); // vnc
     // test16(); // smart_transcoder
     // test17();
     // test18();
     // test15();
     //test19(); // composer
-    test20(); // composer2
+    // test20(); // composer2
     // test21();
 }
 
