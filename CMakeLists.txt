@@ -21,7 +21,10 @@ pkg_search_module(AVDEVICE REQUIRED libavdevice)
 pkg_search_module(SWRESAMPLE REQUIRED libswresample)
 pkg_search_module(AVUTIL REQUIRED libavutil)
 pkg_search_module(SWSCALE REQUIRED libswscale)
+pkg_search_module(WEBRTC_AUDIO_PROCESSING REQUIRED webrtc-audio-processing >=0.3-1)
 pkg_search_module(V4L2 QUIET libv4l2>=0.8.8)
+
+add_definitions (${WEBRTC_AUDIO_PROCESSING_CFLAGS})
 
 set(OpenCV_STATIC ON)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs freetype)
@@ -41,11 +44,13 @@ include_directories(
     ${PROJECT_SOURCE_DIR}
     ${Boost_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ${WEBRTC_AUDIO_PROCESSING_INCLUDE_DIRS}
     )
     
 link_directories(
     ${Boost_LIBRARY_DIRS}
     ${OpenCV_LIBRARY_DIRS}
+    ${WEBRTC_AUDIO_PROCESSING_LIBRARY_DIRS}
     )
 
 set(SOURCES
@@ -74,8 +79,11 @@ target_link_libraries(${PROJECT_NAME}
     ocvwrp
     avwrp
     ipcwrp
+    wapwrp
     ptbase
     vncclient
+    ${WEBRTC_AUDIO_PROCESSING_LIBRARIES}
+    ${OpenCV_LIBRARIES}
     ${OpenCV_LIBRARIES}
     ${AVCODEC_LIBRARIES}
     ${SWRESAMPLE_LIBRARIES}
