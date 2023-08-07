@@ -3,11 +3,92 @@
 #include <webrtc/modules/audio_processing/include/audio_processing.h>
 #include <webrtc/modules/interface/module_common_types.h>
 
+#include <queue>
+
 namespace wap
 {
 
 namespace detail
 {
+
+using frame_queue_t = std::queue<sample_data_t>;
+
+class frame_splitter
+{
+    sample_data_t   m_current_frame;
+    frame_queue_t   m_frames;
+public:
+    frame_splitter(std::size_t fragment_size)
+    {
+        m_current_frame.reserve(fragment_size);
+    }
+
+    bool push_frame(const void* data
+                    , std::size_t size)
+    {
+        bool result = false;
+
+        const auto* ptr = static_cast<const std::uint8_t*>(data);
+
+        while(size > 0)
+        {
+            auto need_size = m_current_frame.capacity() - m_current_frame.size();
+            auto part_size = std::min(need_size, size);
+
+            if (part_size > 0)
+            {
+                m_current_frame.insert(m_current_frame.end()
+                                       , ptr
+                                       , ptr + part_size);
+
+                if (part_size == need_size)
+                {
+                    result |= true;
+                    m_frames.push(m_current_frame);
+                    m_current_frame.clear();
+                }
+            }
+        }
+
+
+        return result;
+    }
+
+    inline std::size_t fragment_size() const
+    {
+        return m_current_frame.capacity();
+    }
+
+    inline std::size_t pending_frames() const
+    {
+        return m_frames.size();
+    }
+
+    inline frame_queue_t fetch_frames()
+    {
+        return std::move(m_frames);
+    }
+
+    inline void reset()
+    {
+        m_current_frame.clear();
+        m_frames = {};
+    }
+
+    inline void reset(std::size_t fragment_size)
+    {
+        m_current_frame.clear();
+
+        if (m_current_frame.capacity() > fragment_size)
+        {
+            m_current_frame.shrink_to_fit();
+        }
+
+        m_current_frame.reserve(fragment_size);
+        m_frames = {};
+    }
+
+};
 
 void set_ap_params(webrtc::AudioProcessing& ap
                    , const processing_config_t& config)
@@ -128,12 +209,12 @@ struct wap_processor::pimpl_t
 
     static webrtc::StreamConfig create_native_stream_config(const sample_format_t& sample_format)
     {
-        return { sample_format.sample_rate, sample_format.channels };
+        return { static_cast<std::int32_t>(sample_format.sample_rate)
+                    , static_cast<std::int32_t>(sample_format.channels) };
     }
 
-    static webrtc::ProcessingConfig create_native_config(const sample_format_t& sample_format)
+    static webrtc::ProcessingConfig create_native_config(const webrtc::StreamConfig& stream_config)
     {
-        webrtc::StreamConfig stream_config = create_native_stream_config(sample_format);
         return { stream_config
                 , stream_config
                 , stream_config
@@ -141,8 +222,21 @@ struct wap_processor::pimpl_t
                };
     }
 
-    config_t            m_config;
-    native_ap_ptr_t     m_native_ap;
+    static webrtc::ProcessingConfig create_native_config(const sample_format_t& sample_format)
+    {
+        return create_native_config(create_native_stream_config(sample_format));
+    }
+
+    static constexpr std::size_t fragment_duration_ms = 10;
+
+    config_t                m_config;
+    webrtc::StreamConfig    m_native_stream_config;
+    native_ap_ptr_t         m_native_ap;
+
+    detail::frame_splitter  m_playback_splitter;
+    detail::frame_splitter  m_record_splitter;
+
+    sample_t                m_output_sample;
 
     static u_ptr_t create(const config_t& config)
     {
@@ -151,6 +245,10 @@ struct wap_processor::pimpl_t
 
     pimpl_t(const config_t& config)
         : m_config(config)
+        , m_native_stream_config(create_native_stream_config(m_config.format))
+        , m_playback_splitter(config.format.size_from_duration(fragment_duration_ms))
+        , m_record_splitter(config.format.size_from_duration(fragment_duration_ms))
+        , m_output_sample(config.format)
     {
 
     }
@@ -160,33 +258,97 @@ struct wap_processor::pimpl_t
 
     }
 
-    bool push_playback(const void* data
-                       , std::size_t samples)
-    {
-        return false;
-    }
-
-    bool push_record(const void* data
-                     , std::size_t samples)
-    {
-        return false;
-    }
-
-    bool pop_playback(sample_t& sample)
-    {
-        return false;
-    }
-
     bool init()
     {
         m_native_ap.reset(webrtc::AudioProcessing::Create());
         if (m_native_ap)
         {
-            auto result = m_native_ap->Initialize(create_native_config(m_config.format));
+            auto result = m_native_ap->Initialize(create_native_config(m_native_stream_config));
             if (result == webrtc::AudioProcessing::kNoError)
             {
-
+                detail::set_ap_params(*m_native_ap
+                                      , m_config.processing_config);
+                detail::get_ap_params(*m_native_ap
+                                      , m_config.processing_config);
+                return true;
             }
+        }
+
+        return false;
+    }
+
+    inline bool has_init() const
+    {
+        return m_native_ap != nullptr;
+    }
+
+    inline const config_t& config() const
+    {
+        return m_config;
+    }
+
+    bool push_playback(const void* data
+                       , std::size_t samples)
+    {
+        bool result = false;
+
+        if (m_playback_splitter.push_frame(data
+                                           , samples))
+        {
+            auto frames = m_playback_splitter.fetch_frames();
+            while(frames.empty())
+            {
+                auto* float_ptr = reinterpret_cast<float*>(frames.front().data());
+                auto webrtc_result = m_native_ap->ProcessReverseStream(&float_ptr
+                                                                      , m_native_stream_config
+                                                                      , m_native_stream_config
+                                                                      , &float_ptr);
+                frames.pop();
+
+                result |= webrtc_result == webrtc::AudioProcessing::kNoError;
+            }
+        }
+
+        return result;
+    }
+
+    bool push_record(const void* data
+                     , std::size_t samples)
+    {
+        bool result = false;
+
+        if (m_record_splitter.push_frame(data
+                                         , samples))
+        {
+            auto frames = m_record_splitter.fetch_frames();
+            while(frames.empty())
+            {
+                auto* float_ptr = reinterpret_cast<float*>(frames.front().data());
+                auto webrtc_result = m_native_ap->ProcessStream(&float_ptr
+                                                                , m_native_stream_config
+                                                                , m_native_stream_config
+                                                                , &float_ptr);
+
+                if (webrtc_result == webrtc::AudioProcessing::kNoError)
+                {
+                    m_output_sample.sample_data.insert(m_output_sample.sample_data.end()
+                                                       , frames.front().begin()
+                                                       , frames.front().end());
+                    result |= true;
+                }
+
+                frames.pop();
+            }
+        }
+
+        return result;
+    }
+
+    bool pop_result(sample_t& sample)
+    {
+        if (!m_output_sample.is_empty())
+        {
+            sample = std::move(m_output_sample);
         }
 
         return false;
@@ -194,12 +356,16 @@ struct wap_processor::pimpl_t
 
     void reset()
     {
-
+        m_playback_splitter.reset();
+        m_record_splitter.reset();
+        init();
     }
 };
 
-wap_processor::config_t::config_t(const sample_format_t &format)
+wap_processor::config_t::config_t(const sample_format_t &format
+                                  , const processing_config_t& processing_config)
     : format(format)
+    , processing_config(processing_config)
 {
 
 }
@@ -217,6 +383,11 @@ wap_processor::wap_processor(const config_t& config)
 
 }
 
+const wap_processor::config_t &wap_processor::config() const
+{
+    return m_pimpl->config();
+}
+
 bool wap_processor::push_playback(const void *data, std::size_t samples)
 {
     return m_pimpl->push_playback(data, samples);
@@ -227,9 +398,9 @@ bool wap_processor::push_record(const void *data, std::size_t samples)
     return m_pimpl->push_record(data, samples);
 }
 
-bool wap_processor::pop_playback(sample_t &sample)
+bool wap_processor::pop_result(sample_t &sample)
 {
-    return m_pimpl->pop_playback(sample);
+    return m_pimpl->pop_result(sample);
 }
 
 void wap_processor::reset()

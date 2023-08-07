@@ -12,9 +12,11 @@ class wap_processor
 public:
     struct config_t
     {
-        sample_format_t     format;
+        sample_format_t         format;
+        processing_config_t     processing_config;
 
-        config_t(const sample_format_t& format = {});
+        config_t(const sample_format_t& format = {}
+                , const processing_config_t& processing_config = {});
 
         bool is_valid() const;
     };
@@ -29,12 +31,14 @@ public:
     wap_processor(const config_t& config);
     ~wap_processor();
 
+    const config_t& config() const;
+
     bool push_playback(const void* data
                        , std::size_t samples);
     bool push_record(const void* data
                      , std::size_t samples);
 
-    bool pop_playback(sample_t& sample);
+    bool pop_result(sample_t& sample);
 
     void reset();
 };
