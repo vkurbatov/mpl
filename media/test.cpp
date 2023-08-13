@@ -15,6 +15,7 @@
 #include "video_format_impl.h"
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
+#include "message_frame_impl.h"
 #include "tools/base/any_base.h"
 
 #include "media_option_types.h"
@@ -58,11 +59,14 @@
 #include "ipc_input_device_factory.h"
 #include "ipc_output_device_factory.h"
 
+#include "tools/wap/wap_processor.h"
+
 #include "tools/ffmpeg/libav_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
 #include "tools/ffmpeg/libav_stream_publisher.h"
 #include "tools/ffmpeg/libav_input_format.h"
 #include "tools/base/url_base.h"
+
 
 #include <thread>
 #include <string>
@@ -2170,6 +2174,161 @@ void test21()
     return;
 }
 
+void test22()
+{
+    ffmpeg::libav_register();
+
+    wap::wap_processor::config_t wap_config;
+    wap_config.format.sample_rate = 32000;
+    wap_config.format.channels = 1;
+    wap_config.processing_config.ap_delay_offset_ms = 0;
+    wap_config.processing_config.ap_delay_stream_ms = 0;
+    wap_config.processing_config.aec_mode = wap::echo_cancellation_mode_t::high;
+    wap_config.processing_config.aec_drift = 3200;
+    wap_config.processing_config.gc_mode = wap::gain_control_mode_t::fixed_digital;
+    wap_config.processing_config.ns_mode = wap::noise_suppression_mode_t::higt;
+    wap_config.processing_config.vad_mode = wap::voice_detection_mode_t::high;
+
+    wap::wap_processor wap_processor(wap_config);
+
+    auto audio_input_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+                                                               , true
+                                                               , "pulse");
+    auto audio_output_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+                                                                , false
+                                                                , "pulse");
+
+    std::cout << "Audio input pulse devices: " << std::endl;
+    for (const auto& c : audio_input_list)
+    {
+        std::cout << c.name << std::endl;
+    }
+
+    std::cout << "Audio output pulse devices: " << std::endl;
+    for (const auto& c : audio_output_list)
+    {
+        std::cout << c.name << std::endl;
+    }
+
+
+    std::string input_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
+    std::string input_options = "buffer_size=480;sample_rate=32000;channels=1";
+
+    std::string output_url = "pulse://alsa_output.pci-0000_00_05.0.analog-stereo";
+    std::string output_options = "buffer_size=480";
+
+    auto libav_input_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_input_device_params);
+        writer.set<std::string>("url", input_url);
+        writer.set<std::string>("options", input_options);
+    }
+
+    auto libav_output_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        writer.set<std::string>("options", output_options);
+        audio_format_impl audio_format(audio_format_id_t::pcm16
+                                       , 32000
+                                       , 1);
+
+
+        i_property::array_t streams;
+        if (auto ap = property_helper::create_object())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
+
+        writer.set("streams", streams);
+    }
+
+    libav_input_device_factory input_device_factory;
+    libav_output_device_factory output_device_factory;
+
+
+
+    if (auto input_device = input_device_factory.create_device(*libav_input_device_params))
+    {
+        if (auto output_device = output_device_factory.create_device(*libav_output_device_params))
+        {
+
+            auto input_handle = [&](const i_message& message)
+            {
+                switch(message.category())
+                {
+                    case message_category_t::frame:
+                    {
+                        auto& message_frame = static_cast<const i_message_frame&>(message);
+                        if (message_frame.frame().media_type() == media_type_t::audio)
+                        {
+                            auto& audio_frame = static_cast<const i_audio_frame&>(message_frame.frame());
+                            wap::sample_t input_sample({ audio_frame.format().sample_rate()
+                                                        , audio_frame.format().channels() });
+
+                            if (auto buffer = audio_frame.buffers().get_buffer(main_media_buffer_index))
+                            {
+                                input_sample.append_pcm16(buffer->data(), buffer->size() / 2);
+                                wap_processor.push_playback(input_sample.sample_data.data(), input_sample.samples());
+                                wap_processor.push_record(input_sample.sample_data.data(), input_sample.samples());
+                                wap::sample_t output_sample;
+                                if (wap_processor.pop_result(output_sample))
+                                {
+                                    std::vector<std::uint8_t> output_pcm16(output_sample.samples() * 2);
+                                    if (output_sample.read_pcm16(output_pcm16.data()
+                                                                 , output_sample.samples()
+                                                                 )
+                                            )
+                                    {
+                                        audio_frame_impl output_frame(audio_frame.format()
+                                                                      , audio_frame.frame_id()
+                                                                      , audio_frame.timestamp());
+
+                                        output_frame.smart_buffers().set_buffer(main_media_buffer_index
+                                                                                , std::move(output_pcm16));
+
+                                        message_frame_ref_impl output_message_frame(output_frame);
+
+                                        return output_device->sink()->send_message(output_message_frame);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                    default:;
+                }
+
+                return false;
+            };
+
+            message_sink_impl input_sink(input_handle);
+
+            input_device->source()->add_sink(&input_sink);
+
+            if (output_device->control(channel_control_t::open()))
+            {
+
+                if (input_device->control(channel_control_t::open()))
+                {
+                    core::utils::sleep(durations::seconds(60));
+                    input_device->control(channel_control_t::close());
+                }
+
+                output_device->control(channel_control_t::close());
+            }
+
+            input_device->source()->remove_sink(output_device->sink());
+        }
+    }
+
+    return;
+}
+
 }
 
 void  tests()
@@ -2178,7 +2337,7 @@ void  tests()
     //test6();
     // test9();
     // test13();
-    test13_2(); // vnc
+    // test13_2(); // vnc
     // test16(); // smart_transcoder
     // test17();
     // test18();
@@ -2186,6 +2345,7 @@ void  tests()
     //test19(); // composer
     // test20(); // composer2
     // test21();
+    test22(); // audio-processing
 }
 
 }

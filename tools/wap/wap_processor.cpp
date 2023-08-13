@@ -48,6 +48,8 @@ public:
                     m_current_frame.clear();
                 }
             }
+
+            size -= part_size;
         }
 
 
@@ -207,6 +209,17 @@ struct wap_processor::pimpl_t
     using u_ptr_t = wap_processor::pimpl_ptr_t;
     using config_t = wap_processor::config_t;
 
+    static constexpr std::size_t fragment_duration_ms = 10;
+
+    config_t                m_config;
+    webrtc::StreamConfig    m_native_stream_config;
+    native_ap_ptr_t         m_native_ap;
+
+    detail::frame_splitter  m_playback_splitter;
+    detail::frame_splitter  m_record_splitter;
+
+    sample_t                m_output_sample;
+
     static webrtc::StreamConfig create_native_stream_config(const sample_format_t& sample_format)
     {
         return { static_cast<std::int32_t>(sample_format.sample_rate)
@@ -227,20 +240,9 @@ struct wap_processor::pimpl_t
         return create_native_config(create_native_stream_config(sample_format));
     }
 
-    static constexpr std::size_t fragment_duration_ms = 10;
-
-    config_t                m_config;
-    webrtc::StreamConfig    m_native_stream_config;
-    native_ap_ptr_t         m_native_ap;
-
-    detail::frame_splitter  m_playback_splitter;
-    detail::frame_splitter  m_record_splitter;
-
-    sample_t                m_output_sample;
-
     static u_ptr_t create(const config_t& config)
     {
-        return nullptr;
+        return std::make_unique<pimpl_t>(config);
     }
 
     pimpl_t(const config_t& config)
@@ -296,7 +298,7 @@ struct wap_processor::pimpl_t
                                            , samples))
         {
             auto frames = m_playback_splitter.fetch_frames();
-            while(frames.empty())
+            while(!frames.empty())
             {
                 auto* float_ptr = reinterpret_cast<float*>(frames.front().data());
                 auto webrtc_result = m_native_ap->ProcessReverseStream(&float_ptr
@@ -321,7 +323,7 @@ struct wap_processor::pimpl_t
                                          , samples))
         {
             auto frames = m_record_splitter.fetch_frames();
-            while(frames.empty())
+            while(!frames.empty())
             {
                 auto* float_ptr = reinterpret_cast<float*>(frames.front().data());
                 auto webrtc_result = m_native_ap->ProcessStream(&float_ptr
@@ -349,6 +351,7 @@ struct wap_processor::pimpl_t
         if (!m_output_sample.is_empty())
         {
             sample = std::move(m_output_sample);
+            return true;
         }
 
         return false;
@@ -379,6 +382,11 @@ bool wap_processor::config_t::is_valid() const
 
 wap_processor::wap_processor(const config_t& config)
     : m_pimpl(pimpl_t::create(config))
+{
+
+}
+
+wap_processor::~wap_processor()
 {
 
 }

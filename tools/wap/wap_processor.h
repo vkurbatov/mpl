@@ -23,7 +23,7 @@ public:
 
 private:
     struct pimpl_t;
-    using pimpl_ptr_t = std::unique_ptr<wap_processor>;
+    using pimpl_ptr_t = std::unique_ptr<pimpl_t>;
 
     pimpl_ptr_t     m_pimpl;
 
