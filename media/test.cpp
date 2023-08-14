@@ -2184,10 +2184,10 @@ void test22()
     wap_config.processing_config.ap_delay_offset_ms = 0;
     wap_config.processing_config.ap_delay_stream_ms = 0;
     wap_config.processing_config.aec_mode = wap::echo_cancellation_mode_t::high;
-    wap_config.processing_config.aec_drift = 3200;
-    wap_config.processing_config.gc_mode = wap::gain_control_mode_t::fixed_digital;
-    wap_config.processing_config.ns_mode = wap::noise_suppression_mode_t::higt;
-    wap_config.processing_config.vad_mode = wap::voice_detection_mode_t::high;
+    wap_config.processing_config.aec_drift = 320;
+    wap_config.processing_config.gc_mode = wap::gain_control_mode_t::none;
+    wap_config.processing_config.ns_mode = wap::noise_suppression_mode_t::none;
+    wap_config.processing_config.vad_mode = wap::voice_detection_mode_t::none;
 
     wap::wap_processor wap_processor(wap_config);
 
@@ -2251,6 +2251,11 @@ void test22()
     libav_output_device_factory output_device_factory;
 
 
+    timestamp_t timestamp = 0;
+    frame_id_t frame_id = 0;
+
+    std::size_t input_samples = 0;
+    std::size_t output_samples = 0;
 
     if (auto input_device = input_device_factory.create_device(*libav_input_device_params))
     {
@@ -2273,6 +2278,7 @@ void test22()
                             if (auto buffer = audio_frame.buffers().get_buffer(main_media_buffer_index))
                             {
                                 input_sample.append_pcm16(buffer->data(), buffer->size() / 2);
+                                input_samples += input_sample.samples();
                                 wap_processor.push_playback(input_sample.sample_data.data(), input_sample.samples());
                                 wap_processor.push_record(input_sample.sample_data.data(), input_sample.samples());
                                 wap::sample_t output_sample;
@@ -2284,9 +2290,17 @@ void test22()
                                                                  )
                                             )
                                     {
+                                        output_samples += output_sample.samples();
+                                        std::cout << "input samples: " << input_samples
+                                                  << ", output samples: " << output_samples
+                                                  << std::endl;
+
                                         audio_frame_impl output_frame(audio_frame.format()
-                                                                      , audio_frame.frame_id()
-                                                                      , audio_frame.timestamp());
+                                                                      , frame_id
+                                                                      , timestamp);
+
+                                        frame_id++;
+                                        timestamp += output_sample.samples();
 
                                         output_frame.smart_buffers().set_buffer(main_media_buffer_index
                                                                                 , std::move(output_pcm16));

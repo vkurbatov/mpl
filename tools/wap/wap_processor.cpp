@@ -4,6 +4,7 @@
 #include <webrtc/modules/interface/module_common_types.h>
 
 #include <queue>
+#include <iostream>
 
 namespace wap
 {
@@ -49,6 +50,7 @@ public:
                 }
             }
 
+            ptr += part_size;
             size -= part_size;
         }
 
@@ -252,7 +254,7 @@ struct wap_processor::pimpl_t
         , m_record_splitter(config.format.size_from_duration(fragment_duration_ms))
         , m_output_sample(config.format)
     {
-
+        init();
     }
 
     ~pimpl_t()
@@ -268,6 +270,7 @@ struct wap_processor::pimpl_t
             auto result = m_native_ap->Initialize(create_native_config(m_native_stream_config));
             if (result == webrtc::AudioProcessing::kNoError)
             {
+
                 detail::set_ap_params(*m_native_ap
                                       , m_config.processing_config);
                 detail::get_ap_params(*m_native_ap
@@ -279,7 +282,7 @@ struct wap_processor::pimpl_t
         return false;
     }
 
-    inline bool has_init() const
+    inline bool is_init() const
     {
         return m_native_ap != nullptr;
     }
@@ -294,20 +297,29 @@ struct wap_processor::pimpl_t
     {
         bool result = false;
 
-        if (m_playback_splitter.push_frame(data
-                                           , samples))
+        if (is_init())
         {
-            auto frames = m_playback_splitter.fetch_frames();
-            while(!frames.empty())
+            auto data_size = m_config.format.size_from_samples(samples);
+            if (m_playback_splitter.push_frame(data
+                                               , data_size))
             {
-                auto* float_ptr = reinterpret_cast<float*>(frames.front().data());
-                auto webrtc_result = m_native_ap->ProcessReverseStream(&float_ptr
-                                                                      , m_native_stream_config
-                                                                      , m_native_stream_config
-                                                                      , &float_ptr);
-                frames.pop();
+                auto frames = m_playback_splitter.fetch_frames();
+                while(!frames.empty())
+                {
+                    auto* float_ptr = reinterpret_cast<float*>(frames.front().data());
 
-                result |= webrtc_result == webrtc::AudioProcessing::kNoError;
+                    auto webrtc_result = m_native_ap->ProcessReverseStream(&float_ptr
+                                                                          , m_native_stream_config
+                                                                          , m_native_stream_config
+                                                                          , &float_ptr);
+
+                    std::cout << "Push playback: size: " << frames.front().size()
+                              << ", result: " << webrtc_result << std::endl;
+
+                    frames.pop();
+
+                    result |= webrtc_result == webrtc::AudioProcessing::kNoError;
+                }
             }
         }
 
@@ -319,28 +331,40 @@ struct wap_processor::pimpl_t
     {
         bool result = false;
 
-        if (m_record_splitter.push_frame(data
-                                         , samples))
+
+        if (is_init())
         {
-            auto frames = m_record_splitter.fetch_frames();
-            while(!frames.empty())
+
+            auto data_size = m_config.format.size_from_samples(samples);
+            if (m_record_splitter.push_frame(data
+                                             , data_size))
             {
-                auto* float_ptr = reinterpret_cast<float*>(frames.front().data());
-                auto webrtc_result = m_native_ap->ProcessStream(&float_ptr
-                                                                , m_native_stream_config
-                                                                , m_native_stream_config
-                                                                , &float_ptr);
-
-                if (webrtc_result == webrtc::AudioProcessing::kNoError)
+                auto frames = m_record_splitter.fetch_frames();
+                while(!frames.empty())
                 {
-                    m_output_sample.sample_data.insert(m_output_sample.sample_data.end()
-                                                       , frames.front().begin()
-                                                       , frames.front().end());
-                    result |= true;
-                }
+                    auto delay = m_native_ap->stream_delay_ms();
+                    m_native_ap->set_stream_delay_ms(delay);
+                    auto* float_ptr = reinterpret_cast<float*>(frames.front().data());
+                    auto webrtc_result = m_native_ap->ProcessStream(&float_ptr
+                                                                    , m_native_stream_config
+                                                                    , m_native_stream_config
+                                                                    , &float_ptr);
 
-                frames.pop();
+                    std::cout << "Push record: size: " << frames.front().size()
+                              << ", result: " << webrtc_result << std::endl;
+
+                    if (webrtc_result == webrtc::AudioProcessing::kNoError)
+                    {
+                        m_output_sample.sample_data.insert(m_output_sample.sample_data.end()
+                                                           , frames.front().begin()
+                                                           , frames.front().end());
+                        result |= true;
+                    }
+
+                    frames.pop();
+                }
             }
+
         }
 
         return result;
@@ -411,9 +435,15 @@ bool wap_processor::pop_result(sample_t &sample)
     return m_pimpl->pop_result(sample);
 }
 
+bool wap_processor::is_init() const
+{
+    return m_pimpl->is_init();
+}
+
 void wap_processor::reset()
 {
     return m_pimpl->reset();
 }
+
 
 }

@@ -40,6 +40,8 @@ public:
 
     bool pop_result(sample_t& sample);
 
+    bool is_init() const;
+
     void reset();
 };
 
