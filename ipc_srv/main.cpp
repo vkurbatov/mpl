@@ -130,10 +130,10 @@ int main()
 
     if (auto ipc_output_device = ipc_output_device_factory.create_device(*ipc_params))
     {
-        mpl::message_sink_safe_impl sink(ipc_output_device->sink());
+        mpl::message_sink_safe_impl sink(ipc_output_device->sink(0));
 
-        audio_device->source()->add_sink(audio_transcoder.get());
-        video_device->source()->add_sink(video_transcoder.get());
+        audio_device->source(0)->add_sink(audio_transcoder.get());
+        video_device->source(0)->add_sink(video_transcoder.get());
 
         audio_transcoder->set_sink(&sink);
         video_transcoder->set_sink(&sink);

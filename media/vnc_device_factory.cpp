@@ -53,7 +53,7 @@ class vnc_device : public i_device
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
 
-     using u_ptr_t = std::unique_ptr<vnc_device>;
+    using u_ptr_t = std::unique_ptr<vnc_device>;
 
     struct device_params_t
     {
@@ -101,10 +101,10 @@ class vnc_device : public i_device
         {
             property_writer writer(params);
             return writer.set("device_type", device_type_t::vnc)
-                    | writer.set("host", host)
-                    | writer.set("port", port)
-                    | writer.set("password", password)
-                    | writer.set("fps", fps);
+                    && writer.set("host", host)
+                    && writer.set("port", port)
+                    && writer.set("password", password)
+                    && writer.set("fps", fps);
         }
 
         bool is_valid() const
@@ -145,14 +145,14 @@ public:
         device_params_t vnc_params(params);
         if (vnc_params.is_valid())
         {
-            return std::make_unique<vnc_device>(vnc_params);
+            return std::make_unique<vnc_device>(std::move(vnc_params));
         }
 
         return nullptr;
     }
 
-    vnc_device(const device_params_t& device_params)
-        : m_device_params(device_params)
+    vnc_device(device_params_t&& device_params)
+        : m_device_params(std::move(device_params))
         , m_native_device(m_device_params.native_config())
         , m_frame_counter(0)
         , m_frame_timestamp(0)
@@ -408,14 +408,19 @@ public:
 
     // i_message_channel interface
 public:
-    i_message_sink *sink() override
+    i_message_sink *sink(std::size_t index) override
     {
         return nullptr;
     }
 
-    i_message_source *source() override
+    i_message_source *source(std::size_t index) override
     {
-        return &m_router;
+        if (index == 0)
+        {
+            return &m_router;
+        }
+
+        return nullptr;
     }
 
     // i_device interface

@@ -32,6 +32,7 @@ public:
     ~wap_processor();
 
     const config_t& config() const;
+    bool set_config(const config_t& config);
 
     bool push_playback(const void* data
                        , std::size_t samples);
@@ -40,9 +41,12 @@ public:
 
     bool pop_result(sample_t& sample);
 
-    bool is_init() const;
+    std::size_t get_stream_delay_ms() const;
 
-    void reset();
+    bool open();
+    bool close();
+
+    bool is_open() const;
 };
 
 }

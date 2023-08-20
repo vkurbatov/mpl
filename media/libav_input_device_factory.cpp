@@ -409,14 +409,19 @@ public:
 
     // i_device interface
 public:
-    i_message_sink *sink() override
+    i_message_sink *sink(std::size_t index) override
     {
         return nullptr;
     }
 
-    i_message_source *source() override
+    i_message_source *source(std::size_t index) override
     {
-        return &m_router;
+        if (index == 0)
+        {
+            return &m_router;
+        }
+
+        return 0;
     }
     device_type_t device_type() const override
     {

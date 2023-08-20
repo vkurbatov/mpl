@@ -21,8 +21,8 @@ public:
 
     virtual stream_id_t stream_id() const = 0;
 
-    virtual i_message_sink* sink() = 0;
-    virtual i_message_source* source() = 0;
+    virtual i_message_sink* sink(std::size_t index) = 0;
+    virtual i_message_source* source(std::size_t index) = 0;
 
 
 };

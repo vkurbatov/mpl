@@ -110,7 +110,7 @@ int main()
         if (auto ipc_input_device = ipc_input_device_factory.create_device(*ipc_params))
         {
 
-            ipc_input_device->source()->add_sink(output_device->sink());
+            ipc_input_device->source(0)->add_sink(output_device->sink(0));
 
             output_device->control(mpl::channel_control_t::open());
             ipc_input_device->control(mpl::channel_control_t::open());

@@ -286,7 +286,7 @@ void test5()
         };
 
         message_sink_impl sink(handler);
-        device->source()->add_sink(&sink);
+        device->source(0)->add_sink(&sink);
 
         if (device->control(channel_control_t::open()))
         {
@@ -295,7 +295,7 @@ void test5()
             device->control(channel_control_t::close());
         }
 
-        device->source()->remove_sink(&sink);
+        device->source(0)->remove_sink(&sink);
 
     }
 
@@ -488,8 +488,8 @@ void test8()
         audio_transcoder->set_sink(&sink);
         video_transcoder->set_sink(&sink);
 
-        device->source()->add_sink(audio_transcoder.get());
-        device->source()->add_sink(video_transcoder.get());
+        device->source(0)->add_sink(audio_transcoder.get());
+        device->source(0)->add_sink(video_transcoder.get());
 
         if (device->control(channel_control_t::open()))
         {
@@ -498,8 +498,8 @@ void test8()
             device->control(channel_control_t::close());
         }
 
-        device->source()->remove_sink(audio_transcoder.get());
-        device->source()->remove_sink(video_transcoder.get());
+        device->source(0)->remove_sink(audio_transcoder.get());
+        device->source(0)->remove_sink(video_transcoder.get());
     }
 
     return;
@@ -563,7 +563,7 @@ void test9()
     {
         if (auto output_device = output_device_factory.create_device(*libav_output_device_params))
         {
-            input_device->source()->add_sink(output_device->sink());
+            input_device->source(0)->add_sink(output_device->sink(0));
 
             if (output_device->control(channel_control_t::open()))
             {
@@ -577,7 +577,7 @@ void test9()
                 output_device->control(channel_control_t::close());
             }
 
-            input_device->source()->remove_sink(output_device->sink());
+            input_device->source(0)->remove_sink(output_device->sink(0));
         }
     }
 
@@ -814,11 +814,11 @@ void test12()
 
         message_sink_impl sink(handler);
 
-        input_device->source()->add_sink(&sink);
+        input_device->source(0)->add_sink(&sink);
         input_device->control(channel_control_t::open());
         core::utils::sleep(durations::seconds(60));
         input_device->control(channel_control_t::close());
-        input_device->source()->remove_sink(&sink);
+        input_device->source(0)->remove_sink(&sink);
 
     }
 
@@ -907,11 +907,11 @@ void test13()
     auto input_video_device = input_video_factory.create_device(*v4l2_input_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
-    input_audio_device->source()->add_sink(audio_transcoder.get());
-    input_video_device->source()->add_sink(video_transcoder.get());
+    input_audio_device->source(0)->add_sink(audio_transcoder.get());
+    input_video_device->source(0)->add_sink(video_transcoder.get());
 
-    audio_transcoder->set_sink(output_device->sink());
-    video_transcoder->set_sink(output_device->sink());
+    audio_transcoder->set_sink(output_device->sink(0));
+    video_transcoder->set_sink(output_device->sink(0));
 
     output_device->control(channel_control_t::open());
     input_audio_device->control(channel_control_t::open());
@@ -1014,11 +1014,11 @@ void test13_2()
     auto input_video_device = input_video_factory.create_device(*vnc_input_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
-    input_audio_device->source()->add_sink(audio_transcoder.get());
-    input_video_device->source()->add_sink(video_transcoder.get());
+    input_audio_device->source(0)->add_sink(audio_transcoder.get());
+    input_video_device->source(0)->add_sink(video_transcoder.get());
 
-    audio_transcoder->set_sink(output_device->sink());
-    video_transcoder->set_sink(output_device->sink());
+    audio_transcoder->set_sink(output_device->sink(0));
+    video_transcoder->set_sink(output_device->sink(0));
 
     output_device->control(channel_control_t::open());
     input_audio_device->control(channel_control_t::open());
@@ -1138,7 +1138,7 @@ void test15()
     {
         if (auto output_device = output_device_factory.create_device(*libav_output_device_params))
         {
-            input_device->source()->add_sink(output_device->sink());
+            input_device->source(0)->add_sink(output_device->sink(0));
 
             if (output_device->control(channel_control_t::open()))
             {
@@ -1152,7 +1152,7 @@ void test15()
                 output_device->control(channel_control_t::close());
             }
 
-            input_device->source()->remove_sink(output_device->sink());
+            input_device->source(0)->remove_sink(output_device->sink(0));
         }
     }
 
@@ -1251,11 +1251,11 @@ void test16()
     auto input_video_device = input_video_factory.create_device(*v4l2_input_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
-    input_audio_device->source()->add_sink(audio_transcoder.get());
-    input_video_device->source()->add_sink(video_transcoder.get());
+    input_audio_device->source(0)->add_sink(audio_transcoder.get());
+    input_video_device->source(0)->add_sink(video_transcoder.get());
 
-    audio_transcoder->set_sink(output_device->sink());
-    video_transcoder->set_sink(output_device->sink());
+    audio_transcoder->set_sink(output_device->sink(0));
+    video_transcoder->set_sink(output_device->sink(0));
 
     output_device->control(channel_control_t::open());
     input_audio_device->control(channel_control_t::open());
@@ -1501,7 +1501,7 @@ void test18()
             if (out_device != nullptr
                     && in_device != nullptr)
             {
-                in_device->source()->add_sink(&input_sink_impl);
+                in_device->source(0)->add_sink(&input_sink_impl);
 
                 if (out_device->control(channel_control_t::open()))
                 {
@@ -1530,7 +1530,7 @@ void test18()
 
                             message_frame_ref_impl message_frame(video_frame);
 
-                            out_device->sink()->send_message(message_frame);
+                            out_device->sink(0)->send_message(message_frame);
 
                             std::this_thread::sleep_for(std::chrono::milliseconds(200));
                         }
@@ -1737,32 +1737,32 @@ void test19()
     auto bg_video_device = libav_input_factory.create_device(*bg_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
-    input_video_device->source()->add_sink(v4l2_transcoder.get());
+    input_video_device->source(0)->add_sink(v4l2_transcoder.get());
 
     message_router_impl compose_router;
 
     for (auto s : streams)
     {
-        compose_router.add_sink(s->sink());
+        compose_router.add_sink(s->sink(0));
     }
 
-    bg_video_device->source()->add_sink(stream10->sink());
+    bg_video_device->source(0)->add_sink(stream10->sink(0));
 
-    input_audio_device->source()->add_sink(&compose_router);
+    input_audio_device->source(0)->add_sink(&compose_router);
     v4l2_transcoder->set_sink(&compose_router);
 
     //media_composer->source()->add_sink(video_transcoder.get());
 
 
-    streams[0]->source()->add_sink(video_transcoder.get());
-    streams[0]->source()->add_sink(audio_transcoder.get());
+    streams[0]->source(0)->add_sink(video_transcoder.get());
+    streams[0]->source(0)->add_sink(audio_transcoder.get());
 
     media_composer->start();
 
     // input_video_device->source()->add_sink(video_transcoder.get());
 
-    audio_transcoder->set_sink(output_device->sink());
-    video_transcoder->set_sink(output_device->sink());
+    audio_transcoder->set_sink(output_device->sink(0));
+    video_transcoder->set_sink(output_device->sink(0));
 
     output_device->control(channel_control_t::open());
     input_audio_device->control(channel_control_t::open());
@@ -2043,27 +2043,27 @@ void test20()
 
             if (auto device = libav_input_factory.create_device(*device_params))
             {
-                device->source()->add_sink(streams[i]->sink());
+                device->source(0)->add_sink(streams[i]->sink(0));
                 devices.emplace_back(std::move(device));
                 i++;
             }
         }
     }
 
-    bg_video_device->source()->add_sink(stream10->sink());
+    bg_video_device->source(0)->add_sink(stream10->sink(0));
 
-    vnc_device->source()->add_sink(streams[1]->sink());
+    vnc_device->source(0)->add_sink(streams[1]->sink(0));
 
-    input_audio_device->source()->add_sink(streams[0]->sink());
-    input_video_device->source()->add_sink(streams[0]->sink());
-
-
-    streams[0]->source()->add_sink(video_transcoder.get());
-    streams[0]->source()->add_sink(audio_transcoder.get());
+    input_audio_device->source(0)->add_sink(streams[0]->sink(0));
+    input_video_device->source(0)->add_sink(streams[0]->sink(0));
 
 
-    audio_transcoder->set_sink(output_device->sink());
-    video_transcoder->set_sink(output_device->sink());
+    streams[0]->source(0)->add_sink(video_transcoder.get());
+    streams[0]->source(0)->add_sink(audio_transcoder.get());
+
+
+    audio_transcoder->set_sink(output_device->sink(0));
+    video_transcoder->set_sink(output_device->sink(0));
 
     media_composer->start();
 
@@ -2182,9 +2182,10 @@ void test22()
     wap_config.format.sample_rate = 32000;
     wap_config.format.channels = 1;
     wap_config.processing_config.ap_delay_offset_ms = 0;
-    wap_config.processing_config.ap_delay_stream_ms = 0;
-    wap_config.processing_config.aec_mode = wap::echo_cancellation_mode_t::high;
-    wap_config.processing_config.aec_drift = 320;
+    wap_config.processing_config.ap_delay_stream_ms = 200;
+    wap_config.processing_config.aec_auto_delay_gain = 0.0;
+    wap_config.processing_config.aec_mode = wap::echo_cancellation_mode_t::moderation;
+    wap_config.processing_config.aec_drift_ms = 0;
     wap_config.processing_config.gc_mode = wap::gain_control_mode_t::none;
     wap_config.processing_config.ns_mode = wap::noise_suppression_mode_t::none;
     wap_config.processing_config.vad_mode = wap::voice_detection_mode_t::none;
@@ -2257,6 +2258,7 @@ void test22()
     std::size_t input_samples = 0;
     std::size_t output_samples = 0;
 
+
     if (auto input_device = input_device_factory.create_device(*libav_input_device_params))
     {
         if (auto output_device = output_device_factory.create_device(*libav_output_device_params))
@@ -2307,7 +2309,7 @@ void test22()
 
                                         message_frame_ref_impl output_message_frame(output_frame);
 
-                                        return output_device->sink()->send_message(output_message_frame);
+                                        return output_device->sink(0)->send_message(output_message_frame);
                                     }
                                 }
                             }
@@ -2322,21 +2324,21 @@ void test22()
 
             message_sink_impl input_sink(input_handle);
 
-            input_device->source()->add_sink(&input_sink);
+            input_device->source(0)->add_sink(&input_sink);
 
             if (output_device->control(channel_control_t::open()))
             {
 
                 if (input_device->control(channel_control_t::open()))
                 {
-                    core::utils::sleep(durations::seconds(60));
+                    core::utils::sleep(durations::seconds(600));
                     input_device->control(channel_control_t::close());
                 }
 
                 output_device->control(channel_control_t::close());
             }
 
-            input_device->source()->remove_sink(output_device->sink());
+            input_device->source(0)->remove_sink(output_device->sink(0));
         }
     }
 

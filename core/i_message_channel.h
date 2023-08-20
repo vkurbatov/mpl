@@ -15,8 +15,8 @@ public:
     using u_ptr_t = std::unique_ptr<i_message_channel>;
     using s_ptr_t = std::shared_ptr<i_message_channel>;
 
-    virtual i_message_sink* sink() = 0;
-    virtual i_message_source* source() = 0;
+    virtual i_message_sink* sink(std::size_t index) = 0;
+    virtual i_message_source* source(std::size_t index) = 0;
 };
 
 }
