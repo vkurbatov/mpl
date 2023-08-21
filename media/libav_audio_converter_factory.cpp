@@ -99,7 +99,7 @@ public:
         if (m_output_sink != nullptr
                 && check_or_update_format(audio_frame.format()))
         {
-            if (auto buffer = audio_frame.buffers().get_buffer(main_media_buffer_index))
+            if (auto buffer = audio_frame.buffers().get_buffer(media_buffer_index))
             {
                 auto output_samples = m_native_resampler.resample(m_input_audio_info
                                                                   , buffer->data()
@@ -112,7 +112,7 @@ public:
                                                            , audio_frame.frame_id()
                                                            , audio_frame.timestamp());
 
-                    converted_audio_frame.smart_buffers().set_buffer(main_media_buffer_index
+                    converted_audio_frame.smart_buffers().set_buffer(media_buffer_index
                                                                     , smart_buffer(std::move(output_samples)));
 
                     return m_output_sink->send_message(message_frame_ref_impl(converted_audio_frame));

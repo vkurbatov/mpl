@@ -56,7 +56,7 @@ image_frame_t create_image(const i_video_frame& frame)
 {
     image_frame_t image(frame.format());
 
-    if (const auto buffer = frame.buffers().get_buffer(main_media_buffer_index))
+    if (const auto buffer = frame.buffers().get_buffer(media_buffer_index))
     {
         image.image_data.assign(buffer->data()
                                 , buffer->size()
@@ -70,7 +70,7 @@ audio_sample_t create_sample(const i_audio_frame& frame)
 {
     audio_sample_t sample(frame.format());
 
-    if (const auto buffer = frame.buffers().get_buffer(main_media_buffer_index))
+    if (const auto buffer = frame.buffers().get_buffer(media_buffer_index))
     {
         sample.sample_data.assign(buffer->data()
                                  , buffer->size()
@@ -267,7 +267,7 @@ class media_composer : public i_media_composer
             {
                 if (auto sample = m_compose_stream->compose_sample())
                 {
-                    m_audio_frame.smart_buffers().set_buffer(main_media_buffer_index
+                    m_audio_frame.smart_buffers().set_buffer(media_buffer_index
                                                              , smart_buffer(&sample->sample_data));
 
                     m_audio_frame.set_timestamp(m_timestamp);
@@ -429,7 +429,7 @@ class media_composer : public i_media_composer
                 if (auto compose_image = m_compose_stream->compose_image())
                 {
 
-                    m_video_frame.smart_buffers().set_buffer(main_media_buffer_index
+                    m_video_frame.smart_buffers().set_buffer(media_buffer_index
                                                              , smart_buffer(&compose_image->image_data));
 
                     m_timestamp = m_timestamp_calculator.calc_timestamp(frame_time());

@@ -1466,7 +1466,7 @@ void test18()
                     case message_category_t::frame:
                     {
                         const auto& frame = static_cast<const i_message_frame&>(message).frame();
-                        auto buffer = frame.buffers().get_buffer(main_media_buffer_index);
+                        auto buffer = frame.buffers().get_buffer(media_buffer_index);
 
                         std::cout << "frame #" << frame.frame_id()
                                   << ", timestamp: " << frame.timestamp()
@@ -1525,7 +1525,7 @@ void test18()
 
 
 
-                            video_frame.smart_buffers().set_buffer(main_media_buffer_index
+                            video_frame.smart_buffers().set_buffer(media_buffer_index
                                                                    , smart_buffer(std::move(buffer)));
 
                             message_frame_ref_impl message_frame(video_frame);
@@ -2277,7 +2277,7 @@ void test22()
                             wap::sample_t input_sample({ audio_frame.format().sample_rate()
                                                         , audio_frame.format().channels() });
 
-                            if (auto buffer = audio_frame.buffers().get_buffer(main_media_buffer_index))
+                            if (auto buffer = audio_frame.buffers().get_buffer(media_buffer_index))
                             {
                                 input_sample.append_pcm16(buffer->data(), buffer->size() / 2);
                                 input_samples += input_sample.samples();
@@ -2304,7 +2304,7 @@ void test22()
                                         frame_id++;
                                         timestamp += output_sample.samples();
 
-                                        output_frame.smart_buffers().set_buffer(main_media_buffer_index
+                                        output_frame.smart_buffers().set_buffer(media_buffer_index
                                                                                 , std::move(output_pcm16));
 
                                         message_frame_ref_impl output_message_frame(output_frame);

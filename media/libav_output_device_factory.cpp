@@ -534,7 +534,7 @@ public:
         auto stream_id = m_device_params.get_stream_id(frame.format());
         if (stream_id != stream_id_undefined)
         {
-            if (auto buffer = frame.buffers().get_buffer(main_media_buffer_index))
+            if (auto buffer = frame.buffers().get_buffer(media_buffer_index))
             {
                 ffmpeg::frame_t libav_frame;
                 libav_frame.info.media_info.media_type = ffmpeg::media_type_t::audio;
@@ -560,7 +560,7 @@ public:
         auto stream_id = m_device_params.get_stream_id(frame.format());
         if (stream_id != stream_id_undefined)
         {
-            if (auto buffer = frame.buffers().get_buffer(main_media_buffer_index))
+            if (auto buffer = frame.buffers().get_buffer(media_buffer_index))
             {
                 ffmpeg::frame_t libav_frame;
                 libav_frame.info.media_info.media_type = ffmpeg::media_type_t::video;

@@ -346,7 +346,7 @@ public:
             detail::set_key_frame(frame
                                   , libav_frame.info.key_frame);
 
-            frame.smart_buffers().set_buffer(main_media_buffer_index
+            frame.smart_buffers().set_buffer(media_buffer_index
                                              , smart_buffer(std::move(libav_frame.media_data)));
 
             // frame.set_options(input_frame.options());
@@ -361,7 +361,7 @@ public:
     {
         if (check_frame(media_frame))
         {
-            if (auto buffer = media_frame.buffers().get_buffer(main_media_buffer_index))
+            if (auto buffer = media_frame.buffers().get_buffer(media_buffer_index))
             {
                 ffmpeg::frame_queue_t frame_queue;
                 auto frame_time = media_frame.timestamp();

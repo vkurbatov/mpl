@@ -105,7 +105,7 @@ public:
     {
         if (check_or_update_format(video_frame.format()))
         {
-            if (auto buffer = video_frame.buffers().get_buffer(main_media_buffer_index))
+            if (auto buffer = video_frame.buffers().get_buffer(media_buffer_index))
             {
                 auto input_fragment_info = m_input_fragment_info;
 
@@ -123,7 +123,7 @@ public:
                                                            , video_frame.timestamp()
                                                            , video_frame.frame_type());
 
-                    converted_video_frame.smart_buffers().set_buffer(main_media_buffer_index
+                    converted_video_frame.smart_buffers().set_buffer(media_buffer_index
                                                                      , smart_buffer(m_output_buffer.data()
                                                                      , m_output_buffer.size()));
 

@@ -333,7 +333,7 @@ public:
                                                , stream.frame_id
                                                , stream.push_timestamp(libav_frame.info.timestamp()));
 
-                        frame.smart_buffers().set_buffer(main_media_buffer_index
+                        frame.smart_buffers().set_buffer(media_buffer_index
                                                          , smart_buffer(libav_frame.data
                                                                         , libav_frame.size));
 
@@ -363,7 +363,7 @@ public:
                                                , stream.push_timestamp(libav_frame.info.timestamp())
                                                , frame_type);
 
-                        frame.smart_buffers().set_buffer(main_media_buffer_index
+                        frame.smart_buffers().set_buffer(media_buffer_index
                                                          , smart_buffer(libav_frame.data
                                                                         , libav_frame.size));
 
