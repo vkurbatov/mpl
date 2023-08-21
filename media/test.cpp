@@ -42,6 +42,7 @@
 #include "media_composer_factory_impl.h"
 #include "layout_manager_mosaic_impl.h"
 #include "vnc_device_factory.h"
+#include "apm_device_factory.h"
 
 #include "video_frame_types.h"
 
@@ -2182,8 +2183,8 @@ void test22()
     wap_config.format.sample_rate = 32000;
     wap_config.format.channels = 1;
     wap_config.processing_config.ap_delay_offset_ms = 0;
-    wap_config.processing_config.ap_delay_stream_ms = 200;
-    wap_config.processing_config.aec_auto_delay_gain = 0.0;
+    wap_config.processing_config.ap_delay_stream_ms = 0;
+    wap_config.processing_config.aec_auto_delay_period = 10;
     wap_config.processing_config.aec_mode = wap::echo_cancellation_mode_t::moderation;
     wap_config.processing_config.aec_drift_ms = 0;
     wap_config.processing_config.gc_mode = wap::gain_control_mode_t::none;
@@ -2258,12 +2259,13 @@ void test22()
     std::size_t input_samples = 0;
     std::size_t output_samples = 0;
 
+    wap_processor.open();
+
 
     if (auto input_device = input_device_factory.create_device(*libav_input_device_params))
     {
         if (auto output_device = output_device_factory.create_device(*libav_output_device_params))
         {
-
             auto input_handle = [&](const i_message& message)
             {
                 switch(message.category())
@@ -2282,7 +2284,7 @@ void test22()
                                 input_sample.append_pcm16(buffer->data(), buffer->size() / 2);
                                 input_samples += input_sample.samples();
                                 wap_processor.push_playback(input_sample.sample_data.data(), input_sample.samples());
-                                wap_processor.push_record(input_sample.sample_data.data(), input_sample.samples());
+                                wap_processor.push_capture(input_sample.sample_data.data(), input_sample.samples());
                                 wap::sample_t output_sample;
                                 if (wap_processor.pop_result(output_sample))
                                 {
@@ -2345,6 +2347,147 @@ void test22()
     return;
 }
 
+void test23()
+{
+    ffmpeg::libav_register();
+
+
+    apm_device_factory apm_factory;
+    auto apm_params = property_helper::create_object();
+    if (apm_params)
+    {
+        property_writer writer(*apm_params);
+        writer.set("format.sample_rate", 32000);
+        writer.set("format.channels", 1);
+        writer.set("delay_offset_ms", 0);
+        writer.set("delay_stream_ms", 400);
+        writer.set("aec.mode", wap::echo_cancellation_mode_t::moderation);
+        writer.set("aec.drift_ms", 100);
+        writer.set("aec.auto_delay_frames", 10);
+        writer.set("gc.mode", wap::gain_control_mode_t::adaptive_analog);
+        writer.set("ns.mode", wap::noise_suppression_mode_t::none);
+        writer.set("vad.mode", wap::voice_detection_mode_t::none);
+
+    }
+
+    auto audio_input_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+                                                               , true
+                                                               , "pulse");
+    auto audio_output_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+                                                                , false
+                                                                , "pulse");
+
+    std::cout << "Audio input pulse devices: " << std::endl;
+    for (const auto& c : audio_input_list)
+    {
+        std::cout << c.name << std::endl;
+    }
+
+    std::cout << "Audio output pulse devices: " << std::endl;
+    for (const auto& c : audio_output_list)
+    {
+        std::cout << c.name << std::endl;
+    }
+
+
+    std::string input_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
+    std::string input_options = "buffer_size=480;sample_rate=32000;channels=1";
+
+    std::string output_url = "pulse://alsa_output.pci-0000_00_05.0.analog-stereo";
+    std::string output_options = "buffer_size=480";
+
+    auto libav_input_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_input_device_params);
+        writer.set<std::string>("url", input_url);
+        writer.set<std::string>("options", input_options);
+    }
+
+    auto libav_output_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        writer.set<std::string>("options", output_options);
+        audio_format_impl audio_format(audio_format_id_t::pcm16
+                                       , 32000
+                                       , 1);
+
+
+        i_property::array_t streams;
+        if (auto ap = property_helper::create_object())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
+
+        writer.set("streams", streams);
+    }
+
+    libav_input_device_factory input_device_factory;
+    libav_output_device_factory output_device_factory;
+
+
+    timestamp_t timestamp = 0;
+    frame_id_t frame_id = 0;
+
+    std::size_t input_samples = 0;
+    std::size_t output_samples = 0;
+
+
+    if (auto input_device = input_device_factory.create_device(*libav_input_device_params))
+    {
+        if (auto output_device = output_device_factory.create_device(*libav_output_device_params))
+        {
+            if (auto apm_device = apm_factory.create_device(*apm_params))
+            {
+                auto input_sink_handler = [&](const i_message& message)
+                {
+                    apm_device->sink(1)->send_message(message);
+                    apm_device->sink(0)->send_message(message);
+                    return true;
+                };
+
+                message_sink_impl input_sink(std::move(input_sink_handler));
+
+                input_device->source(0)->add_sink(&input_sink);
+
+                /*
+                input_device->source(0)->add_sink(apm_device->sink(0));
+                input_device->source(0)->add_sink(apm_device->sink(1));*/
+
+                apm_device->source(0)->add_sink(output_device->sink(0));
+
+                if (apm_device->control(channel_control_t::open()))
+                {
+                    if (output_device->control(channel_control_t::open()))
+                    {
+                        if (input_device->control(channel_control_t::open()))
+                        {
+                            core::utils::sleep(durations::seconds(600));
+
+                            input_device->control(channel_control_t::close());
+                            /*
+                            input_device->source(0)->remove_sink(apm_device->sink(0));
+                            input_device->source(0)->remove_sink(apm_device->sink(1));*/
+
+                            input_device->source(0)->remove_sink(&input_sink);
+                        }
+                        output_device->control(channel_control_t::close());
+                    }
+
+                    apm_device->source(0)->remove_sink(output_device->sink(0));
+                    apm_device->control(channel_control_t::close());
+                }
+            }
+        }
+    }
+
+    return;
+}
+
 }
 
 void  tests()
@@ -2361,7 +2504,9 @@ void  tests()
     //test19(); // composer
     // test20(); // composer2
     // test21();
-    test22(); // audio-processing
+    // test22(); // audio-processing
+    test23(); // audio-processing (apm_device_factory)
+
 }
 
 }

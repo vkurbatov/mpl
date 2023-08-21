@@ -55,6 +55,51 @@ struct delay_metrics_t
     }
 };
 
+class echo_detector
+{
+    std::size_t     m_total_samples;
+    std::size_t     m_echo_samples;
+
+public:
+    echo_detector()
+        : m_total_samples(0)
+        , m_echo_samples(0)
+    {
+
+    }
+
+    inline void reset()
+    {
+        m_total_samples = 0;
+        m_echo_samples = 0;
+    }
+
+    inline std::size_t total_samples() const
+    {
+        return m_total_samples;
+    }
+
+    inline void push_sample(bool has_echo)
+    {
+        m_total_samples++;
+        if (has_echo)
+        {
+            m_echo_samples++;
+        }
+    }
+
+    inline double echo_fractions() const
+    {
+        if (m_total_samples > 0)
+        {
+            return static_cast<double>(m_echo_samples) / static_cast<double>(m_total_samples);
+        }
+
+        return -1.0;
+    }
+
+};
+
 class frame_splitter
 {
     sample_data_t   m_current_frame;
@@ -177,7 +222,6 @@ void set_ap_params(webrtc::AudioProcessing& ap
         ap.echo_cancellation()->set_stream_drift_samples(config.format.samples_from_durations(config.processing_config.aec_drift_ms));
         ap.echo_cancellation()->enable_drift_compensation(config.processing_config.aec_drift_ms > 0);
         ap.echo_cancellation()->set_suppression_level(static_cast<webrtc::EchoCancellation::SuppressionLevel>(config.processing_config.aec_mode));
-        ap.echo_cancellation()->enable_delay_logging(config.processing_config.aec_auto_delay_gain > 0);
     }
 
     // gain control
@@ -278,17 +322,19 @@ struct wap_processor::pimpl_t
 
     static constexpr std::size_t fragment_duration_ms = 10;
 
-    config_t                m_config;
-    webrtc::StreamConfig    m_native_stream_config;
-    native_ap_ptr_t         m_native_ap;
-    detail::delay_metrics_t m_delay_metrics;
-    std::size_t             m_playback_frames;
-    std::size_t             m_record_frames;
+    config_t                    m_config;
+    webrtc::StreamConfig        m_native_stream_config;
+    native_ap_ptr_t             m_native_ap;
+    detail::echo_detector       m_echo_detector;
+    detail::delay_metrics_t     m_delay_metrics;
+    std::int32_t                m_delay_search_direction;
+    std::size_t                 m_playback_frames;
+    std::size_t                 m_record_frames;
 
-    detail::frame_splitter  m_playback_splitter;
-    detail::frame_splitter  m_record_splitter;
+    detail::frame_splitter      m_playback_splitter;
+    detail::frame_splitter      m_record_splitter;
 
-    sample_t                m_output_sample;
+    sample_t                    m_output_sample;
 
     static webrtc::StreamConfig create_native_stream_config(const sample_format_t& sample_format)
     {
@@ -318,12 +364,13 @@ struct wap_processor::pimpl_t
     pimpl_t(const config_t& config)
         : m_config(config)
         , m_native_stream_config(create_native_stream_config(m_config.format))
+        , m_delay_search_direction(m_config.processing_config.aec_auto_delay_period / 2)
         , m_playback_frames(0)
         , m_record_frames(0)
         , m_playback_splitter(config.format.size_from_samples(m_native_stream_config.num_frames())
                               , 0)
         , m_record_splitter(config.format.size_from_samples(m_native_stream_config.num_frames())
-                            , 20)
+                            , 30)
         , m_output_sample(config.format)
     {
 
@@ -385,6 +432,7 @@ struct wap_processor::pimpl_t
         if (config.is_valid())
         {
             m_config = config;
+            m_delay_search_direction = m_config.processing_config.aec_auto_delay_period / 2;
             return true;
         }
 
@@ -430,7 +478,7 @@ struct wap_processor::pimpl_t
         return result;
     }
 
-    bool push_record(const void* data
+    bool push_capture(const void* data
                      , std::size_t samples)
     {
         bool result = false;
@@ -444,33 +492,40 @@ struct wap_processor::pimpl_t
                 auto frames = m_record_splitter.fetch_frames();
                 while(!frames.empty())
                 {
-                    auto metrics = m_delay_metrics;
                     auto has_echo = m_native_ap->echo_cancellation()->stream_has_echo();
+
 
                     if (m_config.processing_config.aec_mode != echo_cancellation_mode_t::none)
                     {
+
                         auto delay = m_native_ap->stream_delay_ms();
 
-                        if (m_config.processing_config.aec_auto_delay_gain > 0)
+                        if (m_config.processing_config.aec_auto_delay_period > 0)
                         {
-                            if (m_record_frames != 0
-                                    && m_record_frames % 100 == 0)
+                            m_echo_detector.push_sample(has_echo);
+                            if (m_echo_detector.total_samples() >= m_config.processing_config.aec_auto_delay_period)
                             {
-                                if (m_native_ap->echo_cancellation()->GetDelayMetrics(&metrics.median_delay
-                                                                                      , &metrics.std_delay
-                                                                                      , &metrics.fraction_poor_delays) == 0)
-                                {
-                                    if (metrics.is_valid()
-                                            && m_delay_metrics != metrics)
-                                    {
+                                auto fractions = m_echo_detector.echo_fractions();
+                                m_echo_detector.reset();
 
-                                        delay += metrics.median_delay
-                                                * m_config.processing_config.aec_auto_delay_gain
-                                                * metrics.fraction_poor_delays;
-                                        m_delay_metrics = metrics;
-                                    }
+                                if (fractions >= 0
+                                        && fractions < 1.0)
+                                {
+                                    delay += (m_delay_search_direction) * (1 - fractions);
+                                }
+
+                                if (delay > 500)
+                                {
+                                    m_delay_search_direction *= -1;
+                                    delay = 500;
+                                }
+                                else if (delay < 0)
+                                {
+                                    m_delay_search_direction *= -1;
+                                    delay = 0;
                                 }
                             }
+
                         }
 
                         m_native_ap->set_stream_delay_ms(delay);
@@ -491,9 +546,6 @@ struct wap_processor::pimpl_t
                     std::cout << "Push record: size: " << frames.front().size()
                               << ", result: " << webrtc_result
                               << ", stream_delay: " << m_native_ap->stream_delay_ms()
-                              << ", median_delay: " << m_delay_metrics.median_delay
-                              << ", standart_delay: " << m_delay_metrics.std_delay
-                              << ", fraction_poor_delays: " << m_delay_metrics.fraction_poor_delays
                               << ", has_echo: " << has_echo
                               << std::endl;
 
@@ -542,6 +594,7 @@ struct wap_processor::pimpl_t
         m_record_splitter.reset();
         m_playback_frames = 0;
         m_record_frames = 0;
+        m_delay_metrics.reset();
     }
 };
 
@@ -586,9 +639,9 @@ bool wap_processor::push_playback(const void *data, std::size_t samples)
     return m_pimpl->push_playback(data, samples);
 }
 
-bool wap_processor::push_record(const void *data, std::size_t samples)
+bool wap_processor::push_capture(const void *data, std::size_t samples)
 {
-    return m_pimpl->push_record(data, samples);
+    return m_pimpl->push_capture(data, samples);
 }
 
 bool wap_processor::pop_result(sample_t &sample)

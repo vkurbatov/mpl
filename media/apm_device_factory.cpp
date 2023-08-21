@@ -1,4 +1,4 @@
-#include "audio_processing_factory.h"
+#include "apm_device_factory.h"
 #include "core/enum_converter_defs.h"
 #include "core/enum_serialize_defs.h"
 
@@ -97,7 +97,7 @@ class apm_device : public i_device
                         | reader.get("delay_stream_ms", wap_config.processing_config.ap_delay_stream_ms)
                         | reader.get("aec.mode", wap_config.processing_config.aec_mode)
                         | reader.get("aec.drift_ms", wap_config.processing_config.aec_drift_ms)
-                        | reader.get("aec.auto_delay_gain", wap_config.processing_config.aec_auto_delay_gain)
+                        | reader.get("aec.auto_delay_frames", wap_config.processing_config.aec_auto_delay_period)
                         | reader.get("gc.mode", wap_config.processing_config.gc_mode)
                         | reader.get("ns.mode", wap_config.processing_config.ns_mode)
                         | reader.get("vad.mode", wap_config.processing_config.vad_mode);
@@ -115,7 +115,7 @@ class apm_device : public i_device
                     && writer.set("delay_stream_ms", wap_config.processing_config.ap_delay_stream_ms)
                     && writer.set("aec.mode", wap_config.processing_config.aec_mode)
                     && writer.set("aec.drift_ms", wap_config.processing_config.aec_drift_ms)
-                    && writer.set("aec.auto_delay_gain", wap_config.processing_config.aec_auto_delay_gain)
+                    && writer.set("aec.auto_delay_frames", wap_config.processing_config.aec_auto_delay_period)
                     && writer.set("gc.mode", wap_config.processing_config.gc_mode)
                     && writer.set("ns.mode", wap_config.processing_config.ns_mode)
                     && writer.set("vad.mode", wap_config.processing_config.vad_mode);
@@ -212,7 +212,7 @@ public:
                 wap::sample_t sample(m_device_params.wap_config.format);
 
                 sample.append_pcm16(buffer->data()
-                                    , sample.format.samples_from_size(buffer->size()));
+                                    , buffer->size() / 2);
                 if (!sample.is_empty())
                 {
                     return capture
@@ -227,12 +227,13 @@ public:
 
     bool on_playback_sample(wap::sample_t&& sample)
     {
-        return m_native_device.push_playback(sample.sample_data.data(), sample.samples());
+        return m_native_device.push_playback(sample.sample_data.data()
+                                             , sample.samples());
     }
 
     bool on_capture_sample(wap::sample_t&& sample)
     {
-        if (m_native_device.push_playback(sample.sample_data.data()
+        if (m_native_device.push_capture(sample.sample_data.data()
                                           , sample.samples()))
         {
             sample.clear();
@@ -240,7 +241,7 @@ public:
             {
                 if (auto samples = sample.samples())
                 {
-                    raw_array_t pcm_data(sample.sample_data.size() / 2);
+                    raw_array_t pcm_data(samples * 2);
                     if (sample.read_pcm16(pcm_data.data(), samples))
                     {
                         audio_format_impl audio_format(audio_format_id_t::pcm16
@@ -293,6 +294,7 @@ public:
             if (!m_native_device.is_open())
             {
                 m_device_params = device_params;
+                m_native_device.set_config(device_params.wap_config);
                 result = true;
             }
         }
@@ -367,10 +369,10 @@ public:
         switch(index)
         {
             case 0:
-
+                return &m_capture_sink;
             break;
             case 1:
-
+                return &m_playback_sink;
             break;
             default:;
         }
@@ -396,17 +398,17 @@ public:
     }
 };
 
-audio_processing_factory::u_ptr_t audio_processing_factory::create()
+apm_device_factory::u_ptr_t apm_device_factory::create()
 {
-    return std::make_unique<audio_processing_factory>();
+    return std::make_unique<apm_device_factory>();
 }
 
-audio_processing_factory::audio_processing_factory()
+apm_device_factory::apm_device_factory()
 {
 
 }
 
-i_device::u_ptr_t audio_processing_factory::create_device(const i_property &device_params)
+i_device::u_ptr_t apm_device_factory::create_device(const i_property &device_params)
 {
     return apm_device::create(device_params);
 }

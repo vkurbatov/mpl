@@ -36,7 +36,7 @@ public:
 
     bool push_playback(const void* data
                        , std::size_t samples);
-    bool push_record(const void* data
+    bool push_capture(const void* data
                      , std::size_t samples);
 
     bool pop_result(sample_t& sample);
