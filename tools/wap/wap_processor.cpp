@@ -57,34 +57,105 @@ struct delay_metrics_t
 
 class echo_detector
 {
+public:
+    enum class state_t
+    {
+        ready,
+        process,
+        completed
+    };
+private:
+
+    static constexpr std::int32_t min_delay_ms = 0;
+    static constexpr std::int32_t max_delay_ms = 500;
+    static constexpr std::int32_t median_delay_ms = (max_delay_ms - min_delay_ms);
+    static constexpr std::double_t delay_tune_gain = 0.5;
+    static constexpr std::int32_t default_delay_period = 50; //frames
+
+    std::int32_t    m_delay_period;
+    std::int32_t    m_direction;
     std::size_t     m_total_samples;
     std::size_t     m_echo_samples;
+    double_t        m_prev_echo_loss;
+    state_t         m_state;
 
 public:
-    echo_detector()
-        : m_total_samples(0)
+    echo_detector(std::int32_t delay_period = default_delay_period)
+        : m_delay_period(std::abs(delay_period))
+        , m_direction(0)
+        , m_total_samples(0)
         , m_echo_samples(0)
+        , m_prev_echo_loss(0)
+        , m_state(state_t::ready)
     {
 
     }
 
-    inline void reset()
+    inline void reset_counters()
     {
         m_total_samples = 0;
         m_echo_samples = 0;
     }
+
+    inline void reset()
+    {
+        reset_counters();
+        m_direction = 0;
+        m_prev_echo_loss = 0;
+        m_state = state_t::ready;
+    }
+
+    inline void reset(std::int32_t delay_period)
+    {
+        m_delay_period = std::abs(delay_period);
+        reset();
+    }
+
 
     inline std::size_t total_samples() const
     {
         return m_total_samples;
     }
 
-    inline void push_sample(bool has_echo)
+    inline std::int32_t push_sample(bool has_echo
+                                    , std::int32_t delay)
     {
         m_total_samples++;
+
         if (has_echo)
         {
             m_echo_samples++;
+        }
+
+        if (m_total_samples >= static_cast<std::size_t>(m_delay_period))
+        {
+
+            auto echo_loss = 1.0 - echo_fractions();
+            if (echo_loss == 1.0
+                    && echo_loss < m_prev_echo_loss)
+            {
+                m_direction *= -1;
+            }
+
+            delay += delay_tune_gain * echo_loss * m_direction;
+
+            tune_direction(delay);
+            reset_counters();
+            m_prev_echo_loss = echo_loss;
+        }
+
+        return delay;
+    }
+
+    void tune_direction(std::int32_t delay)
+    {
+        if (delay >= max_delay_ms)
+        {
+            m_direction = -m_delay_period;
+        }
+        else if (delay <= min_delay_ms || m_direction == 0)
+        {
+            m_direction = m_delay_period;
         }
     }
 
@@ -96,6 +167,12 @@ public:
         }
 
         return -1.0;
+    }
+
+
+    inline state_t state() const
+    {
+        return m_state;
     }
 
 };
@@ -113,7 +190,7 @@ public:
         m_current_frame.reserve(fragment_size);
         if (delay > 0)
         {
-            for (auto i = 0; i < delay; i++)
+            for (std::size_t i = 0; i < delay; i++)
             {
                 sample_data_t data(fragment_size);
                 m_frames.emplace(std::move(data));
@@ -327,7 +404,6 @@ struct wap_processor::pimpl_t
     native_ap_ptr_t             m_native_ap;
     detail::echo_detector       m_echo_detector;
     detail::delay_metrics_t     m_delay_metrics;
-    std::int32_t                m_delay_search_direction;
     std::size_t                 m_playback_frames;
     std::size_t                 m_record_frames;
 
@@ -364,13 +440,13 @@ struct wap_processor::pimpl_t
     pimpl_t(const config_t& config)
         : m_config(config)
         , m_native_stream_config(create_native_stream_config(m_config.format))
-        , m_delay_search_direction(m_config.processing_config.aec_auto_delay_period / 2)
+        , m_echo_detector(m_config.processing_config.aec_auto_delay_period)
         , m_playback_frames(0)
         , m_record_frames(0)
         , m_playback_splitter(config.format.size_from_samples(m_native_stream_config.num_frames())
                               , 0)
         , m_record_splitter(config.format.size_from_samples(m_native_stream_config.num_frames())
-                            , 30)
+                            , 0)
         , m_output_sample(config.format)
     {
 
@@ -391,7 +467,6 @@ struct wap_processor::pimpl_t
                 auto result = m_native_ap->Initialize(create_native_config(m_native_stream_config));
                 if (result == webrtc::AudioProcessing::kNoError)
                 {
-
                     reset();
                     detail::set_ap_params(*m_native_ap
                                           , m_config);
@@ -432,7 +507,7 @@ struct wap_processor::pimpl_t
         if (config.is_valid())
         {
             m_config = config;
-            m_delay_search_direction = m_config.processing_config.aec_auto_delay_period / 2;
+            m_echo_detector.reset(m_config.processing_config.aec_auto_delay_period);
             return true;
         }
 
@@ -502,30 +577,7 @@ struct wap_processor::pimpl_t
 
                         if (m_config.processing_config.aec_auto_delay_period > 0)
                         {
-                            m_echo_detector.push_sample(has_echo);
-                            if (m_echo_detector.total_samples() >= m_config.processing_config.aec_auto_delay_period)
-                            {
-                                auto fractions = m_echo_detector.echo_fractions();
-                                m_echo_detector.reset();
-
-                                if (fractions >= 0
-                                        && fractions < 1.0)
-                                {
-                                    delay += (m_delay_search_direction) * (1 - fractions);
-                                }
-
-                                if (delay > 500)
-                                {
-                                    m_delay_search_direction *= -1;
-                                    delay = 500;
-                                }
-                                else if (delay < 0)
-                                {
-                                    m_delay_search_direction *= -1;
-                                    delay = 0;
-                                }
-                            }
-
+                            delay = m_echo_detector.push_sample(has_echo, delay);
                         }
 
                         m_native_ap->set_stream_delay_ms(delay);

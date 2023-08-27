@@ -2360,10 +2360,10 @@ void test23()
         writer.set("format.sample_rate", 32000);
         writer.set("format.channels", 1);
         writer.set("delay_offset_ms", 0);
-        writer.set("delay_stream_ms", 400);
+        writer.set("delay_stream_ms", 0);
         writer.set("aec.mode", wap::echo_cancellation_mode_t::moderation);
         writer.set("aec.drift_ms", 100);
-        writer.set("aec.auto_delay_frames", 10);
+        writer.set("aec.auto_delay_frames", 50);
         writer.set("gc.mode", wap::gain_control_mode_t::adaptive_analog);
         writer.set("ns.mode", wap::noise_suppression_mode_t::none);
         writer.set("vad.mode", wap::voice_detection_mode_t::none);
