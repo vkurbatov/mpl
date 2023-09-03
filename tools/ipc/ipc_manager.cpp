@@ -139,15 +139,6 @@ bool ipc_manager::is_writeble() const
             && m_config.has_create();
 }
 
-/*
-template<>
-ipc_segment ipc_manager::create_object(const std::string& name
-                                       , std::size_t size)
-{
-    return ipc_segment(m_native_manager
-                       , name
-                       , size);
-}*/
 
 
 }
