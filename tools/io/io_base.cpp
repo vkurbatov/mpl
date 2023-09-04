@@ -47,6 +47,11 @@ bool endpoint_t::is_valid() const
     return true;
 }
 
+std::string endpoint_t::to_string() const
+{
+    return std::string("undefined");
+}
+
 endpoint_t::endpoint_t(endpoint_type_t type)
     : type(type)
 {

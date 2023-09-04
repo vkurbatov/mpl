@@ -79,6 +79,7 @@ struct endpoint_t
     virtual bool operator == (const endpoint_t& other) const;
     virtual bool operator != (const endpoint_t& other) const;
     virtual bool is_valid() const;
+    virtual std::string to_string() const;
 
 protected:
     endpoint_t(endpoint_type_t type);

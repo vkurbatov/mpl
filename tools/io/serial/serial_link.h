@@ -25,6 +25,7 @@ public:
 
     serial_link(io_core& core
                 , const serial_link_config_t& config);
+    ~serial_link();
 
     bool set_config(const serial_link_config_t& config);
 

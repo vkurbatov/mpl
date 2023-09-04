@@ -80,6 +80,7 @@ target_link_libraries(${PROJECT_NAME}
     avwrp
     ipcwrp
     wapwrp
+    iopt
     ptbase
     vncclient
     ${WEBRTC_AUDIO_PROCESSING_LIBRARIES}

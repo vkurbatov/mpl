@@ -67,7 +67,10 @@
 #include "tools/ffmpeg/libav_stream_publisher.h"
 #include "tools/ffmpeg/libav_input_format.h"
 #include "tools/base/url_base.h"
-
+#include "tools/io/io_core.h"
+#include "tools/io/serial/serial_link.h"
+#include "tools/io/serial/serial_endpoint.h"
+#include "tools/io/serial/serial_link_config.h"
 
 #include <thread>
 #include <string>
@@ -2488,6 +2491,62 @@ void test23()
     return;
 }
 
+void test24()
+{
+    io::io_core core;
+
+    auto state_handler = [](io::link_state_t new_state
+            , const std::string_view& reason)
+    {
+        std::cout << "link state: " << static_cast<std::int32_t>(new_state)
+                  << ", reason: " << reason << std::endl;
+    };
+
+    auto message_handler = [](const io::message_t& message
+                            , const io::endpoint_t& endpoint)
+    {
+        std::string string_message(static_cast<const char*>(message.data())
+                                   , message.size());
+
+        std::cout << "message: " << string_message
+                  << " from ep: " << endpoint.to_string() << std::endl;
+    };
+
+    io::serial_link_config_t serial_config;
+    serial_config.baud_rate = 9600;
+    serial_config.char_size = 8;
+    serial_config.stop_bits = io::serial_stop_bits_t::one;
+    serial_config.parity = io::serial_parity_t::none;
+    serial_config.flow_control = io::serial_flow_control_t::none;
+
+    io::serial_endpoint_t serial_endpoint("/tmp/vstty1");
+
+    io::serial_link link(core
+                         , serial_config);
+
+    link.set_state_handler(state_handler);
+    link.set_message_handler(message_handler);
+
+    core.run();
+
+    if (link.set_endpoint(serial_endpoint))
+    {
+        if (link.control(io::link_control_id_t::open))
+        {
+            if (link.control(io::link_control_id_t::start))
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(60));
+                link.control(io::link_control_id_t::stop);
+            }
+            link.control(io::link_control_id_t::close);
+        }
+    }
+
+    core.stop();
+
+    return;
+}
+
 }
 
 void  tests()
@@ -2505,7 +2564,8 @@ void  tests()
     // test20(); // composer2
     // test21();
     // test22(); // audio-processing
-    test23(); // audio-processing (apm_device_factory)
+    // test23(); // audio-processing (apm_device_factory)
+    test24();
 
 }
 

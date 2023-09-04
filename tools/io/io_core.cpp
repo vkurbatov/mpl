@@ -45,7 +45,7 @@ struct io_core::pimpl_t
         bool flag = false;
         if (m_running.compare_exchange_strong(flag, true))
         {
-            for (std::size_t i = 0; i < m_config.max_workers; i++)
+            for (std::size_t i = 0; i < m_config.total_workers(); i++)
             {
                 m_threads.emplace_back([&, i] { worker_proc(i); });
             }
@@ -121,6 +121,11 @@ io_core::io_core(const config_t &config)
 
 }
 
+io_core::~io_core()
+{
+
+}
+
 const io_core::config_t &io_core::config() const
 {
     return m_pimpl->m_config;
@@ -152,7 +157,7 @@ bool io_core::is_valid() const
 }
 
 template<>
-const boost::asio::io_context &io_core::get() const
+boost::asio::io_context &io_core::get() const
 {
     return m_pimpl->m_io_context;
 }

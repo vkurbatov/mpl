@@ -8,11 +8,17 @@
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
 
+#include <atomic>
+#include <vector>
+#include <array>
+
 namespace io
 {
 
+constexpr static std::size_t recv_buffer_size = 1000;
 using serial_t = boost::asio::serial_port;
 using io_contex_t = boost::asio::io_context;
+using array_t = std::array<std::uint8_t, recv_buffer_size>;
 
 namespace detail
 {
@@ -61,8 +67,10 @@ struct serial_link::pimpl_t
     serial_link_config_t    m_config;
     serial_endpoint_t       m_endpoint;
     serial_t                m_serial;
+    array_t                 m_recv_buffer;
 
     bool                    m_started;
+    std::atomic_bool        m_io_processed;
 
     static u_ptr_t create(serial_link& link
                           , const serial_link_config_t& config)
@@ -133,7 +141,9 @@ struct serial_link::pimpl_t
     {
         if (m_serial.is_open())
         {
+            change_state(link_state_t::closing);
             stop();
+            change_state(link_state_t::closed);
             return true;
         }
 
@@ -142,9 +152,13 @@ struct serial_link::pimpl_t
 
     bool start()
     {
-        if (is_open()
-                || open())
+        if (!m_started
+                && is_open())
         {
+            change_state(link_state_t::connecting);
+            m_started = true;
+            change_state(link_state_t::connected);
+            do_receive();
             return true;
         }
 
@@ -153,9 +167,14 @@ struct serial_link::pimpl_t
 
     bool stop()
     {
-        if (is_open())
+        if (m_started)
         {
-
+            change_state(link_state_t::disconnecting);
+            m_started = false;
+            m_serial.cancel();
+            while(m_io_processed.load(std::memory_order_acquire));
+            change_state(link_state_t::disconnected);
+            return true;
         }
 
         return false;
@@ -191,6 +210,72 @@ struct serial_link::pimpl_t
         return m_serial.is_open();
     }
 
+
+    inline bool send_to(const message_t &message
+                        , const endpoint_t& /*endpoint*/)
+    {
+        if (is_open()
+                && m_started)
+        {
+            auto buffer = boost::asio::buffer(message.data()
+                                               , message.size());
+            m_serial.async_write_some(buffer
+                                      , [&](auto&&... args) { on_send(args...); });
+            return true;
+        }
+
+        return false;
+    }
+
+    inline void on_send(boost::system::error_code error_code
+                        , std::size_t bytes_transfered)
+    {
+        if (error_code.failed())
+        {
+            change_state(link_state_t::failed
+                         , error_code.message());
+            m_started = false;
+        }
+        // nothing
+    }
+
+    inline void do_receive()
+    {
+        if (m_started)
+        {
+            m_io_processed.store(true);
+            auto buffer = boost::asio::buffer(m_recv_buffer);
+            m_serial.async_read_some(buffer
+                                     , [&](auto&&... args) { on_receive(args...); });
+
+        }
+        m_io_processed.store(false
+                             , std::memory_order_release);
+    }
+
+    inline void on_receive(boost::system::error_code error_code
+                           , std::size_t bytes_transfered)
+    {
+        if (error_code.failed())
+        {
+            change_state(link_state_t::failed
+                         , error_code.message());
+        }
+        else
+        {
+            message_t message(m_recv_buffer.data()
+                              , bytes_transfered);
+
+            m_link.on_recv_message(message
+                                   , m_endpoint);
+
+            do_receive();
+            return;
+        }
+        m_io_processed.store(false
+                             , std::memory_order_release);
+    }
+
 };
 
 serial_link::u_ptr_t serial_link::create(io_core &core
@@ -205,6 +290,11 @@ serial_link::serial_link(io_core &core
     : io_link(core)
     , m_pimpl(pimpl_t::create(*this
                               , config))
+{
+
+}
+
+serial_link::~serial_link()
 {
 
 }
@@ -254,12 +344,13 @@ bool serial_link::control(link_control_id_t control_id)
 bool serial_link::send_to(const message_t &message
                           , const endpoint_t &endpoint)
 {
-    return false;
+    return m_pimpl->send_to(message
+                            , endpoint);
 }
 
 bool serial_link::set_endpoint(const endpoint_t &endpoint)
 {
-    return false;
+    return m_pimpl->set_endpoint(endpoint);
 }
 
 bool serial_link::is_open() const

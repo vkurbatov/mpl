@@ -31,6 +31,7 @@ public:
     static u_ptr_t create(const config_t& config = {});
 
     io_core(const config_t& config = {});
+    ~io_core();
     const config_t& config() const;
     bool run();
     bool stop();

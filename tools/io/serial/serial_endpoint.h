@@ -17,6 +17,7 @@ struct serial_endpoint_t : public endpoint_t
 public:
     bool operator ==(const endpoint_t &other) const override;
     bool is_valid() const override;
+    std::string to_string() const override;
 };
 
 }
