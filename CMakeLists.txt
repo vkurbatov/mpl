@@ -72,14 +72,14 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     mplmedia
     mplcore
-    vncwrp
-    viscawrp
-    v4l2wrp
-    srlwrp
-    ocvwrp
-    avwrp
-    ipcwrp
-    wapwrp
+    vncpt
+    viscapt
+    v4l2pt
+    srlpt
+    ocvpt
+    avpt
+    ipcpt
+    wappt
     iopt
     ptbase
     vncclient

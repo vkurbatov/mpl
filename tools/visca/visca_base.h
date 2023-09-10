@@ -43,7 +43,7 @@ enum class parse_state_t
     terminator
 };
 
-enum class visca_command_t
+enum class visca_command_id_t
 {
     direct_mask             = 0x400000,
     on_off_mask             = 0x300000,

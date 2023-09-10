@@ -28,6 +28,7 @@ public:
 
     using u_ptr_t = std::unique_ptr<io_core>;
 
+    static io_core& get_instance();
     static u_ptr_t create(const config_t& config = {});
 
     io_core(const config_t& config = {});

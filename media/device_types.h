@@ -15,6 +15,7 @@ enum class device_type_t
     ipc_in,
     ipc_out,
     apm,
+    visca,
     custom
 };
 

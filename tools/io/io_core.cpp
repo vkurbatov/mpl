@@ -110,6 +110,12 @@ std::size_t io_core::config_t::total_workers() const
             : std::thread::hardware_concurrency();
 }
 
+io_core &io_core::get_instance()
+{
+    static io_core single_core;
+    return single_core;
+}
+
 io_core::u_ptr_t io_core::create(const config_t &config)
 {
     return std::make_unique<io_core>(config);

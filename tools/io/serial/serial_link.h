@@ -37,7 +37,9 @@ public:
 public:
     link_type_t type() const override;
     bool control(link_control_id_t control_id) override;
-    bool send_to(const message_t &message, const endpoint_t &endpoint) override;
+    bool send_to(const message_t &message
+                 , const endpoint_t &endpoint) override;
+    bool get_endpoint(endpoint_t &endpoint) const override;
     bool set_endpoint(const endpoint_t &endpoint) override;
     bool is_open() const override;
 };

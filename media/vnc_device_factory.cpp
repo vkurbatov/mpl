@@ -124,7 +124,6 @@ class vnc_device : public i_device
     device_params_t             m_device_params;
     message_router_impl         m_router;
     vnc::vnc_device             m_native_device;
-    //v4l2_wrapper                m_wrapped_device;
 
     frame_id_t                  m_frame_counter;
     timestamp_t                 m_frame_timestamp;

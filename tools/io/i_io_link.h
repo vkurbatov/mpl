@@ -17,6 +17,7 @@ public:
     virtual bool send_to(const message_t& message
                         , const endpoint_t& endpoint) = 0;
 
+    virtual bool get_endpoint(endpoint_t& endpoint) const = 0;
     virtual bool set_endpoint(const endpoint_t& endpoint) = 0;
 
     virtual void set_message_handler(const message_handler_t& message_handler) = 0;

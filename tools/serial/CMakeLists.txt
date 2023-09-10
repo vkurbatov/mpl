@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET srlwrp)
+set(TARGET srlpt)
 
 set(SOURCES
     serial_api.cpp

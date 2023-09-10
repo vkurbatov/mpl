@@ -1,29 +1,29 @@
-#ifndef VISCA_DEVICE_H
-#define VISCA_DEVICE_H
+#ifndef VISCA_CONTROL_H
+#define VISCA_CONTROL_H
 
 #include "visca_base.h"
 
-#include <string>
 #include <memory>
+#include <string>
 
 namespace visca
 {
 
-struct visca_device_context_t;
-typedef std::unique_ptr<visca_device_context_t>  visca_device_context_ptr_t;
 
-class visca_device
+class i_visca_channel;
+class visca_control
 {
-    visca_device_context_ptr_t      m_visca_device_context;
+    struct pimpl_t;
+    using pimpl_ptr_t = std::unique_ptr<pimpl_t>;
+
+    pimpl_ptr_t m_pimpl;
+
 public:
+    visca_control(const visca_config_t& visca_config = visca_config_t()
+                  , i_visca_channel* channel = nullptr);
+    ~visca_control();
 
-    visca_device(const visca_config_t& visca_config = visca_config_t());
-    ~visca_device();
-
-    bool open(const std::string& uri);
-    bool close();
-    bool is_opened() const;
-    bool is_established() const;
+    void set_channel(i_visca_channel* channel);
 
     const visca_config_t& config() const;
     bool set_config(const visca_config_t& visca_config);
@@ -60,4 +60,4 @@ public:
 
 }
 
-#endif // VISCA_DEVICE_H
+#endif // VISCA_CONTROL_H

@@ -348,6 +348,17 @@ bool serial_link::send_to(const message_t &message
                             , endpoint);
 }
 
+bool serial_link::get_endpoint(endpoint_t &endpoint) const
+{
+    if (endpoint.type == endpoint_type_t::serial)
+    {
+        static_cast<serial_endpoint_t&>(endpoint) = m_pimpl->m_endpoint;
+        return true;
+    }
+
+    return false;
+}
+
 bool serial_link::set_endpoint(const endpoint_t &endpoint)
 {
     return m_pimpl->set_endpoint(endpoint);

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET ocvwrp)
+set(TARGET ocvpt)
 
 set(SOURCES
     ocv_utils.cpp

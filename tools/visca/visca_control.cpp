@@ -1,7 +1,7 @@
-#include "visca_device.h"
+#include "visca_control.h"
 
-#include "tools/serial/serial_device.h"
 #include "visca_proto.h"
+#include "i_visca_channel.h"
 
 #include <thread>
 #include <cstring>
@@ -205,29 +205,58 @@ static packet_data_t& build_command(packet_data_t& command_buffer
     return command_buffer;
 }
 
-const serial::control_config_t visca_serial_config = { serial::baud_rate_t::br_9600
-                                                     , serial::parity_t::p_none
-                                                     , serial::stop_bits_t::sb_1
-                                                     , serial::data_bits_t::db_8
-                                                     , serial::flow_control_t::fc_no_flow};
-
-
 struct visca_controller_t
 {
-    serial::serial_device&  port;
+    const visca_config_t&   config;
+    i_visca_channel*        channel;
     packet_data_t           command_buffer;
     packet_data_t           response_buffer;
     response_parser_t       response_parser;
     response_packet_t       response;
 
-    const visca_config_t&   config;
 
-    visca_controller_t(serial::serial_device& port
-                    , const visca_config_t& config)
-        : port(port)
-        , config(config)
+    visca_controller_t(const visca_config_t& config
+                       , i_visca_channel* channel)
+        : config(config)
+        , channel(channel)
     {
 
+    }
+
+    void set_channel(i_visca_channel* channel)
+    {
+        this->channel = channel;
+    }
+
+    bool flush()
+    {
+        if (channel)
+        {
+            return channel->flush();
+        }
+        return false;
+    }
+
+    std::size_t write(const void* data, std::size_t size)
+    {
+        if (channel)
+        {
+            return channel->write(data
+                                  , size);
+        }
+
+        return 0;
+    }
+
+    std::size_t read(packet_data_t& data
+                     , std::uint32_t timeout = 0)
+    {
+        if (channel)
+        {
+            return channel->read(data
+                                  , timeout);
+        }
+        return 0;
     }
 
     bool send_command(std::uint8_t address
@@ -235,14 +264,14 @@ struct visca_controller_t
     {
         if (is_init())
         {
-            port.flush();
+            flush();
 
             build_command(command_buffer
                           , address
                           , command);
 
-            auto write_size = port.write(command_buffer.data()
-                                        , command_buffer.size());
+            auto write_size = write(command_buffer.data()
+                                    , command_buffer.size());
 
             if (write_size > 0)
             {
@@ -263,15 +292,15 @@ struct visca_controller_t
     {
         if (is_init())
         {
-            port.flush();
+            flush();
 
             build_command(command_buffer
                           , address
                           , command
                           , value);
 
-            auto write_size = port.write(command_buffer.data()
-                                        , command_buffer.size());
+            auto write_size = write(command_buffer.data()
+                                    , command_buffer.size());
 
             if (write_size > 0)
             {
@@ -293,7 +322,7 @@ struct visca_controller_t
     {
         if (is_init())
         {
-            port.flush();
+            flush();
 
             build_command(command_buffer
                           , address
@@ -301,8 +330,8 @@ struct visca_controller_t
                           , value
                           , args...);
 
-            auto write_size = port.write(command_buffer.data()
-                                        , command_buffer.size());
+            auto write_size = write(command_buffer.data()
+                                    , command_buffer.size());
 
             if (write_size > 0)
             {
@@ -335,9 +364,8 @@ struct visca_controller_t
 
                 response_buffer.clear();
 
-                if (port.read(response_buffer
-                              , false
-                              , dt) > 0)
+                if (read(response_buffer
+                         , dt) > 0)
                 {
 
                     LOG_D << "Recv packet: " <<  base::hex_dump(response_buffer.data()
@@ -447,74 +475,42 @@ struct visca_controller_t
 
     bool is_init() const
     {
-        return port.is_opened();
+        return true;
     }
 
 };
 
 
 
-struct visca_device_context_t
+struct visca_control::pimpl_t
 {
     visca_config_t          m_config;
-    serial::serial_device   m_port;
     std::uint8_t            m_address;
-    visca_controller_t         m_channel;
+    visca_controller_t      m_controller;
     std::uint16_t           m_id;
     bool                    m_is_init;
 
 
-    visca_device_context_t(const visca_config_t& config)
+    pimpl_t(const visca_config_t& config
+            , i_visca_channel* channel)
         : m_config(config)
         , m_address(1)
-        , m_channel(m_port
-                    , m_config)
+        , m_controller(m_config
+                       , channel)
         , m_id(0)
         , m_is_init(false)
     {
 
     }
 
-    bool open(const std::string &uri)
+    void set_channel(i_visca_channel* channel)
     {
-        m_is_init = false;
-
-        if (m_port.open(uri))
-        {
-            set_address(m_address);
-            get_id(m_id);
-
-            m_is_init = true;
-
-            /*if (!m_is_init)
-            {
-                m_port.close();
-            }*/
-        }
-
-        return m_is_init;
-    }
-
-    bool close()
-    {
-        m_is_init = false;
-        return m_port.close();
-    }
-
-    bool is_opened() const
-    {
-        return m_channel.is_init();
-    }
-
-    bool is_established() const
-    {
-        return is_opened()
-                && m_is_init == true;
+        m_controller.set_channel(channel);
     }
 
     bool set_address(std::uint8_t address)
     {
-        if (m_channel.request(0
+        if (m_controller.request(0
                               , visca_command_id_t::cmd_address_set
                               , any_size
                               , address))
@@ -527,11 +523,11 @@ struct visca_device_context_t
 
     bool get_id(std::uint16_t& id)
     {
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::inq_cam_id
                               , 4))
         {
-            id = from_visca_value(m_channel.fetch_response_arg<std::uint32_t>());
+            id = from_visca_value(m_controller.fetch_response_arg<std::uint32_t>());
 
             return true;
         }
@@ -542,7 +538,7 @@ struct visca_device_context_t
     bool set_pan_tilt(int16_t pan
                       , int16_t tilt)
     {
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::cmd_pan_tilt_absolute
                               , any_size
                               , m_config.pan_speed
@@ -560,12 +556,12 @@ struct visca_device_context_t
                       , int16_t& tilt)
     {
 
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::inq_pan_tilt_pos
                               , 8))
         {
-            pan = from_visca_value(m_channel.fetch_response_arg<std::uint32_t>(0));
-            tilt = from_visca_value(m_channel.fetch_response_arg<std::uint32_t>(4));
+            pan = from_visca_value(m_controller.fetch_response_arg<std::uint32_t>(0));
+            tilt = from_visca_value(m_controller.fetch_response_arg<std::uint32_t>(4));
 
             return true;
         }
@@ -594,7 +590,7 @@ struct visca_device_context_t
 
     bool pan_tilt_reset()
     {
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::cmd_pan_tilt_reset))
         {
             return true;
@@ -604,7 +600,7 @@ struct visca_device_context_t
     }
     bool pan_tilt_home()
     {
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::cmd_pan_tilt_home))
         {
             return true;
@@ -615,7 +611,7 @@ struct visca_device_context_t
 
     bool pan_tilt_stop()
     {
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::cmd_pan_tilt_drive
                               , any_size
                               , 0x03030303))
@@ -628,7 +624,7 @@ struct visca_device_context_t
 
     bool set_zoom(uint16_t zoom)
     {
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::cmd_cam_zoom_direct
                               , any_size
                               , to_visca_value(zoom)))
@@ -641,10 +637,10 @@ struct visca_device_context_t
 
     bool get_zoom(uint16_t &zoom)
     {
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::inq_cam_zoom_pos))
         {
-            zoom = from_visca_value(m_channel.fetch_response_arg<std::uint32_t>());
+            zoom = from_visca_value(m_controller.fetch_response_arg<std::uint32_t>());
             return true;
         }
 
@@ -653,7 +649,7 @@ struct visca_device_context_t
 
     bool zoom_stop()
     {
-        if (m_channel.request(m_address
+        if (m_controller.request(m_address
                               , visca_command_id_t::cmd_cam_zoom
                               , 0
                               , static_cast<std::uint8_t>(0)))
@@ -700,129 +696,117 @@ struct visca_device_context_t
 };
 
 //---------------------------------------------------------------------------------------------
-visca_device::visca_device(const visca_config_t& visca_config)
-    : m_visca_device_context(new visca_device_context_t(visca_config))
+visca_control::visca_control(const visca_config_t& visca_config
+                             , i_visca_channel* channel)
+    : m_pimpl(new pimpl_t(visca_config
+                          , channel))
 {
 
 }
 
-visca_device::~visca_device()
+visca_control::~visca_control()
 {
 
 }
 
-bool visca_device::open(const std::string &uri)
+void visca_control::set_channel(i_visca_channel *channel)
 {
-    return m_visca_device_context->open(uri);
+    m_pimpl->set_channel(channel);
 }
 
-bool visca_device::close()
+
+const visca_config_t &visca_control::config() const
 {
-    return m_visca_device_context->close();
+    return m_pimpl->m_config;
 }
 
-bool visca_device::is_opened() const
+bool visca_control::set_config(const visca_config_t &visca_config)
 {
-    return m_visca_device_context->is_opened();
-}
-
-bool visca_device::is_established() const
-{
-    return m_visca_device_context->is_established();
-}
-
-const visca_config_t &visca_device::config() const
-{
-    return m_visca_device_context->m_config;
-}
-
-bool visca_device::set_config(const visca_config_t &visca_config)
-{
-    m_visca_device_context->m_config = visca_config;
+    m_pimpl->m_config = visca_config;
     return true;
 }
 
-bool visca_device::get_id(uint16_t &id)
+bool visca_control::get_id(uint16_t &id)
 {
-    return m_visca_device_context->get_id(id);
+    return m_pimpl->get_id(id);
 }
 
-bool visca_device::set_pan_tilt(int16_t pan
+bool visca_control::set_pan_tilt(int16_t pan
                                 , int16_t tilt)
 {
-    return m_visca_device_context->set_pan_tilt(pan
-                                                , tilt);
+    return m_pimpl->set_pan_tilt(pan
+                                 , tilt);
 }
 
-bool visca_device::set_pan(int16_t pan)
+bool visca_control::set_pan(int16_t pan)
 {
-    return m_visca_device_context->set_pan(pan);
+    return m_pimpl->set_pan(pan);
 }
 
-bool visca_device::set_tilt(int16_t tilt)
+bool visca_control::set_tilt(int16_t tilt)
 {
-    return m_visca_device_context->set_tilt(tilt);
+    return m_pimpl->set_tilt(tilt);
 }
 
-bool visca_device::get_pan_tilt(int16_t& pan
+bool visca_control::get_pan_tilt(int16_t& pan
                                 , int16_t& tilt)
 {
-    return m_visca_device_context->get_pan_tilt(pan
-                                                , tilt);
+    return m_pimpl->get_pan_tilt(pan
+                                 , tilt);
 }
 
-bool visca_device::get_pan(int16_t &pan)
+bool visca_control::get_pan(int16_t &pan)
 {
     std::int16_t tilt;
-    return m_visca_device_context->get_pan_tilt(pan
-                                                , tilt);
+    return m_pimpl->get_pan_tilt(pan
+                                 , tilt);
 }
 
-bool visca_device::get_tilt(int16_t &tilt)
+bool visca_control::get_tilt(int16_t &tilt)
 {
     std::int16_t pan;
-    return m_visca_device_context->get_pan_tilt(pan
-                                                , tilt);
+    return m_pimpl->get_pan_tilt(pan
+                                  , tilt);
 }
 
-bool visca_device::pan_tilt_home()
+bool visca_control::pan_tilt_home()
 {
-    return m_visca_device_context->pan_tilt_home();
+    return m_pimpl->pan_tilt_home();
 }
 
-bool visca_device::pan_tilt_reset()
+bool visca_control::pan_tilt_reset()
 {
-    return m_visca_device_context->pan_tilt_reset();
+    return m_pimpl->pan_tilt_reset();
 }
 
-bool visca_device::pan_tilt_stop()
+bool visca_control::pan_tilt_stop()
 {
-    return m_visca_device_context->pan_tilt_stop();
+    return m_pimpl->pan_tilt_stop();
 }
 
-bool visca_device::set_zoom(uint16_t zoom)
+bool visca_control::set_zoom(uint16_t zoom)
 {
-    return m_visca_device_context->set_zoom(zoom);
+    return m_pimpl->set_zoom(zoom);
 }
 
-bool visca_device::get_zoom(uint16_t &zoom)
+bool visca_control::get_zoom(uint16_t &zoom)
 {
-    return m_visca_device_context->get_zoom(zoom);
+    return m_pimpl->get_zoom(zoom);
 }
 
-bool visca_device::get_ptz(double &pan, double &tilt, double &zoom)
+bool visca_control::get_ptz(double &pan, double &tilt, double &zoom)
 {
-    return m_visca_device_context->get_ptz(pan, tilt, zoom);
+    return m_pimpl->get_ptz(pan, tilt, zoom);
 }
 
-bool visca_device::set_ptz(double pan, double tilt, double zoom)
+bool visca_control::set_ptz(double pan, double tilt, double zoom)
 {
-    return m_visca_device_context->set_ptz(pan, tilt, zoom);
+    return m_pimpl->set_ptz(pan, tilt, zoom);
 }
 
-bool visca_device::zoom_stop()
+bool visca_control::zoom_stop()
 {
-    return m_visca_device_context->zoom_stop();
+    return m_pimpl->zoom_stop();
 }
 
 }

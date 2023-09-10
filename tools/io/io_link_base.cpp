@@ -33,6 +33,11 @@ link_state_t io_link::state() const
     return m_state;
 }
 
+io_core &io_link::core()
+{
+    return m_core;
+}
+
 bool io_link::send(const message_t &message)
 {
     return send_to(message, endpoint_t::undefined());

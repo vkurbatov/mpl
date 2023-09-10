@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET vncwrp)
+set(TARGET vncpt)
 
 set(SOURCES
     vnc_base.cpp

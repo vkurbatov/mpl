@@ -30,6 +30,8 @@ public:
     bool set_endpoint(const endpoint_t &endpoint) override;
     link_state_t state() const final override;
 
+    io_core& core();
+
     bool send(const message_t& message);
 protected:
     void change_state(link_state_t new_state
