@@ -570,7 +570,7 @@ class v4l2_device : public i_device
             return false;
         }
 
-        inline i_property::u_ptr_t get_controls()
+        inline i_property::u_ptr_t get_controls() const
         {
             if (auto ctrls = property_helper::create_array())
             {
@@ -790,81 +790,6 @@ public:
         return m_running.load(std::memory_order_acquire);
     }
 
-    bool set_params(const i_property& input_params)
-    {
-        bool result = false;
-        auto device_params = m_device_params;
-        if (device_params.load(input_params))
-        {           
-            if (!m_wrapped_device.is_open())
-            {
-                m_device_params = device_params;
-                result = true;
-            }
-        }
-/*
-        property_reader reader(input_params);
-        if (auto params = reader["controls"])
-        {
-
-        }*/
-
-        return result;
-    }
-
-    bool get_params(i_property& output_params)
-    {
-        if (m_device_params.save(output_params))
-        {
-            if (m_wrapped_device.is_open())
-            {
-                property_writer writer(output_params);
-                /*if (auto formats = m_wrapped_device.get_formats())
-                {
-                    writer.set("formats", *formats);
-                }*/
-                if (auto controls = m_wrapped_device.get_controls())
-                {
-                    writer.set("controls", *controls);
-                }
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-    bool internal_configure(const i_property* input_params
-                            , i_property* output_params)
-    {
-        bool result = false;
-
-        if (input_params != nullptr)
-        {
-            result = set_params(*input_params);
-        }
-
-        if (output_params != nullptr)
-        {
-            result = get_params(*output_params);
-        }
-
-        return result;
-    }
-
-    bool internal_command(const i_property* input_params
-                          , i_property* output_params)
-    {
-        if (input_params != nullptr
-                || output_params != nullptr)
-        {
-            return m_wrapped_device.command(input_params
-                                            , output_params);
-        }
-
-        return false;
-    }
-
     // i_channel interface
 public:
     bool control(const channel_control_t &control) override
@@ -876,14 +801,6 @@ public:
             break;
             case channel_control_id_t::close:
                 return close();
-            break;
-            case channel_control_id_t::configure:
-                return internal_configure(control.input_params
-                                          , control.output_params);
-            break;
-            case channel_control_id_t::command:
-                return internal_command(control.input_params
-                                        , control.output_params);
             break;
             default:;
         }
@@ -920,6 +837,42 @@ public:
     device_type_t device_type() const override
     {
         return device_type_t::v4l2_in;
+    }
+
+    // i_parametrizable interface
+public:
+    bool set_params(const i_property& input_params) override
+    {
+        bool result = false;
+        auto device_params = m_device_params;
+        if (device_params.load(input_params))
+        {
+            if (!m_wrapped_device.is_open())
+            {
+                m_device_params = device_params;
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    bool get_params(i_property& output_params) const override
+    {
+        if (m_device_params.save(output_params))
+        {
+            if (m_wrapped_device.is_open())
+            {
+                property_writer writer(output_params);
+                if (auto controls = m_wrapped_device.get_controls())
+                {
+                    writer.set("controls", *controls);
+                }
+            }
+            return true;
+        }
+
+        return false;
     }
 };
 

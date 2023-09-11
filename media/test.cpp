@@ -1271,7 +1271,7 @@ void test16()
 
     if (auto params = property_helper::create_object())
     {
-        if (input_video_device->control(channel_control_t::get_config(params.get())))
+        if (input_video_device->get_params(*params))
         {
             property_reader params_reader(*params);
             if (auto controls = params_reader.get<i_property::array_t>("controls"))

@@ -421,11 +421,34 @@ public:
             return &m_router;
         }
 
-        return 0;
+        return nullptr;
     }
     device_type_t device_type() const override
     {
         return device_type_t::v4l2_in;
+    }
+
+    // i_parametrizable interface
+public:
+    bool set_params(const i_property &params) override
+    {
+        if (!m_open)
+        {
+            auto device_params = m_device_params;
+            if (device_params.load(params)
+                    && device_params.is_valid())
+            {
+                m_device_params = device_params;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool get_params(i_property &params) const override
+    {
+        return m_device_params.save(params);
     }
 };
 

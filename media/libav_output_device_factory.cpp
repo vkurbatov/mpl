@@ -267,6 +267,7 @@ class libav_output_device : public i_device
             , url(url)
             , options(options)
             , streams(std::move(streams))
+            , sync_tracks(false)
         {
 
         }
@@ -302,7 +303,7 @@ class libav_output_device : public i_device
                 writer.set("options", options, {});
                 if (auto s = detail::serialize_stream_list(streams))
                 {
-                    return writer.set("streams", s);
+                    return writer.set("streams", *s);
                 }
             }
 
@@ -720,6 +721,29 @@ public:
     device_type_t device_type() const override
     {
         return device_type_t::libav_out;
+    }
+
+    // i_parametrizable interface
+public:
+    bool set_params(const i_property &params) override
+    {
+        if (!m_open)
+        {
+            device_params_t device_params;
+            if (device_params.load(params)
+                    && device_params.is_valid())
+            {
+                m_device_params = std::move(device_params);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool get_params(i_property &params) const override
+    {
+        return m_device_params.save(params);
     }
 };
 

@@ -76,30 +76,6 @@ channel_control_t channel_control_t::command(const i_property *input_params
     };
 }
 
-channel_control_t channel_control_t::configure(const i_property *input_params
-                                               , i_property *output_params)
-{
-    return
-    {
-        channel_control_id_t::configure
-        , "configure"
-        , input_params
-        , output_params
-    };
-}
-
-channel_control_t channel_control_t::set_config(const i_property *input_params)
-{
-    return configure(input_params
-                     , nullptr);
-}
-
-channel_control_t channel_control_t::get_config(i_property *output_params)
-{
-    return configure(nullptr
-                     , output_params);
-}
-
 channel_control_t::channel_control_t(channel_control_id_t control_id
                                      , const std::string &name
                                      , const i_property *input_params

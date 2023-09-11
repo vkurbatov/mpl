@@ -351,6 +351,11 @@ public:
 public:
     i_message_sink *sink(std::size_t index) override
     {
+        if (index == 0)
+        {
+            return &m_sink;
+        }
+
         return nullptr;
     }
 
@@ -369,6 +374,32 @@ public:
     device_type_t device_type() const override
     {
         return device_type_t::visca;
+    }
+    // i_parametrizable interface
+public:
+    bool set_params(const i_property &params) override
+    {
+        bool result = false;
+
+        auto device_params = m_device_params;
+
+        if (device_params.load(params)
+                && device_params.is_valid())
+        {
+            if (!m_visca_channel.is_open())
+            {
+                m_device_params = device_params;
+                // m_visca_channel.set_config(device_params.wap_config);
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    bool get_params(i_property &params) const override
+    {
+        return m_device_params.save(params);
     }
 };
 

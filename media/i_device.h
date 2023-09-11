@@ -3,11 +3,13 @@
 
 #include "device_types.h"
 #include "core/i_message_channel.h"
+#include "core/i_parametrizable.h"
 
 namespace mpl::media
 {
 
 class i_device : public i_message_channel
+        , public i_parametrizable
 {
 public:
     using u_ptr_t = std::unique_ptr<i_device>;

@@ -324,55 +324,6 @@ public:
         return m_running.load(std::memory_order_acquire);
     }
 
-    bool set_params(const i_property& input_params)
-    {
-        bool result = false;
-
-        auto device_params = m_device_params;
-
-        if (device_params.load(input_params)
-                && device_params.is_valid())
-        {
-            if (!m_native_device.is_opened()
-                    && m_native_device.set_config(device_params.native_config()))
-            {
-                m_device_params = device_params;
-                result = true;
-            }
-        }
-
-        return result;
-    }
-
-    bool get_params(i_property& output_params)
-    {
-        if (m_device_params.save(output_params))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    bool internal_configure(const i_property* input_params
-                            , i_property* output_params)
-    {
-        bool result = false;
-
-        if (input_params != nullptr)
-        {
-            result = set_params(*input_params);
-        }
-
-        if (output_params != nullptr)
-        {
-            result = get_params(*output_params);
-        }
-
-        return result;
-    }
-
-
     // i_channel interface
 public:
     bool control(const channel_control_t &control) override
@@ -384,10 +335,6 @@ public:
             break;
             case channel_control_id_t::close:
                 return close();
-            break;
-            case channel_control_id_t::configure:
-                return internal_configure(control.input_params
-                                          , control.output_params);
             break;
             default:;
         }
@@ -427,6 +374,32 @@ public:
     device_type_t device_type() const override
     {
         return device_type_t::vnc;
+    }
+    // i_parametrizable interface
+public:
+    bool set_params(const i_property &params) override
+    {
+        bool result = false;
+
+        auto device_params = m_device_params;
+
+        if (device_params.load(params)
+                && device_params.is_valid())
+        {
+            if (!m_native_device.is_opened()
+                    && m_native_device.set_config(device_params.native_config()))
+            {
+                m_device_params = device_params;
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    bool get_params(i_property &params) const override
+    {
+        return m_device_params.save(params);
     }
 };
 

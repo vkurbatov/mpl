@@ -315,28 +315,6 @@ public:
         return m_running.load(std::memory_order_acquire);
     }
 
-    bool get_params(i_property& output_params)
-    {
-        if (m_device_params.save(output_params))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    bool internal_configure(const i_property* input_params
-                            , i_property* output_params)
-    {
-        bool result = false;
-
-        if (output_params != nullptr)
-        {
-            result = get_params(*output_params);
-        }
-
-        return result;
-    }
 
     void grabbing_thread()
     {
@@ -381,10 +359,6 @@ public:
             case channel_control_id_t::close:
                 return close();
             break;
-            case channel_control_id_t::configure:
-                return internal_configure(control.input_params
-                                          , control.output_params);
-            break;
             default:;
         }
 
@@ -423,6 +397,29 @@ public:
     device_type_t device_type() const override
     {
         return device_type_t::ipc_in;
+    }
+
+    // i_parametrizable interface
+public:
+    bool set_params(const i_property& input_params) override
+    {
+        if (!m_open)
+        {
+            auto device_params = m_device_params;
+            if (device_params.load(input_params)
+                    && device_params.is_valid())
+            {
+                m_device_params = device_params;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool get_params(i_property& output_params) const override
+    {
+        return m_device_params.save(output_params);
     }
 };
 
