@@ -8,9 +8,12 @@
 #include "core/time_utils.h"
 #include "core/convert_utils.h"
 #include "core/enum_utils.h"
+#include "core/message_sink_impl.h"
 
 #include "video_frame_impl.h"
 #include "message_frame_impl.h"
+#include "media_command_message_impl.h"
+#include "command_camera_control.h"
 
 #include "v4l2_utils.h"
 
@@ -25,6 +28,8 @@
 
 namespace mpl::media
 {
+
+std::uint32_t control_id_format = 1;
 
 namespace detail
 {
@@ -183,13 +188,13 @@ class v4l2_device : public i_device
     };
 
     class v4l2_wrapper
-    {
-
+    {           
         mutable mutex_t                         m_safe_mutex;
+
         v4l2::v4l2_input_device                 m_native_device;
         v4l2::frame_info_t                      m_frame_info;
-        mutable v4l2::control_info_t::map_t     m_cached_controls;
         mutable v4l2::frame_info_t::array_t     m_cached_formats;
+        mutable v4l2::control_info_t::map_t     m_cached_controls;
 
     public:
 
@@ -199,33 +204,21 @@ class v4l2_device : public i_device
 
         }
 
-        inline void lock()
-        {
-            m_safe_mutex.lock();
-        }
-
-        inline void unlock()
-        {
-            m_safe_mutex.unlock();
-        }
-
         inline bool open()
         {
-            lock_t lock(m_safe_mutex);
+            if (m_native_device.open())
             {
-                if (m_native_device.open())
-                {
-                    m_cached_controls = m_native_device.get_supported_controls();
-                    m_cached_formats = m_native_device.get_supported_formats();
-                    return true;
-                }
+                m_cached_formats = m_native_device.get_supported_formats();
+                get_supported_controls();
+                //m_cached_controls = m_native_device.get_supported_controls();
+
+                return true;
             }
             return false;
         }
 
         inline bool close()
         {
-            lock_t lock(m_safe_mutex);
             if (m_native_device.close())
             {
                 m_cached_controls.clear();
@@ -238,109 +231,201 @@ class v4l2_device : public i_device
 
         inline bool is_open() const
         {
-            shared_lock_t lock(m_safe_mutex);
             return m_native_device.is_opened();
         }
 
         inline bool set_config(const device_params_t& config)
         {
-            lock_t lock(m_safe_mutex);
             return m_native_device.set_config(config.native_config());
         }
 
         inline device_params_t config() const
         {
-            shared_lock_t lock(m_safe_mutex);
             auto native_config = m_native_device.config();
             return { device_type_t::v4l2_in
                         , native_config.url };
         }
 
-        inline std::size_t controls(v4l2::ctrl_command_t::array_t& controls)
+        inline bool control(v4l2::ctrl_command_t& command)
         {
-            lock_t lock(m_safe_mutex);
-            return m_native_device.controls(controls);
-        }
-
-        inline bool control(v4l2::ctrl_command_t& control)
-        {
-            lock_t lock(m_safe_mutex);
-            return m_native_device.control(control);
-        }
-
-        inline bool set_format(const i_video_format& format)
-        {
-            v4l2::frame_info_t frame_info;
-            if (mpl::core::utils::convert(format
-                                          , frame_info))
+            if (command.id == control_id_format)
             {
-                lock_t lock(m_safe_mutex);
-                return m_native_device.set_format(frame_info);
+                command.success = set_format_id(command.id);
+                return command.success;
+            }
+
+            return m_native_device.control(command);
+        }
+
+        inline std::size_t controls(v4l2::ctrl_command_t::array_t& commands)
+        {
+            std::size_t result = 0;
+
+            for (auto& c : commands)
+            {
+                if (control(c))
+                {
+                    result++;
+                }
+            }
+
+            return result;
+        }
+
+        inline bool execute_command(command_camera_control_t& camera_control)
+        {
+            switch (camera_control.state)
+            {
+                case command_camera_control_t::state_t::set:
+                {
+                    if (camera_control.commands != nullptr)
+                    {
+                        if (send_commands(*camera_control.commands))
+                        {
+                            camera_control.state = command_camera_control_t::state_t::ok;
+                            return true;
+                        }
+                    }
+                }
+                break;
+                case command_camera_control_t::state_t::get:
+                {
+                    if (camera_control.commands != nullptr)
+                    {
+                        if (camera_control.commands == nullptr)
+                        {
+                            camera_control.commands = get_controls();
+                            camera_control.state = command_camera_control_t::state_t::ok;
+                            return true;
+
+                        }
+                        else
+                        {
+                            if (recv_commands(*camera_control.commands))
+                            {
+                                camera_control.state = command_camera_control_t::state_t::ok;
+                                return true;
+                            }
+                        }
+                    }
+                }
+                break;
+                default:
+                    camera_control.state = command_camera_control_t::state_t::failed;
             }
 
             return false;
         }
 
-        bool get_format(video_format_impl& format) const
+        inline bool set_format(const std::string& format_string)
         {
-            v4l2::frame_info_t frame_info;
+            if (!format_string.empty())
             {
-                shared_lock_t lock(m_safe_mutex);
-                frame_info = m_native_device.get_format();
-            }
-
-            if (!frame_info.is_null())
-            {
-                return mpl::core::utils::convert(frame_info
-                                                 , format);
+                for (const auto& f : m_cached_formats)
+                {
+                    if (detail::get_format_string(f) == format_string)
+                    {
+                        return m_native_device.set_format(f);
+                    }
+                }
             }
 
             return false;
-
         }
 
-        std::vector<video_format_impl> get_supported_formats(bool cached = false) const
+        inline bool set_format_id(std::uint32_t id)
         {
-            std::vector<video_format_impl> formats;
+            if (id < m_cached_formats.size())
+            {
+                return m_native_device.set_format(m_cached_formats[id]);
+            }
+
+            return false;
+        }
+
+        inline std::string get_format() const
+        {
+            return detail::get_format_string(m_native_device.get_format());
+        }
+
+        inline uint32_t get_format_id() const
+        {
+            std::uint32_t id = 0;
+
+            auto format = m_native_device.get_format();
+            for (const auto& f : m_cached_formats)
+            {
+                if (f == format)
+                {
+                    return id;
+                }
+                id++;
+            }
+
+            return 0;
+        }
+
+        std::vector<std::string> get_supported_formats(bool cached = false) const
+        {
+            std::vector<std::string> formats;
+
             v4l2::frame_info_t::array_t v4l2_formats;
+            if (!cached || m_cached_formats.empty())
             {
-                shared_lock_t lock(m_safe_mutex);
-                if (!cached || m_cached_formats.empty())
-                {
-                    v4l2_formats = m_native_device.get_supported_formats();
-                    m_cached_formats = v4l2_formats;
-                }
-                else
-                {
-                    v4l2_formats = m_cached_formats;
-                }
+                v4l2_formats = m_native_device.get_supported_formats();
+                m_cached_formats = v4l2_formats;
+            }
+            else
+            {
+                v4l2_formats = m_cached_formats;
             }
 
             for (const auto& f : v4l2_formats)
             {
-                video_format_impl format;
-                if (mpl::core::utils::convert(f
-                                              , format))
+                auto format_string = detail::get_format_string(f);
+                if (!format_string.empty())
                 {
-                    formats.emplace_back(std::move(format));
+                    formats.emplace_back(std::move(format_string));
                 }
             }
 
             return formats;
         }
 
-        v4l2::control_info_t::map_t get_supported_controls(bool cached = false) const
+        inline v4l2::control_info_t get_format_control_info(bool cached = false) const
         {
-            shared_lock_t lock(m_safe_mutex);
+            auto formats = get_supported_formats(cached);
+
+            v4l2::control_info_t contorl_info(control_id_format
+                                              , "Resolution"
+                                              , 1
+                                              , 0
+                                              , get_format_id()
+                                              , 0
+                                              , formats.size() > 0 ? formats.size() - 1 : 0);
+
+
+            for (const auto& d : formats)
+            {
+                contorl_info.menu.emplace_back(contorl_info.menu.size(), d);
+            }
+
+            return contorl_info;
+        }
+
+        inline v4l2::control_info_t::map_t get_supported_controls(bool cached = false) const
+        {
             if (!cached
                     || m_cached_controls.empty())
             {
                 m_cached_controls = m_native_device.get_supported_controls();
+                m_cached_controls.emplace(control_id_format
+                                          , get_format_control_info(false));
             }
             return m_cached_controls;
         }
 
-        bool get_formats(i_property& params)
+        inline bool get_formats(i_property& params)
         {
             auto formats = get_supported_formats();
             return !formats.empty()
@@ -456,118 +541,65 @@ class v4l2_device : public i_device
             return controls;
         }
 
-        bool send_commands(const i_property& input_params)
+
+        inline bool send_commands(const i_property& input_params)
         {
-            bool result = false;
-            property_reader reader(input_params);
-            if (auto commands = reader["commands"])
-            {
-                auto controls = create_commands(*commands
-                                                , true);
+            auto send_controls = create_commands(input_params
+                                            , true);
+            return controls(send_controls) > 0;
 
-                result |= m_native_device.controls(controls) > 0;
-            }
-
-            if (auto format = reader.get<video_format_impl>("format"))
-            {
-                v4l2::frame_info_t frame_info;
-                if (core::utils::convert<i_video_format>(*format
-                                                         , frame_info))
-                {
-                    result |= m_native_device.set_format(frame_info);
-                }
-            }
-
-            return result;
         }
 
         bool recv_commands(i_property& output_params)
         {
             bool result = false;
-            property_writer writer(output_params);
 
-            if (auto commands = writer["commands"])
+            if (output_params.property_type() == property_type_t::array)
             {
-                if (commands->property_type() == property_type_t::array)
+                for (auto& c : static_cast<i_property_array&>(output_params).get_value())
                 {
-                    for (auto& c : static_cast<i_property_array&>(*commands).get_value())
+                    if (auto command = create_command(*c
+                                                      , false))
                     {
-                        if (auto command = create_command(*c
-                                                          , false))
+                        if (control(*command))
                         {
-                            if (m_native_device.control(*command))
+                            if (command->success)
                             {
-                                if (command->success)
+                                auto it = m_cached_controls.find(command->id);
+                                if (it != m_cached_controls.end())
                                 {
-                                    auto it = m_cached_controls.find(command->id);
-                                    if (it != m_cached_controls.end())
+                                    const v4l2::control_info_t& control_info = it->second;
+                                    property_writer cmd_writer(*c);
+
+                                    switch(control_info.type())
                                     {
-                                        const v4l2::control_info_t& control_info = it->second;
-                                        property_writer cmd_writer(*c);
+                                        case v4l2::control_type_t::boolean:
+                                            result |= cmd_writer.set("value"
+                                                                    , static_cast<bool>(command->value));
+                                        break;
+                                        case v4l2::control_type_t::numeric:
+                                            result |= cmd_writer.set("value"
+                                                                    , command->value);
+                                        break;
+                                        case v4l2::control_type_t::menu:
+                                            if (auto item = control_info.get_menu_item(command->value))
+                                            {
 
-                                        switch(control_info.type())
-                                        {
-                                            case v4l2::control_type_t::boolean:
                                                 result |= cmd_writer.set("value"
-                                                                        , static_cast<bool>(command->value));
-                                            break;
-                                            case v4l2::control_type_t::numeric:
-                                                result |= cmd_writer.set("value"
-                                                                        , command->value);
-                                            break;
-                                            case v4l2::control_type_t::menu:
-                                                if (auto item = control_info.get_menu_item(command->value))
-                                                {
-
-                                                    result |= cmd_writer.set("value"
-                                                                            , item->name);
-                                                }
-                                            break;
-                                            default:;
-                                        }
+                                                                        , item->name);
+                                            }
+                                        break;
+                                        default:;
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            if (writer.has_property("format"))
-            {
-                video_format_impl video_format;
-                if (core::utils::convert(m_native_device.get_format()
-                                         , video_format))
-                {
-                    result |= writer.set("format"
-                                         , video_format);
-                }
             }
 
             return result;
-        }
-
-        bool command(const i_property* input_params
-                     , i_property* output_params)
-        {
-            lock_t lock(m_safe_mutex);
-            if (m_native_device.is_opened())
-            {
-                bool result = false;
-                if (input_params)
-                {
-                    result = send_commands(*input_params);
-                }
-
-                if (output_params)
-                {
-                    result = recv_commands(*output_params);
-                }
-
-                return result;
-            }
-
-            return false;
         }
 
         inline i_property::u_ptr_t get_controls() const
@@ -578,6 +610,8 @@ class v4l2_device : public i_device
                 detail::serialize_controls(get_supported_controls()
                                            , control_array);
 
+
+
                 return ctrls;
             }
 
@@ -586,15 +620,21 @@ class v4l2_device : public i_device
 
         inline bool read_frame(v4l2::frame_t& frame)
         {
-            lock_t lock(m_safe_mutex);
             return m_native_device.read_frame(frame);
         }
     };
 
+    using commands_queue_t = std::queue<command_camera_control_t>;
+
+    mutable mutex_t             m_command_mutex;
     device_params_t             m_device_params;
-    message_router_impl         m_router;
     v4l2_wrapper                m_wrapped_device;
 
+    message_sink_impl           m_sink;
+    message_router_impl         m_router;
+
+
+    commands_queue_t            m_commands;
     frame_id_t                  m_frame_counter;
     timestamp_t                 m_frame_timestamp;
     timestamp_t                 m_real_timestamp;
@@ -623,6 +663,7 @@ public:
     v4l2_device(const device_params_t& device_params)
         : m_device_params(device_params)
         , m_wrapped_device(m_device_params)
+        , m_sink([&](const auto& message) { return on_message(message); })
         , m_frame_counter(0)
         , m_frame_timestamp(0)
         , m_real_timestamp(0)
@@ -737,6 +778,55 @@ public:
         return true;
     }
 
+    bool on_message(const i_message& message)
+    {
+        switch(message.category())
+        {
+            case message_category_t::command:
+            {
+                auto& command_message = static_cast<const i_message_command&>(message);
+                switch(command_message.command().command_id)
+                {
+                    case command_camera_control_t::id:
+                    {
+                        return on_camera_control(static_cast<const command_camera_control_t&>(command_message.command()));
+                    }
+                    break;
+                    default:;
+                }
+            }
+            break;
+            default:;
+        }
+
+        return false;
+    }
+
+    bool on_camera_control(const command_camera_control_t& camera_control)
+    {
+        if (is_open())
+        {
+            lock_t lock(m_command_mutex);
+            m_commands.push(camera_control);
+
+            return true;
+        }
+        return false;
+    }
+
+    bool fetch_camera_control(command_camera_control_t& camera_control)
+    {
+        lock_t lock(m_command_mutex);
+        if (!m_commands.empty())
+        {
+            camera_control = std::move(m_commands.front());
+            m_commands.pop();
+            return true;
+        }
+
+        return false;
+    }
+
     void grabbing_thread()
     {
         change_state(channel_state_t::open);
@@ -756,6 +846,15 @@ public:
                 while (is_running()
                        && error_counter < 10)
                 {
+
+                    command_camera_control_t camera_control;
+                    if (fetch_camera_control(camera_control))
+                    {
+                        m_wrapped_device.execute_command(camera_control);
+                        m_router.send_message(media_command_message_impl<command_camera_control_t>(camera_control));
+                        continue;
+                    }
+
                     v4l2::frame_t v4l2_frame;
                     if (m_wrapped_device.read_frame(v4l2_frame))
                     {
@@ -782,8 +881,8 @@ public:
                 change_state(channel_state_t::disconnected);
             }
         }
-
     }
+
 
     bool is_running() const
     {
@@ -821,6 +920,11 @@ public:
 public:
     i_message_sink *sink(std::size_t index) override
     {
+        if (index == 0)
+        {
+            return &m_sink;
+        }
+
         return nullptr;
     }
 
@@ -859,20 +963,7 @@ public:
 
     bool get_params(i_property& output_params) const override
     {
-        if (m_device_params.save(output_params))
-        {
-            if (m_wrapped_device.is_open())
-            {
-                property_writer writer(output_params);
-                if (auto controls = m_wrapped_device.get_controls())
-                {
-                    writer.set("controls", *controls);
-                }
-            }
-            return true;
-        }
-
-        return false;
+        return m_device_params.save(output_params);
     }
 };
 

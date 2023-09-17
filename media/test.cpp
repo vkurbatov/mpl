@@ -276,7 +276,7 @@ void test5()
                 case message_category_t::event:
                 {
                     const auto& event_message = static_cast<const i_message_event&>(message);
-                    if (event_message.event().event_id == event_id_t::channel_state)
+                    if (event_message.event().event_id == event_channel_state_t::id)
                     {
                         const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
                         std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
@@ -459,7 +459,7 @@ void test8()
                 case message_category_t::event:
                 {
                     const auto& event_message = static_cast<const i_message_event&>(message);
-                    if (event_message.event().event_id == event_id_t::channel_state)
+                    if (event_message.event().event_id == event_channel_state_t::id)
                     {
                         const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
                         std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
@@ -803,7 +803,7 @@ void test12()
                 case message_category_t::event:
                 {
                     const auto& event_message = static_cast<const i_message_event&>(message);
-                    if (event_message.event().event_id == event_id_t::channel_state)
+                    if (event_message.event().event_id == event_channel_state_t::id)
                     {
                         const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
                         std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
@@ -1461,7 +1461,7 @@ void test18()
                     case message_category_t::event:
                     {
                         const auto& event = static_cast<const i_message_event&>(message).event();
-                        if (event.event_id == event_id_t::channel_state)
+                        if (event.event_id == event_channel_state_t::id)
                         {
                             std::cout << "channel state: " << core::utils::enum_to_string(static_cast<const event_channel_state_t&>(event).state) << std::endl;
                         }

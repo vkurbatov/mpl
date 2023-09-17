@@ -9,6 +9,9 @@ namespace mpl
 
 struct event_channel_state_t : public event_t
 {
+    static event_id_t id;
+    constexpr static std::string_view event_name = "channel_state";
+
     channel_state_t     state;
     std::string         reason;
 
