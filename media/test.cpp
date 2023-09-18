@@ -44,6 +44,9 @@
 #include "vnc_device_factory.h"
 #include "apm_device_factory.h"
 
+#include "command_camera_control.h"
+#include "media_command_message_impl.h"
+
 #include "video_frame_types.h"
 
 #include "media_option_types.h"
@@ -1251,12 +1254,41 @@ void test16()
         writer.set("streams", streams);
     }
 
+
+
     auto input_audio_device = input_audio_factory.create_device(*libav_input_audio_params);
     auto input_video_device = input_video_factory.create_device(*v4l2_input_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
+    auto v4l2_handler = [&](const i_message& message)
+    {
+        switch(message.category())
+        {
+            case message_category_t::frame:
+            {
+                return video_transcoder->send_message(message);
+            }
+            break;
+            case message_category_t::command:
+            {
+                auto& command_message = static_cast<const i_message_command&>(message);
+                if (command_message.command().command_id == command_camera_control_t::id)
+                {
+                    auto& camera_control = static_cast<const command_camera_control_t&>(command_message.command());
+                    return true;
+                }
+            }
+            break;
+            default:;
+        }
+
+        return false;
+    };
+
+    message_sink_impl v4l2_sink(v4l2_handler);
+
     input_audio_device->source(0)->add_sink(audio_transcoder.get());
-    input_video_device->source(0)->add_sink(video_transcoder.get());
+    input_video_device->source(0)->add_sink(&v4l2_sink);
 
     audio_transcoder->set_sink(output_device->sink(0));
     video_transcoder->set_sink(output_device->sink(0));
@@ -1265,104 +1297,27 @@ void test16()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
-
-    std::size_t count = 10000;
     while(input_video_device->state() != channel_state_t::connected);
 
-    if (auto params = property_helper::create_object())
+
+    command_camera_control_t camera_control;
+    camera_control.control_id = 123;
+    camera_control.state = command_camera_control_t::state_t::get;
+
+    input_video_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
+
+    camera_control.state = command_camera_control_t::state_t::set;
+    camera_control.commands = property_helper::create_array();
+
+    if (auto resolution_property = property_helper::create_object())
     {
-        if (input_video_device->get_params(*params))
-        {
-            property_reader params_reader(*params);
-            if (auto controls = params_reader.get<i_property::array_t>("controls"))
-            {
-                for (const auto& c : *controls)
-                {
-                    if (c != nullptr)
-                    {
-                        property_reader reader(*c);
-                        if (reader.check<std::string>("description", "Brightness"))
-                        {
-                            auto id = reader.get<std::int32_t>("id", 0);
-                            auto min = reader.get<std::int32_t>("min", 0);
-                            auto max = reader.get<std::int32_t>("max", 0);
-                            auto step = reader.get<std::int32_t>("step", 0);
-                            auto value = reader.get<std::int32_t>("value", 0);
+        property_writer resolution_writer(*resolution_property);
+        resolution_writer.set<std::string>("id", "resolution");
+        resolution_writer.set<std::string>("value", "1280x720@30:mjpg");
 
-                            std::int32_t vt = 8;
-
-                            while (count-- > 0)
-                            {
-                                if (auto set_cmd = property_helper::create_object())
-                                {
-                                    if (value + vt >= max)
-                                    {
-                                        vt = -step;
-                                    }
-                                    if (value - vt <= min)
-                                    {
-                                        vt = step;
-                                    }
-
-                                    value += vt;
-
-                                    if (auto ctrl = property_helper::create_object())
-                                    {
-                                        if (property_writer(*ctrl).set("id", id))
-                                        {
-                                            property_writer(*ctrl).set("value", value);
-                                            if (auto cmds = property_writer(*set_cmd).create_array("commands"))
-                                            {
-                                                static_cast<i_property_array&>(*cmds).get_value().emplace_back(std::move(ctrl));
-                                                input_video_device->control(channel_control_t::command(set_cmd.get()
-                                                                                                      , set_cmd.get()));
-                                            }
-                                        }
-                                    }
-
-                                }
-                                core::utils::sleep(durations::milliseconds(200));
-                            }
-
-                            break;
-                        }
-                    }
-                }
-            }
-            if (auto brightness = params_reader["controls.Brightness"])
-            {
-                property_reader sub_reader(*brightness);
-                auto min = sub_reader.get<std::int32_t>("min", 0);
-                auto max = sub_reader.get<std::int32_t>("max", 0);
-                auto step = sub_reader.get<std::int32_t>("step", 0);
-                auto value = sub_reader.get<std::int32_t>("value", 0);
-                std::int32_t vt = 8;
-                while (count-- > 0)
-                {
-                    if (auto set_cmd = property_helper::create_object())
-                    {
-                        if (value + vt >= max)
-                        {
-                            vt = -step;
-                        }
-                        if (value - vt <= min)
-                        {
-                            vt = step;
-                        }
-
-                        value += vt;
-
-                        property_writer set_writer(*set_cmd);
-                        set_writer.set("Brightness.value", value);
-
-                        input_video_device->control(channel_control_t::command(set_cmd.get()
-                                                                              , set_cmd.get()));
-
-                    }
-                    core::utils::sleep(durations::milliseconds(200));
-                }
-            }
-        }
+        auto& a = static_cast<i_property_array&>(*camera_control.commands);
+        a.get_value().emplace_back(std::move(resolution_property));
+        input_video_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
     }
 
 
@@ -2547,6 +2502,11 @@ void test24()
     return;
 }
 
+void test25()
+{
+
+}
+
 }
 
 void  tests()
@@ -2556,16 +2516,16 @@ void  tests()
     // test9();
     // test13();
     // test13_2(); // vnc
-    // test16(); // smart_transcoder
+    test16(); // smart_transcoder
     // test17();
     // test18();
     // test15();
-    //test19(); // composer
+    // test19(); // composer
     // test20(); // composer2
     // test21();
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)
-    test24();
+    // test24();
 
 }
 

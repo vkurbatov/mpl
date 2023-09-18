@@ -16,6 +16,7 @@
 #include "command_camera_control.h"
 
 #include "v4l2_utils.h"
+#include "tools/v4l2/v4l2_utils.h"
 
 #include "video_frame_impl.h"
 
@@ -29,10 +30,31 @@
 namespace mpl::media
 {
 
-std::uint32_t control_id_format = 1;
+constexpr static std::uint32_t control_id_resolution = v4l2::ctrl_format;
+constexpr static std::string_view control_name_resolution = "resolution";
 
 namespace detail
 {
+
+    std::uint32_t get_ctrl_id(const std::string& ctrl_name)
+    {
+        if (ctrl_name == control_name_resolution)
+        {
+            return control_id_resolution;
+        }
+
+        return v4l2::get_ctrl_id(ctrl_name);
+    }
+
+    std::string get_ctrl_name(std::uint32_t ctrl_id)
+    {
+        if (ctrl_id == control_id_resolution)
+        {
+            return std::string(control_name_resolution);
+        }
+
+        return v4l2::get_ctrl_name(ctrl_id);
+    }
 
     std::size_t serialize_controls(const v4l2::control_info_t::map_t& controls
                                    , i_property::array_t& property_controls)
@@ -44,7 +66,7 @@ namespace detail
                 property_writer writer(*ctrl);
                 const v4l2::control_info_t& control_info = c.second;
 
-                if (writer.set("id", control_info.id)
+                if (writer.set("id", detail::get_ctrl_name(control_info.id))
                         && writer.set("description", control_info.name))
                 {
                     switch(control_info.type())
@@ -103,22 +125,6 @@ namespace detail
         }
 
         return property_controls.size();
-    }
-
-    std::string get_format_string(const v4l2::frame_info_t& frame_info)
-    {
-        std::string result;
-
-        video_format_id_t format_id = utils::format_form_v4l2(frame_info.pixel_format);
-        if (format_id != video_format_id_t::undefined)
-        {
-            result.append(std::to_string(frame_info.size.width)).append("x")
-                    .append(std::to_string(frame_info.size.height)).append("@")
-                    .append(std::to_string(frame_info.fps)).append(":")
-                    .append(core::utils::enum_to_string(format_id));
-        }
-
-        return result;
     }
 }
 
@@ -248,9 +254,9 @@ class v4l2_device : public i_device
 
         inline bool control(v4l2::ctrl_command_t& command)
         {
-            if (command.id == control_id_format)
+            if (command.id == control_id_resolution)
             {
-                command.success = set_format_id(command.id);
+                command.success = set_format_id(command.value);
                 return command.success;
             }
 
@@ -282,6 +288,7 @@ class v4l2_device : public i_device
                     {
                         if (send_commands(*camera_control.commands))
                         {
+                            recv_commands(*camera_control.commands);
                             camera_control.state = command_camera_control_t::state_t::ok;
                             return true;
                         }
@@ -290,30 +297,27 @@ class v4l2_device : public i_device
                 break;
                 case command_camera_control_t::state_t::get:
                 {
-                    if (camera_control.commands != nullptr)
+                    if (camera_control.commands == nullptr)
                     {
-                        if (camera_control.commands == nullptr)
+                        camera_control.commands = get_controls();
+                        camera_control.state = command_camera_control_t::state_t::ok;
+                        return true;
+
+                    }
+                    else
+                    {
+                        if (recv_commands(*camera_control.commands))
                         {
-                            camera_control.commands = get_controls();
                             camera_control.state = command_camera_control_t::state_t::ok;
                             return true;
-
-                        }
-                        else
-                        {
-                            if (recv_commands(*camera_control.commands))
-                            {
-                                camera_control.state = command_camera_control_t::state_t::ok;
-                                return true;
-                            }
                         }
                     }
                 }
                 break;
-                default:
-                    camera_control.state = command_camera_control_t::state_t::failed;
+                default:;
             }
 
+            camera_control.state = command_camera_control_t::state_t::failed;
             return false;
         }
 
@@ -323,7 +327,7 @@ class v4l2_device : public i_device
             {
                 for (const auto& f : m_cached_formats)
                 {
-                    if (detail::get_format_string(f) == format_string)
+                    if (f.to_string() == format_string)
                     {
                         return m_native_device.set_format(f);
                     }
@@ -345,7 +349,7 @@ class v4l2_device : public i_device
 
         inline std::string get_format() const
         {
-            return detail::get_format_string(m_native_device.get_format());
+            return m_native_device.get_format().to_string();
         }
 
         inline uint32_t get_format_id() const
@@ -382,7 +386,7 @@ class v4l2_device : public i_device
 
             for (const auto& f : v4l2_formats)
             {
-                auto format_string = detail::get_format_string(f);
+                auto format_string = f.to_string();
                 if (!format_string.empty())
                 {
                     formats.emplace_back(std::move(format_string));
@@ -396,7 +400,7 @@ class v4l2_device : public i_device
         {
             auto formats = get_supported_formats(cached);
 
-            v4l2::control_info_t contorl_info(control_id_format
+            v4l2::control_info_t contorl_info(control_id_resolution
                                               , "Resolution"
                                               , 1
                                               , 0
@@ -419,7 +423,7 @@ class v4l2_device : public i_device
                     || m_cached_controls.empty())
             {
                 m_cached_controls = m_native_device.get_supported_controls();
-                m_cached_controls.emplace(control_id_format
+                m_cached_controls.emplace(control_id_resolution
                                           , get_format_control_info(false));
             }
             return m_cached_controls;
@@ -450,9 +454,10 @@ class v4l2_device : public i_device
         {
             property_reader reader(command);
 
-            if (auto id = reader.get<std::uint32_t>("id"))
+            if (auto id_name = reader.get<std::string>("id"))
             {
-                if (auto it = m_cached_controls.find(*id); it != m_cached_controls.end())
+                std::uint32_t id = detail::get_ctrl_id(*id_name);
+                if (auto it = m_cached_controls.find(id); it != m_cached_controls.end())
                 {
                     const v4l2::control_info_t& control_info = it->second;
                     auto delay = reader.get<std::uint32_t>("delay", 0);
@@ -846,7 +851,6 @@ public:
                 while (is_running()
                        && error_counter < 10)
                 {
-
                     command_camera_control_t camera_control;
                     if (fetch_camera_control(camera_control))
                     {

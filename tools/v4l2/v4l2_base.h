@@ -21,17 +21,20 @@ enum class streaming_event_t
 
 typedef std::vector<std::uint8_t> frame_data_t;
 
+using ctrl_id_t = std::uint32_t;
 
-extern const std::uint32_t ctrl_format;
-extern const std::uint32_t ctrl_base;
-extern const std::uint32_t ctrl_tilt_absolute;
-extern const std::uint32_t ctrl_pan_absolute;
-extern const std::uint32_t ctrl_zoom_absolute;
-extern const std::uint32_t ctrl_pan_speed;
-extern const std::uint32_t ctrl_tilt_speed;
-extern const std::uint32_t ctrl_zoom_speed;
+constexpr static ctrl_id_t ctrl_undefined = 0;
+constexpr static ctrl_id_t ctrl_format = 0x00001000;
+extern const ctrl_id_t ctrl_base;
+extern const ctrl_id_t ctrl_tilt_absolute;
+extern const ctrl_id_t ctrl_pan_absolute;
+extern const ctrl_id_t ctrl_zoom_absolute;
+extern const ctrl_id_t ctrl_pan_speed;
+extern const ctrl_id_t ctrl_tilt_speed;
+extern const ctrl_id_t ctrl_zoom_speed;
 
-typedef std::uint32_t pixel_format_t;
+
+using pixel_format_t = std::uint32_t;
 const pixel_format_t pixel_format_unknown = 0;
 extern const pixel_format_t pixel_format_h264;
 extern const pixel_format_t pixel_format_jpeg;
@@ -67,6 +70,8 @@ struct frame_info_t
 
     bool is_null() const;
 
+    std::string to_string() const;
+
 };
 
 struct frame_t
@@ -83,7 +88,6 @@ struct frame_t
 
 using frame_queue_t = std::queue<frame_t>;
 using ctrl_value_t = std::int32_t;
-using ctrl_id_t = std::uint32_t;
 
 struct control_range_t
 {
