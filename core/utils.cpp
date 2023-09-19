@@ -19,7 +19,7 @@ std::size_t get_value_size(const T& value)
 }
 
 template<>
-std::size_t get_value_size(const i_property::array_t& value)
+std::size_t get_value_size(const i_property::s_array_t& value)
 {
     return value.size();
 }
@@ -43,7 +43,7 @@ declare_property_type(long double, r96)
 declare_property_type(bool, boolean)
 declare_property_type(std::string, string)
 declare_property_type(octet_string_t, octet_string)
-declare_property_type(i_property::array_t, array)
+declare_property_type(i_property::s_array_t, array)
 
 raw_array_t create_raw_array(const void *ref_data
                              , std::size_t ref_size)

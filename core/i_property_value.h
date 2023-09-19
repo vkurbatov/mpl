@@ -13,7 +13,7 @@ public:
     using value_type_t = T;
     using property_type_t = i_property_value<value_type_t>;
     using s_ptr_t = std::shared_ptr<property_type_t>;
-    using array_t = std::vector<s_ptr_t>;
+    using s_array_t = std::vector<s_ptr_t>;
 
     virtual ~i_property_value(){}
 
@@ -23,7 +23,7 @@ public:
     virtual void set_value(T&& value) = 0;
 };
 
-using i_property_array = i_property_value<i_property::array_t>;
+using i_property_array = i_property_value<i_property::s_array_t>;
 
 }
 

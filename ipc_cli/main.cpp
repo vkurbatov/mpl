@@ -88,7 +88,7 @@ int main()
     {
         mpl::property_writer writer(*libav_params);
         writer.set<std::string>("url", output_url);
-        mpl::i_property::array_t streams;
+        mpl::i_property::s_array_t streams;
         streams.emplace_back(audio_format.get_params());
         streams.emplace_back(video_format.get_params());
         writer.set("streams", streams);

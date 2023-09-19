@@ -41,6 +41,7 @@ set(SOURCES
     packetizer.cpp
     depacketizer.cpp
     packetize_impl.cpp
+    json_utils.cpp
     ipc/ipc_manager_impl.cpp
     sq/mapped_sq_header.cpp
     sq/sq_packet_builder.cpp
@@ -66,6 +67,7 @@ set(PUBLIC_HEADERS
     command_types.h
     command.h
     shared_buffer_header.h
+    json_utils.h
     i_task.h
     i_task_manager.h
     i_property.h

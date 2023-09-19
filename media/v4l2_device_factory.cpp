@@ -24,6 +24,7 @@
 #include "tools/v4l2/v4l2_input_device.h"
 
 #include <shared_mutex>
+#include <condition_variable>
 #include <atomic>
 #include <thread>
 
@@ -57,7 +58,7 @@ namespace detail
     }
 
     std::size_t serialize_controls(const v4l2::control_info_t::map_t& controls
-                                   , i_property::array_t& property_controls)
+                                   , i_property::s_array_t& property_controls)
     {
         for (const auto& c : controls)
         {
@@ -134,6 +135,7 @@ class v4l2_device : public i_device
     using mutex_t = base::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
+    using cond_t = std::condition_variable;
 
     using u_ptr_t = std::unique_ptr<v4l2_device>;
 
@@ -256,7 +258,20 @@ class v4l2_device : public i_device
         {
             if (command.id == control_id_resolution)
             {
-                command.success = set_format_id(command.value);
+                if (command.is_set)
+                {
+                    command.success = set_format_id(command.value);
+                }
+                else if (auto id = get_format_id())
+                {
+                    command.value = *id;
+                    command.success = true;
+                }
+                else
+                {
+                    command.success = false;
+                }
+
                 return command.success;
             }
 
@@ -278,60 +293,20 @@ class v4l2_device : public i_device
             return result;
         }
 
-        inline bool execute_command(command_camera_control_t& camera_control)
+        inline bool execute_control_command(command_camera_control_t& camera_control)
         {
-            switch (camera_control.state)
+            if (camera_control.commands == nullptr)
             {
-                case command_camera_control_t::state_t::set:
-                {
-                    if (camera_control.commands != nullptr)
-                    {
-                        if (send_commands(*camera_control.commands))
-                        {
-                            recv_commands(*camera_control.commands);
-                            camera_control.state = command_camera_control_t::state_t::ok;
-                            return true;
-                        }
-                    }
-                }
-                break;
-                case command_camera_control_t::state_t::get:
-                {
-                    if (camera_control.commands == nullptr)
-                    {
-                        camera_control.commands = get_controls();
-                        camera_control.state = command_camera_control_t::state_t::ok;
-                        return true;
-
-                    }
-                    else
-                    {
-                        if (recv_commands(*camera_control.commands))
-                        {
-                            camera_control.state = command_camera_control_t::state_t::ok;
-                            return true;
-                        }
-                    }
-                }
-                break;
-                default:;
+                camera_control.commands = get_controls();
+                return camera_control.commands != nullptr;
             }
-
-            camera_control.state = command_camera_control_t::state_t::failed;
-            return false;
-        }
-
-        inline bool set_format(const std::string& format_string)
-        {
-            if (!format_string.empty())
+            else
             {
-                for (const auto& f : m_cached_formats)
+                if (execute_commands(*camera_control.commands) > 0)
                 {
-                    if (f.to_string() == format_string)
-                    {
-                        return m_native_device.set_format(f);
-                    }
+                    return true;
                 }
+
             }
 
             return false;
@@ -352,7 +327,7 @@ class v4l2_device : public i_device
             return m_native_device.get_format().to_string();
         }
 
-        inline uint32_t get_format_id() const
+        inline std::optional<std::uint32_t> get_format_id() const
         {
             std::uint32_t id = 0;
 
@@ -366,52 +341,25 @@ class v4l2_device : public i_device
                 id++;
             }
 
-            return 0;
+            return std::nullopt;
         }
 
-        std::vector<std::string> get_supported_formats(bool cached = false) const
+        inline v4l2::control_info_t get_format_control_info() const
         {
-            std::vector<std::string> formats;
-
-            v4l2::frame_info_t::array_t v4l2_formats;
-            if (!cached || m_cached_formats.empty())
-            {
-                v4l2_formats = m_native_device.get_supported_formats();
-                m_cached_formats = v4l2_formats;
-            }
-            else
-            {
-                v4l2_formats = m_cached_formats;
-            }
-
-            for (const auto& f : v4l2_formats)
-            {
-                auto format_string = f.to_string();
-                if (!format_string.empty())
-                {
-                    formats.emplace_back(std::move(format_string));
-                }
-            }
-
-            return formats;
-        }
-
-        inline v4l2::control_info_t get_format_control_info(bool cached = false) const
-        {
-            auto formats = get_supported_formats(cached);
+            auto format_id = get_format_id();
 
             v4l2::control_info_t contorl_info(control_id_resolution
                                               , "Resolution"
                                               , 1
                                               , 0
-                                              , get_format_id()
+                                              , format_id.has_value() ? *format_id : 0
                                               , 0
-                                              , formats.size() > 0 ? formats.size() - 1 : 0);
+                                              , m_cached_formats.size() > 0 ? m_cached_formats.size() - 1 : 0);
 
 
-            for (const auto& d : formats)
+            for (const auto& f : m_cached_formats)
             {
-                contorl_info.menu.emplace_back(contorl_info.menu.size(), d);
+                contorl_info.menu.emplace_back(contorl_info.menu.size(), f.to_string());
             }
 
             return contorl_info;
@@ -422,40 +370,33 @@ class v4l2_device : public i_device
             if (!cached
                     || m_cached_controls.empty())
             {
+                m_cached_formats = m_native_device.get_supported_formats();
                 m_cached_controls = m_native_device.get_supported_controls();
                 m_cached_controls.emplace(control_id_resolution
-                                          , get_format_control_info(false));
+                                          , get_format_control_info());
             }
+
             return m_cached_controls;
         }
 
-        inline bool get_formats(i_property& params)
+        const v4l2::control_info_t* get_control(std::uint32_t control_id) const
         {
-            auto formats = get_supported_formats();
-            return !formats.empty()
-                    && property_writer(params).set({}, formats);
-        }
-
-        i_property::u_ptr_t get_formats()
-        {
-            if (auto formats = property_helper::create_array())
+            if (auto it = m_cached_controls.find(control_id); it != m_cached_controls.end())
             {
-                if (get_formats(*formats))
-                {
-                    return formats;
-                }
+                return &it->second;
             }
 
             return nullptr;
         }
 
-        std::optional<v4l2::ctrl_command_t> create_command(const i_property& command
-                                                           , bool is_set) const
+        std::optional<v4l2::ctrl_command_t> create_command(const i_property& command) const
         {
             property_reader reader(command);
 
             if (auto id_name = reader.get<std::string>("id"))
             {
+                bool is_set = reader.has_property("value");
+
                 std::uint32_t id = detail::get_ctrl_id(*id_name);
                 if (auto it = m_cached_controls.find(id); it != m_cached_controls.end())
                 {
@@ -521,8 +462,7 @@ class v4l2_device : public i_device
             return std::nullopt;
         }
 
-        v4l2::ctrl_command_t::array_t create_commands(const i_property& commands
-                                                      , bool is_set) const
+        v4l2::ctrl_command_t::array_t create_commands(const i_property& commands) const
         {
             v4l2::ctrl_command_t::array_t controls;
 
@@ -533,9 +473,7 @@ class v4l2_device : public i_device
                 {
                     if (c != nullptr)
                     {
-
-                        if (auto control = create_command(*c
-                                                            , is_set))
+                        if (auto control = create_command(*c))
                         {
                             controls.emplace_back(std::move(*control));
                         }
@@ -547,61 +485,68 @@ class v4l2_device : public i_device
         }
 
 
-        inline bool send_commands(const i_property& input_params)
+        bool execute_command(i_property& output_params)
         {
-            auto send_controls = create_commands(input_params
-                                            , true);
-            return controls(send_controls) > 0;
-
-        }
-
-        bool recv_commands(i_property& output_params)
-        {
-            bool result = false;
-
-            if (output_params.property_type() == property_type_t::array)
+            if (auto command = create_command(output_params))
             {
-                for (auto& c : static_cast<i_property_array&>(output_params).get_value())
+                if (control(*command)
+                        && command->success)
                 {
-                    if (auto command = create_command(*c
-                                                      , false))
+                    property_writer cmd_writer(output_params);
+
+                    if (command->is_set)
                     {
-                        if (control(*command))
+                        cmd_writer.remove("value");
+                        execute_command(output_params);
+                        return true;
+                    }
+
+                    if (auto control = get_control(command->id))
+                    {
+                        switch(control->type())
                         {
-                            if (command->success)
-                            {
-                                auto it = m_cached_controls.find(command->id);
-                                if (it != m_cached_controls.end())
+                            case v4l2::control_type_t::boolean:
+                                return cmd_writer.set("value"
+                                                      , static_cast<bool>(command->value));
+                            break;
+                            case v4l2::control_type_t::numeric:
+                                return cmd_writer.set("value"
+                                                     , command->value);
+                            break;
+                            case v4l2::control_type_t::menu:
+                                if (auto item = control->get_menu_item(command->value))
                                 {
-                                    const v4l2::control_info_t& control_info = it->second;
-                                    property_writer cmd_writer(*c);
-
-                                    switch(control_info.type())
-                                    {
-                                        case v4l2::control_type_t::boolean:
-                                            result |= cmd_writer.set("value"
-                                                                    , static_cast<bool>(command->value));
-                                        break;
-                                        case v4l2::control_type_t::numeric:
-                                            result |= cmd_writer.set("value"
-                                                                    , command->value);
-                                        break;
-                                        case v4l2::control_type_t::menu:
-                                            if (auto item = control_info.get_menu_item(command->value))
-                                            {
-
-                                                result |= cmd_writer.set("value"
-                                                                        , item->name);
-                                            }
-                                        break;
-                                        default:;
-                                    }
+                                    return cmd_writer.set("value"
+                                                          , item->name);
                                 }
-                            }
+                            break;
+                            default:;
                         }
                     }
                 }
+            }
 
+            return false;
+        }
+
+
+        inline std::size_t execute_commands(i_property& output_params)
+        {
+            std::size_t result = 0;
+
+            if (output_params.property_type() == property_type_t::array)
+            {
+                const auto& ctrls = static_cast<const i_property_array&>(output_params).get_value();
+                for (const auto& c : ctrls)
+                {
+                    if (c != nullptr)
+                    {
+                        if (execute_command(*c))
+                        {
+                            result++;
+                        }
+                    }
+                }
             }
 
             return result;
@@ -612,7 +557,7 @@ class v4l2_device : public i_device
             if (auto ctrls = property_helper::create_array())
             {
                 auto& control_array = static_cast<i_property_array&>(*ctrls).get_value();
-                detail::serialize_controls(get_supported_controls()
+                detail::serialize_controls(get_supported_controls(false)
                                            , control_array);
 
 
@@ -632,6 +577,7 @@ class v4l2_device : public i_device
     using commands_queue_t = std::queue<command_camera_control_t>;
 
     mutable mutex_t             m_command_mutex;
+    cond_t                      m_command_signal;
     device_params_t             m_device_params;
     v4l2_wrapper                m_wrapped_device;
 
@@ -717,6 +663,7 @@ public:
             change_state(channel_state_t::closing);
             m_running.store(false, std::memory_order_release);
             m_open = false;
+            m_command_signal.notify_all();
 
             if (m_thread.joinable())
             {
@@ -813,13 +760,14 @@ public:
         {
             lock_t lock(m_command_mutex);
             m_commands.push(camera_control);
+            m_command_signal.notify_all();
 
             return true;
         }
         return false;
     }
 
-    bool fetch_camera_control(command_camera_control_t& camera_control)
+    bool fetch_control_command(command_camera_control_t& camera_control)
     {
         lock_t lock(m_command_mutex);
         if (!m_commands.empty())
@@ -834,6 +782,8 @@ public:
 
     void grabbing_thread()
     {
+        std::mutex signal_mutex;
+        std::unique_lock signal_lock(signal_mutex);
         change_state(channel_state_t::open);
 
         std::size_t error_counter = 0;
@@ -852,9 +802,12 @@ public:
                        && error_counter < 10)
                 {
                     command_camera_control_t camera_control;
-                    if (fetch_camera_control(camera_control))
+                    if (fetch_control_command(camera_control))
                     {
-                        m_wrapped_device.execute_command(camera_control);
+                        if (m_wrapped_device.execute_control_command(camera_control))
+                        {
+                            error_counter = 0;
+                        }
                         m_router.send_message(media_command_message_impl<command_camera_control_t>(camera_control));
                         continue;
                     }
@@ -876,7 +829,7 @@ public:
 
                     if (is_running())
                     {
-                        core::utils::sleep(durations::milliseconds(frame_time));
+                        m_command_signal.wait_for(signal_lock, std::chrono::milliseconds(frame_time));
                     }
                 }
 

@@ -10,6 +10,9 @@
 #include "core/event_channel_state.h"
 #include "core/time_utils.h"
 
+#include "media_command_message_impl.h"
+#include "command_camera_control.h"
+
 #include "tools/io/serial/serial_link.h"
 #include "tools/io/serial/serial_link_config.h"
 #include "tools/io/serial/serial_endpoint.h"
@@ -257,6 +260,7 @@ class visca_device : public i_device
 
     device_params_t             m_device_params;
     visca_channel               m_visca_channel;
+    visca::visca_control        m_visca_control;
 
     message_sink_impl           m_sink;
     message_router_impl         m_router;
@@ -293,7 +297,9 @@ public:
         , m_visca_channel(*this
                           , get_gore()
                           , m_device_params.serial_config)
-        , m_sink([&](auto&& ...args) { return on_sink_message(args...); })
+        , m_visca_control(m_device_params.visca_config
+                          , &m_visca_channel)
+        , m_sink([&](auto&& ...args) { return on_message(args...); })
         , m_state(channel_state_t::ready)
     {
 
@@ -314,8 +320,42 @@ public:
         }
     }
 
-    bool on_sink_message(const i_message& message)
+    bool on_message(const i_message& message)
     {
+        switch(message.category())
+        {
+            case message_category_t::command:
+            {
+                auto& command_message = static_cast<const i_message_command&>(message);
+                switch(command_message.command().command_id)
+                {
+                    case command_camera_control_t::id:
+                    {
+                        return on_camera_control(static_cast<const command_camera_control_t&>(command_message.command()));
+                    }
+                    break;
+                    default:;
+                }
+            }
+            break;
+            default:;
+        }
+
+        return false;
+    }
+
+    bool on_camera_control(const command_camera_control_t& camera_control)
+    {
+        if (is_open())
+        {
+
+            /*
+            lock_t lock(m_command_mutex);
+            m_commands.push(camera_control);
+            m_command_signal.notify_all();*/
+
+            return true;
+        }
         return false;
     }
 

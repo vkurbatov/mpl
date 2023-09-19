@@ -94,7 +94,7 @@ namespace detail
 
     i_property::u_ptr_t serialize_stream_list(const stream_list_t& streams_list)
     {
-        i_property::array_t streams;
+        i_property::s_array_t streams;
 
         for (const auto& s : streams_list)
         {

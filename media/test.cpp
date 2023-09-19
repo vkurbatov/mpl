@@ -59,6 +59,7 @@
 #include "core/i_message_source.h"
 
 #include "core/event_channel_state.h"
+#include "core/json_utils.h"
 
 #include "ipc_input_device_factory.h"
 #include "ipc_output_device_factory.h"
@@ -542,7 +543,7 @@ void test9()
 
         //option_writer(video_format.options()).set<std::int32_t>(opt_fmt_stream_id, 1);
 
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -890,7 +891,7 @@ void test13()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -997,7 +998,7 @@ void test13_2()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -1124,7 +1125,7 @@ void test15()
 
 
 
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -1232,7 +1233,7 @@ void test16()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
 
         if (auto vp = property_helper::create_object())
         {
@@ -1275,6 +1276,12 @@ void test16()
                 if (command_message.command().command_id == command_camera_control_t::id)
                 {
                     auto& camera_control = static_cast<const command_camera_control_t&>(command_message.command());
+                    if (camera_control.commands != nullptr)
+                    {
+                        auto json_controls = core::utils::to_json(*camera_control.commands, true);
+                        std::cout << "json_controls: " << std::endl << json_controls << std::endl;
+                    }
+
                     return true;
                 }
             }
@@ -1302,11 +1309,9 @@ void test16()
 
     command_camera_control_t camera_control;
     camera_control.control_id = 123;
-    camera_control.state = command_camera_control_t::state_t::get;
 
     input_video_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
 
-    camera_control.state = command_camera_control_t::state_t::set;
     camera_control.commands = property_helper::create_array();
 
     if (auto resolution_property = property_helper::create_object())
@@ -1670,7 +1675,7 @@ void test19()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
 
         if (auto vp = property_helper::create_object())
         {
@@ -1962,7 +1967,7 @@ void test20()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
 
         if (auto vp = property_helper::create_object())
         {
@@ -2194,7 +2199,7 @@ void test22()
                                        , 1);
 
 
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -2371,7 +2376,7 @@ void test23()
                                        , 1);
 
 
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))

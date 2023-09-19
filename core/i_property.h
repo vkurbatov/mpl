@@ -16,7 +16,7 @@ public:
     using s_ptr_t = std::shared_ptr<i_property>;
     using const_u_ptr_t = std::unique_ptr<const i_property>;
     using const_s_ptr_t = std::shared_ptr<const i_property>;
-    using array_t = std::vector<s_ptr_t>;
+    using s_array_t = std::vector<s_ptr_t>;
 
     virtual ~i_property() {}
 
