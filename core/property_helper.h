@@ -20,12 +20,12 @@ class property_helper
 public:
     static i_property::u_ptr_t create_property(property_type_t type);
     static i_property::u_ptr_t create_object();
-    static i_property::u_ptr_t create_array(i_property::array_t&& values = {});
+    static i_property::u_ptr_t create_array(i_property::s_array_t&& values = {});
 
     template<class T>
     static bool deserialize(T& value, const i_property& property);
 
-    static bool deserialize(i_property::array_t& value, const i_property& property);
+    static bool deserialize(i_property::s_array_t& value, const i_property& property);
 
     // vector
     template<class T>
@@ -103,8 +103,8 @@ public:
         return false;
     }
 
-    static bool serialize(const i_property::array_t& value, i_property& property);
-    static i_property::u_ptr_t serialize(const i_property::array_t& value);
+    static bool serialize(const i_property::s_array_t& value, i_property& property);
+    static i_property::u_ptr_t serialize(const i_property::s_array_t& value);
 
     template<class T>
     static bool serialize(const T& value, i_property& property);
@@ -154,7 +154,7 @@ public:
     {
         if (property.property_type() == property_type_t::array)
         {
-            i_property::array_t array;
+            i_property::s_array_t array;
             for (const auto& v : value)
             {
                 array.emplace_back(std::move(serialize(v)));
@@ -170,7 +170,7 @@ public:
     template<class T>
     static i_property::u_ptr_t serialize(const std::vector<T>& value)
     {
-        i_property::array_t array;
+        i_property::s_array_t array;
         for (const auto& v : value)
         {
             array.emplace_back(std::move(serialize(v)));
@@ -204,7 +204,7 @@ public:
     {
         if (property.property_type() == property_type_t::array)
         {
-            i_property::array_t array;
+            i_property::s_array_t array;
             for (const auto& v : value)
             {
                 array.emplace_back(std::move(serialize(v)));
@@ -220,7 +220,7 @@ public:
     template<class T>
     static i_property::u_ptr_t serialize(const std::set<T>& value)
     {
-        i_property::array_t array;
+        i_property::s_array_t array;
         for (const auto& v : value)
         {
             array.emplace_back(std::move(serialize(v)));

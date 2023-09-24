@@ -168,17 +168,17 @@ std::vector<std::string> split_strings(const std::string &string, const std::str
     return split_list;
 }
 
-std::string lower_string(const std::string &string)
+std::string lower_string(const std::string_view &string)
 {
-    auto lower_string = string;
+    std::string lower_string(string);
     std::transform(lower_string.begin(), lower_string.end(), lower_string.begin(),
         [](unsigned char c){ return std::tolower(c); });
     return lower_string;
 }
 
-std::string upper_string(const std::string &string)
+std::string upper_string(const std::string_view &string)
 {
-    auto upper_string = string;
+    std::string upper_string(string);
     std::transform(upper_string.begin(), upper_string.end(), upper_string.begin(),
         [](unsigned char c){ return std::tolower(c); });
     return upper_string;

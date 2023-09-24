@@ -20,8 +20,8 @@ bool compare(const T& value1
 }
 
 template<>
-bool compare(const i_property::array_t& value1
-             , const i_property::array_t& value2)
+bool compare(const i_property::s_array_t& value1
+             , const i_property::s_array_t& value2)
 {
     if (value1 == value2)
     {
@@ -79,7 +79,7 @@ template class property_value<long double>;
 template class property_value<std::string>;
 template class property_value<octet_string_t>;
 
-template class property_value<i_property::array_t>;
+template class property_value<i_property::s_array_t>;
 
 template<typename T>
 typename i_property_value<T>::u_ptr_t property_value<T>::create(const T &value)
@@ -96,13 +96,13 @@ typename i_property_value<T>::u_ptr_t property_value<T>::create(T &&value)
 template<typename T>
 typename i_property::u_ptr_t property_value<T>::create(const std::vector<T> &value)
 {
-    return property_value<i_property::array_t>::create(property_value<T>::create_array(value));
+    return property_value<i_property::s_array_t>::create(property_value<T>::create_array(value));
 }
 
 template<typename T>
-typename i_property::array_t property_value<T>::create_array(const std::vector<T> &value)
+typename i_property::s_array_t property_value<T>::create_array(const std::vector<T> &value)
 {
-    i_property::array_t array;
+    i_property::s_array_t array;
 
     for (const auto& v : value)
     {

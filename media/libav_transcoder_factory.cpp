@@ -163,6 +163,12 @@ std::uint32_t get_sample_size(const i_media_format& format)
     return 0;
 }
 
+inline bool is_wait_key_frame(const i_media_format& media_format)
+{
+    return media_format.media_type() == media_type_t::video
+            && video_format_info_t::get_info(static_cast<const i_video_format&>(media_format).format_id()).motion;
+}
+
 
 }
 
@@ -312,7 +318,8 @@ public:
                             {
                                 tune_format(target_format);
                                 m_wait_first_frame = !encoder
-                                        && media_format.media_type() == media_type_t::video;
+                                        && detail::is_wait_key_frame(media_format);
+
                                 return true;
                             }
                         }

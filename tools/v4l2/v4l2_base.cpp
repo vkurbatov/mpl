@@ -1,21 +1,22 @@
 #include "v4l2_base.h"
+#include "v4l2_utils.h"
 #include <linux/videodev2.h>
 
 namespace v4l2
 {
 
+const ctrl_id_t ctrl_base = V4L2_CID_BASE;
+const ctrl_id_t ctrl_tilt_absolute = V4L2_CID_TILT_ABSOLUTE;
+const ctrl_id_t ctrl_pan_absolute = V4L2_CID_PAN_ABSOLUTE;
+const ctrl_id_t ctrl_zoom_absolute = V4L2_CID_ZOOM_ABSOLUTE;
+const ctrl_id_t ctrl_pan_speed = V4L2_CID_PAN_SPEED;
+const ctrl_id_t ctrl_tilt_speed = V4L2_CID_TILT_SPEED;
+const ctrl_id_t ctrl_zoom_speed = V4L2_CID_ZOOM_CONTINUOUS;
+
 const pixel_format_t pixel_format_h264 = V4L2_PIX_FMT_H264;
 const pixel_format_t pixel_format_jpeg = V4L2_PIX_FMT_JPEG;
 const pixel_format_t pixel_format_mjpeg = V4L2_PIX_FMT_MJPEG;
 
-const std::uint32_t ctrl_format = 0x00001000;
-const std::uint32_t ctrl_base = V4L2_CID_BASE;
-const std::uint32_t ctrl_tilt_absolute = V4L2_CID_TILT_ABSOLUTE;
-const std::uint32_t ctrl_pan_absolute = V4L2_CID_PAN_ABSOLUTE;
-const std::uint32_t ctrl_zoom_absolute = V4L2_CID_ZOOM_ABSOLUTE;
-const std::uint32_t ctrl_pan_speed = V4L2_CID_PAN_SPEED;
-const std::uint32_t ctrl_tilt_speed = V4L2_CID_TILT_SPEED;
-const std::uint32_t ctrl_zoom_speed = V4L2_CID_ZOOM_CONTINUOUS;
 
 
 frame_size_t::frame_size_t(uint32_t width
@@ -69,6 +70,26 @@ bool frame_info_t::is_null() const
 {
     return size.is_null()
             || pixel_format == 0;
+}
+
+std::string frame_info_t::to_string() const
+{
+    std::string format_string = std::to_string(size.width)
+            .append("x")
+            .append(std::to_string(size.height));
+
+    if (fps > 0)
+    {
+        format_string.append("@").append(std::to_string(fps));
+    }
+
+    auto format_name = get_format_name(pixel_format);
+    if (!format_name.empty())
+    {
+        format_string.append(":").append(format_name);
+    }
+
+    return format_string;
 }
 
 frame_t::frame_t(const frame_info_t &frame_info

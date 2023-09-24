@@ -45,6 +45,8 @@ set(SOURCES
     video_composer.cpp
     layout_manager_mosaic_impl.cpp
     media_composer_factory_impl.cpp
+    command_camera_control.cpp
+    media_command_message_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -57,6 +59,7 @@ set(PUBLIC_HEADERS
     video_info.h
     stream_types.h
     media_option_types.h
+    command_camera_control.h
     i_message_frame.h
     i_media_stream.h
     i_media_format.h
@@ -114,6 +117,7 @@ set(PRIVATE_HEADERS
     video_composer.h
     layout_manager_mosaic_impl.h
     media_composer_factory_impl.h
+    media_command_message_impl.h
 )
 
 

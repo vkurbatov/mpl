@@ -18,6 +18,7 @@ set(SOURCES
     shared_data_impl.cpp
     utils.cpp
     time_utils.cpp
+    command.cpp
     adaptive_delay.cpp
     property_helper.cpp
     property_reader.cpp
@@ -40,6 +41,7 @@ set(SOURCES
     packetizer.cpp
     depacketizer.cpp
     packetize_impl.cpp
+    json_utils.cpp
     ipc/ipc_manager_impl.cpp
     sq/mapped_sq_header.cpp
     sq/sq_packet_builder.cpp
@@ -62,7 +64,10 @@ set(PUBLIC_HEADERS
     option_types.h
     event.h
     event_channel_state.h
+    command_types.h
+    command.h
     shared_buffer_header.h
+    json_utils.h
     i_task.h
     i_task_manager.h
     i_property.h
@@ -87,6 +92,7 @@ set(PUBLIC_HEADERS
     i_message_sink.h
     i_message_source.h
     i_message_event.h
+    i_message_command.h
     i_message_channel.h
     )
 

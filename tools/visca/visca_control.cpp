@@ -622,7 +622,7 @@ struct visca_control::pimpl_t
         return false;
     }
 
-    bool set_zoom(uint16_t zoom)
+    bool set_zoom(int16_t zoom)
     {
         if (m_controller.request(m_address
                               , visca_command_id_t::cmd_cam_zoom_direct
@@ -635,7 +635,7 @@ struct visca_control::pimpl_t
         return false;
     }
 
-    bool get_zoom(uint16_t &zoom)
+    bool get_zoom(int16_t &zoom)
     {
         if (m_controller.request(m_address
                               , visca_command_id_t::inq_cam_zoom_pos))
@@ -666,7 +666,7 @@ struct visca_control::pimpl_t
 
         if (get_pan_tilt(v_pan, v_tilt))
         {
-            std::uint16_t v_zoom = 0;
+            std::int16_t v_zoom = 0;
 
             if (get_zoom(v_zoom))
             {
@@ -784,12 +784,12 @@ bool visca_control::pan_tilt_stop()
     return m_pimpl->pan_tilt_stop();
 }
 
-bool visca_control::set_zoom(uint16_t zoom)
+bool visca_control::set_zoom(int16_t zoom)
 {
     return m_pimpl->set_zoom(zoom);
 }
 
-bool visca_control::get_zoom(uint16_t &zoom)
+bool visca_control::get_zoom(int16_t &zoom)
 {
     return m_pimpl->get_zoom(zoom);
 }

@@ -11,7 +11,7 @@ namespace mpl::core::utils
 namespace detail
 {
 
-bool convert(const i_property::array_t& in_value, i_property::array_t& out_value)
+bool convert(const i_property::s_array_t& in_value, i_property::s_array_t& out_value)
 {
     out_value.clear();
     for (const auto& i : in_value)
@@ -25,28 +25,28 @@ bool convert(const i_property::array_t& in_value, i_property::array_t& out_value
 }
 
 template<typename Tin>
-bool convert(const Tin& in_value, i_property::array_t& out_value)
+bool convert(const Tin& in_value, i_property::s_array_t& out_value)
 {
     return false;
 }
 
 template<typename Tout>
-bool convert(const i_property::array_t& out_value, Tout& in_value)
+bool convert(const i_property::s_array_t& out_value, Tout& in_value)
 {
     return false;
 }
 
-bool convert(const std::string& in_value, i_property::array_t &out_value)
+bool convert(const std::string& in_value, i_property::s_array_t &out_value)
 {
     return false;
 }
 
-bool convert(const octet_string_t& in_value, i_property::array_t &out_value)
+bool convert(const octet_string_t& in_value, i_property::s_array_t &out_value)
 {
     return false;
 }
 
-bool convert(const i_property::array_t &in_value, std::string& out_value)
+bool convert(const i_property::s_array_t &in_value, std::string& out_value)
 {
     return false;
 }
@@ -119,7 +119,7 @@ bool convert_from_property(const i_property &in_value, Tout &out_value)
             return detail::convert(static_cast<const i_property_value<octet_string_t>&>(in_value).get_value(), out_value);
         break;
         case property_type_t::array:
-            return detail::convert(static_cast<const i_property_value<i_property::array_t>&>(in_value).get_value(), out_value);
+            return detail::convert(static_cast<const i_property_value<i_property::s_array_t>&>(in_value).get_value(), out_value);
         break;
         default:
             return false;
@@ -178,7 +178,7 @@ bool convert_to_property(const Tin &in_value, i_property &out_value)
             return detail::convert_property(in_value, static_cast<i_property_value<octet_string_t>&>(out_value));
         break;
         case property_type_t::array:
-            return detail::convert_property(in_value, static_cast<i_property_value<i_property::array_t>&>(out_value));
+            return detail::convert_property(in_value, static_cast<i_property_value<i_property::s_array_t>&>(out_value));
         break;
         default:
             return false;
@@ -212,6 +212,6 @@ __declare_conversion_type(long double)
 
 __declare_conversion_type(std::string)
 __declare_conversion_type(octet_string_t)
-__declare_conversion_type(i_property::array_t)
+__declare_conversion_type(i_property::s_array_t)
 
 }

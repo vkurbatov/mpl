@@ -59,8 +59,8 @@ bool is_equal(const std::string& lstr
 
 std::string format_string(const std::string& format, ...);
 
-std::string lower_string(const std::string& string);
-std::string upper_string(const std::string& string);
+std::string lower_string(const std::string_view& string);
+std::string upper_string(const std::string_view& string);
 
 bool compare(const std::string& text
              , const std::string& filter);

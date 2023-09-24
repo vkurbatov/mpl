@@ -229,7 +229,7 @@ struct libav_output_format::context_t
             return false;
         }
 
-        bool is_open() const
+        inline bool is_open() const
         {
             return m_context != nullptr;
         }
@@ -361,12 +361,12 @@ struct libav_output_format::context_t
         close();
     }
 
-    const config_t& config() const
+    inline const config_t& config() const
     {
         return m_config;
     }
 
-    bool set_config(const config_t& config)
+    inline bool set_config(const config_t& config)
     {
         if (!is_open())
         {
@@ -377,22 +377,22 @@ struct libav_output_format::context_t
         return false;
     }
 
-    bool open()
+    inline bool open()
     {
         return m_native_context.open(m_config);
     }
 
-    bool close()
+    inline bool close()
     {
         return m_native_context.close();
     }
 
-    bool is_open() const
+    inline bool is_open() const
     {
         return m_native_context.is_open();
     }
 
-    bool write(const frame_ref_t &frame)
+    inline bool write(const frame_ref_t &frame)
     {
         return m_native_context.write(frame);
     }

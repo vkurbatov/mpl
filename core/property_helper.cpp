@@ -43,7 +43,7 @@ i_property::u_ptr_t property_helper::create_property(property_type_t type)
             return property_tree::create();
         break;
         case property_type_t::array:
-            return property_value<i_property::array_t>::create();
+            return property_value<i_property::s_array_t>::create();
         break;
         case property_type_t::i8:
             return property_value<std::int8_t>::create();
@@ -98,9 +98,9 @@ i_property::u_ptr_t property_helper::create_object()
     return property_tree::create();
 }
 
-i_property::u_ptr_t property_helper::create_array(i_property::array_t&& values)
+i_property::u_ptr_t property_helper::create_array(i_property::s_array_t&& values)
 {
-    return property_value<i_property::array_t>::create(std::move(values));
+    return property_value<i_property::s_array_t>::create(std::move(values));
 }
 
 template<class T>
@@ -116,12 +116,12 @@ bool property_helper::deserialize(octet_string_t& value
      return core::utils::convert(property, value);
 }
 
-bool property_helper::deserialize(i_property::array_t &value
+bool property_helper::deserialize(i_property::s_array_t &value
                                  , const i_property &property)
 {
     if (property.property_type() == property_type_t::array)
     {
-        for (auto&& p : static_cast<const i_property_value<i_property::array_t>&>(property).get_value())
+        for (auto&& p : static_cast<const i_property_value<i_property::s_array_t>&>(property).get_value())
         {
             if (p != nullptr)
             {
@@ -141,7 +141,7 @@ bool property_helper::serialize(const T &value
     return core::utils::convert(value, property);
 }
 
-bool property_helper::serialize(const i_property::array_t &value
+bool property_helper::serialize(const i_property::s_array_t &value
                                 , i_property &property)
 {
     if (property.property_type() == property_type_t::array)
@@ -154,9 +154,9 @@ bool property_helper::serialize(const i_property::array_t &value
     return false;
 }
 
-i_property::u_ptr_t property_helper::serialize(const i_property::array_t &value)
+i_property::u_ptr_t property_helper::serialize(const i_property::s_array_t &value)
 {
-    return property_value<i_property::array_t>::create(value);
+    return property_value<i_property::s_array_t>::create(value);
 }
 
 property_helper::property_helper(const i_property &property)

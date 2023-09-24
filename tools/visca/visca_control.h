@@ -48,8 +48,8 @@ public:
 
     bool pan_tilt_stop();
 
-    bool set_zoom(std::uint16_t zoom);
-    bool get_zoom(std::uint16_t& zoom);
+    bool set_zoom(std::int16_t zoom);
+    bool get_zoom(std::int16_t& zoom);
 
     bool get_ptz(double& pan, double& tilt, double& zoom);
     bool set_ptz(double pan, double tilt, double zoom);

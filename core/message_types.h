@@ -8,7 +8,7 @@ enum class message_category_t
 {
     undefined = -1,
     frame,
-    control,
+    command,
     event
 };
 

@@ -44,6 +44,9 @@
 #include "vnc_device_factory.h"
 #include "apm_device_factory.h"
 
+#include "command_camera_control.h"
+#include "media_command_message_impl.h"
+
 #include "video_frame_types.h"
 
 #include "media_option_types.h"
@@ -56,11 +59,14 @@
 #include "core/i_message_source.h"
 
 #include "core/event_channel_state.h"
+#include "core/json_utils.h"
 
 #include "ipc_input_device_factory.h"
 #include "ipc_output_device_factory.h"
 
 #include "tools/wap/wap_processor.h"
+
+#include "visca_device_factory.h"
 
 #include "tools/ffmpeg/libav_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
@@ -276,7 +282,7 @@ void test5()
                 case message_category_t::event:
                 {
                     const auto& event_message = static_cast<const i_message_event&>(message);
-                    if (event_message.event().event_id == event_id_t::channel_state)
+                    if (event_message.event().event_id == event_channel_state_t::id)
                     {
                         const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
                         std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
@@ -459,7 +465,7 @@ void test8()
                 case message_category_t::event:
                 {
                     const auto& event_message = static_cast<const i_message_event&>(message);
-                    if (event_message.event().event_id == event_id_t::channel_state)
+                    if (event_message.event().event_id == event_channel_state_t::id)
                     {
                         const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
                         std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
@@ -539,7 +545,7 @@ void test9()
 
         //option_writer(video_format.options()).set<std::int32_t>(opt_fmt_stream_id, 1);
 
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -803,7 +809,7 @@ void test12()
                 case message_category_t::event:
                 {
                     const auto& event_message = static_cast<const i_message_event&>(message);
-                    if (event_message.event().event_id == event_id_t::channel_state)
+                    if (event_message.event().event_id == event_channel_state_t::id)
                     {
                         const auto& channel_state = static_cast<const event_channel_state_t&>(event_message.event());
                         std::cout << "device state: " << static_cast<std::uint32_t>(channel_state.state) << std::endl;
@@ -887,7 +893,7 @@ void test13()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -994,7 +1000,7 @@ void test13_2()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -1121,7 +1127,7 @@ void test15()
 
 
 
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -1229,7 +1235,7 @@ void test16()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
 
         if (auto vp = property_helper::create_object())
         {
@@ -1251,12 +1257,47 @@ void test16()
         writer.set("streams", streams);
     }
 
+
+
     auto input_audio_device = input_audio_factory.create_device(*libav_input_audio_params);
     auto input_video_device = input_video_factory.create_device(*v4l2_input_video_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
+    auto v4l2_handler = [&](const i_message& message)
+    {
+        switch(message.category())
+        {
+            case message_category_t::frame:
+            {
+                return video_transcoder->send_message(message);
+            }
+            break;
+            case message_category_t::command:
+            {
+                auto& command_message = static_cast<const i_message_command&>(message);
+                if (command_message.command().command_id == command_camera_control_t::id)
+                {
+                    auto& camera_control = static_cast<const command_camera_control_t&>(command_message.command());
+                    if (camera_control.commands != nullptr)
+                    {
+                        auto json_controls = core::utils::to_json(*camera_control.commands, true);
+                        std::cout << "json_controls: " << std::endl << json_controls << std::endl;
+                    }
+
+                    return true;
+                }
+            }
+            break;
+            default:;
+        }
+
+        return false;
+    };
+
+    message_sink_impl v4l2_sink(v4l2_handler);
+
     input_audio_device->source(0)->add_sink(audio_transcoder.get());
-    input_video_device->source(0)->add_sink(video_transcoder.get());
+    input_video_device->source(0)->add_sink(&v4l2_sink);
 
     audio_transcoder->set_sink(output_device->sink(0));
     video_transcoder->set_sink(output_device->sink(0));
@@ -1265,104 +1306,26 @@ void test16()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
-
-    std::size_t count = 10000;
     while(input_video_device->state() != channel_state_t::connected);
 
-    if (auto params = property_helper::create_object())
+
+    command_camera_control_t camera_control;
+    camera_control.control_id = 123;
+
+    input_video_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
+
+    camera_control.commands = property_helper::create_array();
+
+    if (auto resolution_property = property_helper::create_object())
     {
-        if (input_video_device->get_params(*params))
-        {
-            property_reader params_reader(*params);
-            if (auto controls = params_reader.get<i_property::array_t>("controls"))
-            {
-                for (const auto& c : *controls)
-                {
-                    if (c != nullptr)
-                    {
-                        property_reader reader(*c);
-                        if (reader.check<std::string>("description", "Brightness"))
-                        {
-                            auto id = reader.get<std::int32_t>("id", 0);
-                            auto min = reader.get<std::int32_t>("min", 0);
-                            auto max = reader.get<std::int32_t>("max", 0);
-                            auto step = reader.get<std::int32_t>("step", 0);
-                            auto value = reader.get<std::int32_t>("value", 0);
+        property_writer resolution_writer(*resolution_property);
+        resolution_writer.set<std::string>("id", "resolution");
+        resolution_writer.set<std::string>("value", "1280x720@30:mjpg");
 
-                            std::int32_t vt = 8;
-
-                            while (count-- > 0)
-                            {
-                                if (auto set_cmd = property_helper::create_object())
-                                {
-                                    if (value + vt >= max)
-                                    {
-                                        vt = -step;
-                                    }
-                                    if (value - vt <= min)
-                                    {
-                                        vt = step;
-                                    }
-
-                                    value += vt;
-
-                                    if (auto ctrl = property_helper::create_object())
-                                    {
-                                        if (property_writer(*ctrl).set("id", id))
-                                        {
-                                            property_writer(*ctrl).set("value", value);
-                                            if (auto cmds = property_writer(*set_cmd).create_array("commands"))
-                                            {
-                                                static_cast<i_property_array&>(*cmds).get_value().emplace_back(std::move(ctrl));
-                                                input_video_device->control(channel_control_t::command(set_cmd.get()
-                                                                                                      , set_cmd.get()));
-                                            }
-                                        }
-                                    }
-
-                                }
-                                core::utils::sleep(durations::milliseconds(200));
-                            }
-
-                            break;
-                        }
-                    }
-                }
-            }
-            if (auto brightness = params_reader["controls.Brightness"])
-            {
-                property_reader sub_reader(*brightness);
-                auto min = sub_reader.get<std::int32_t>("min", 0);
-                auto max = sub_reader.get<std::int32_t>("max", 0);
-                auto step = sub_reader.get<std::int32_t>("step", 0);
-                auto value = sub_reader.get<std::int32_t>("value", 0);
-                std::int32_t vt = 8;
-                while (count-- > 0)
-                {
-                    if (auto set_cmd = property_helper::create_object())
-                    {
-                        if (value + vt >= max)
-                        {
-                            vt = -step;
-                        }
-                        if (value - vt <= min)
-                        {
-                            vt = step;
-                        }
-
-                        value += vt;
-
-                        property_writer set_writer(*set_cmd);
-                        set_writer.set("Brightness.value", value);
-
-                        input_video_device->control(channel_control_t::command(set_cmd.get()
-                                                                              , set_cmd.get()));
-
-                    }
-                    core::utils::sleep(durations::milliseconds(200));
-                }
-            }
-        }
+        auto& a = static_cast<i_property_array&>(*camera_control.commands);
+        a.get_value().clear();
+        a.get_value().emplace_back(std::move(resolution_property));
+        input_video_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
     }
 
 
@@ -1461,7 +1424,7 @@ void test18()
                     case message_category_t::event:
                     {
                         const auto& event = static_cast<const i_message_event&>(message).event();
-                        if (event.event_id == event_id_t::channel_state)
+                        if (event.event_id == event_channel_state_t::id)
                         {
                             std::cout << "channel state: " << core::utils::enum_to_string(static_cast<const event_channel_state_t&>(event).state) << std::endl;
                         }
@@ -1715,7 +1678,7 @@ void test19()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
 
         if (auto vp = property_helper::create_object())
         {
@@ -2007,7 +1970,7 @@ void test20()
     {
         property_writer writer(*libav_output_device_params);
         writer.set<std::string>("url", output_url);
-        i_property::array_t streams;
+        i_property::s_array_t streams;
 
         if (auto vp = property_helper::create_object())
         {
@@ -2239,7 +2202,7 @@ void test22()
                                        , 1);
 
 
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -2416,7 +2379,7 @@ void test23()
                                        , 1);
 
 
-        i_property::array_t streams;
+        i_property::s_array_t streams;
         if (auto ap = property_helper::create_object())
         {
             if (audio_format.get_params(*ap))
@@ -2547,6 +2510,98 @@ void test24()
     return;
 }
 
+void test25()
+{
+
+    visca_device_factory factory;
+
+    auto visca_params = property_helper::create_object();
+    if (visca_params)
+    {
+        property_writer writer(*visca_params);
+        writer.set("visca.reply_timeout_ms", 100);
+        writer.set("visca.pan_speed", 10);
+        writer.set("visca.tilt_speed", 10);
+        writer.set("serial.baud_rate", 9600);
+        writer.set("serial.char_size", 8);
+        writer.set<std::string>("serial.parity", "even");
+        writer.set<std::string>("serial.stop_bits", "one");
+        writer.set<std::string>("serial.flow_control", "none");
+        writer.set<std::string>("serial.port_name", "/dev/pts/3");
+
+    }
+
+    auto visca_device = factory.create_device(*visca_params);
+    if (visca_device)
+    {
+        auto visca_handler = [&](const i_message& message)
+        {
+            switch(message.category())
+            {
+                case message_category_t::event:
+                {
+                    auto& channel_state = static_cast<const event_channel_state_t&>(static_cast<const i_message_event&>(message).event());
+                    std::cout << "Visca state: " << core::utils::enum_to_string(channel_state.state) << std::endl;
+                }
+                break;
+                case message_category_t::command:
+                {
+                    auto& command_message = static_cast<const i_message_command&>(message);
+                    if (command_message.command().command_id == command_camera_control_t::id)
+                    {
+                        auto& camera_control = static_cast<const command_camera_control_t&>(command_message.command());
+                        if (camera_control.commands != nullptr)
+                        {
+                            auto json_controls = core::utils::to_json(*camera_control.commands, true);
+                            std::cout << "json_controls: " << std::endl << json_controls << std::endl;
+                        }
+
+                        return true;
+                    }
+                }
+                break;
+                default:;
+            }
+
+            return false;
+        };
+
+        message_sink_impl visca_sink(visca_handler);
+
+        visca_device->source(0)->add_sink(&visca_sink);
+
+        visca_device->control(channel_control_t::open());
+
+        command_camera_control_t camera_control;
+        camera_control.control_id = 123;
+
+        core::utils::sleep(durations::seconds(1));
+
+        visca_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
+
+        core::utils::sleep(durations::seconds(1));
+
+
+        if (auto tilt_property = property_helper::create_object())
+        {
+            property_writer tilt_writer(*tilt_property);
+            tilt_writer.set<std::string>("id", "tilt_absolute");
+            tilt_writer.set<std::uint16_t>("value", 56);
+
+            camera_control.commands = property_helper::create_array();
+            auto& a = static_cast<i_property_array&>(*camera_control.commands);
+            a.get_value().emplace_back(std::move(tilt_property));
+            visca_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
+        }
+
+        core::utils::sleep(durations::seconds(150));
+
+        visca_device->control(channel_control_t::close());
+    }
+
+    // auto factory.create_device("");
+}
+
 }
 
 void  tests()
@@ -2556,16 +2611,17 @@ void  tests()
     // test9();
     // test13();
     // test13_2(); // vnc
-    // test16(); // smart_transcoder
+    //test16(); // smart_transcoder
     // test17();
     // test18();
     // test15();
-    //test19(); // composer
+    // test19(); // composer
     // test20(); // composer2
     // test21();
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)
-    test24();
+    // test24();
+    test25(); // visca
 
 }
 

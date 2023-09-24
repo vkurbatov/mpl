@@ -18,7 +18,7 @@ public:
     static typename i_property_value<T>::u_ptr_t create(const T& value = {});
     static typename i_property_value<T>::u_ptr_t create(T&& value);
     static typename i_property::u_ptr_t create(const std::vector<T>& value);
-    static typename i_property::array_t create_array(const std::vector<T>& value);
+    static typename i_property::s_array_t create_array(const std::vector<T>& value);
 
     property_value(T&& value);
     property_value(const T& value = {});
