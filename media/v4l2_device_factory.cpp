@@ -295,18 +295,21 @@ class v4l2_device : public i_device
 
         inline bool execute_control_command(command_camera_control_t& camera_control)
         {
-            if (camera_control.commands == nullptr)
+            if (camera_control.state == command_camera_control_t::state_t::request)
             {
-                camera_control.commands = get_controls();
-                return camera_control.commands != nullptr;
-            }
-            else
-            {
-                if (execute_commands(*camera_control.commands) > 0)
+                if (camera_control.commands == nullptr)
                 {
-                    return true;
+                    camera_control.commands = get_controls();
+                    return camera_control.commands != nullptr;
                 }
+                else
+                {
+                    if (execute_commands(*camera_control.commands) > 0)
+                    {
+                        return true;
+                    }
 
+                }
             }
 
             return false;
@@ -806,7 +809,12 @@ public:
                     {
                         if (m_wrapped_device.execute_control_command(camera_control))
                         {
+                            camera_control.state = command_camera_control_t::state_t::success;
                             error_counter = 0;
+                        }
+                        else
+                        {
+                            camera_control.state = command_camera_control_t::state_t::failed;
                         }
                         m_router.send_message(media_command_message_impl<command_camera_control_t>(camera_control));
                         continue;

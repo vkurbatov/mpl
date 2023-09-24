@@ -66,6 +66,8 @@
 
 #include "tools/wap/wap_processor.h"
 
+#include "visca_device_factory.h"
+
 #include "tools/ffmpeg/libav_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
 #include "tools/ffmpeg/libav_stream_publisher.h"
@@ -1321,6 +1323,7 @@ void test16()
         resolution_writer.set<std::string>("value", "1280x720@30:mjpg");
 
         auto& a = static_cast<i_property_array&>(*camera_control.commands);
+        a.get_value().clear();
         a.get_value().emplace_back(std::move(resolution_property));
         input_video_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
     }
@@ -2510,6 +2513,93 @@ void test24()
 void test25()
 {
 
+    visca_device_factory factory;
+
+    auto visca_params = property_helper::create_object();
+    if (visca_params)
+    {
+        property_writer writer(*visca_params);
+        writer.set("visca.reply_timeout_ms", 100);
+        writer.set("visca.pan_speed", 10);
+        writer.set("visca.tilt_speed", 10);
+        writer.set("serial.baud_rate", 9600);
+        writer.set("serial.char_size", 8);
+        writer.set<std::string>("serial.parity", "even");
+        writer.set<std::string>("serial.stop_bits", "one");
+        writer.set<std::string>("serial.flow_control", "none");
+        writer.set<std::string>("serial.port_name", "/dev/pts/3");
+
+    }
+
+    auto visca_device = factory.create_device(*visca_params);
+    if (visca_device)
+    {
+        auto visca_handler = [&](const i_message& message)
+        {
+            switch(message.category())
+            {
+                case message_category_t::event:
+                {
+                    auto& channel_state = static_cast<const event_channel_state_t&>(static_cast<const i_message_event&>(message).event());
+                    std::cout << "Visca state: " << core::utils::enum_to_string(channel_state.state) << std::endl;
+                }
+                break;
+                case message_category_t::command:
+                {
+                    auto& command_message = static_cast<const i_message_command&>(message);
+                    if (command_message.command().command_id == command_camera_control_t::id)
+                    {
+                        auto& camera_control = static_cast<const command_camera_control_t&>(command_message.command());
+                        if (camera_control.commands != nullptr)
+                        {
+                            auto json_controls = core::utils::to_json(*camera_control.commands, true);
+                            std::cout << "json_controls: " << std::endl << json_controls << std::endl;
+                        }
+
+                        return true;
+                    }
+                }
+                break;
+                default:;
+            }
+
+            return false;
+        };
+
+        message_sink_impl visca_sink(visca_handler);
+
+        visca_device->source(0)->add_sink(&visca_sink);
+
+        visca_device->control(channel_control_t::open());
+
+        command_camera_control_t camera_control;
+        camera_control.control_id = 123;
+
+        core::utils::sleep(durations::seconds(1));
+
+        visca_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
+
+        core::utils::sleep(durations::seconds(1));
+
+
+        if (auto tilt_property = property_helper::create_object())
+        {
+            property_writer tilt_writer(*tilt_property);
+            tilt_writer.set<std::string>("id", "tilt_absolute");
+            tilt_writer.set<std::uint16_t>("value", 56);
+
+            camera_control.commands = property_helper::create_array();
+            auto& a = static_cast<i_property_array&>(*camera_control.commands);
+            a.get_value().emplace_back(std::move(tilt_property));
+            visca_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
+        }
+
+        core::utils::sleep(durations::seconds(150));
+
+        visca_device->control(channel_control_t::close());
+    }
+
+    // auto factory.create_device("");
 }
 
 }
@@ -2521,7 +2611,7 @@ void  tests()
     // test9();
     // test13();
     // test13_2(); // vnc
-    test16(); // smart_transcoder
+    //test16(); // smart_transcoder
     // test17();
     // test18();
     // test15();
@@ -2531,6 +2621,7 @@ void  tests()
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)
     // test24();
+    test25(); // visca
 
 }
 
