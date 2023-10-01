@@ -71,6 +71,7 @@ add_library(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     mplmedia
+    mplutils
     mplcore
     vncpt
     viscapt
@@ -130,6 +131,7 @@ target_link_libraries(${IPC_CLI_PROJECT_NAME}
     )
 
 add_subdirectory(core)
+add_subdirectory(utils)
 add_subdirectory(media)
 add_subdirectory(tools)
 

@@ -4,51 +4,11 @@ set(TARGET mplcore)
 
 set(SOURCES
     test.cpp
-    enum_convert_impl.cpp
     type_info.cpp
-    data_splitter.cpp
-    smart_buffer.cpp
-    smart_buffer_collection.cpp
-    task_manager_impl.cpp
-    fifo_writer_impl.cpp
-    fifo_reader_impl.cpp
-    cyclic_data_reader.cpp
-    cyclic_data_writer.cpp
-    shared_buffer_header.cpp
-    shared_data_impl.cpp
-    utils.cpp
-    time_utils.cpp
     command.cpp
-    adaptive_delay.cpp
-    property_helper.cpp
-    property_reader.cpp
-    property_writer.cpp
-    string_utils_impl.cpp
-    property_value_impl.cpp
-    property_tree_impl.cpp
-    option_impl.cpp
-    option_helper.cpp
-    option_value_impl.cpp
-    convert_value_impl.cpp
-    convert_property_impl.cpp
     channel_control.cpp
-    message_router_impl.cpp
     event.cpp
     event_channel_state.cpp
-    message_event_impl.cpp
-    message_sink_impl.cpp
-    mapped_packet.cpp
-    packetizer.cpp
-    depacketizer.cpp
-    packetize_impl.cpp
-    json_utils.cpp
-    ipc/ipc_manager_impl.cpp
-    sq/mapped_sq_header.cpp
-    sq/sq_packet_builder.cpp
-    sq/sq_packet.cpp
-    sq/sq_buffer.cpp
-    sq/sq_parser.cpp
-    sq/sq_stitcher.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -66,8 +26,6 @@ set(PUBLIC_HEADERS
     event_channel_state.h
     command_types.h
     command.h
-    shared_buffer_header.h
-    json_utils.h
     i_task.h
     i_task_manager.h
     i_property.h
@@ -98,45 +56,6 @@ set(PUBLIC_HEADERS
 
 set(PRIVATE_HEADERS
     test.h
-    data_splitter.h
-    smart_buffer.h
-    smart_buffer_collection.h
-    task_manager_impl.h
-    fifo_writer_impl.h
-    fifo_reader_impl.h
-    cyclic_data_reader.h
-    cyclic_data_writer.h
-    shared_data_impl.h
-    utils.h
-    enum_utils.h
-    enum_converter_defs.h
-    enum_serialize_defs.h
-    time_utils.h
-    adaptive_delay.h
-    property_helper.h
-    property_reader.h
-    property_writer.h
-    convert_utils.h
-    pointer_utils.h
-    property_value_impl.h
-    property_tree_impl.h
-    option_impl.h
-    option_value_impl.h
-    option_helper.h
-    message_router_impl.h
-    message_event_impl.h
-    message_sink_impl.h
-    mapped_packet.h
-    packetizer.h
-    depacketizer.h
-    ipc/ipc_manager_impl.h
-    sq/mapped_sq_header.h
-    sq/sq_types.h
-    sq/sq_packet_builder.h
-    sq/sq_packet.h
-    sq/sq_buffer.h
-    sq/sq_parser.h
-    sq/sq_stitcher.h
 )
 
 

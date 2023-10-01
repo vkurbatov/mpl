@@ -1,7 +1,7 @@
 #include "media_converter_factory_impl.h"
 #include "libav_audio_converter_factory.h"
 #include "libav_video_converter_factory.h"
-#include "core/property_reader.h"
+#include "utils/property_reader.h"
 
 namespace mpl::media
 {

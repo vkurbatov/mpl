@@ -1,8 +1,8 @@
 #include "libav_video_converter_factory.h"
 
-#include "core/property_reader.h"
-#include "core/convert_utils.h"
-#include "core/option_helper.h"
+#include "utils/property_reader.h"
+#include "utils/convert_utils.h"
+#include "utils/option_helper.h"
 #include "core/i_buffer_collection.h"
 
 #include "video_format_impl.h"
@@ -22,8 +22,8 @@ namespace detail
                                    , ffmpeg::fragment_info_t& fragment_info)
     {
         ffmpeg::stream_info_t stream_info;
-        if (core::utils::convert(format
-                                 , stream_info))
+        if (utils::convert(format
+                           , stream_info))
         {
             fragment_info.pixel_format = stream_info.media_info.video_info.pixel_format;
             fragment_info.frame_size = stream_info.media_info.video_info.size;

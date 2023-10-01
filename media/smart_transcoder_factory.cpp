@@ -1,13 +1,13 @@
 #include "smart_transcoder_factory.h"
 
-#include "core/property_writer.h"
-#include "core/option_helper.h"
+#include "utils/property_writer.h"
+#include "utils/option_helper.h"
 #include "message_frame_impl.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 
-#include "core/task_manager_impl.h"
+#include "utils/task_manager_impl.h"
 
 #include "media_option_types.h"
 

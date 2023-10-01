@@ -1,11 +1,11 @@
 #include "vnc_device_factory.h"
 
 
-#include "core/message_router_impl.h"
-#include "core/property_writer.h"
-#include "core/message_event_impl.h"
+#include "utils/message_router_impl.h"
+#include "utils/property_writer.h"
+#include "utils/message_event_impl.h"
 #include "core/event_channel_state.h"
-#include "core/time_utils.h"
+#include "utils/time_utils.h"
 
 #include "video_frame_impl.h"
 #include "message_frame_impl.h"

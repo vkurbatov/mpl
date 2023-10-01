@@ -1,6 +1,6 @@
-#include "core/packetizer.h"
-#include "core/depacketizer.h"
-#include "core/option_helper.h"
+#include "utils/packetizer.h"
+#include "utils/depacketizer.h"
+#include "utils/option_helper.h"
 
 #include "media_utils.h"
 #include "audio_format_impl.h"

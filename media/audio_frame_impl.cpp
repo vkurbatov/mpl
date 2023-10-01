@@ -1,5 +1,5 @@
 #include "audio_frame_impl.h"
-#include "core/pointer_utils.h"
+#include "utils/pointer_utils.h"
 
 namespace mpl::media
 {
@@ -180,7 +180,7 @@ audio_frame_ptr_impl::audio_frame_ptr_impl(const i_audio_format::s_ptr_t &audio_
 }
 
 audio_frame_ptr_impl::audio_frame_ptr_impl(const i_audio_frame &other)
-    : audio_frame_ptr_impl(core::utils::static_pointer_cast<i_audio_format>(other.format().clone())
+    : audio_frame_ptr_impl(utils::static_pointer_cast<i_audio_format>(other.format().clone())
                            , other.frame_id()
                            , other.timestamp())
 {
@@ -194,12 +194,12 @@ void audio_frame_ptr_impl::set_format(const i_audio_format::s_ptr_t &audio_forma
 
 void audio_frame_ptr_impl::set_format(const i_audio_format &audio_format)
 {
-    m_audio_format_ptr = core::utils::static_pointer_cast<i_audio_format>(audio_format.clone());
+    m_audio_format_ptr = utils::static_pointer_cast<i_audio_format>(audio_format.clone());
 }
 
 void audio_frame_ptr_impl::assign(const i_audio_frame &other)
 {
-    m_audio_format_ptr = core::utils::static_pointer_cast<i_audio_format>(other.format().clone());
+    m_audio_format_ptr = utils::static_pointer_cast<i_audio_format>(other.format().clone());
     m_frame_id = other.frame_id();
     m_timestamp = other.timestamp();
     m_buffers.assign(other.buffers());
@@ -209,7 +209,7 @@ i_media_frame::u_ptr_t audio_frame_ptr_impl::clone() const
 {
     if (m_audio_format_ptr)
     {
-        if (auto clone_format = core::utils::static_pointer_cast<i_audio_format>(m_audio_format_ptr->clone()))
+        if (auto clone_format = utils::static_pointer_cast<i_audio_format>(m_audio_format_ptr->clone()))
         {
             if (auto clone_frame = create(std::move(clone_format)
                                           , m_frame_id
@@ -241,7 +241,7 @@ audio_frame_ref_impl::audio_frame_ref_impl(const i_audio_format &audio_format
 
 i_media_frame::u_ptr_t audio_frame_ref_impl::clone() const
 {
-    if (auto clone_format = core::utils::static_pointer_cast<i_audio_format>(format().clone()))
+    if (auto clone_format = utils::static_pointer_cast<i_audio_format>(format().clone()))
     {
         if (auto clone_frame = audio_frame_ptr_impl::create(std::move(clone_format)
                                                            , m_frame_id

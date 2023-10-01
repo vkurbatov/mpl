@@ -3,7 +3,7 @@
 
 #include "video_types.h"
 #include "video_frame_types.h"
-#include "core/smart_buffer.h"
+#include "utils/smart_buffer.h"
 #include <string>
 
 namespace mpl::media

@@ -1,7 +1,7 @@
 #ifndef MPL_AUDIO_SAMPLE_H
 #define MPL_AUDIO_SAMPLE_H
 
-#include "core/smart_buffer.h"
+#include "utils/smart_buffer.h"
 #include "core/time_types.h"
 #include "audio_types.h"
 

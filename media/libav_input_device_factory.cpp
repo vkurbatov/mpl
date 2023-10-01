@@ -1,10 +1,10 @@
 #include "libav_input_device_factory.h"
 
-#include "core/message_router_impl.h"
-#include "core/property_writer.h"
-#include "core/message_event_impl.h"
+#include "utils/message_router_impl.h"
+#include "utils/property_writer.h"
+#include "utils/message_event_impl.h"
 #include "core/event_channel_state.h"
-#include "core/time_utils.h"
+#include "utils/time_utils.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
@@ -326,8 +326,8 @@ public:
                 case ffmpeg::media_type_t::audio:
                 {
                     audio_format_impl format;
-                    if (core::utils::convert(stream.stream_info
-                                             , format))
+                    if (utils::convert(stream.stream_info
+                                       , format))
                     {
                         audio_frame_impl frame(format
                                                , stream.frame_id
@@ -346,8 +346,8 @@ public:
                 case ffmpeg::media_type_t::video:
                 {
                     video_format_impl format;
-                    if (core::utils::convert(stream.stream_info
-                                             , format))
+                    if (utils::convert(stream.stream_info
+                                       , format))
                     {
                         i_video_frame::frame_type_t frame_type = format.is_convertable()
                                 ? i_video_frame::frame_type_t::undefined

@@ -1,11 +1,11 @@
-#include "core/enum_converter_defs.h"
+#include "utils/enum_converter_defs.h"
 
 #include "device_types.h"
 #include "media_types.h"
 #include "audio_types.h"
 #include "video_types.h"
 
-namespace mpl::core::utils
+namespace mpl::utils
 {
 
 using namespace media;

@@ -1,4 +1,4 @@
-#include "core/enum_serialize_defs.h"
+#include "utils/enum_serialize_defs.h"
 
 #include "device_types.h"
 #include "media_types.h"

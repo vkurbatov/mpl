@@ -1,8 +1,8 @@
 #include "libav_format_utils.h"
 
-#include "core/convert_utils.h"
+#include "utils/convert_utils.h"
 #include "media_option_types.h"
-#include "core/option_helper.h"
+#include "utils/option_helper.h"
 
 #include "audio_format_impl.h"
 #include "video_format_impl.h"
@@ -286,7 +286,7 @@ void convert_options(const ffmpeg::stream_info_t& stream_info
 
 } //mpl::media::utils
 
-namespace mpl::core::utils
+namespace mpl::utils
 {
 
 template<>

@@ -1,16 +1,16 @@
 #include <iostream>
 #include "test.h"
-#include "core/convert_utils.h"
-#include "core/enum_utils.h"
-#include "core/time_utils.h"
-#include "core/property_value_impl.h"
-#include "core/property_tree_impl.h"
-#include "core/message_router_impl.h"
-#include "core/task_manager_impl.h"
+#include "utils/convert_utils.h"
+#include "utils/enum_utils.h"
+#include "utils/time_utils.h"
+#include "utils/property_value_impl.h"
+#include "utils/property_tree_impl.h"
+#include "utils/message_router_impl.h"
+#include "utils/task_manager_impl.h"
 
-#include "core/property_writer.h"
+#include "utils/property_writer.h"
 
-#include "core/convert_utils.h"
+#include "utils/convert_utils.h"
 #include "audio_format_impl.h"
 #include "video_format_impl.h"
 #include "audio_frame_impl.h"
@@ -20,14 +20,14 @@
 
 #include "media_option_types.h"
 
-#include "core/option_helper.h"
-#include "core/packetizer.h"
-#include "core/depacketizer.h"
+#include "utils/option_helper.h"
+#include "utils/packetizer.h"
+#include "utils/depacketizer.h"
 
 #include "v4l2_device_factory.h"
 #include "libav_input_device_factory.h"
 #include "libav_output_device_factory.h"
-#include "core/message_sink_impl.h"
+#include "utils/message_sink_impl.h"
 #include "core/i_buffer_collection.h"
 #include "i_audio_frame.h"
 #include "i_audio_format.h"
@@ -54,12 +54,12 @@
 
 #include "i_message_frame.h"
 
-#include "core/ipc/ipc_manager_impl.h"
+#include "utils/ipc_manager_impl.h"
 #include "core/i_message_event.h"
 #include "core/i_message_source.h"
 
 #include "core/event_channel_state.h"
-#include "core/json_utils.h"
+#include "utils/json_utils.h"
 
 #include "ipc_input_device_factory.h"
 #include "ipc_output_device_factory.h"
@@ -109,10 +109,10 @@ void test2()
 {
     auto convert_test = [](auto& in, auto& out)
     {
-        if (core::utils::convert(in, out))
+        if (utils::convert(in, out))
         {
             std::cout << "forward conversion: from " << in << " to " << out << " completed" << std::endl;
-            if (core::utils::convert(out, in))
+            if (utils::convert(out, in))
             {
                 std::cout << "backward conversion: from " << out << " to " << in << " completed" << std::endl;
             }
@@ -150,10 +150,10 @@ void test2()
 
     test_string.clear();
 
-    if (core::utils::convert(hex_test, test_string))
+    if (utils::convert(hex_test, test_string))
     {
         std::cout << "forward conversion hex " << test_string << " completed" << std::endl;
-        if (core::utils::convert(test_string, hex_test))
+        if (utils::convert(test_string, hex_test))
         {
             std::cout << "backward conversion hex " << test_string << " completed" << std::endl;
         }
@@ -316,10 +316,10 @@ void test6()
 {
     device_type_t enum_value = device_type_t::undefined;
     std::string string_value;
-    core::utils::convert(device_type_t::libav_in, string_value);
-    core::utils::convert(string_value, enum_value);
-    auto s2 = core::utils::enum_to_string<device_type_t>(enum_value);
-    auto e2 = core::utils::string_to_enum<device_type_t>(s2);
+    utils::convert(device_type_t::libav_in, string_value);
+    utils::convert(string_value, enum_value);
+    auto s2 = utils::enum_to_string<device_type_t>(enum_value);
+    auto e2 = utils::string_to_enum<device_type_t>(s2);
 
     auto tree = property_helper::create_object();
     property_writer writer(*tree);
@@ -429,7 +429,7 @@ void test8()
                     {
                         const auto& video_frame = static_cast<const i_video_frame&>(frame_message.frame());
                         std::cout << "on_frame #" << video_frame.frame_id()
-                                  << ": format_id: " << core::utils::enum_to_string(video_frame.format().format_id())
+                                  << ": format_id: " << utils::enum_to_string(video_frame.format().format_id())
                                   << ", fmt: " << video_frame.format().width()
                                   << "x" << video_frame.format().height()
                                   << "@" << video_frame.format().frame_rate()
@@ -448,7 +448,7 @@ void test8()
                     {
                         const auto& audio_frame = static_cast<const i_audio_frame&>(frame_message.frame());
                         std::cout << "on_frame #" << audio_frame.frame_id()
-                                  << ": format_id: " << core::utils::enum_to_string(audio_frame.format().format_id())
+                                  << ": format_id: " << utils::enum_to_string(audio_frame.format().format_id())
                                   << ", fmt: " << audio_frame.format().sample_rate()
                                   << "/" << audio_frame.format().channels()
                                   << ", ts: " << audio_frame.timestamp();
@@ -773,7 +773,7 @@ void test12()
                     {
                         const auto& video_frame = static_cast<const i_video_frame&>(frame_message.frame());
                         std::cout << "on_frame #" << video_frame.frame_id()
-                                  << ": format_id: " << core::utils::enum_to_string(video_frame.format().format_id())
+                                  << ": format_id: " << utils::enum_to_string(video_frame.format().format_id())
                                   << ", fmt: " << video_frame.format().width()
                                   << "x" << video_frame.format().height()
                                   << "@" << video_frame.format().frame_rate()
@@ -792,7 +792,7 @@ void test12()
                     {
                         const auto& audio_frame = static_cast<const i_audio_frame&>(frame_message.frame());
                         std::cout << "on_frame #" << audio_frame.frame_id()
-                                  << ": format_id: " << core::utils::enum_to_string(audio_frame.format().format_id())
+                                  << ": format_id: " << utils::enum_to_string(audio_frame.format().format_id())
                                   << ", fmt: " << audio_frame.format().sample_rate()
                                   << "/" << audio_frame.format().channels()
                                   << ", ts: " << audio_frame.timestamp();
@@ -1280,7 +1280,7 @@ void test16()
                     auto& camera_control = static_cast<const command_camera_control_t&>(command_message.command());
                     if (camera_control.commands != nullptr)
                     {
-                        auto json_controls = core::utils::to_json(*camera_control.commands, true);
+                        auto json_controls = utils::to_json(*camera_control.commands, true);
                         std::cout << "json_controls: " << std::endl << json_controls << std::endl;
                     }
 
@@ -1426,7 +1426,7 @@ void test18()
                         const auto& event = static_cast<const i_message_event&>(message).event();
                         if (event.event_id == event_channel_state_t::id)
                         {
-                            std::cout << "channel state: " << core::utils::enum_to_string(static_cast<const event_channel_state_t&>(event).state) << std::endl;
+                            std::cout << "channel state: " << utils::enum_to_string(static_cast<const event_channel_state_t&>(event).state) << std::endl;
                         }
                     }
                     break;
@@ -2541,7 +2541,7 @@ void test25()
                 case message_category_t::event:
                 {
                     auto& channel_state = static_cast<const event_channel_state_t&>(static_cast<const i_message_event&>(message).event());
-                    std::cout << "Visca state: " << core::utils::enum_to_string(channel_state.state) << std::endl;
+                    std::cout << "Visca state: " << utils::enum_to_string(channel_state.state) << std::endl;
                 }
                 break;
                 case message_category_t::command:
@@ -2552,7 +2552,7 @@ void test25()
                         auto& camera_control = static_cast<const command_camera_control_t&>(command_message.command());
                         if (camera_control.commands != nullptr)
                         {
-                            auto json_controls = core::utils::to_json(*camera_control.commands, true);
+                            auto json_controls = utils::to_json(*camera_control.commands, true);
                             std::cout << "json_controls: " << std::endl << json_controls << std::endl;
                         }
 
@@ -2611,7 +2611,7 @@ void  tests()
     // test9();
     // test13();
     // test13_2(); // vnc
-    //test16(); // smart_transcoder
+    test16(); // smart_transcoder
     // test17();
     // test18();
     // test15();
@@ -2621,7 +2621,7 @@ void  tests()
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)
     // test24();
-    test25(); // visca
+    // test25(); // visca
 
 }
 

@@ -1,8 +1,8 @@
 #include "media_utils.h"
 #include "media_types.h"
 
-#include "core/property_writer.h"
-#include "core/option_helper.h"
+#include "utils/property_writer.h"
+#include "utils/option_helper.h"
 #include "media_option_types.h"
 
 #include "core/common_types.h"

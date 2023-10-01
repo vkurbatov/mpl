@@ -1,0 +1,101 @@
+cmake_minimum_required(VERSION 3.16)
+
+set(TARGET mplutils)
+
+set(SOURCES
+    test.cpp
+    ipc_manager_impl.cpp
+    mapped_packet.cpp
+    shared_buffer_header.cpp
+    shared_data_impl.cpp
+    smart_buffer.cpp
+    smart_buffer_collection.cpp
+    packetizer.cpp
+    depacketizer.cpp
+    packetize_impl.cpp
+    adaptive_delay.cpp
+    data_splitter.cpp
+    task_manager_impl.cpp
+    convert_value_impl.cpp
+    convert_property_impl.cpp
+    cyclic_data_reader.cpp
+    cyclic_data_writer.cpp
+    fifo_writer_impl.cpp
+    fifo_reader_impl.cpp
+    message_router_impl.cpp
+    message_event_impl.cpp
+    message_sink_impl.cpp
+    property_value_impl.cpp
+    property_tree_impl.cpp
+    property_helper.cpp
+    property_reader.cpp
+    property_writer.cpp
+    option_impl.cpp
+    option_helper.cpp
+    option_value_impl.cpp
+    common_utils.cpp
+    time_utils.cpp
+    string_utils_impl.cpp
+    json_utils.cpp
+    enum_convert_impl.cpp
+    sq/mapped_sq_header.cpp
+    sq/sq_packet_builder.cpp
+    sq/sq_packet.cpp
+    sq/sq_parser.cpp
+    sq/sq_stitcher.cpp
+)
+
+set(PUBLIC_HEADERS
+    ipc_manager_impl.h
+    packetizer.h
+    depacketizer.h
+    shared_buffer_header.h
+    shared_data_impl.h
+    smart_buffer.h
+    smart_buffer_collection.h
+    adaptive_delay.h
+    data_splitter.h
+    task_manager_impl.h
+    cyclic_data_reader.h
+    cyclic_data_writer.h
+    fifo_writer_impl.h
+    fifo_reader_impl.h
+    message_router_impl.h
+    message_event_impl.h
+    message_sink_impl.h
+    property_value_impl.h
+    property_tree_impl.h
+    property_helper.h
+    property_reader.h
+    property_writer.h
+    option_impl.h
+    option_value_impl.h
+    option_helper.h
+    common_utils.h
+    enum_utils.h
+    time_utils.h
+    convert_utils.h
+    pointer_utils.h
+    json_utils.h
+    enum_converter_defs.h
+    enum_serialize_defs.h
+    sq/sq_types.h
+    sq/sq_packet_builder.h
+    sq/sq_packet.h
+    sq/sq_parser.h
+    sq/sq_stitcher.h
+    )
+
+set(PRIVATE_HEADERS
+    test.h
+    mapped_packet.h
+    sq/mapped_sq_header.h
+)
+
+
+add_library(${TARGET}
+    ${SOURCES}
+    ${PRIVATE_HEADERS}
+    ${PUBLIC_HEADERS}
+)
+

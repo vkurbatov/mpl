@@ -1,17 +1,17 @@
 #include "ipc_output_device_factory.h"
 
-#include "core/message_router_impl.h"
-#include "core/property_writer.h"
-#include "core/message_event_impl.h"
+#include "utils/message_router_impl.h"
+#include "utils/property_writer.h"
+#include "utils/message_event_impl.h"
 #include "core/event_channel_state.h"
-#include "core/time_utils.h"
-#include "core/convert_utils.h"
-#include "core/enum_utils.h"
-#include "core/fifo_writer_impl.h"
+#include "utils/time_utils.h"
+#include "utils/convert_utils.h"
+#include "utils/enum_utils.h"
+#include "utils/fifo_writer_impl.h"
 
-#include "core/packetizer.h"
+#include "utils/packetizer.h"
 
-#include "core/sq/sq_packet_builder.h"
+#include "utils/sq/sq_packet_builder.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"

@@ -3,8 +3,8 @@
 
 #include "media_utils.h"
 
-#include "core/property_writer.h"
-#include "core/option_helper.h"
+#include "utils/property_writer.h"
+#include "utils/option_helper.h"
 #include "core/option_types.h"
 
 namespace mpl::media

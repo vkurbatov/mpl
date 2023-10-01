@@ -1,14 +1,14 @@
 #include "libav_output_device_factory.h"
 
-#include "core/message_router_impl.h"
-#include "core/message_sink_impl.h"
-#include "core/property_writer.h"
-#include "core/message_event_impl.h"
+#include "utils/message_router_impl.h"
+#include "utils/message_sink_impl.h"
+#include "utils/property_writer.h"
+#include "utils/message_event_impl.h"
 #include "core/event_channel_state.h"
-#include "core/time_utils.h"
-#include "core/utils.h"
+#include "utils/time_utils.h"
+#include "utils/common_utils.h"
 
-#include "core/option_helper.h"
+#include "utils/option_helper.h"
 
 
 #include "media_option_types.h"
@@ -318,8 +318,8 @@ class libav_output_device : public i_device
             {
                 ffmpeg::stream_info_t stream_info;
                 if (s != nullptr
-                        && core::utils::convert(*s
-                                                , stream_info))
+                        && utils::convert(*s
+                                          , stream_info))
                 {
                     stream_info.stream_id = stream_id;
                     stream_list.emplace_back(std::move(stream_info));
@@ -540,8 +540,8 @@ public:
                 ffmpeg::frame_t libav_frame;
                 libav_frame.info.media_info.media_type = ffmpeg::media_type_t::audio;
                 libav_frame.info.stream_id = stream_id;
-                libav_frame.media_data = core::utils::create_raw_array(buffer->data()
-                                                                       , buffer->size());
+                libav_frame.media_data = utils::create_raw_array(buffer->data()
+                                                                 , buffer->size());
                 libav_frame.info.pts = frame.timestamp();
                 libav_frame.info.dts = frame.timestamp();
 
@@ -566,8 +566,8 @@ public:
                 ffmpeg::frame_t libav_frame;
                 libav_frame.info.media_info.media_type = ffmpeg::media_type_t::video;
                 libav_frame.info.stream_id = stream_id;
-                libav_frame.media_data = core::utils::create_raw_array(buffer->data()
-                                                                       , buffer->size());
+                libav_frame.media_data = utils::create_raw_array(buffer->data()
+                                                                 , buffer->size());
                 libav_frame.info.pts = frame.timestamp();
                 libav_frame.info.dts = frame.timestamp();
                 libav_frame.info.key_frame = frame.frame_type() == i_video_frame::frame_type_t::key_frame;

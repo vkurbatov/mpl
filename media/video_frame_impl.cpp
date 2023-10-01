@@ -1,5 +1,5 @@
 #include "video_frame_impl.h"
-#include "core/pointer_utils.h"
+#include "utils/pointer_utils.h"
 
 namespace mpl::media
 {
@@ -208,7 +208,7 @@ video_frame_ptr_impl::video_frame_ptr_impl(const i_video_format::s_ptr_t &video_
 }
 
 video_frame_ptr_impl::video_frame_ptr_impl(const i_video_frame &other)
-    : video_frame_ptr_impl(core::utils::static_pointer_cast<i_video_format>(other.format().clone())
+    : video_frame_ptr_impl(utils::static_pointer_cast<i_video_format>(other.format().clone())
                            , other.frame_id()
                            , other.timestamp()
                            , other.frame_type())
@@ -223,7 +223,7 @@ void video_frame_ptr_impl::set_format(const i_video_format::s_ptr_t &video_forma
 
 void video_frame_ptr_impl::assign(const i_video_frame &other)
 {
-    m_video_format_ptr = core::utils::static_pointer_cast<i_video_format>(other.format().clone());
+    m_video_format_ptr = utils::static_pointer_cast<i_video_format>(other.format().clone());
     m_frame_id = other.frame_id();
     m_timestamp = other.timestamp();
     m_frame_type = other.frame_type();
@@ -234,7 +234,7 @@ i_media_frame::u_ptr_t video_frame_ptr_impl::clone() const
 {
     if (m_video_format_ptr)
     {
-        if (auto clone_format = core::utils::static_pointer_cast<i_video_format>(m_video_format_ptr->clone()))
+        if (auto clone_format = utils::static_pointer_cast<i_video_format>(m_video_format_ptr->clone()))
         {
             if (auto clone_frame = create(std::move(clone_format)
                                           , m_frame_id
@@ -269,7 +269,7 @@ video_frame_ref_impl::video_frame_ref_impl(const i_video_format &video_format
 
 i_media_frame::u_ptr_t video_frame_ref_impl::clone() const
 {
-    if (auto clone_format = core::utils::static_pointer_cast<i_video_format>(format().clone()))
+    if (auto clone_format = utils::static_pointer_cast<i_video_format>(format().clone()))
     {
         if (auto clone_frame = video_frame_ptr_impl::create(std::move(clone_format)
                                                            , m_frame_id

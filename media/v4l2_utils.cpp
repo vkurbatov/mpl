@@ -3,7 +3,7 @@
 
 #include "video_format_impl.h"
 
-#include "core/convert_utils.h"
+#include "utils/convert_utils.h"
 
 #include <linux/videodev2.h>
 
@@ -22,7 +22,7 @@ v4l2::pixel_format_t format_to_v4l2(video_format_id_t video_format)
 
 }
 
-namespace mpl::core::utils
+namespace mpl::utils
 {
 
 

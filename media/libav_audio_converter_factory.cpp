@@ -1,8 +1,8 @@
 #include "libav_audio_converter_factory.h"
 
-#include "core/convert_utils.h"
-#include "core/property_reader.h"
-#include "core/option_helper.h"
+#include "utils/convert_utils.h"
+#include "utils/property_reader.h"
+#include "utils/option_helper.h"
 #include "core/i_buffer_collection.h"
 
 #include "audio_format_impl.h"
@@ -22,8 +22,8 @@ bool audio_info_from_format(const i_audio_format& format
                             , ffmpeg::audio_info_t& audio_info)
 {
     ffmpeg::stream_info_t stream_info;
-    if (core::utils::convert(format
-                             , stream_info))
+    if (utils::convert(format
+                       , stream_info))
     {
         audio_info = stream_info.media_info.audio_info;
         return true;

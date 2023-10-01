@@ -1,11 +1,11 @@
 #include <iostream>
 
-#include "core/ipc/ipc_manager_impl.h"
+#include "utils/ipc_manager_impl.h"
 #include "core/i_message_event.h"
 #include "core/i_message_source.h"
-#include "core/message_sink_impl.h"
-#include "core/property_writer.h"
-#include "core/option_helper.h"
+#include "utils/message_sink_impl.h"
+#include "utils/property_writer.h"
+#include "utils/option_helper.h"
 
 #include "media/libav_audio_converter_factory.h"
 #include "media/libav_video_converter_factory.h"

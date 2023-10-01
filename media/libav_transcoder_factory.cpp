@@ -1,13 +1,13 @@
 #include "libav_transcoder_factory.h"
 
-#include "core/property_reader.h"
-#include "core/convert_utils.h"
-#include "core/option_helper.h"
+#include "utils/property_reader.h"
+#include "utils/convert_utils.h"
+#include "utils/option_helper.h"
 
-#include "core/smart_buffer.h"
+#include "utils/smart_buffer.h"
 #include "core/i_buffer_collection.h"
 
-#include "core/message_event_impl.h"
+#include "utils/message_event_impl.h"
 #include "core/event_channel_state.h"
 
 //#include "core/data_splitter.h"
@@ -124,8 +124,8 @@ void tune_frame_format(const ffmpeg::frame_t& libav_frame
                  , audio_format_impl& format)
 {
     audio_format_id_t format_id = format.format_id();
-    if (core::utils::convert(libav_frame.format_info()
-                             , format_id))
+    if (utils::convert(libav_frame.format_info()
+                       , format_id))
     {
         format.set_format_id(format_id);
     }
@@ -139,8 +139,8 @@ void tune_frame_format(const ffmpeg::frame_t& libav_frame
                       , video_format_impl& format)
 {
     video_format_id_t format_id = format.format_id();
-    if (core::utils::convert(libav_frame.format_info()
-                             , format_id))
+    if (utils::convert(libav_frame.format_info()
+                       , format_id))
     {
         format.set_format_id(format_id);
     }
@@ -292,8 +292,8 @@ public:
                 case media_type_t::video:
                 {
                     ffmpeg::stream_info_t stream_info;
-                    if (core::utils::convert(media_format
-                                             , stream_info))
+                    if (utils::convert(media_format
+                                       , stream_info))
                     {
                         option_reader options(media_format.options());
                         std::string transcoder_options = options.get<std::string>(opt_codec_params, {});
@@ -313,8 +313,8 @@ public:
                             auto tune_stream_info = m_native_transcoder.config();
                             tune_stream_info.codec_info.id = ffmpeg::codec_id_none;
 
-                            if (core::utils::convert(tune_stream_info
-                                                     , target_format))
+                            if (utils::convert(tune_stream_info
+                                               , target_format))
                             {
                                 tune_format(target_format);
                                 m_wait_first_frame = !encoder

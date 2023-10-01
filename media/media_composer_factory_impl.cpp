@@ -7,12 +7,12 @@
 #include "video_frame_impl.h"
 
 #include "core/i_buffer_collection.h"
-#include "core/message_router_impl.h"
-#include "core/message_sink_impl.h"
-#include "core/time_utils.h"
-#include "core/property_writer.h"
-#include "core/task_manager_impl.h"
-#include "core/adaptive_delay.h"
+#include "utils/message_router_impl.h"
+#include "utils/message_sink_impl.h"
+#include "utils/time_utils.h"
+#include "utils/property_writer.h"
+#include "utils/task_manager_impl.h"
+#include "utils/adaptive_delay.h"
 
 #include "media_types.h"
 #include "image_frame.h"

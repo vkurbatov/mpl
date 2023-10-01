@@ -1,7 +1,7 @@
 #ifndef MPL_MEDIA_AUDIO_FRAME_SPLITTER_H
 #define MPL_MEDIA_AUDIO_FRAME_SPLITTER_H
 
-#include "core/data_splitter.h"
+#include "utils/data_splitter.h"
 #include "audio_format_impl.h"
 
 namespace mpl::media

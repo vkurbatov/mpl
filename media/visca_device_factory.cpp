@@ -1,14 +1,14 @@
 #include "visca_device_factory.h"
 
-#include "core/enum_converter_defs.h"
-#include "core/enum_serialize_defs.h"
+#include "utils/enum_converter_defs.h"
+#include "utils/enum_serialize_defs.h"
 
-#include "core/message_router_impl.h"
-#include "core/message_sink_impl.h"
-#include "core/property_writer.h"
-#include "core/message_event_impl.h"
+#include "utils/message_router_impl.h"
+#include "utils/message_sink_impl.h"
+#include "utils/property_writer.h"
+#include "utils/message_event_impl.h"
 #include "core/event_channel_state.h"
-#include "core/time_utils.h"
+#include "utils/time_utils.h"
 
 #include "media_command_message_impl.h"
 #include "command_camera_control.h"
@@ -25,7 +25,7 @@
 #include <condition_variable>
 #include <atomic>
 
-namespace mpl::core::utils
+namespace mpl::utils
 {
 
 declare_enum_converter_begin(io::serial_parity_t)

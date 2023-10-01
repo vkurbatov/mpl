@@ -1,5 +1,5 @@
 #include "timestamp_calculator.h"
-#include "core/time_utils.h"
+#include "utils/time_utils.h"
 
 namespace mpl::media
 {
