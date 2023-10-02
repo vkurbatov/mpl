@@ -301,7 +301,7 @@ void test5()
         if (device->control(channel_control_t::open()))
         {
 
-            core::utils::sleep(durations::seconds(60));
+            utils::time::sleep(durations::seconds(60));
             device->control(channel_control_t::close());
         }
 
@@ -504,7 +504,7 @@ void test8()
         if (device->control(channel_control_t::open()))
         {
 
-            core::utils::sleep(durations::seconds(60));
+            utils::time::sleep(durations::seconds(60));
             device->control(channel_control_t::close());
         }
 
@@ -580,7 +580,7 @@ void test9()
 
                 if (input_device->control(channel_control_t::open()))
                 {
-                    core::utils::sleep(durations::seconds(60));
+                    utils::time::sleep(durations::seconds(60));
                     input_device->control(channel_control_t::close());
                 }
 
@@ -708,7 +708,7 @@ void test10()
     libav_grabber.open(config.url);
 
 
-    core::utils::sleep(durations::seconds(60));
+    utils::time::sleep(durations::seconds(60));
 
     return;
 }
@@ -826,7 +826,7 @@ void test12()
 
         input_device->source(0)->add_sink(&sink);
         input_device->control(channel_control_t::open());
-        core::utils::sleep(durations::seconds(60));
+        utils::time::sleep(durations::seconds(60));
         input_device->control(channel_control_t::close());
         input_device->source(0)->remove_sink(&sink);
 
@@ -927,7 +927,7 @@ void test13()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
-    core::utils::sleep(durations::seconds(600));
+    utils::time::sleep(durations::seconds(600));
 
     input_audio_device->control(channel_control_t::close());
     input_video_device->control(channel_control_t::close());
@@ -1034,7 +1034,7 @@ void test13_2()
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
 
-    core::utils::sleep(durations::seconds(600));
+    utils::time::sleep(durations::seconds(600));
 
     input_audio_device->control(channel_control_t::close());
     input_video_device->control(channel_control_t::close());
@@ -1155,7 +1155,7 @@ void test15()
 
                 if (input_device->control(channel_control_t::open()))
                 {
-                    core::utils::sleep(durations::seconds(60));
+                    utils::time::sleep(durations::seconds(60));
                     input_device->control(channel_control_t::close());
                 }
 
@@ -1329,7 +1329,7 @@ void test16()
     }
 
 
-    core::utils::sleep(durations::seconds(150));
+    utils::time::sleep(durations::seconds(150));
 
     input_audio_device->control(channel_control_t::close());
     input_video_device->control(channel_control_t::close());
@@ -1782,7 +1782,7 @@ void test19()
                 }
             }
         }
-        core::utils::sleep(durations::seconds(1));
+        utils::time::sleep(durations::seconds(1));
     }
 
     media_composer->stop();
@@ -2058,7 +2058,7 @@ void test20()
         // stream10->set_params(*sp);
     }
 
-    core::utils::sleep(durations::seconds(120));
+    utils::time::sleep(durations::seconds(120));
 
 
     /*
@@ -2136,7 +2136,7 @@ void test21()
 
             manager->add_task(handler);
         }
-        mpl::core::utils::sleep(durations::milliseconds(10));
+        utils::time::sleep(durations::milliseconds(10));
     }
     return;
 }
@@ -2299,7 +2299,7 @@ void test22()
 
                 if (input_device->control(channel_control_t::open()))
                 {
-                    core::utils::sleep(durations::seconds(600));
+                    utils::time::sleep(durations::seconds(600));
                     input_device->control(channel_control_t::close());
                 }
 
@@ -2432,7 +2432,7 @@ void test23()
                     {
                         if (input_device->control(channel_control_t::open()))
                         {
-                            core::utils::sleep(durations::seconds(600));
+                            utils::time::sleep(durations::seconds(600));
 
                             input_device->control(channel_control_t::close());
                             /*
@@ -2575,11 +2575,11 @@ void test25()
         command_camera_control_t camera_control;
         camera_control.control_id = 123;
 
-        core::utils::sleep(durations::seconds(1));
+        utils::time::sleep(durations::seconds(1));
 
         visca_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
 
-        core::utils::sleep(durations::seconds(1));
+        utils::time::sleep(durations::seconds(1));
 
 
         if (auto tilt_property = property_helper::create_object())
@@ -2594,7 +2594,7 @@ void test25()
             visca_device->sink(0)->send_message(media_command_message_impl<command_camera_control_t>(camera_control));
         }
 
-        core::utils::sleep(durations::seconds(150));
+        utils::time::sleep(durations::seconds(150));
 
         visca_device->control(channel_control_t::close());
     }
@@ -2611,12 +2611,12 @@ void  tests()
     // test9();
     // test13();
     // test13_2(); // vnc
-    test16(); // smart_transcoder
+    // test16(); // smart_transcoder
     // test17();
     // test18();
     // test15();
     // test19(); // composer
-    // test20(); // composer2
+    test20(); // composer2
     // test21();
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)

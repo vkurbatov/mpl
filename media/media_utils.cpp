@@ -7,7 +7,10 @@
 
 #include "core/common_types.h"
 
-namespace mpl::media::utils
+
+using namespace mpl::media;
+
+namespace mpl::utils
 {
 
 namespace detail

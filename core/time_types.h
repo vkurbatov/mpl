@@ -6,9 +6,6 @@
 namespace mpl
 {
 
-using timer_id_t = std::int32_t;
-const timer_id_t timer_id_none = -1;
-
 using timestamp_t = std::int64_t;
 const timestamp_t timestamp_infinite = -1;
 const timestamp_t timestamp_null = 0;

@@ -14,7 +14,7 @@ timestamp_t timestamp_calculator::calc_timestamp(std::uint32_t frame_time)
 {
     if (m_sample_rate > 0)
     {
-        auto now = core::utils::get_ticks();
+        auto now = utils::time::get_ticks();
         m_timestamp = ((now - m_start_time) * m_sample_rate) / durations::seconds(1);
 
         if (frame_time > 0)
@@ -58,13 +58,13 @@ void timestamp_calculator::reset(uint32_t sample_rate)
 
 void timestamp_calculator::reset()
 {
-    m_start_time = core::utils::get_ticks();
+    m_start_time = utils::time::get_ticks();
     m_timestamp = 0;
 }
 
 timestamp_t timestamp_calculator::elapsed() const
 {
-    return core::utils::get_ticks() - m_start_time;
+    return utils::time::get_ticks() - m_start_time;
 }
 
 

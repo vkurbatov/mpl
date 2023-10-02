@@ -335,7 +335,7 @@ public:
                 {
                     change_state(channel_state_t::connected);
                 }
-                mpl::core::utils::sleep(durations::milliseconds(50));
+                utils::time::sleep(durations::milliseconds(50));
             }
             while(is_running());
 

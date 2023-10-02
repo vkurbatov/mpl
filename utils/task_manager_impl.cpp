@@ -21,7 +21,7 @@ class task_manager_impl : public i_task_manager
 
     struct task_queue_t
     {
-        mutable mutex_t             m_safe_mutex;
+        mutable mutex_t                 m_safe_mutex;
 
         struct task_impl : public i_task
         {
@@ -134,6 +134,11 @@ class task_manager_impl : public i_task_manager
             : m_task_id(0)
         {
 
+        }
+
+        ~task_queue_t()
+        {
+            reset();
         }
 
         task_impl::s_ptr_t add_task(const task_handler_t& task_handler)
@@ -317,7 +322,7 @@ task_manager_factory &task_manager_factory::get_instance()
     return single_factory;
 }
 
-i_task_manager &task_manager_factory::singe_manager()
+i_task_manager &task_manager_factory::single_manager()
 {
     static task_manager_impl single_manager({});
     return single_manager;

@@ -47,7 +47,7 @@ bool fifo_writer_impl::push_data(const void *data
         {
             header.position += size;
             header.state.packets ++;
-            header.timestamp = core::utils::now();
+            header.timestamp = utils::time::now();
 
             result = true;
         }

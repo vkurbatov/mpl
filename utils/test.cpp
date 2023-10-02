@@ -1,25 +1,30 @@
 #include "test.h"
 
-#include "utils/fifo_reader_impl.h"
-#include "utils/fifo_writer_impl.h"
-#include "utils/shared_data_impl.h"
+#include "time_utils.h"
 
-#include "utils/smart_buffer.h"
+#include "fifo_reader_impl.h"
+#include "fifo_writer_impl.h"
+#include "shared_data_impl.h"
 
-#include "utils/packetizer.h"
-#include "utils/depacketizer.h"
+#include "smart_buffer.h"
+
+#include "packetizer.h"
+#include "depacketizer.h"
 
 #include <vector>
 #include <thread>
 #include <iostream>
 
-#include "utils/ipc_manager_impl.h"
+#include "ipc_manager_impl.h"
 
-#include "utils/sq/sq_packet_builder.h"
-#include "utils/sq/sq_parser.h"
-#include "utils/sq/sq_stitcher.h"
+#include "sq/sq_packet_builder.h"
+#include "sq/sq_parser.h"
+#include "sq/sq_stitcher.h"
 
-#include "utils/common_utils.h"
+#include "common_utils.h"
+
+#include "task_manager_impl.h"
+#include "timer_manager_impl.h"
 
 #include "tools/ipc/test.h"
 #include "tools/base/random_base.h"
@@ -373,6 +378,48 @@ void test6()
     return;
 }
 
+void test7()
+{
+    if (auto task_manager = task_manager_factory::get_instance().create_manager({}))
+    {
+        if (auto timers = timer_manager_factory::get_instance().create_timer_manager({}
+                                                                                     , *task_manager))
+        {
+            if (timers->start())
+            {
+
+                auto timeout_1 = durations::milliseconds(1000);
+                auto timeout_2 = durations::milliseconds(500);
+
+                i_timer::u_ptr_t timer1 = nullptr;
+                i_timer::u_ptr_t timer2 = nullptr;
+
+                auto timer_handler_1 = [&]
+                {
+                    std::clog << "Timer 1 handle" << std::endl;
+                    timer1->start(timeout_1);
+                };
+
+                auto timer_handler_2 = [&]
+                {
+                    std::clog << "Timer 2 handle" << std::endl;
+                    timer2->start(timeout_2);
+                };
+
+                timer1 = timers->create_timer(timer_handler_1);
+                timer2 = timers->create_timer(timer_handler_2);
+
+                timer1->start(0);
+                timer2->start(0);
+
+                utils::time::sleep(durations::minutes(1));
+
+                timers->stop();
+            }
+        }
+    }
+}
+
 
 void ipc_test()
 {
@@ -383,7 +430,7 @@ void ipc_test()
 
 void utils_test()
 {
-    test6();
+    test7();
 }
 
 

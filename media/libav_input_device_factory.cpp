@@ -74,7 +74,7 @@ struct stream_t
                 || std::abs(dt) > stream_info.media_info.sample_rate())
         {
             start_timestamp = native_timestamp;
-            real_timestamp = mpl::core::utils::get_ticks();
+            real_timestamp = utils::time::get_ticks();
         }
 
         last_timestamp = native_timestamp;
@@ -84,14 +84,14 @@ struct stream_t
 
     void sync(timestamp_t native_timestamp) const
     {
-        auto rdt = mpl::core::utils::get_ticks() - real_timestamp;
+        auto rdt = utils::time::get_ticks() - real_timestamp;
         auto pdt = native_timestamp - start_timestamp;
 
         pdt = durations::milliseconds(pdt * 1000) / stream_info.media_info.sample_rate();
 
         if (pdt > rdt)
         {
-            mpl::core::utils::sleep(pdt - rdt);
+            utils::time::sleep(pdt - rdt);
         }
     }
 
@@ -291,7 +291,7 @@ public:
                         error_counter++;
                         if (is_open())
                         {
-                            core::utils::sleep(durations::milliseconds(100));
+                            utils::time::sleep(durations::milliseconds(100));
                         }
                     }
                 }
@@ -307,12 +307,12 @@ public:
     {
         m_frame_counter = 0;
         m_frame_timestamp = 0;
-        m_start_time = mpl::core::utils::now();
+        m_start_time = utils::time::now();
     }
 
     timestamp_t elapsed_time() const
     {
-        return mpl::core::utils::now() - m_start_time;
+        return utils::time::now() - m_start_time;
     }
 
 

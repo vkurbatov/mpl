@@ -219,12 +219,12 @@ public:
         m_frame_counter = 0;
         m_frame_timestamp = 0;
         m_real_timestamp = 0;
-        m_start_time = mpl::core::utils::now();
+        m_start_time = utils::time::now();
     }
 
     timestamp_t elapsed_time() const
     {
-        return mpl::core::utils::now() - m_start_time;
+        return utils::time::now() - m_start_time;
     }
 
     void process_timesatamp(std::uint32_t fps)
@@ -307,7 +307,7 @@ public:
 
                     if (is_running())
                     {
-                        core::utils::sleep(durations::milliseconds(frame_time));
+                        utils::time::sleep(durations::milliseconds(frame_time));
                     }
                 }
 
@@ -315,6 +315,7 @@ public:
                 m_native_device.close();
                 change_state(channel_state_t::disconnected);
             }
+            utils::time::sleep(durations::milliseconds(100));
         }
     }
 

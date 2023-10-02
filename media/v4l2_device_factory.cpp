@@ -1,10 +1,11 @@
 #include "v4l2_device_factory.h"
 #include "v4l2_utils.h"
 
+#include "core/event_channel_state.h"
+
 #include "utils/message_router_impl.h"
 #include "utils/property_writer.h"
 #include "utils/message_event_impl.h"
-#include "core/event_channel_state.h"
 #include "utils/time_utils.h"
 #include "utils/convert_utils.h"
 #include "utils/enum_utils.h"
@@ -685,12 +686,12 @@ public:
         m_frame_counter = 0;
         m_frame_timestamp = 0;
         m_real_timestamp = 0;
-        m_start_time = mpl::core::utils::now();
+        m_start_time = utils::time::now();
     }
 
     timestamp_t elapsed_time() const
     {
-        return mpl::core::utils::now() - m_start_time;
+        return utils::time::now() - m_start_time;
     }
 
     void process_timesatamp(std::uint32_t fps)

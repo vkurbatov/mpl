@@ -33,7 +33,7 @@ i_task_manager& get_single_task_manager()
     static auto single_task_manager = task_manager_factory::get_instance().create_manager({});
     return *single_task_manager;*/
 
-    return task_manager_factory::singe_manager();
+    return task_manager_factory::single_manager();
 }
 
 template<media_type_t MediaType>

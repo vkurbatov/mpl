@@ -4,42 +4,35 @@
 namespace mpl
 {
 
+timestamp_t adaptive_delay::now()
+{
+    return  utils::time::get_ticks();
+}
+
 adaptive_delay::adaptive_delay()
+    : m_last_time(now())
 {
-    reset();
+
 }
 
-void adaptive_delay::reset(timestamp_t delay)
+timestamp_t adaptive_delay::elapsed() const
 {
-    m_target_time = mpl::core::utils::get_ticks() + delay;
+    return now() - m_last_time;
 }
 
-void adaptive_delay::wait(timestamp_t delay
-                          , std::size_t max_drift_periods)
+void adaptive_delay::wait(timestamp_t wait_period)
 {
-    auto now = mpl::core::utils::get_ticks();
-
-    timestamp_t max_drift = delay * max_drift_periods;
-
-    auto dt = m_target_time - now;
-
-    if (max_drift != 0
-            && std::abs(dt) > max_drift)
+    m_last_time = m_last_time + wait_period;
+    auto now_tp = now();
+    if (m_last_time > now_tp)
     {
-        m_target_time = now + delay;
-        dt = delay / 2;
+        utils::time::sleep(m_last_time - now_tp);
     }
-    else
-    {
-        m_target_time += delay;
+}
 
-        if (dt < 0)
-        {
-            dt = 0;
-        }
-    }
-
-    mpl::core::utils::sleep(dt);
+void adaptive_delay::reset()
+{
+    m_last_time = now();
 }
 
 }

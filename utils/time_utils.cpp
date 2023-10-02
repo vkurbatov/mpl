@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-namespace mpl::core::utils
+namespace mpl::utils::time
 {
 
 std::string to_string(timestamp_t timestamp)

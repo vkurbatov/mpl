@@ -28,6 +28,8 @@ set(PUBLIC_HEADERS
     command.h
     i_task.h
     i_task_manager.h
+    i_timer.h
+    i_timer_manager.h
     i_property.h
     i_property_value.h
     i_property_tree.h

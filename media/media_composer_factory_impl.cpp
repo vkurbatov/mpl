@@ -356,7 +356,7 @@ class media_composer : public i_media_composer
                     if (!m_frame_queue.empty())
                     {
                         m_last_frame = std::move(m_frame_queue.front());
-                        m_last_frame_time = core::utils::get_ticks();
+                        m_last_frame_time = utils::time::get_ticks();
                         m_frame_queue.pop();
                     }
                 }
@@ -381,7 +381,7 @@ class media_composer : public i_media_composer
 
             timestamp_t elapsed_frame_time() const
             {
-                return core::utils::get_ticks() - m_last_frame_time;
+                return utils::time::get_ticks() - m_last_frame_time;
             }
 
             inline void set_layout_params(const relative_frame_rect_t& rect
@@ -1147,7 +1147,7 @@ public:
     {
         m_video_compose_delay.reset();
         std::size_t frames = 0;
-        auto tp = mpl::core::utils::get_ticks();
+        auto tp = utils::time::get_ticks();
         while(m_started)
         {
             timestamp_t video_delay = durations::second / m_composer_params.video_params.format.frame_rate();
@@ -1157,7 +1157,7 @@ public:
 
             frames++;
 
-            auto dt = mpl::core::utils::get_ticks() - tp;
+            auto dt = utils::time::get_ticks() - tp;
 
             auto fps = durations::seconds(frames) / dt;
 

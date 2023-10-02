@@ -3,17 +3,19 @@
 
 #include "core/time_types.h"
 
+namespace mpl::media
+{
+
+class i_audio_format;
+class i_video_format;
+
+}
+
 namespace mpl
 {
 
 class i_option;
 class i_property;
-
-namespace media
-{
-
-class i_audio_format;
-class i_video_format;
 
 namespace utils
 {
@@ -26,7 +28,6 @@ bool convert_format_options(const i_property& property, i_option& options);
 
 } // utils
 
-} // media
 
 } // mpl
 

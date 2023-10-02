@@ -7,7 +7,9 @@
 
 #include <linux/videodev2.h>
 
-namespace mpl::media::utils
+using namespace mpl::media;
+
+namespace mpl::utils
 {
 
 video_format_id_t format_form_v4l2(v4l2::pixel_format_t v4l2_format)
@@ -30,7 +32,7 @@ template<>
 bool convert(const v4l2::frame_info_t& frame_info
              , media::video_format_impl& video_format)
 {
-    auto format_id = media::utils::format_form_v4l2(frame_info.pixel_format);
+    auto format_id = utils::format_form_v4l2(frame_info.pixel_format);
     if (format_id != media::video_format_id_t::undefined)
     {
         video_format.set_format_id(format_id);
@@ -48,7 +50,7 @@ template<>
 bool convert(const media::i_video_format& video_format
              , v4l2::frame_info_t& frame_info)
 {
-    auto v4l2_pixel_format = media::utils::format_to_v4l2(video_format.format_id());
+    auto v4l2_pixel_format = utils::format_to_v4l2(video_format.format_id());
     if (v4l2_pixel_format != v4l2::pixel_format_unknown)
     {
         frame_info.pixel_format = v4l2_pixel_format;
