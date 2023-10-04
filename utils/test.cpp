@@ -397,7 +397,10 @@ void test7()
                 auto timer_handler_1 = [&]
                 {
                     std::clog << "Timer 1 handle" << std::endl;
-                    timer1->start(timeout_1);
+                    if (timer1 != nullptr)
+                    {
+                        timer1->start(timeout_1);
+                    }
                 };
 
                 auto timer_handler_2 = [&]
@@ -410,6 +413,8 @@ void test7()
                 timer2 = timers->create_timer(timer_handler_2);
 
                 timer1->start(0);
+                std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+                timer1.reset();
                 timer2->start(0);
 
                 utils::time::sleep(durations::minutes(1));

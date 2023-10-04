@@ -9,6 +9,11 @@ set(SOURCES
     serial/serial_link_config.cpp
     serial/serial_endpoint.cpp
     serial/serial_link.cpp
+    net/ip_address.cpp
+    net/ip_endpoint.cpp
+    net/resolver.cpp
+    net/net_info.cpp
+    net/net_utils.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -17,6 +22,12 @@ set(PUBLIC_HEADERS
     i_io_link_factory.h
     serial/serial_link_config.h
     serial/serial_endpoint.h
+    net/ip_address.h
+    net/net_types.h
+    net/ip_endpoint.h
+    net/resolver.h
+    net/net_info.h
+    net/net_utils.h
 )
 
 set(PRIVATE_HEADERS

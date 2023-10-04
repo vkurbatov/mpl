@@ -27,6 +27,7 @@ class timer_manager_impl final : public i_timer_manager
         timer_handler_t             m_handler;
 
         timestamp_t                 m_target_time;
+        std::atomic_bool            m_queued;
 
         friend class timer_manager_impl;
 
@@ -59,6 +60,7 @@ class timer_manager_impl final : public i_timer_manager
             , m_id(id)
             , m_handler(handler)
             , m_target_time(timestamp_null)
+            , m_queued(false)
         {
             m_manager.append_timer(this);
         }
@@ -66,12 +68,17 @@ class timer_manager_impl final : public i_timer_manager
         ~timer_impl()
         {
             m_manager.remove_timer(this);
+            while(m_queued.load(std::memory_order_relaxed))
+            {
+                std::this_thread::yield();
+            }
         }
 
         void execute()
         {
             m_target_time = timestamp_null;
             m_handler();
+            m_queued.store(false, std::memory_order_release);
 
         }
 
@@ -195,6 +202,7 @@ public:
 
     inline void execute(timer_impl* timer)
     {
+        timer->m_queued.store(true, std::memory_order_release);
         m_task_manager.add_task(timer->m_handler);
     }
 

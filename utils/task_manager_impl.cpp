@@ -226,7 +226,6 @@ class task_manager_impl : public i_task_manager
                 if (auto task = m_manager.m_task_queue.fetch_task())
                 {
                     task->execute();
-                    // std::clog << "exec task #" << task->task_id() << std::endl;
                 }
                 else
                 {

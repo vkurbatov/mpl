@@ -12,6 +12,8 @@
 #include <vector>
 #include <array>
 
+#include <thread>
+
 namespace io
 {
 
@@ -172,7 +174,10 @@ struct serial_link::pimpl_t
             change_state(link_state_t::disconnecting);
             m_started = false;
             m_serial.cancel();
-            while(m_io_processed.load(std::memory_order_acquire));
+            while(m_io_processed.load(std::memory_order_relaxed))
+            {
+                std::this_thread::yield();
+            }
             change_state(link_state_t::disconnected);
             return true;
         }
