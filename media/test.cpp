@@ -15,7 +15,6 @@
 #include "video_format_impl.h"
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
-#include "message_frame_impl.h"
 #include "tools/base/any_base.h"
 
 #include "media_option_types.h"
@@ -50,9 +49,6 @@
 #include "video_frame_types.h"
 
 #include "media_option_types.h"
-#include "message_frame_impl.h"
-
-#include "i_message_frame.h"
 
 #include "utils/ipc_manager_impl.h"
 #include "core/i_message_event.h"
@@ -255,13 +251,13 @@ void test5()
         {
             switch(message.category())
             {
-                case message_category_t::frame:
+                case message_category_t::data:
                 {
-                    const auto& frame_message = static_cast<const i_message_frame&>(message);
+                    const auto& media_frame = static_cast<const i_media_frame&>(message);
 
-                    if (frame_message.frame().media_type() == media_type_t::video)
+                    if (media_frame.media_type() == media_type_t::video)
                     {
-                        const auto& video_frame = static_cast<const i_video_frame&>(frame_message.frame());
+                        const auto& video_frame = static_cast<const i_video_frame&>(media_frame);
                         std::cout << "on_frame #" << video_frame.frame_id()
                                   << ": format_id: " << static_cast<std::int32_t>(video_frame.format().format_id())
                                   << ", fmt: " << video_frame.format().width()
@@ -421,13 +417,13 @@ void test8()
         {
             switch(message.category())
             {
-                case message_category_t::frame:
+                case message_category_t::data:
                 {
-                    const auto& frame_message = static_cast<const i_message_frame&>(message);
+                    const auto& media_frame = static_cast<const i_media_frame&>(message);
 
-                    if (frame_message.frame().media_type() == media_type_t::video)
+                    if (media_frame.media_type() == media_type_t::video)
                     {
-                        const auto& video_frame = static_cast<const i_video_frame&>(frame_message.frame());
+                        const auto& video_frame = static_cast<const i_video_frame&>(media_frame);
                         std::cout << "on_frame #" << video_frame.frame_id()
                                   << ": format_id: " << utils::enum_to_string(video_frame.format().format_id())
                                   << ", fmt: " << video_frame.format().width()
@@ -444,9 +440,9 @@ void test8()
                         std::cout << std::endl;
 
                     }
-                    else if (frame_message.frame().media_type() == media_type_t::audio)
+                    else if (media_frame.media_type() == media_type_t::audio)
                     {
-                        const auto& audio_frame = static_cast<const i_audio_frame&>(frame_message.frame());
+                        const auto& audio_frame = static_cast<const i_audio_frame&>(media_frame);
                         std::cout << "on_frame #" << audio_frame.frame_id()
                                   << ": format_id: " << utils::enum_to_string(audio_frame.format().format_id())
                                   << ", fmt: " << audio_frame.format().sample_rate()
@@ -765,13 +761,13 @@ void test12()
         {
             switch(message.category())
             {
-                case message_category_t::frame:
+                case message_category_t::data:
                 {
-                    const auto& frame_message = static_cast<const i_message_frame&>(message);
+                    const auto& media_frame = static_cast<const i_media_frame&>(message);
 
-                    if (frame_message.frame().media_type() == media_type_t::video)
+                    if (media_frame.media_type() == media_type_t::video)
                     {
-                        const auto& video_frame = static_cast<const i_video_frame&>(frame_message.frame());
+                        const auto& video_frame = static_cast<const i_video_frame&>(media_frame);
                         std::cout << "on_frame #" << video_frame.frame_id()
                                   << ": format_id: " << utils::enum_to_string(video_frame.format().format_id())
                                   << ", fmt: " << video_frame.format().width()
@@ -788,9 +784,9 @@ void test12()
                         std::cout << std::endl;
 
                     }
-                    else if (frame_message.frame().media_type() == media_type_t::audio)
+                    else if (media_frame.media_type() == media_type_t::audio)
                     {
-                        const auto& audio_frame = static_cast<const i_audio_frame&>(frame_message.frame());
+                        const auto& audio_frame = static_cast<const i_audio_frame&>(media_frame);
                         std::cout << "on_frame #" << audio_frame.frame_id()
                                   << ": format_id: " << utils::enum_to_string(audio_frame.format().format_id())
                                   << ", fmt: " << audio_frame.format().sample_rate()
@@ -1267,7 +1263,7 @@ void test16()
     {
         switch(message.category())
         {
-            case message_category_t::frame:
+            case message_category_t::data:
             {
                 return video_transcoder->send_message(message);
             }
@@ -1430,9 +1426,9 @@ void test18()
                         }
                     }
                     break;
-                    case message_category_t::frame:
+                    case message_category_t::data:
                     {
-                        const auto& frame = static_cast<const i_message_frame&>(message).frame();
+                        const auto& frame = static_cast<const i_media_frame&>(message);
                         auto buffer = frame.buffers().get_buffer(media_buffer_index);
 
                         std::cout << "frame #" << frame.frame_id()
@@ -1495,9 +1491,7 @@ void test18()
                             video_frame.smart_buffers().set_buffer(media_buffer_index
                                                                    , smart_buffer(std::move(buffer)));
 
-                            message_frame_ref_impl message_frame(video_frame);
-
-                            out_device->sink(0)->send_message(message_frame);
+                            out_device->sink(0)->send_message(video_frame);
 
                             std::this_thread::sleep_for(std::chrono::milliseconds(200));
                         }
@@ -2236,12 +2230,12 @@ void test22()
             {
                 switch(message.category())
                 {
-                    case message_category_t::frame:
+                    case message_category_t::data:
                     {
-                        auto& message_frame = static_cast<const i_message_frame&>(message);
-                        if (message_frame.frame().media_type() == media_type_t::audio)
+                        auto& media_frame = static_cast<const i_media_frame&>(message);
+                        if (media_frame.media_type() == media_type_t::audio)
                         {
-                            auto& audio_frame = static_cast<const i_audio_frame&>(message_frame.frame());
+                            auto& audio_frame = static_cast<const i_audio_frame&>(media_frame);
                             wap::sample_t input_sample({ audio_frame.format().sample_rate()
                                                         , audio_frame.format().channels() });
 
@@ -2275,9 +2269,7 @@ void test22()
                                         output_frame.smart_buffers().set_buffer(media_buffer_index
                                                                                 , std::move(output_pcm16));
 
-                                        message_frame_ref_impl output_message_frame(output_frame);
-
-                                        return output_device->sink(0)->send_message(output_message_frame);
+                                        return output_device->sink(0)->send_message(output_frame);
                                     }
                                 }
                             }

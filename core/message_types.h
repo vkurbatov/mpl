@@ -7,9 +7,10 @@ namespace mpl
 enum class message_category_t
 {
     undefined = -1,
-    frame,
+    data,
     command,
-    event
+    event,
+    app
 };
 
 }

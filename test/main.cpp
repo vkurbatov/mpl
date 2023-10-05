@@ -9,7 +9,7 @@
 
 int main()
 {
-    // mpl::media::tests();
-    mpl::utils_test();
+    mpl::media::tests();
+    // mpl::utils_test();
 }
 

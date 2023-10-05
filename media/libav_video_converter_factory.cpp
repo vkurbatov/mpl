@@ -8,8 +8,6 @@
 #include "video_format_impl.h"
 #include "video_frame_impl.h"
 
-#include "message_frame_impl.h"
-
 #include "tools/ffmpeg/libav_converter.h"
 
 namespace mpl::media
@@ -127,7 +125,7 @@ public:
                                                                      , smart_buffer(m_output_buffer.data()
                                                                      , m_output_buffer.size()));
 
-                    return m_output_sink->send_message(message_frame_ref_impl(converted_video_frame));
+                    return m_output_sink->send_message(converted_video_frame);
                 }
             }
         }
@@ -138,13 +136,13 @@ public:
 public:
     bool send_message(const i_message &message) override
     {
-        if (message.category() == message_category_t::frame
+        if (message.category() == message_category_t::data
                 && m_output_sink != nullptr)
         {
-            const i_message_frame& message_frame = static_cast<const i_message_frame&>(message);
-            if (message_frame.frame().media_type() == media_type_t::video)
+            const i_media_frame& media_frame = static_cast<const i_media_frame&>(message);
+            if (media_frame.media_type() == media_type_t::video)
             {
-                const auto& video_frame = static_cast<const i_video_frame&>(message_frame.frame());
+                const auto& video_frame = static_cast<const i_video_frame&>(media_frame);
                 if (video_frame.format().is_compatible(m_output_format))
                 {
                     return m_output_sink->send_message(message);

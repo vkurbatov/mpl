@@ -1,6 +1,5 @@
 #include "media_composer_factory_impl.h"
 #include "i_media_converter_factory.h"
-#include "i_message_frame.h"
 #include "i_layout_manager.h"
 
 #include "audio_frame_impl.h"
@@ -19,7 +18,6 @@
 #include "audio_sample.h"
 #include "draw_options.h"
 #include "image_builder.h"
-#include "message_frame_impl.h"
 #include "timestamp_calculator.h"
 
 #include "audio_composer.h"
@@ -130,7 +128,7 @@ class media_composer : public i_media_composer
 
         class audio_track
         {
-            using frame_queue_t = std::queue<i_media_frame::s_ptr_t>;
+            using frame_queue_t = std::queue<i_message::s_ptr_t>;
             using compose_stream_ptr_t = audio_composer::i_compose_stream::s_ptr_t;
 
             mutable mutex_t             m_safe_mutex;
@@ -183,16 +181,16 @@ class media_composer : public i_media_composer
                 return m_compose_stream->level();
             }
             
-            bool push_frame(const i_message_frame& message_frame)
+            bool push_frame(const i_media_frame& media_frame)
             {
-                if (message_frame.frame().media_type() == media_type_t::audio)
+                if (media_frame.media_type() == media_type_t::audio)
                 {
                     if (m_media_converter != nullptr)
                     {
-                        return m_media_converter->send_message(message_frame);
+                        return m_media_converter->send_message(media_frame);
                     }
 
-                    return on_converter_message(message_frame);
+                    return on_converter_message(media_frame);
                 }
 
                 return false;
@@ -206,7 +204,7 @@ class media_composer : public i_media_composer
                     {
                         auto frame = std::move(m_frame_queue.front());
                         m_frame_queue.pop();
-                        return frame;
+                        return std::static_pointer_cast<i_media_frame>(frame);
                     }
                 }
 
@@ -254,8 +252,11 @@ class media_composer : public i_media_composer
             {
                 switch(message.category())
                 {
-                    case message_category_t::frame:
-                        return on_converter_frame(static_cast<const i_message_frame&>(message).frame());
+                    case message_category_t::data:
+                        if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+                        {
+                            return on_converter_frame(static_cast<const i_media_frame&>(message));
+                        }
                     break;
                     default:;
                 }
@@ -287,7 +288,7 @@ class media_composer : public i_media_composer
 
         class video_track
         {
-            using frame_queue_t = std::queue<i_media_frame::s_ptr_t>;
+            using frame_queue_t = std::queue<i_message::s_ptr_t>;
             using compose_stream_ptr_t = video_composer::i_compose_stream::s_ptr_t;
             mutable mutex_t             m_safe_mutex;
 
@@ -339,14 +340,14 @@ class media_composer : public i_media_composer
                 }
             }
 
-            bool push_frame(const i_message_frame& message_frame)
+            bool push_frame(const i_media_frame& media_frame)
             {
                 if (m_media_converter)
                 {
-                    return m_media_converter->send_message(message_frame);
+                    return m_media_converter->send_message(media_frame);
                 }
 
-                return on_converter_frame(message_frame.frame());
+                return on_converter_frame(media_frame);
             }
 
             i_media_frame::s_ptr_t pop_frame()
@@ -355,7 +356,7 @@ class media_composer : public i_media_composer
                     lock_t lock(m_safe_mutex);
                     if (!m_frame_queue.empty())
                     {
-                        m_last_frame = std::move(m_frame_queue.front());
+                        m_last_frame = std::move(std::static_pointer_cast<i_media_frame>(m_frame_queue.front()));
                         m_last_frame_time = utils::time::get_ticks();
                         m_frame_queue.pop();
                     }
@@ -469,8 +470,11 @@ class media_composer : public i_media_composer
             {
                 switch(message.category())
                 {
-                    case message_category_t::frame:
-                        return on_converter_frame(static_cast<const i_message_frame&>(message).frame());
+                    case message_category_t::data:
+                        if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+                        {
+                            return on_converter_frame(static_cast<const i_media_frame&>(message));
+                        }
                     break;
                     default:;
                 }
@@ -634,15 +638,15 @@ class media_composer : public i_media_composer
         }
 
 
-        bool push_frame(const i_message_frame& message_frame)
+        bool push_frame(const i_media_frame& media_frame)
         {
-            switch(message_frame.frame().media_type())
+            switch(media_frame.media_type())
             {
                 case media_type_t::audio:
-                    return m_audio_track.push_frame(message_frame);
+                    return m_audio_track.push_frame(media_frame);
                 break;
                 case media_type_t::video:
-                    return m_video_track.push_frame(message_frame);
+                    return m_video_track.push_frame(media_frame);
                 break;
                 default:;
             }
@@ -697,8 +701,7 @@ class media_composer : public i_media_composer
         {
             if (auto frame = m_audio_track.compose_frame())
             {
-                message_frame_ref_impl message_frame(*frame);
-                return m_router.send_message(message_frame);
+                return m_router.send_message(*frame);
             }
 
             return false;
@@ -708,8 +711,7 @@ class media_composer : public i_media_composer
         {
             if (auto frame = m_video_track.compose_frame())
             {
-                message_frame_ref_impl message_frame(*frame);
-                return m_router.send_message(message_frame);
+                return m_router.send_message(*frame);
             }
 
             return false;
@@ -768,8 +770,11 @@ class media_composer : public i_media_composer
         {
             switch(message.category())
             {
-                case message_category_t::frame:
-                    return push_frame(static_cast<const i_message_frame&>(message));
+                case message_category_t::data:
+                    if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+                    {
+                        return push_frame(static_cast<const i_media_frame&>(message));
+                    }
                 break;
                 default:;
             }

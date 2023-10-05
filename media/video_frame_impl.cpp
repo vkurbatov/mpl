@@ -34,6 +34,11 @@ void video_frame_base_impl::set_frame_type(frame_type_t frame_type)
     m_frame_type = frame_type;
 }
 
+option_impl &video_frame_base_impl::options()
+{
+    return m_options;
+}
+
 smart_buffer_collection &video_frame_base_impl::smart_buffers()
 {
     return m_buffers;
@@ -42,6 +47,21 @@ smart_buffer_collection &video_frame_base_impl::smart_buffers()
 const smart_buffer_collection &video_frame_base_impl::smart_buffers() const
 {
     return m_buffers;
+}
+
+message_category_t video_frame_base_impl::category() const
+{
+    return message_category_t::data;
+}
+
+i_message_data::data_id_t video_frame_base_impl::data_id() const
+{
+    return media_frame_id;
+}
+
+const i_option *video_frame_base_impl::options() const
+{
+    return &m_options;
 }
 
 media_type_t video_frame_base_impl::media_type() const
@@ -160,7 +180,7 @@ void video_frame_impl::assign(const i_video_frame &other)
     m_buffers.assign(other.buffers());
 }
 
-i_media_frame::u_ptr_t video_frame_impl::clone() const
+i_message::u_ptr_t video_frame_impl::clone() const
 {
     if (auto clone_frame = create(m_video_format
                                   , m_frame_id
@@ -230,7 +250,7 @@ void video_frame_ptr_impl::assign(const i_video_frame &other)
     m_buffers.assign(other.buffers());
 }
 
-i_media_frame::u_ptr_t video_frame_ptr_impl::clone() const
+i_message::u_ptr_t video_frame_ptr_impl::clone() const
 {
     if (m_video_format_ptr)
     {
@@ -267,7 +287,7 @@ video_frame_ref_impl::video_frame_ref_impl(const i_video_format &video_format
 
 }
 
-i_media_frame::u_ptr_t video_frame_ref_impl::clone() const
+i_message::u_ptr_t video_frame_ref_impl::clone() const
 {
     if (auto clone_format = utils::static_pointer_cast<i_video_format>(format().clone()))
     {

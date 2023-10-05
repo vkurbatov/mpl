@@ -14,7 +14,6 @@
 #include "audio_frame_splitter.h"
 
 #include "media_option_types.h"
-#include "message_frame_impl.h"
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 #include "video_info.h"
@@ -358,7 +357,7 @@ public:
 
             // frame.set_options(input_frame.options());
 
-            return m_output_sink->send_message(message_frame_ref_impl(frame));
+            return m_output_sink->send_message(frame);
         }
 
         return false;
@@ -472,9 +471,9 @@ public:
 public:
     bool send_message(const i_message &message) override
     {
-        if (message.category() == message_category_t::frame)
+        if (message.category() == message_category_t::data)
         {
-            const auto& frame = static_cast<const i_message_frame&>(message).frame();
+            const auto& frame = static_cast<const i_media_frame&>(message);
             if (frame.media_type() == MediaType)
             {
                 return on_media_frame(static_cast<const i_frame_t&>(frame));

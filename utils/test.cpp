@@ -509,7 +509,8 @@ void test8()
                 link1.send_to(msg
                               , link2.local_endpoint());
 
-                // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                // std::this_thread::yield();
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));

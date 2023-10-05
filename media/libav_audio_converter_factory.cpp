@@ -8,8 +8,6 @@
 #include "audio_format_impl.h"
 #include "audio_frame_impl.h"
 
-#include "message_frame_impl.h"
-
 #include "tools/ffmpeg/libav_resampler.h"
 
 namespace mpl::media
@@ -115,7 +113,7 @@ public:
                     converted_audio_frame.smart_buffers().set_buffer(media_buffer_index
                                                                     , smart_buffer(std::move(output_samples)));
 
-                    return m_output_sink->send_message(message_frame_ref_impl(converted_audio_frame));
+                    return m_output_sink->send_message(converted_audio_frame);
                 }
             }
         }
@@ -126,13 +124,13 @@ public:
 public:
     bool send_message(const i_message &message) override
     {
-        if (message.category() == message_category_t::frame
+        if (message.category() == message_category_t::data
                 && m_output_sink != nullptr)
         {
-            const i_message_frame& message_frame = static_cast<const i_message_frame&>(message);
-            if (message_frame.frame().media_type() == media_type_t::audio)
+            const i_media_frame& media_frame = static_cast<const i_media_frame&>(message);
+            if (media_frame.media_type() == media_type_t::audio)
             {
-                const auto& audio_frame = static_cast<const i_audio_frame&>(message_frame.frame());
+                const auto& audio_frame = static_cast<const i_audio_frame&>(media_frame);
                 if (audio_frame.format().is_compatible(m_output_format))
                 {
                     return m_output_sink->send_message(message);

@@ -16,6 +16,8 @@ protected:
     frame_id_t                      m_frame_id;
     timestamp_t                     m_timestamp;
     i_video_frame::frame_type_t     m_frame_type;
+    option_impl                     m_options;
+
 
 public:
     using u_ptr_t = std::unique_ptr<video_frame_base_impl>;
@@ -30,10 +32,19 @@ public:
     void set_timestamp(timestamp_t timestamp);
     void set_buffers(smart_buffer_collection&& buffers);
     void set_frame_type(i_video_frame::frame_type_t frame_type);
+    option_impl& options();
 
     smart_buffer_collection& smart_buffers();
     const smart_buffer_collection& smart_buffers() const;
 
+    // i_message interface
+public:
+    message_category_t category() const override;
+
+    // i_message_data interface
+public:
+    data_id_t data_id() const override;
+    const i_option *options() const override;
 
     // i_media_frame interface
 public:
@@ -92,7 +103,7 @@ public:
 
     // i_media_frame interface
 public:
-    i_media_frame::u_ptr_t clone() const override;
+    i_message::u_ptr_t clone() const override;
 
     // i_video_frame interface
 public:
@@ -130,7 +141,7 @@ public:
 
     // i_media_frame interface
 public:
-    i_media_frame::u_ptr_t clone() const override;
+    i_message::u_ptr_t clone() const override;
 
     // i_video_frame interface
 public:
@@ -153,7 +164,7 @@ public:
 
     // i_media_frame interface
 public:
-    i_media_frame::u_ptr_t clone() const override;
+    i_message::u_ptr_t clone() const override;
 
     // i_video_frame interface
 public:

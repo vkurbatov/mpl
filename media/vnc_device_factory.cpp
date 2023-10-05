@@ -8,7 +8,6 @@
 #include "utils/time_utils.h"
 
 #include "video_frame_impl.h"
-#include "message_frame_impl.h"
 
 #include "tools/base/sync_base.h"
 #include "tools/vnc/vnc_device.h"
@@ -258,9 +257,7 @@ public:
             m_frame_counter++;
             process_timesatamp(m_device_params.fps);
 
-            message_frame_ref_impl message_frame(video_frame);
-
-            return m_router.send_message(message_frame);
+            return m_router.send_message(video_frame);
         }
 
         return false;

@@ -15,7 +15,6 @@
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
-#include "message_frame_impl.h"
 
 #include "tools/base/sync_base.h"
 
@@ -72,8 +71,13 @@ public:
     {
         switch(message.category())
         {
-            case message_category_t::frame:
-                return send_frame(static_cast<const i_message_frame&>(message).frame());
+            case message_category_t::data:
+            {
+                if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+                {
+                    return send_frame(static_cast<const i_media_frame&>(message));
+                }
+            }
             break;
             default:;
         }
@@ -88,7 +92,7 @@ private:
         m_frame_buffer.clear();
         packetizer packer(m_frame_buffer);
 
-        if (packer.add_enum(message_category_t::frame)
+        if (packer.add_enum(message_category_t::data)
                 && packer.add_value(frame))
         {
 

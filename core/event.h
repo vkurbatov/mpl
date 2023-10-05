@@ -24,7 +24,7 @@ protected:
     // заглушки нужны, чтобы производные структуры декларировали
     // "пятерку" по умолчанию, так как есть константные методы
     event_t& operator=(const event_t& other);
-    event_t& operator=(event_t&& other);
+    event_t& operator=(event_t&& other) = default;
 };
 
 }

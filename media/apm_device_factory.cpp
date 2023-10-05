@@ -11,7 +11,6 @@
 
 
 #include "audio_frame_impl.h"
-#include "message_frame_impl.h"
 
 #include "tools/wap/wap_processor.h"
 
@@ -190,9 +189,9 @@ public:
     {
         if (m_native_device.is_open())
         {
-            if (message.category() == message_category_t::frame)
+            if (message.category() == message_category_t::data)
             {
-                auto& media_frame = static_cast<const i_message_frame&>(message).frame();
+                auto& media_frame = static_cast<const i_media_frame&>(message);
                 if (media_frame.media_type() == media_type_t::audio)
                 {
                     return on_sink_frame(static_cast<const i_audio_frame&>(media_frame)
@@ -257,9 +256,7 @@ public:
                         m_frame_counter++;
                         m_frame_timestamp += samples;
 
-                        message_frame_ref_impl message_frame(audio_frame);
-
-                        return m_router.send_message(message_frame);
+                        return m_router.send_message(audio_frame);
                     }
 
                 }

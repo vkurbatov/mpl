@@ -37,6 +37,26 @@ const smart_buffer_collection &audio_frame_base_impl::smart_buffers() const
     return m_buffers;
 }
 
+option_impl &audio_frame_base_impl::options()
+{
+    return m_options;
+}
+
+message_category_t audio_frame_base_impl::category() const
+{
+    return message_category_t::data;
+}
+
+i_message_data::data_id_t audio_frame_base_impl::data_id() const
+{
+    return media_frame_id;
+}
+
+const i_option *audio_frame_base_impl::options() const
+{
+    return &m_options;
+}
+
 media_type_t audio_frame_base_impl::media_type() const
 {
     return media_type_t::audio;
@@ -137,7 +157,7 @@ void audio_frame_impl::assign(const i_audio_frame &other)
     m_buffers.assign(other.buffers());
 }
 
-i_media_frame::u_ptr_t audio_frame_impl::clone() const
+i_message::u_ptr_t audio_frame_impl::clone() const
 {
     if (auto clone_frame = create(m_audio_format
                                   , m_frame_id
@@ -205,7 +225,7 @@ void audio_frame_ptr_impl::assign(const i_audio_frame &other)
     m_buffers.assign(other.buffers());
 }
 
-i_media_frame::u_ptr_t audio_frame_ptr_impl::clone() const
+i_message::u_ptr_t audio_frame_ptr_impl::clone() const
 {
     if (m_audio_format_ptr)
     {
@@ -239,7 +259,7 @@ audio_frame_ref_impl::audio_frame_ref_impl(const i_audio_format &audio_format
 
 }
 
-i_media_frame::u_ptr_t audio_frame_ref_impl::clone() const
+i_message::u_ptr_t audio_frame_ref_impl::clone() const
 {
     if (auto clone_format = utils::static_pointer_cast<i_audio_format>(format().clone()))
     {

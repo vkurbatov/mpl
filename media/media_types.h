@@ -32,6 +32,8 @@ constexpr std::uint32_t video_sample_rate = 90000;
 constexpr std::int64_t media_buffer_index = 0;
 constexpr std::int64_t extension_data_index = 1;
 
+constexpr std::uint32_t media_frame_id = 0;
+
 }
 
 #endif // MPL_MEDIA_TYPES_H

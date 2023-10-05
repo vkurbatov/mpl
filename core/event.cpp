@@ -42,9 +42,5 @@ event_t &event_t::operator=(const event_t &other)
     return *this;
 }
 
-event_t &event_t::operator=(event_t &&other)
-{
-    return *this;
-}
 
 }

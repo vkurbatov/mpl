@@ -20,7 +20,6 @@ set(SOURCES
     video_format_impl.cpp
     video_info.cpp
     video_frame_impl.cpp
-    message_frame_impl.cpp
     media_packetizer_impl.cpp
     timestamp_calculator.cpp
     libav_video_converter_factory.cpp
@@ -60,7 +59,6 @@ set(PUBLIC_HEADERS
     stream_types.h
     media_option_types.h
     command_camera_control.h
-    i_message_frame.h
     i_media_stream.h
     i_media_format.h
     i_media_frame.h
@@ -94,7 +92,6 @@ set(PRIVATE_HEADERS
     audio_mixer.h
     audio_level.h
     audio_sample.h
-    message_frame_impl.h
     timestamp_calculator.h
     libav_video_converter_factory.h
     libav_audio_converter_factory.h

@@ -4,6 +4,7 @@
 #include "i_audio_frame.h"
 #include "audio_format_impl.h"
 #include "utils/smart_buffer_collection.h"
+#include "utils/option_impl.h"
 #include <unordered_map>
 
 namespace mpl::media
@@ -15,6 +16,7 @@ protected:
     smart_buffer_collection m_buffers;
     frame_id_t              m_frame_id;
     timestamp_t             m_timestamp;
+    option_impl             m_options;
 
 public:
     using u_ptr_t = std::unique_ptr<audio_frame_base_impl>;
@@ -30,13 +32,23 @@ public:
     smart_buffer_collection& smart_buffers();
     const smart_buffer_collection& smart_buffers() const;
 
+    option_impl& options();
+
+    // i_message interface
+public:
+    message_category_t category() const override;
+
+    // i_message_data interface
+public:
+    data_id_t data_id() const override;
+    const i_option *options() const override;
+
     // i_media_frame interface
 public:
     media_type_t media_type() const override;
     frame_id_t frame_id() const override;
     timestamp_t timestamp() const override;
     const i_buffer_collection& buffers() const override;
-
 };
 
 class audio_frame_impl : public audio_frame_base_impl
@@ -75,7 +87,7 @@ public:
 
     // i_media_frame interface
 public:
-    i_media_frame::u_ptr_t clone() const override;
+    i_message::u_ptr_t clone() const override;
 
     // i_audio_frame interface
 public:
@@ -109,7 +121,7 @@ public:
 
     // i_media_frame interface
 public:
-    i_media_frame::u_ptr_t clone() const override;
+    i_message::u_ptr_t clone() const override;
 
     // i_audio_frame interface
 public:
@@ -130,7 +142,7 @@ public:
 
     // i_media_frame interface
 public:
-    i_media_frame::u_ptr_t clone() const override;
+    i_message::u_ptr_t clone() const override;
 
     // i_audio_frame interface
 public:

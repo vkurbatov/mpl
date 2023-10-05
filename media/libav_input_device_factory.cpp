@@ -8,7 +8,6 @@
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
-#include "message_frame_impl.h"
 
 #include "tools/base/sync_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
@@ -337,9 +336,7 @@ public:
                                                          , smart_buffer(libav_frame.data
                                                                         , libav_frame.size));
 
-                        message_frame_ref_impl message_frame(frame);
-
-                        return m_router.send_message(message_frame);
+                        return m_router.send_message(frame);
                     }
                 }
                 break;
@@ -367,9 +364,8 @@ public:
                                                          , smart_buffer(libav_frame.data
                                                                         , libav_frame.size));
 
-                        message_frame_ref_impl message_frame(frame);
 
-                        return m_router.send_message(message_frame);
+                        return m_router.send_message(frame);
                     }
                 }
                 break;

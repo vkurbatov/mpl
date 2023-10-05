@@ -12,7 +12,6 @@
 #include "utils/message_sink_impl.h"
 
 #include "video_frame_impl.h"
-#include "message_frame_impl.h"
 #include "media_command_message_impl.h"
 #include "command_camera_control.h"
 
@@ -725,9 +724,7 @@ public:
             m_frame_counter++;
             process_timesatamp(frame.frame_info.fps);
 
-            message_frame_ref_impl message_frame(video_frame);
-
-            m_router.send_message(message_frame);
+            m_router.send_message(video_frame);
 
         }
 

@@ -15,7 +15,6 @@
 #include "media/smart_transcoder_factory.h"
 #include "media/ipc_output_device_factory.h"
 #include "media/media_option_types.h"
-#include "media/i_message_frame.h"
 #include "media/i_video_frame.h"
 
 #include "media/audio_format_impl.h"

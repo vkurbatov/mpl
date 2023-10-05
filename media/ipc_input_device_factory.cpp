@@ -17,8 +17,6 @@
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
-#include "message_frame_impl.h"
-
 
 #include <shared_mutex>
 #include <atomic>
@@ -124,7 +122,7 @@ private:
         message_category_t category = message_category_t::undefined;
 
         if (depacker.fetch_enum(category)
-                && category == message_category_t::frame)
+                && category == message_category_t::data)
         {
             auto save = depacker.cursor();
             media_type_t media_type = media_type_t::undefined;
@@ -140,10 +138,8 @@ private:
                         audio_frame_impl audio_frame({});
                         if (depacker.fetch_value(audio_frame))
                         {
-                            message_frame_ref_impl message_frame(audio_frame);
-
                             m_frame_counter++;
-                            m_message_sink.send_message(message_frame);
+                            m_message_sink.send_message(audio_frame);
                         }
                     }
                     break;
@@ -152,10 +148,8 @@ private:
                         video_frame_impl video_frame({});
                         if (depacker.fetch_value(video_frame))
                         {
-                            message_frame_ref_impl message_frame(video_frame);
-
                             m_frame_counter++;
-                            m_message_sink.send_message(message_frame);
+                            m_message_sink.send_message(video_frame);
                         }
                     }
                     break;

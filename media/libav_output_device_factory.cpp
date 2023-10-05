@@ -14,7 +14,6 @@
 #include "media_option_types.h"
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
-#include "message_frame_impl.h"
 
 #include "tools/base/sync_base.h"
 //#include "tools/ffmpeg/libav_stream_publisher.h"
@@ -606,8 +605,11 @@ public:
     {
         switch(message.category())
         {
-            case message_category_t::frame:
-                return on_message_frame(static_cast<const i_message_frame&>(message).frame());
+            case message_category_t::data:
+            if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+            {
+                return on_message_frame(static_cast<const i_media_frame&>(message));
+            }
             break;
             default:;
         }
