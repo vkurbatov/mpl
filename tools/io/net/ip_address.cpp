@@ -21,6 +21,7 @@ boost::asio::ip::address address_from_string(const std::string& string_address
         case ip_version_t::ip6:
             return boost::asio::ip::address_v6::from_string(string_address, error_code);
         break;
+        default:;
     }
 
     return boost::asio::ip::address::from_string(string_address, error_code);
@@ -228,17 +229,7 @@ bool ip_address_t::from_string(const std::string &string_address
 
     return false;
 }
-/*
-ip_address_t ip_address_t::from_string(const std::string &string_address)
-{
-    ip_address_t address;
 
-    from_string(string_address
-                , address);
-
-    return address;
-}
-*/
 ip_address_t::ip_address_t()
     : version(ip_version_t::undefined)
 {

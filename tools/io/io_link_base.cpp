@@ -1,4 +1,5 @@
 #include "io_link_base.h"
+#include "endpoint.h"
 
 namespace io
 {

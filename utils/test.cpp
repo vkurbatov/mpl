@@ -29,6 +29,11 @@
 #include "tools/ipc/test.h"
 #include "tools/base/random_base.h"
 
+#include "tools/io/net/udp_link.h"
+#include "tools/io/net/udp_link_config.h"
+#include "tools/io/net/ip_endpoint.h"
+#include "tools/io/io_core.h"
+
 
 namespace mpl
 {
@@ -425,6 +430,101 @@ void test7()
     }
 }
 
+void test8()
+{
+    auto& core = io::io_core::get_instance();
+    core.run();
+
+    io::udp_link link1(core
+                       , {});
+    io::udp_link link2(core
+                       , {});
+
+    io::ip_endpoint_t ep1("127.0.0.1:0");
+    io::ip_endpoint_t ep2("127.0.0.1:0");
+
+    auto link_state_handler_1 = [](io::link_state_t state
+                                   , const std::string_view& reason)
+    {
+        std::clog << "Link #1 state: " << static_cast<std::int32_t>(state) << std::endl;
+    };
+
+    auto link_state_handler_2 = [](io::link_state_t state
+                                   , const std::string_view& reason)
+    {
+        std::clog << "Link #2 state: " << static_cast<std::int32_t>(state) << std::endl;
+    };
+
+    auto link_message_handler_1 = [&](const io::message_t& message
+                                      , const io::endpoint_t& endpoint)
+    {
+        std::string_view msg(static_cast<const char*>(message.data())
+                             , message.size());
+
+        std::clog << "Link #1 message: " << msg
+                  << " from: " << endpoint.to_string()
+                  << std::endl;
+    };
+
+    auto link_message_handler_2 = [&](const io::message_t& message
+                                      , const io::endpoint_t& endpoint)
+    {
+        std::string_view msg(static_cast<const char*>(message.data())
+                             , message.size());
+
+        std::clog << "Link #2 message: " << msg
+                  << " from: " << endpoint.to_string()
+                  << std::endl;
+
+        link1.send_to(message
+                      , endpoint);
+    };
+
+    link1.set_endpoint(ep1);
+    link2.set_endpoint(ep2);
+
+    link1.set_state_handler(link_state_handler_1);
+    link2.set_state_handler(link_state_handler_2);
+
+    link1.set_message_handler(link_message_handler_1);
+    link2.set_message_handler(link_message_handler_2);
+
+    const auto count = 1000;
+    const std::string_view test_string = "Test string";
+
+    if (link1.control(io::link_control_id_t::open)
+            && link2.control(io::link_control_id_t::open))
+    {
+        if (link1.control(io::link_control_id_t::start)
+                && link2.control(io::link_control_id_t::start))
+        {
+            for (auto i = 0; i < count; i++)
+            {
+                auto send_sting = std::string(test_string)
+                        .append(" #")
+                        .append(std::to_string(i));
+
+                io::message_t msg(send_sting.data(), send_sting.size());
+
+                link1.send_to(msg
+                              , link2.local_endpoint());
+
+                // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            link2.control(io::link_control_id_t::stop);
+            link1.control(io::link_control_id_t::stop);
+        }
+
+        link2.control(io::link_control_id_t::close);
+        link1.control(io::link_control_id_t::close);
+    }
+
+
+    core.stop();
+}
 
 void ipc_test()
 {
@@ -435,7 +535,7 @@ void ipc_test()
 
 void utils_test()
 {
-    test7();
+    test8();
 }
 
 

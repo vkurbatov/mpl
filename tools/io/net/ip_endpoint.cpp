@@ -90,7 +90,8 @@ ip_endpoint_t::ip_endpoint_t(const std::string &string_endpoint)
 
 ip_endpoint_t::ip_endpoint_t(const ip_address_t &address
                              , port_t port)
-    : address(address)
+    : endpoint_t(type_t::ip)
+    , address(address)
     , port(port)
 {
 
@@ -102,10 +103,12 @@ bool ip_endpoint_t::operator ==(const ip_endpoint_t &other) const
             && port == other.port;
 }
 
-bool ip_endpoint_t::operator !=(const ip_endpoint_t &other) const
+bool ip_endpoint_t::operator ==(const endpoint_t &other) const
 {
-    return ! operator == (other);
+    return other.type == type_t::ip
+            && *this == static_cast<const ip_endpoint_t&>(other);
 }
+
 
 bool ip_endpoint_t::is_echo_port() const
 {

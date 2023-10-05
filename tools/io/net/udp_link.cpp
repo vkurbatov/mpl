@@ -1,10 +1,12 @@
-#include "serial_link.h"
-#include "serial_link_config.h"
-#include "serial_endpoint.h"
+#include "udp_link.h"
+#include "ip_endpoint.h"
+#include "udp_link_config.h"
 #include "tools/io/io_core.h"
 
+#include "net_utils.h"
+
 #include <boost/asio/io_context.hpp>
-#include <boost/asio/serial_port.hpp>
+#include <boost/asio/ip/udp.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
 
@@ -17,75 +19,57 @@
 namespace io
 {
 
-constexpr static std::size_t recv_buffer_size = 1000;
-using serial_t = boost::asio::serial_port;
+constexpr static std::size_t recv_buffer_size = 10000;
+using socket_t = boost::asio::ip::udp::socket;
+using udp_endpoint_t = boost::asio::ip::udp::endpoint;
 using io_contex_t = boost::asio::io_context;
 using array_t = std::array<std::uint8_t, recv_buffer_size>;
 
 namespace detail
 {
 
-bool set_link_params(serial_t& serial
-                      , const serial_link_config_t& config
-                      , boost::system::error_code& ec)
+bool set_link_params(socket_t& socket
+                    , const udp_link_config_t& config
+                    , boost::system::error_code& ec)
 {
     if (config.is_valid())
     {
-        serial.set_option(boost::asio::serial_port_base::baud_rate(config.baud_rate), ec);
-
-        if (!ec.failed())
-        {
-            serial.set_option(boost::asio::serial_port_base::character_size(config.char_size), ec);
-        }
-
-        if (!ec.failed())
-        {
-            serial.set_option(boost::asio::serial_port_base::stop_bits(static_cast<boost::asio::serial_port_base::stop_bits::type>(config.stop_bits)), ec);
-        }
-
-        if (!ec.failed())
-        {
-            serial.set_option(boost::asio::serial_port_base::parity(static_cast<boost::asio::serial_port_base::parity::type>(config.parity)), ec);
-        }
-
-        if (!ec.failed())
-        {
-            serial.set_option(boost::asio::serial_port_base::flow_control(static_cast<boost::asio::serial_port_base::flow_control::type>(config.flow_control)), ec);
-        }
-
         return !ec.failed();
     }
-
     return false;
 }
 
 }
 
-struct serial_link::pimpl_t
+struct udp_link::pimpl_t
 {
-    using u_ptr_t = serial_link::pimpl_ptr_t;
+    using u_ptr_t = udp_link::pimpl_ptr_t;
 
-    serial_link&            m_link;
-    serial_link_config_t    m_config;
-    serial_endpoint_t       m_endpoint;
-    serial_t                m_serial;
+    udp_link&               m_link;
+    udp_link_config_t       m_config;
+    ip_endpoint_t           m_local_endpoint;
+    ip_endpoint_t           m_remote_endpoint;
+
+    udp_endpoint_t          m_recv_endpoint;
+
+    socket_t                m_socket;
     array_t                 m_recv_buffer;
 
     bool                    m_started;
     std::atomic_bool        m_io_processed;
 
-    static u_ptr_t create(serial_link& link
-                          , const serial_link_config_t& config)
+    static u_ptr_t create(udp_link& link
+                          , const udp_link_config_t& config)
     {
         return std::make_unique<pimpl_t>(link
                                          , config);
     }
 
-    pimpl_t(serial_link& link
-            , const serial_link_config_t& config)
+    pimpl_t(udp_link& link
+            , const udp_link_config_t& config)
         : m_link(link)
         , m_config(config)
-        , m_serial(m_link.m_core.get<io_contex_t>())
+        , m_socket(m_link.m_core.get<io_contex_t>())
         , m_started(false)
     {
 
@@ -104,20 +88,60 @@ struct serial_link::pimpl_t
                             , reason);
     }
 
+    bool socket_open(boost::system::error_code& ec)
+    {
+        switch(m_local_endpoint.address.version)
+        {
+            case ip_version_t::ip4:
+                m_socket.open(boost::asio::ip::udp::v4()
+                              , ec);
+            break;
+            case ip_version_t::ip6:
+                m_socket.open(boost::asio::ip::udp::v6()
+                              , ec);
+            break;
+            default:;
+        }
+
+        if (!ec.failed()
+                && m_socket.is_open())
+        {
+            if (m_config.socket_options.reuse_address)
+            {
+                m_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true)
+                                   , ec);
+            }
+
+            if (!ec.failed())
+            {
+                m_socket.bind(utils::convert<udp_endpoint_t>(m_local_endpoint)
+                              , ec);
+
+                if (!ec.failed())
+                {
+                    m_local_endpoint = utils::convert<ip_endpoint_t>(m_socket.local_endpoint());
+                    return true;
+                }
+            }
+
+            m_socket.close();
+        }
+
+        return false;
+    }
+
     bool open()
     {
-        if (!m_serial.is_open())
+        if (!m_socket.is_open())
         {
             boost::system::error_code ec;
             change_state(link_state_t::opening);
 
-            if (m_endpoint.is_valid())
+            if (m_local_endpoint.is_valid())
             {
-                m_serial.open(m_endpoint.port_name, ec);
-
-                if (!ec.failed())
+                if (socket_open(ec))
                 {
-                    if (detail::set_link_params(m_serial
+                    if (detail::set_link_params(m_socket
                                                  , m_config
                                                  , ec))
                     {
@@ -141,7 +165,7 @@ struct serial_link::pimpl_t
 
     bool close()
     {
-        if (m_serial.is_open())
+        if (m_socket.is_open())
         {
             change_state(link_state_t::closing);
             stop();
@@ -173,7 +197,7 @@ struct serial_link::pimpl_t
         {
             change_state(link_state_t::disconnecting);
             m_started = false;
-            m_serial.cancel();
+            m_socket.cancel();
             while(m_io_processed.load(std::memory_order_relaxed))
             {
                 std::this_thread::yield();
@@ -185,7 +209,7 @@ struct serial_link::pimpl_t
         return false;
     }
 
-    inline bool set_config(const serial_link_config_t &config)
+    inline bool set_config(const udp_link_config_t &config)
     {
         if (!is_open())
         {
@@ -196,39 +220,49 @@ struct serial_link::pimpl_t
         return false;
     }
 
-    inline bool set_endpoint(const endpoint_t &endpoint)
+    inline bool set_endpoint(const ip_endpoint_t &endpoint
+                             , bool remote = false)
     {
-        if (!is_open())
+        if (!is_open() || remote)
         {
-            if (endpoint.type == endpoint_t::type_t::serial)
-            {
-                m_endpoint = static_cast<const serial_endpoint_t&>(endpoint);
-                return true;
-            }
+            (remote ? m_remote_endpoint : m_local_endpoint) = endpoint;
+            return true;
         }
 
         return false;
     }
 
+
     inline bool is_open()
     {
-        return m_serial.is_open();
+        return m_socket.is_open();
     }
 
 
     inline bool send_to(const message_t &message
-                        , const endpoint_t& /*endpoint*/)
+                        , const ip_endpoint_t& endpoint)
     {
         if (is_open()
                 && m_started)
         {
             auto buffer = boost::asio::buffer(message.data()
                                                , message.size());
-            m_serial.async_write_some(buffer
-                                      , [&](auto&&... args) { on_send(args...); });
+            m_socket.async_send_to(buffer
+                                   , utils::convert<udp_endpoint_t>(endpoint)
+                                   , [&](auto&&... args) { on_send(args...); });
             return true;
         }
 
+        return false;
+    }
+
+    inline bool send(const message_t &message)
+    {
+        if (m_remote_endpoint.is_valid())
+        {
+            return send_to(message
+                           , m_remote_endpoint);
+        }
         return false;
     }
 
@@ -250,8 +284,10 @@ struct serial_link::pimpl_t
         {
             m_io_processed.store(true);
             auto buffer = boost::asio::buffer(m_recv_buffer);
-            m_serial.async_read_some(buffer
-                                     , [&](auto&&... args) { on_receive(args...); });
+            m_socket.async_receive_from(buffer
+                                        , m_recv_endpoint
+                                        , 0
+                                        , [&](auto&&... args) { on_receive(args...); });
 
         }
         m_io_processed.store(false
@@ -272,7 +308,7 @@ struct serial_link::pimpl_t
                               , bytes_transfered);
 
             m_link.on_recv_message(message
-                                   , m_endpoint);
+                                   , utils::convert<ip_endpoint_t>(m_recv_endpoint));
 
             do_receive();
             return;
@@ -283,15 +319,15 @@ struct serial_link::pimpl_t
 
 };
 
-serial_link::u_ptr_t serial_link::create(io_core &core
-                                         , const serial_link_config_t &config)
+udp_link::u_ptr_t udp_link::create(io_core &core
+                                         , const udp_link_config_t &config)
 {
-    return std::make_unique<serial_link>(core
-                                         , config);
+    return std::make_unique<udp_link>(core
+                                      , config);
 }
 
-serial_link::serial_link(io_core &core
-                         , const serial_link_config_t &config)
+udp_link::udp_link(io_core &core
+                   , const udp_link_config_t &config)
     : io_link(core)
     , m_pimpl(pimpl_t::create(*this
                               , config))
@@ -299,32 +335,47 @@ serial_link::serial_link(io_core &core
 
 }
 
-serial_link::~serial_link()
+udp_link::~udp_link()
 {
 
 }
 
-bool serial_link::set_config(const serial_link_config_t &config)
+bool udp_link::set_config(const udp_link_config_t &config)
 {
     return m_pimpl->set_config(config);
 }
 
-const serial_link_config_t &serial_link::config()
+const udp_link_config_t &udp_link::config()
 {
     return m_pimpl->m_config;
 }
 
-const serial_endpoint_t &serial_link::endpoint() const
+const ip_endpoint_t& udp_link::local_endpoint() const
 {
-    return m_pimpl->m_endpoint;
+    return m_pimpl->m_local_endpoint;
 }
 
-link_type_t serial_link::type() const
+const ip_endpoint_t& udp_link::remote_endpoint() const
+{
+    return m_pimpl->m_remote_endpoint;
+}
+
+bool udp_link::set_local_endpoint(const ip_endpoint_t &endpoint)
+{
+    return m_pimpl->set_endpoint(endpoint, false);
+}
+
+bool udp_link::set_remote_endpoint(const ip_endpoint_t &endpoint)
+{
+    return m_pimpl->set_endpoint(endpoint, true);
+}
+
+link_type_t udp_link::type() const
 {
     return link_type_t::serial;
 }
 
-bool serial_link::control(link_control_id_t control_id)
+bool udp_link::control(link_control_id_t control_id)
 {
     switch(control_id)
     {
@@ -346,30 +397,37 @@ bool serial_link::control(link_control_id_t control_id)
     return false;
 }
 
-bool serial_link::send_to(const message_t &message
+bool udp_link::send_to(const message_t &message
                           , const endpoint_t &endpoint)
 {
-    return m_pimpl->send_to(message
-                            , endpoint);
+    return endpoint.type == endpoint_t::type_t::undefined
+            ? m_pimpl->send(message)
+            : m_pimpl->send_to(message
+                               , static_cast<const ip_endpoint_t&>(endpoint));
 }
 
-bool serial_link::get_endpoint(endpoint_t &endpoint) const
+bool udp_link::get_endpoint(endpoint_t &endpoint) const
 {
-    if (endpoint.type == endpoint_t::type_t::serial)
+    if (endpoint.type == endpoint_t::type_t::ip)
     {
-        static_cast<serial_endpoint_t&>(endpoint) = m_pimpl->m_endpoint;
+        static_cast<ip_endpoint_t&>(endpoint) = m_pimpl->m_local_endpoint;
         return true;
     }
 
     return false;
 }
 
-bool serial_link::set_endpoint(const endpoint_t &endpoint)
+bool udp_link::set_endpoint(const endpoint_t &endpoint)
 {
-    return m_pimpl->set_endpoint(endpoint);
+    if (endpoint.type == endpoint_t::type_t::ip)
+    {
+        return m_pimpl->set_endpoint(static_cast<const ip_endpoint_t&>(endpoint));
+    }
+
+    return false;
 }
 
-bool serial_link::is_open() const
+bool udp_link::is_open() const
 {
     return m_pimpl->is_open();
 }
