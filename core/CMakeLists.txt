@@ -9,6 +9,7 @@ set(SOURCES
     channel_control.cpp
     event.cpp
     event_channel_state.cpp
+    ntp_time.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -17,6 +18,7 @@ set(PUBLIC_HEADERS
     property_types.h
     packet_types.h
     time_types.h
+    ntp_time.h
     message_types.h
     channel_types.h
     event_types.h

@@ -40,11 +40,28 @@ std::string to_string(timestamp_t timestamp)
     return time_buff;
 }
 
+timestamp_t zone_offset(timestamp_t duration)
+{
+    std::time_t now = std::time(nullptr);
+    std::time_t local = std::mktime(std::localtime(&now));
+    std::time_t gmt = std::mktime(std::gmtime(&now));
+    auto offset = durations::seconds(static_cast<timestamp_t>(gmt - local));
+    return duration > 1
+             ? offset / duration
+             :  offset;
+}
+
 timestamp_t now(timestamp_t duration)
 {
     return duration > 0
             ? std::chrono::high_resolution_clock::now().time_since_epoch().count() / duration
             : std::chrono::high_resolution_clock::now().time_since_epoch().count();
+}
+
+
+timestamp_t utc_now(timestamp_t duration)
+{
+    return now(duration) + zone_offset(duration);
 }
 
 void sleep(timestamp_t wait_time, bool clock_align)
@@ -71,6 +88,17 @@ timestamp_t get_ticks(timestamp_t duration)
             ? ticks / duration
             : ticks;
 }
+
+uint32_t get_abs_time_24(timestamp_t timestamp)
+{
+    return ((timestamp << 18) / durations::second) & 0x00ffffff;
+}
+
+timestamp_t from_abs_time_24(uint32_t abs_time)
+{
+    return (static_cast<timestamp_t>(abs_time & 0x00ffffff) * durations::second) >> 18;
+}
+
 
 
 }

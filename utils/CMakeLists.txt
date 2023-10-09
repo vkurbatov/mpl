@@ -37,6 +37,7 @@ set(SOURCES
     option_value_impl.cpp
     common_utils.cpp
     time_utils.cpp
+    property_utils.cpp
     watch_timer.cpp
     throttler.cpp
     string_utils_impl.cpp
@@ -80,6 +81,7 @@ set(PUBLIC_HEADERS
     common_utils.h
     enum_utils.h
     time_utils.h
+    property_utils.h
     watch_timer.h
     throttler.h
     convert_utils.h

@@ -25,6 +25,19 @@ enum class property_type_t
     octet_string
 };
 
+enum class property_class_t
+{
+    undefined = -1,
+    object,
+    array,
+    s_numeric,
+    u_numeric,
+    real,
+    boolean,
+    string,
+    octet_string
+};
+
 }
 
 #endif // MPL_PROPERTY_TYPES_H

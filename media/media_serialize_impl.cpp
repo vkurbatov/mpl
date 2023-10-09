@@ -1,4 +1,5 @@
 #include "utils/property_writer.h"
+#include "utils/property_utils.h"
 
 #include "media_utils.h"
 
@@ -16,13 +17,13 @@ using namespace media;
 
 // audio_format_impl
 template<>
-bool property_helper::serialize(const audio_format_impl& value, i_property& property)
+bool utils::property::serialize(const audio_format_impl& value, i_property& property)
 {
     return value.get_params(property);
 }
 
 template<>
-bool property_helper::deserialize(audio_format_impl& value
+bool utils::property::deserialize(audio_format_impl& value
                                   , const i_property& property)
 {
     return value.set_params(property);
@@ -31,7 +32,7 @@ bool property_helper::deserialize(audio_format_impl& value
 
 // video_format_impl
 template<>
-bool property_helper::serialize(const video_format_impl& value
+bool utils::property::serialize(const video_format_impl& value
                                 , i_property& property)
 {
     return value.get_params(property);
@@ -39,7 +40,7 @@ bool property_helper::serialize(const video_format_impl& value
 }
 
 template<>
-bool property_helper::deserialize(video_format_impl& value
+bool utils::property::deserialize(video_format_impl& value
                                   , const i_property& property)
 {
     return value.set_params(property);
@@ -47,7 +48,7 @@ bool property_helper::deserialize(video_format_impl& value
 
 // frame_point_t
 template<>
-bool property_helper::serialize(const frame_point_t& value
+bool utils::property::serialize(const frame_point_t& value
                                 , i_property& property)
 {
     property_writer writer(property);
@@ -57,7 +58,7 @@ bool property_helper::serialize(const frame_point_t& value
 }
 
 template<>
-bool property_helper::deserialize(frame_point_t& value
+bool utils::property::deserialize(frame_point_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
@@ -67,7 +68,7 @@ bool property_helper::deserialize(frame_point_t& value
 
 // frame_size_t
 template<>
-bool property_helper::serialize(const frame_size_t& value
+bool utils::property::serialize(const frame_size_t& value
                                 , i_property& property)
 {
     property_writer writer(property);
@@ -77,7 +78,7 @@ bool property_helper::serialize(const frame_size_t& value
 }
 
 template<>
-bool property_helper::deserialize(frame_size_t& value
+bool utils::property::deserialize(frame_size_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
@@ -87,7 +88,7 @@ bool property_helper::deserialize(frame_size_t& value
 
 // frame_rect_t
 template<>
-bool property_helper::serialize(const frame_rect_t& value
+bool utils::property::serialize(const frame_rect_t& value
                                 , i_property& property)
 {
     property_writer writer(property);
@@ -97,7 +98,7 @@ bool property_helper::serialize(const frame_rect_t& value
 }
 
 template<>
-bool property_helper::deserialize(frame_rect_t& value
+bool utils::property::deserialize(frame_rect_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
@@ -107,7 +108,7 @@ bool property_helper::deserialize(frame_rect_t& value
 
 // relative_frame_point_t
 template<>
-bool property_helper::serialize(const relative_frame_point_t& value
+bool utils::property::serialize(const relative_frame_point_t& value
                                 , i_property& property)
 {
     property_writer writer(property);
@@ -117,7 +118,7 @@ bool property_helper::serialize(const relative_frame_point_t& value
 }
 
 template<>
-bool property_helper::deserialize(relative_frame_point_t& value
+bool utils::property::deserialize(relative_frame_point_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
@@ -127,7 +128,7 @@ bool property_helper::deserialize(relative_frame_point_t& value
 
 // relative_frame_size_t
 template<>
-bool property_helper::serialize(const relative_frame_size_t& value
+bool utils::property::serialize(const relative_frame_size_t& value
                                 , i_property& property)
 {
     property_writer writer(property);
@@ -137,7 +138,7 @@ bool property_helper::serialize(const relative_frame_size_t& value
 }
 
 template<>
-bool property_helper::deserialize(relative_frame_size_t& value
+bool utils::property::deserialize(relative_frame_size_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
@@ -147,7 +148,7 @@ bool property_helper::deserialize(relative_frame_size_t& value
 
 // relative_frame_rect_t
 template<>
-bool property_helper::serialize(const relative_frame_rect_t& value
+bool utils::property::serialize(const relative_frame_rect_t& value
                                 , i_property& property)
 {
     property_writer writer(property);
@@ -157,7 +158,7 @@ bool property_helper::serialize(const relative_frame_rect_t& value
 }
 
 template<>
-bool property_helper::deserialize(relative_frame_rect_t& value
+bool utils::property::deserialize(relative_frame_rect_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
@@ -167,7 +168,7 @@ bool property_helper::deserialize(relative_frame_rect_t& value
 
 // image_info_t
 template<>
-bool property_helper::serialize(const image_info_t& value
+bool utils::property::serialize(const image_info_t& value
                                 , i_property& property)
 {
     property_writer writer(property);
@@ -178,7 +179,7 @@ bool property_helper::serialize(const image_info_t& value
 }
 
 template<>
-bool property_helper::deserialize(image_info_t& value
+bool utils::property::deserialize(image_info_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
@@ -189,7 +190,7 @@ bool property_helper::deserialize(image_info_t& value
 
 // sample_info_t
 template<>
-bool property_helper::serialize(const sample_info_t& value
+bool utils::property::serialize(const sample_info_t& value
                                 , i_property& property)
 {
     property_writer writer(property);
@@ -200,7 +201,7 @@ bool property_helper::serialize(const sample_info_t& value
 }
 
 template<>
-bool property_helper::deserialize(sample_info_t& value
+bool utils::property::deserialize(sample_info_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);

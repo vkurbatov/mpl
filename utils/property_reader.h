@@ -2,6 +2,7 @@
 #define MPL_PROPERTY_READER_H
 
 #include "property_helper.h"
+#include "property_utils.h"
 
 namespace mpl
 {
@@ -26,14 +27,14 @@ public:
     {
         if (key.empty())
         {
-            return property_helper::deserialize(value
+            return utils::property::deserialize(value
                                                 , m_property);
         }
         else if (m_property.property_type() == property_type_t::object)
         {
             if (auto property = static_cast<const i_property_tree&>(m_property).property(key))
             {
-                return property_helper::deserialize(value
+                return utils::property::deserialize(value
                                                     , *property);
             }
         }

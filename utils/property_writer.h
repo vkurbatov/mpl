@@ -31,12 +31,12 @@ public:
     {
         if (key.empty())
         {
-            return serialize(value, m_property);
+            return utils::property::serialize(value, m_property);
         }
         else if (m_property.property_type() == property_type_t::object)
         {
             static_cast<i_property_tree&>(m_property).set(key
-                                                         , property_helper::serialize(value));
+                                                         , utils::property::serialize(value));
             return true;
         }
 
@@ -70,7 +70,7 @@ public:
             if (node->property_type() == property_type_t::array)
             {
                 auto& array = static_cast<i_property_array&>(*node).get_value();
-                if (auto p = property_helper::serialize(value))
+                if (auto p = utils::property::serialize(value))
                 {
                     array.emplace_back(std::move(p));
                     return true;

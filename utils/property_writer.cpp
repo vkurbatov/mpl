@@ -28,10 +28,10 @@ i_property* property_writer::create_object(const std::string &key, bool create_a
             }
         }
 
-        if (auto object = property_helper::create_object())
+        if (auto object = utils::property::create_property(property_type_t::object))
         {
             tree.set(key
-                              , std::move(object));
+                     , std::move(object));
 
             return tree.property(key);
         }
@@ -58,7 +58,7 @@ i_property* property_writer::create_array(const std::string &key, bool create_al
             }
         }
 
-        if (auto object = property_helper::create_array())
+        if (auto object = utils::property::create_property(property_type_t::array))
         {
             tree.set(key
                      , std::move(object));
