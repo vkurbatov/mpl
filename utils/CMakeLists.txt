@@ -5,6 +5,7 @@ set(TARGET mplutils)
 set(SOURCES
     test.cpp
     ipc_manager_impl.cpp
+    bitrate_calculator.cpp
     mapped_packet.cpp
     shared_buffer_header.cpp
     shared_data_impl.cpp
@@ -36,6 +37,8 @@ set(SOURCES
     option_value_impl.cpp
     common_utils.cpp
     time_utils.cpp
+    watch_timer.cpp
+    throttler.cpp
     string_utils_impl.cpp
     json_utils.cpp
     enum_convert_impl.cpp
@@ -50,6 +53,7 @@ set(PUBLIC_HEADERS
     ipc_manager_impl.h
     packetizer.h
     depacketizer.h
+    bitrate_calculator.h
     shared_buffer_header.h
     shared_data_impl.h
     smart_buffer.h
@@ -76,6 +80,8 @@ set(PUBLIC_HEADERS
     common_utils.h
     enum_utils.h
     time_utils.h
+    watch_timer.h
+    throttler.h
     convert_utils.h
     pointer_utils.h
     json_utils.h
