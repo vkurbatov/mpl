@@ -6,7 +6,7 @@ namespace mpl
 
 enum class event_id_t
 {
-    undefined = -1,
+    undefined = 0,
     channel_state,
     custom
 };

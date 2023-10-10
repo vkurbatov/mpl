@@ -311,7 +311,7 @@ public:
                 std::lock_guard lock(m_safe_mutex);
 
                 std::size_t refs = 0;
-                if (auto buffer = frame.buffers().get_buffer(0))
+                if (auto buffer = frame.data().get_buffer(0))
                 {
                     refs = buffer->refs();
                 }

@@ -103,7 +103,7 @@ public:
     {
         if (check_or_update_format(video_frame.format()))
         {
-            if (auto buffer = video_frame.buffers().get_buffer(media_buffer_index))
+            if (auto buffer = video_frame.data().get_buffer(media_buffer_index))
             {
                 auto input_fragment_info = m_input_fragment_info;
 

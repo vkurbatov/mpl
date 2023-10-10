@@ -97,7 +97,7 @@ public:
         if (m_output_sink != nullptr
                 && check_or_update_format(audio_frame.format()))
         {
-            if (auto buffer = audio_frame.buffers().get_buffer(media_buffer_index))
+            if (auto buffer = audio_frame.data().get_buffer(media_buffer_index))
             {
                 auto output_samples = m_native_resampler.resample(m_input_audio_info
                                                                   , buffer->data()

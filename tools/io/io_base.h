@@ -15,7 +15,7 @@ using raw_array_t = std::vector<std::uint8_t>;
 
 enum class link_type_t
 {
-    undefined = -1,
+    undefined = 0,
     serial,
     ip,
     udp,
@@ -27,7 +27,7 @@ enum class link_type_t
 
 enum class endpoint_type_t
 {
-    undefined = -1,
+    undefined = 0,
     serial,
     ip,
     udp,
@@ -38,7 +38,7 @@ enum class endpoint_type_t
 
 enum class link_state_t
 {
-    undefined = -1,
+    undefined = 0,
     ready,
     opening,
     open,

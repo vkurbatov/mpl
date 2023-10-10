@@ -6,7 +6,7 @@ namespace mpl::media
 
 enum class device_type_t
 {
-    undefined = -1,
+    undefined = 0,
     v4l2_in,
     v4l2_out,
     libav_in,

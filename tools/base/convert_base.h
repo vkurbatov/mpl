@@ -9,7 +9,7 @@ namespace base
 
 enum class value_type_t
 {
-    undefined = -1,
+    undefined = 0,
     i8,
     i16,
     i32,

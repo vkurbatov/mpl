@@ -54,9 +54,9 @@ message_category_t video_frame_base_impl::category() const
     return message_category_t::data;
 }
 
-i_message_data::data_id_t video_frame_base_impl::data_id() const
+message_subtype_t video_frame_base_impl::subtype() const
 {
-    return media_frame_id;
+    return message_subtype_media_frame;
 }
 
 const i_option *video_frame_base_impl::options() const
@@ -79,7 +79,7 @@ timestamp_t video_frame_base_impl::timestamp() const
     return m_timestamp;
 }
 
-const i_buffer_collection &video_frame_base_impl::buffers() const
+const i_buffer_collection &video_frame_base_impl::data() const
 {
     return m_buffers;
 }
@@ -148,7 +148,7 @@ video_frame_impl::video_frame_impl(const i_video_frame &other)
                        , other.timestamp()
                        , other.frame_type())
 {
-    m_buffers.assign(other.buffers());
+    m_buffers.assign(other.data());
 }
 
 void video_frame_impl::set_format(const video_format_impl &video_format)
@@ -177,7 +177,7 @@ void video_frame_impl::assign(const i_video_frame &other)
     m_frame_id = other.frame_id();
     m_timestamp = other.timestamp();
     m_frame_type = other.frame_type();
-    m_buffers.assign(other.buffers());
+    m_buffers.assign(other.data());
 }
 
 i_message::u_ptr_t video_frame_impl::clone() const
@@ -233,7 +233,7 @@ video_frame_ptr_impl::video_frame_ptr_impl(const i_video_frame &other)
                            , other.timestamp()
                            , other.frame_type())
 {
-    m_buffers.assign(other.buffers());
+    m_buffers.assign(other.data());
 }
 
 void video_frame_ptr_impl::set_format(const i_video_format::s_ptr_t &video_format)
@@ -247,7 +247,7 @@ void video_frame_ptr_impl::assign(const i_video_frame &other)
     m_frame_id = other.frame_id();
     m_timestamp = other.timestamp();
     m_frame_type = other.frame_type();
-    m_buffers.assign(other.buffers());
+    m_buffers.assign(other.data());
 }
 
 i_message::u_ptr_t video_frame_ptr_impl::clone() const

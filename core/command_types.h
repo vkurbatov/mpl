@@ -6,7 +6,7 @@ namespace mpl
 
 enum class command_id_t
 {
-    undefined = -1,
+    undefined = 0,
     device_control,
     custom
 };

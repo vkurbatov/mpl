@@ -6,6 +6,7 @@
 namespace io
 {
 
+
 enum class ip_version_t
 {
     undefined,
@@ -15,7 +16,7 @@ enum class ip_version_t
 
 enum class role_t
 {
-    undefined = -1,
+    undefined = 0,
     server,
     client,
     srvcli

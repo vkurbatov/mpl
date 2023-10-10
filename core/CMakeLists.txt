@@ -56,6 +56,7 @@ set(PUBLIC_HEADERS
     i_message_data.h
     i_message_event.h
     i_message_command.h
+    i_message_packet.h
     i_message_channel.h
     )
 

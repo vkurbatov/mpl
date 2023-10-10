@@ -26,6 +26,7 @@ public:
     // i_message interface
 public:
     message_category_t category() const override;
+    message_subtype_t subtype() const override;
     i_message::u_ptr_t clone() const override;
 
     // i_message_event interface

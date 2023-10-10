@@ -4,12 +4,9 @@
 #include "core/i_message_data.h"
 #include "core/time_types.h"
 #include "media_types.h"
-#include "core/i_buffer.h"
 
 namespace mpl
 {
-
-class i_buffer_collection;
 
 namespace media
 {
@@ -23,7 +20,6 @@ public:
     virtual media_type_t media_type() const = 0;
     virtual frame_id_t frame_id() const = 0;
     virtual timestamp_t timestamp() const = 0;
-    virtual const i_buffer_collection& buffers() const = 0;
 };
 
 }

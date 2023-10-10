@@ -133,6 +133,7 @@ target_link_libraries(${IPC_CLI_PROJECT_NAME}
 add_subdirectory(core)
 add_subdirectory(utils)
 add_subdirectory(media)
+add_subdirectory(net)
 add_subdirectory(tools)
 
 

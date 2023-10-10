@@ -1,5 +1,5 @@
-#ifndef ENUM_CONVERTER_DEFS_H
-#define ENUM_CONVERTER_DEFS_H
+#ifndef MPL_ENUM_CONVERTER_DEFS_H
+#define MPL_ENUM_CONVERTER_DEFS_H
 
 #include "convert_utils.h"
 #include "common_utils.h"
@@ -140,15 +140,15 @@ namespace detail
     }
 }
 
-#define declare_enum_converter_begin(enum_type)\
+#define __declare_enum_converter_begin(enum_type)\
     namespace __##enum_type \
     {\
         static auto __converter = detail::get_converter<enum_type>({
-#define declare_consistent_enum_converter_begin(enum_type, start_index)\
+#define __declare_consistent_enum_converter_begin(enum_type, start_index)\
     namespace __##enum_type \
     {\
         static auto __converter = detail::get_converter<enum_type>(start_index, {
-#define declare_enum_converter_end(enum_type)\
+#define __declare_enum_converter_end(enum_type)\
         });\
     }\
     template<> bool convert<>(const enum_type& in_value, std::string& out_value) { return __##enum_type::__converter.convert(in_value, out_value); }\
@@ -161,9 +161,13 @@ namespace detail
 #define xstr(s) str(s)
 #define str(s) #s
 
-#define declare_pair(type, value)\
+#define __declare_enum_pair(type, value)\
     std::make_pair(type::value, #value)
+
+#define __declare_enum_pair_name(type, value, name)\
+    std::make_pair(type::value, name)
+
 
 }
 
-#endif // ENUM_CONVERTER_DEFS_H
+#endif // MPL_ENUM_CONVERTER_DEFS_H

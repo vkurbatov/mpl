@@ -28,32 +28,32 @@
 namespace mpl::utils
 {
 
-declare_enum_converter_begin(io::serial_parity_t)
-    declare_pair(io::serial_parity_t, none),
-    declare_pair(io::serial_parity_t, odd),
-    declare_pair(io::serial_parity_t, even)
-declare_enum_converter_end(io::serial_parity_t)
+__declare_enum_converter_begin(io::serial_parity_t)
+    __declare_enum_pair(io::serial_parity_t, none),
+    __declare_enum_pair(io::serial_parity_t, odd),
+    __declare_enum_pair(io::serial_parity_t, even)
+__declare_enum_converter_end(io::serial_parity_t)
 
-declare_enum_converter_begin(io::serial_stop_bits_t)
-    declare_pair(io::serial_stop_bits_t, one),
-    declare_pair(io::serial_stop_bits_t, onepointfive),
-    declare_pair(io::serial_stop_bits_t, two)
-declare_enum_converter_end(io::serial_stop_bits_t)
+__declare_enum_converter_begin(io::serial_stop_bits_t)
+    __declare_enum_pair(io::serial_stop_bits_t, one),
+    __declare_enum_pair(io::serial_stop_bits_t, onepointfive),
+    __declare_enum_pair(io::serial_stop_bits_t, two)
+__declare_enum_converter_end(io::serial_stop_bits_t)
 
-declare_enum_converter_begin(io::serial_flow_control_t)
-    declare_pair(io::serial_flow_control_t, none),
-    declare_pair(io::serial_flow_control_t, software),
-    declare_pair(io::serial_flow_control_t, hardware)
-declare_enum_converter_end(io::serial_flow_control_t)
+__declare_enum_converter_begin(io::serial_flow_control_t)
+    __declare_enum_pair(io::serial_flow_control_t, none),
+    __declare_enum_pair(io::serial_flow_control_t, software),
+    __declare_enum_pair(io::serial_flow_control_t, hardware)
+__declare_enum_converter_end(io::serial_flow_control_t)
 
 }
 
 namespace mpl
 {
 
-declare_enum_serializer(io::serial_parity_t)
-declare_enum_serializer(io::serial_stop_bits_t)
-declare_enum_serializer(io::serial_flow_control_t)
+__declare_enum_serializer(io::serial_parity_t)
+__declare_enum_serializer(io::serial_stop_bits_t)
+__declare_enum_serializer(io::serial_flow_control_t)
 
 }
 

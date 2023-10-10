@@ -6,7 +6,7 @@ namespace mpl::media
 
 enum class audio_format_id_t
 {
-    undefined = -1,
+    undefined = 0,
     pcm8,
     pcm16,
     pcm32,

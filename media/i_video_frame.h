@@ -14,7 +14,7 @@ public:
 
     enum class frame_type_t
     {
-        undefined = -1,
+        undefined = 0,
         delta_frame,
         key_frame
     };

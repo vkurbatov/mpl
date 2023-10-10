@@ -54,7 +54,7 @@ image_frame_t create_image(const i_video_frame& frame)
 {
     image_frame_t image(frame.format());
 
-    if (const auto buffer = frame.buffers().get_buffer(media_buffer_index))
+    if (const auto buffer = frame.data().get_buffer(media_buffer_index))
     {
         image.image_data.assign(buffer->data()
                                 , buffer->size()
@@ -68,7 +68,7 @@ audio_sample_t create_sample(const i_audio_frame& frame)
 {
     audio_sample_t sample(frame.format());
 
-    if (const auto buffer = frame.buffers().get_buffer(media_buffer_index))
+    if (const auto buffer = frame.data().get_buffer(media_buffer_index))
     {
         sample.sample_data.assign(buffer->data()
                                  , buffer->size()
@@ -253,7 +253,7 @@ class media_composer : public i_media_composer
                 switch(message.category())
                 {
                     case message_category_t::data:
-                        if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+                        if (static_cast<const i_message_data&>(message).subtype() == message_subtype_media_frame)
                         {
                             return on_converter_frame(static_cast<const i_media_frame&>(message));
                         }
@@ -471,7 +471,7 @@ class media_composer : public i_media_composer
                 switch(message.category())
                 {
                     case message_category_t::data:
-                        if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+                        if (static_cast<const i_message_data&>(message).subtype() == message_subtype_media_frame)
                         {
                             return on_converter_frame(static_cast<const i_media_frame&>(message));
                         }
@@ -771,7 +771,7 @@ class media_composer : public i_media_composer
             switch(message.category())
             {
                 case message_category_t::data:
-                    if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+                    if (static_cast<const i_message_data&>(message).subtype() == message_subtype_media_frame)
                     {
                         return push_frame(static_cast<const i_media_frame&>(message));
                     }

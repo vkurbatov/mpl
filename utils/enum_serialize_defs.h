@@ -37,7 +37,7 @@ bool deserialize(E& enum_value, const i_property& property)
 
 }
 
-#define declare_enum_serializer(enum_type)\
+#define __declare_enum_serializer(enum_type)\
     template<> bool utils::property::serialize(const enum_type& enum_value, i_property& property) { return mpl::detail::serialize(enum_value, property); };\
     template<> i_property::u_ptr_t utils::property::serialize(const enum_type& enum_value) { return mpl::detail::serialize(enum_value); }\
     template<> bool utils::property::deserialize(enum_type& enum_value, const i_property& property) { return mpl::detail::deserialize(enum_value, property); };;

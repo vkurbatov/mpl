@@ -534,7 +534,7 @@ public:
         auto stream_id = m_device_params.get_stream_id(frame.format());
         if (stream_id != stream_id_undefined)
         {
-            if (auto buffer = frame.buffers().get_buffer(media_buffer_index))
+            if (auto buffer = frame.data().get_buffer(media_buffer_index))
             {
                 ffmpeg::frame_t libav_frame;
                 libav_frame.info.media_info.media_type = ffmpeg::media_type_t::audio;
@@ -560,7 +560,7 @@ public:
         auto stream_id = m_device_params.get_stream_id(frame.format());
         if (stream_id != stream_id_undefined)
         {
-            if (auto buffer = frame.buffers().get_buffer(media_buffer_index))
+            if (auto buffer = frame.data().get_buffer(media_buffer_index))
             {
                 ffmpeg::frame_t libav_frame;
                 libav_frame.info.media_info.media_type = ffmpeg::media_type_t::video;
@@ -606,7 +606,7 @@ public:
         switch(message.category())
         {
             case message_category_t::data:
-            if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+            if (static_cast<const i_message_data&>(message).subtype() == message_subtype_media_frame)
             {
                 return on_message_frame(static_cast<const i_media_frame&>(message));
             }

@@ -286,7 +286,7 @@ bool packetizer::add_value(const i_audio_frame& audio_frame)
         {
             add_value(audio_frame.frame_id());
             add_value(audio_frame.timestamp());
-            add_value(audio_frame.buffers());
+            add_value(audio_frame.data());
             return close_object();
         }
     }
@@ -327,7 +327,7 @@ bool packetizer::add_value(const i_video_frame& video_frame)
                 && add_value(video_frame.timestamp())
                 && add_enum(video_frame.frame_type()))
         {
-            add_value(video_frame.buffers());
+            add_value(video_frame.data());
             return close_object();
         }
     }

@@ -265,7 +265,7 @@ void test5()
                                   << "@" << video_frame.format().frame_rate()
                                   << ", ts: " << video_frame.timestamp();
 
-                        if (auto buffer = video_frame.buffers().get_buffer(0))
+                        if (auto buffer = video_frame.data().get_buffer(0))
                         {
                             std::cout << ", size: " << buffer->size();
                         }
@@ -432,7 +432,7 @@ void test8()
                                   << ", ts: " << video_frame.timestamp()
                                   << ", kf: " << (video_frame.frame_type() == i_video_frame::frame_type_t::key_frame);
 
-                        if (auto buffer = video_frame.buffers().get_buffer(0))
+                        if (auto buffer = video_frame.data().get_buffer(0))
                         {
                             std::cout << ", size: " << buffer->size();
                         }
@@ -449,7 +449,7 @@ void test8()
                                   << "/" << audio_frame.format().channels()
                                   << ", ts: " << audio_frame.timestamp();
 
-                        if (auto buffer = audio_frame.buffers().get_buffer(0))
+                        if (auto buffer = audio_frame.data().get_buffer(0))
                         {
                             std::cout << ", size: " << buffer->size();
                         }
@@ -776,7 +776,7 @@ void test12()
                                   << ", ts: " << video_frame.timestamp()
                                   << ", kf: " << (video_frame.frame_type() == i_video_frame::frame_type_t::key_frame);
 
-                        if (auto buffer = video_frame.buffers().get_buffer(0))
+                        if (auto buffer = video_frame.data().get_buffer(0))
                         {
                             std::cout << ", size: " << buffer->size();
                         }
@@ -793,7 +793,7 @@ void test12()
                                   << "/" << audio_frame.format().channels()
                                   << ", ts: " << audio_frame.timestamp();
 
-                        if (auto buffer = audio_frame.buffers().get_buffer(0))
+                        if (auto buffer = audio_frame.data().get_buffer(0))
                         {
                             std::cout << ", size: " << buffer->size();
                         }
@@ -1429,7 +1429,7 @@ void test18()
                     case message_category_t::data:
                     {
                         const auto& frame = static_cast<const i_media_frame&>(message);
-                        auto buffer = frame.buffers().get_buffer(media_buffer_index);
+                        auto buffer = frame.data().get_buffer(media_buffer_index);
 
                         std::cout << "frame #" << frame.frame_id()
                                   << ", timestamp: " << frame.timestamp()
@@ -2239,7 +2239,7 @@ void test22()
                             wap::sample_t input_sample({ audio_frame.format().sample_rate()
                                                         , audio_frame.format().channels() });
 
-                            if (auto buffer = audio_frame.buffers().get_buffer(media_buffer_index))
+                            if (auto buffer = audio_frame.data().get_buffer(media_buffer_index))
                             {
                                 input_sample.append_pcm16(buffer->data(), buffer->size() / 2);
                                 input_samples += input_sample.samples();

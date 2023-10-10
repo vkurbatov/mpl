@@ -40,7 +40,7 @@ public:
 
     // i_message_data interface
 public:
-    data_id_t data_id() const override;
+    message_subtype_t subtype() const override;
     const i_option *options() const override;
 
     // i_media_frame interface
@@ -48,7 +48,7 @@ public:
     media_type_t media_type() const override;
     frame_id_t frame_id() const override;
     timestamp_t timestamp() const override;
-    const i_buffer_collection& buffers() const override;
+    const i_buffer_collection& data() const override;
 };
 
 class audio_frame_impl : public audio_frame_base_impl

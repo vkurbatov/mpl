@@ -39,6 +39,12 @@ message_category_t media_command_message_impl<MediaCommand>::category() const
 }
 
 template<typename MediaCommand>
+message_subtype_t media_command_message_impl<MediaCommand>::subtype() const
+{
+    return static_cast<message_subtype_t>(m_command.command_id);
+}
+
+template<typename MediaCommand>
 i_message::u_ptr_t media_command_message_impl<MediaCommand>::clone() const
 {
     return create(m_command);

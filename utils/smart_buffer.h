@@ -11,7 +11,7 @@ class smart_buffer : public i_dynamic_buffer
 {
     enum class storage_type_t
     {
-        undefined = -1,
+        undefined = 0,
         ref_const_data,
         ref_const_array,
         ref_const_data_pointer,

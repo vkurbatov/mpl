@@ -17,45 +17,45 @@
 namespace mpl::utils
 {
 
-declare_enum_converter_begin(wap::echo_cancellation_mode_t)
-    declare_pair(wap::echo_cancellation_mode_t, none),
-    declare_pair(wap::echo_cancellation_mode_t, low),
-    declare_pair(wap::echo_cancellation_mode_t, moderation),
-    declare_pair(wap::echo_cancellation_mode_t, high)
-declare_enum_converter_end(wap::echo_cancellation_mode_t)
+__declare_enum_converter_begin(wap::echo_cancellation_mode_t)
+    __declare_enum_pair(wap::echo_cancellation_mode_t, none),
+    __declare_enum_pair(wap::echo_cancellation_mode_t, low),
+    __declare_enum_pair(wap::echo_cancellation_mode_t, moderation),
+    __declare_enum_pair(wap::echo_cancellation_mode_t, high)
+__declare_enum_converter_end(wap::echo_cancellation_mode_t)
 
-declare_enum_converter_begin(wap::gain_control_mode_t)
-    declare_pair(wap::gain_control_mode_t, none),
-    declare_pair(wap::gain_control_mode_t, adaptive_analog),
-    declare_pair(wap::gain_control_mode_t, adaptive_digital),
-    declare_pair(wap::gain_control_mode_t, fixed_digital)
-declare_enum_converter_end(wap::gain_control_mode_t)
+__declare_enum_converter_begin(wap::gain_control_mode_t)
+    __declare_enum_pair(wap::gain_control_mode_t, none),
+    __declare_enum_pair(wap::gain_control_mode_t, adaptive_analog),
+    __declare_enum_pair(wap::gain_control_mode_t, adaptive_digital),
+    __declare_enum_pair(wap::gain_control_mode_t, fixed_digital)
+__declare_enum_converter_end(wap::gain_control_mode_t)
 
-declare_enum_converter_begin(wap::noise_suppression_mode_t)
-    declare_pair(wap::noise_suppression_mode_t, none),
-    declare_pair(wap::noise_suppression_mode_t, low),
-    declare_pair(wap::noise_suppression_mode_t, moderate),
-    declare_pair(wap::noise_suppression_mode_t, high),
-    declare_pair(wap::noise_suppression_mode_t, very_high)
-declare_enum_converter_end(wap::noise_suppression_mode_t)
+__declare_enum_converter_begin(wap::noise_suppression_mode_t)
+    __declare_enum_pair(wap::noise_suppression_mode_t, none),
+    __declare_enum_pair(wap::noise_suppression_mode_t, low),
+    __declare_enum_pair(wap::noise_suppression_mode_t, moderate),
+    __declare_enum_pair(wap::noise_suppression_mode_t, high),
+    __declare_enum_pair(wap::noise_suppression_mode_t, very_high)
+__declare_enum_converter_end(wap::noise_suppression_mode_t)
 
-declare_enum_converter_begin(wap::voice_detection_mode_t)
-    declare_pair(wap::voice_detection_mode_t, none),
-    declare_pair(wap::voice_detection_mode_t, very_low),
-    declare_pair(wap::voice_detection_mode_t, low),
-    declare_pair(wap::voice_detection_mode_t, moderate),
-    declare_pair(wap::voice_detection_mode_t, high)
-declare_enum_converter_end(wap::voice_detection_mode_t)
+__declare_enum_converter_begin(wap::voice_detection_mode_t)
+    __declare_enum_pair(wap::voice_detection_mode_t, none),
+    __declare_enum_pair(wap::voice_detection_mode_t, very_low),
+    __declare_enum_pair(wap::voice_detection_mode_t, low),
+    __declare_enum_pair(wap::voice_detection_mode_t, moderate),
+    __declare_enum_pair(wap::voice_detection_mode_t, high)
+__declare_enum_converter_end(wap::voice_detection_mode_t)
 
 }
 
 namespace mpl
 {
 
-declare_enum_serializer(wap::echo_cancellation_mode_t)
-declare_enum_serializer(wap::gain_control_mode_t)
-declare_enum_serializer(wap::noise_suppression_mode_t)
-declare_enum_serializer(wap::voice_detection_mode_t)
+__declare_enum_serializer(wap::echo_cancellation_mode_t)
+__declare_enum_serializer(wap::gain_control_mode_t)
+__declare_enum_serializer(wap::noise_suppression_mode_t)
+__declare_enum_serializer(wap::voice_detection_mode_t)
 
 }
 
@@ -206,7 +206,7 @@ public:
     {
         if (m_device_params.is_compatible_format(audio_frame.format()))
         {
-            if (auto buffer = audio_frame.buffers().get_buffer(media_buffer_index))
+            if (auto buffer = audio_frame.data().get_buffer(media_buffer_index))
             {
                 wap::sample_t sample(m_device_params.wap_config.format);
 

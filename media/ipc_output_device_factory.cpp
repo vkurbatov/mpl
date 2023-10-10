@@ -73,7 +73,7 @@ public:
         {
             case message_category_t::data:
             {
-                if (static_cast<const i_message_data&>(message).data_id() == media_frame_id)
+                if (static_cast<const i_message_data&>(message).subtype() == message_subtype_media_frame)
                 {
                     return send_frame(static_cast<const i_media_frame&>(message));
                 }

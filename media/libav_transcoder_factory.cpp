@@ -367,7 +367,7 @@ public:
     {
         if (check_frame(media_frame))
         {
-            if (auto buffer = media_frame.buffers().get_buffer(media_buffer_index))
+            if (auto buffer = media_frame.data().get_buffer(media_buffer_index))
             {
                 ffmpeg::frame_queue_t frame_queue;
                 auto frame_time = media_frame.timestamp();

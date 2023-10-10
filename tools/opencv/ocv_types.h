@@ -24,7 +24,7 @@ using color_t = std::uint32_t;
 
 enum class frame_format_t
 {
-    undefined = -1,
+    undefined = 0,
     bgr,
     bgra,
     rgb,

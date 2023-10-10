@@ -6,7 +6,7 @@ namespace mpl
 
 enum class property_type_t
 {
-    undefined = -1,
+    undefined = 0,
     object,
     array,
     i8,
@@ -27,7 +27,7 @@ enum class property_type_t
 
 enum class property_class_t
 {
-    undefined = -1,
+    undefined = 0,
     object,
     array,
     s_numeric,

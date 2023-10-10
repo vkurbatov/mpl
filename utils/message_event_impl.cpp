@@ -52,6 +52,12 @@ message_category_t message_event_impl<Event>::category() const
 }
 
 template<typename Event>
+message_subtype_t message_event_impl<Event>::subtype() const
+{
+    return static_cast<message_subtype_t>(m_event.event_id);
+}
+
+template<typename Event>
 i_message::u_ptr_t message_event_impl<Event>::clone() const
 {
     return create(m_event);
