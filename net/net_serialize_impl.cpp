@@ -66,8 +66,8 @@ bool utils::property::serialize(const socket_endpoint_t& value, i_property& prop
 {
     property_writer write(property);
     return write.set("transport_id", value.transport_id)
-            && write.set("address", value.ip_endpoint.address)
-            && write.set("port", value.ip_endpoint.port, port_any);
+            && write.set("address", value.socket_address.address)
+            && write.set("port", value.socket_address.port, port_any);
 }
 
 template<>
@@ -76,8 +76,8 @@ bool utils::property::deserialize(socket_endpoint_t& value, const i_property &pr
     property_reader reader(property);
     if (reader.get("transport_id", transport_id_t::undefined) == value.transport_id)
     {
-        return reader.get("address", value.ip_endpoint.address)
-                | reader.get("address", value.ip_endpoint.port);
+        return reader.get("address", value.socket_address.address)
+                | reader.get("address", value.socket_address.port);
     }
 
     return false;

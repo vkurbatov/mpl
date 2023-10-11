@@ -37,6 +37,23 @@ class udp_transport_impl final: public i_udp_transport
     channel_state_t                 m_state;
 
 public:
+
+    using u_ptr_t = std::unique_ptr<udp_transport_impl>;
+
+    static u_ptr_t create(const i_property& params
+                          , io::io_core& core)
+    {
+        udp_transport_params_t udp_params;
+        if (utils::property::deserialize(udp_params
+                                         , params))
+        {
+            return std::make_unique<udp_transport_impl>(std::move(udp_params)
+                                                        , core);
+        }
+
+        return nullptr;
+    }
+
     udp_transport_impl(udp_transport_params_t&& udp_params
                        , io::io_core& core)
         : m_udp_params(std::move(udp_params))
@@ -94,10 +111,10 @@ public:
             io::message_t message(socket_packet.data()
                                   , socket_packet.size());
 
-            if (socket_packet.endpoint().ip_endpoint.is_valid())
+            if (socket_packet.endpoint().socket_address.is_valid())
             {
                 return m_link.send_to(message
-                                      , socket_packet.endpoint().ip_endpoint);
+                                      , socket_packet.endpoint().socket_address);
             }
             else
             {
@@ -139,7 +156,15 @@ public:
         switch(control.control_id)
         {
             case channel_control_id_t::open:
-                return m_link.control(io::link_control_id_t::open);
+            {
+                m_link.set_local_endpoint(m_udp_params.local_endpoint.socket_address);
+                m_link.set_remote_endpoint(m_udp_params.remote_endpoint.socket_address);
+                if (m_link.control(io::link_control_id_t::open))
+                {
+                    m_udp_params.local_endpoint.socket_address = m_link.local_endpoint();
+                    return true;
+                }
+            }
             break;
             case channel_control_id_t::close:
                 return m_link.control(io::link_control_id_t::close);
@@ -268,7 +293,8 @@ udp_transport_factory::udp_transport_factory(io::io_core &io_core)
 
 i_transport_channel::u_ptr_t udp_transport_factory::create_transport(const i_property &params)
 {
-    return nullptr;
+    return udp_transport_impl::create(params
+                                      , m_io_core);
 }
 
 

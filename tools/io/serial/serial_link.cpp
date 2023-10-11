@@ -252,6 +252,7 @@ struct serial_link::pimpl_t
             auto buffer = boost::asio::buffer(m_recv_buffer);
             m_serial.async_read_some(buffer
                                      , [&](auto&&... args) { on_receive(args...); });
+            return;
 
         }
         m_io_processed.store(false

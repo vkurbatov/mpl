@@ -71,6 +71,7 @@ add_library(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     mplmedia
+    mplnet
     mplutils
     mplcore
     vncpt

@@ -223,13 +223,8 @@ struct udp_link::pimpl_t
     inline bool set_endpoint(const ip_endpoint_t &endpoint
                              , bool remote = false)
     {
-        if (!is_open() || remote)
-        {
-            (remote ? m_remote_endpoint : m_local_endpoint) = endpoint;
-            return true;
-        }
-
-        return false;
+        (remote ? m_remote_endpoint : m_local_endpoint) = endpoint;
+        return true;
     }
 
 
@@ -282,7 +277,7 @@ struct udp_link::pimpl_t
     {
         if (m_started)
         {
-            m_io_processed.store(true);
+            m_io_processed.store(true, std::memory_order_release);
             auto buffer = boost::asio::buffer(m_recv_buffer);
             m_socket.async_receive_from(buffer
                                         , m_recv_endpoint
@@ -290,8 +285,11 @@ struct udp_link::pimpl_t
                                         , [&](auto&&... args) { on_receive(args...); });
 
         }
-        m_io_processed.store(false
-                             , std::memory_order_release);
+        else
+        {
+            m_io_processed.store(false
+                                , std::memory_order_release);
+        }
     }
 
     inline void on_receive(boost::system::error_code error_code
@@ -299,8 +297,11 @@ struct udp_link::pimpl_t
     {
         if (error_code.failed())
         {
-            change_state(link_state_t::failed
-                         , error_code.message());
+            if (m_started)
+            {
+                change_state(link_state_t::failed
+                             , error_code.message());
+            }
         }
         else
         {

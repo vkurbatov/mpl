@@ -9,7 +9,7 @@ namespace mpl::net
 
 struct socket_endpoint_t : public endpoint_t
 {
-    ip_endpoint_t       ip_endpoint;
+    ip_endpoint_t       socket_address;
 
     socket_endpoint_t(socket_type_t socket_type = socket_type_t::udp
                       , const ip_endpoint_t& ip_endpoint = {});
