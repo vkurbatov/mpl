@@ -23,6 +23,12 @@ enum class transcoder_type_t
     converter
 };
 
+enum class media_data_type_t
+{
+    undefined,
+    frame
+};
+
 using frame_id_t = std::int32_t;
 using stream_id_t = std::int32_t;
 
@@ -32,8 +38,9 @@ constexpr std::uint32_t video_sample_rate = 90000;
 constexpr std::int64_t media_buffer_index = 0;
 constexpr std::int64_t extension_data_index = 1;
 
-constexpr message_subtype_t message_subtype_media_base = message_subtype_core_base + message_subtype_range;
-constexpr message_subtype_t message_subtype_media_frame = message_subtype_media_base + 1;
+
+
+constexpr message_subclass_t message_media_class = message_core_class + 1;
 
 }
 

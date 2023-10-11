@@ -39,9 +39,9 @@ message_category_t media_command_message_impl<MediaCommand>::category() const
 }
 
 template<typename MediaCommand>
-message_subtype_t media_command_message_impl<MediaCommand>::subtype() const
+message_subclass_t media_command_message_impl<MediaCommand>::subclass() const
 {
-    return static_cast<message_subtype_t>(m_command.command_id);
+    return static_cast<message_subclass_t>(m_command.command_id);
 }
 
 template<typename MediaCommand>

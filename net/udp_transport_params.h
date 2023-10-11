@@ -10,11 +10,11 @@ struct udp_transport_params_t
 {
     socket_endpoint_t       local_endpoint;
     socket_endpoint_t       remote_endpoint;
-    bool                    reuse_address;
+    socket_options_t        options;
 
     udp_transport_params_t(const socket_endpoint_t& local_endpoint = {}
                            , const socket_endpoint_t& remote_endpoint = {}
-                           , bool reuse_address = false);
+                           , const socket_options_t& options = {});
 
     bool is_valid() const;
 };

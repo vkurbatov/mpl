@@ -35,6 +35,7 @@ public:
     static u_ptr_t create(io_core& core);
 
     resolver(io_core& core);
+    ~resolver();
 
     resolve_info_t::array_t resolve(const std::vector<std::string>& dns_names);
     void resolve_async(const std::vector<std::string>& dns_names

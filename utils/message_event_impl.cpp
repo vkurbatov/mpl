@@ -52,9 +52,9 @@ message_category_t message_event_impl<Event>::category() const
 }
 
 template<typename Event>
-message_subtype_t message_event_impl<Event>::subtype() const
+message_subclass_t message_event_impl<Event>::subclass() const
 {
-    return static_cast<message_subtype_t>(m_event.event_id);
+    return static_cast<message_subclass_t>(m_event.event_id);
 }
 
 template<typename Event>

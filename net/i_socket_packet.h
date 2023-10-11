@@ -6,7 +6,7 @@
 namespace mpl::net
 {
 
-struct ip_endpoint_t;
+struct socket_endpoint_t;
 
 class i_socket_packet : public i_net_packet
 {
@@ -14,7 +14,7 @@ public:
     using u_ptr_t = std::unique_ptr<i_socket_packet>;
     using s_ptr_t = std::shared_ptr<i_socket_packet>;
 
-    virtual const ip_endpoint_t& endpoint() const = 0;
+    virtual const socket_endpoint_t& endpoint() const = 0;
 };
 
 }

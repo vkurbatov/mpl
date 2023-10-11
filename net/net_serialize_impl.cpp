@@ -83,6 +83,24 @@ bool utils::property::deserialize(socket_endpoint_t& value, const i_property &pr
     return false;
 }
 
+// socket_options_t
+template<>
+bool utils::property::serialize(const socket_options_t& value, i_property& property)
+{
+    property_writer write(property);
+    return write.set("reuse_address", value.reuse_address)
+            && write.set("reuse_port", value.reuse_port);
+}
+
+template<>
+bool utils::property::deserialize(socket_options_t& value, const i_property &property)
+{
+    property_reader reader(property);
+    return reader.get("reuse_address", value.reuse_address)
+            | reader.get("reuse_port", value.reuse_port);
+
+}
+
 // udp_transport_params_t
 template<>
 bool utils::property::serialize(const udp_transport_params_t& value, i_property& property)
@@ -90,7 +108,7 @@ bool utils::property::serialize(const udp_transport_params_t& value, i_property&
     property_writer write(property);
     return write.set("local_endpoint", value.local_endpoint, {})
             && write.set("remote_endpoint", value.remote_endpoint, {})
-            && write.set("reuse_address", value.reuse_address, false);
+            && write.set("options", value.options, {});
 }
 
 template<>
@@ -99,7 +117,7 @@ bool utils::property::deserialize(udp_transport_params_t& value, const i_propert
     property_reader reader(property);
     return reader.get("local_endpoint", value.local_endpoint)
             | reader.get("remote_endpoint", value.remote_endpoint)
-            | reader.get("reuse_address", value.reuse_address);
+            | reader.get("options", value.options);
 
 }
 

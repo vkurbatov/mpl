@@ -43,7 +43,7 @@ public:
 
     // i_message_data interface
 public:
-    message_subtype_t subtype() const override;
+    message_subclass_t subclass() const override;
     const i_option *options() const override;
 
     // i_media_frame interface
@@ -56,9 +56,13 @@ public:
     // i_video_frame interface
 public:
     frame_type_t frame_type() const override;
+
+    // i_message_media_data interface
+public:
+    media_data_type_t data_type() const override;
 };
 
-class video_frame_impl : public video_frame_base_impl
+class video_frame_impl final : public video_frame_base_impl
 {
     video_format_impl   m_video_format;
 public:
@@ -110,7 +114,7 @@ public:
     const i_video_format &format() const override;
 };
 
-class video_frame_ptr_impl : public video_frame_base_impl
+class video_frame_ptr_impl final : public video_frame_base_impl
 {
     i_video_format::s_ptr_t   m_video_format_ptr;
 public:
@@ -148,7 +152,7 @@ public:
     const i_video_format &format() const override;
 };
 
-class video_frame_ref_impl : public video_frame_base_impl
+class video_frame_ref_impl final : public video_frame_base_impl
 {
     const i_video_format&           m_video_format;
 public:

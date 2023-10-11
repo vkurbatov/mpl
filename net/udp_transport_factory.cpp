@@ -1,26 +1,158 @@
 #include "udp_transport_factory.h"
 #include "udp_transport_params.h"
 
-#include "utils/property_utils.h"
 #include "i_udp_transport.h"
+#include "i_socket_packet.h"
+
+#include "socket_packet_impl.h"
+
+#include "core/event_channel_state.h"
+
+#include "utils/message_event_impl.h"
+#include "utils/property_utils.h"
+#include "utils/smart_buffer.h"
+#include "utils/message_router_impl.h"
+#include "utils/message_sink_impl.h"
+
 
 #include "net_utils.h"
 
 #include "tools/io/net/udp_link.h"
+#include "tools/io/net/udp_link_config.h"
+#include "tools/io/net/resolver.h"
 
 namespace mpl::net
 {
 
 
 class udp_transport_impl final: public i_udp_transport
+        , public i_message_sink
 {
-    udp_transport_params_t      m_udp_params;
-    io::udp_link                m_link;
+    udp_transport_params_t          m_udp_params;
+    io::udp_link                    m_link;
+    io::resolver                    m_resolver;
+
+    message_router_impl             m_router;
+
+    channel_state_t                 m_state;
+
 public:
+    udp_transport_impl(udp_transport_params_t&& udp_params
+                       , io::io_core& core)
+        : m_udp_params(std::move(udp_params))
+        , m_link(core
+                 , m_udp_params.options)
+        , m_resolver(core)
+        , m_state(channel_state_t::ready)
+    {
+        m_link.set_message_handler([&](auto&& ...args) { on_link_message(args...); });
+        m_link.set_state_handler([&](auto&& ...args) { on_link_state(args...); });
+    }
+
+    ~udp_transport_impl()
+    {
+        m_resolver.reset();
+        m_link.control(io::link_control_id_t::close);
+        m_link.set_message_handler(nullptr);
+        m_link.set_state_handler(nullptr);
+    }
+
+public:
+
+    void change_channel_state(channel_state_t new_state
+                              , const std::string_view& reason = {})
+    {
+        if (m_state != new_state)
+        {
+            m_state = new_state;
+            m_router.send_message(message_event_impl(event_channel_state_t(new_state
+                                                                            , reason))
+                                  );
+        }
+    }
+
+    bool internal_send_packet(const i_message_packet &packet)
+    {
+        if (m_link.is_open())
+        {
+            if (packet.subclass() == message_net_class)
+            {
+                auto& net_packet = static_cast<const i_net_packet&>(packet);
+                if (net_packet.transport_id() == transport_id_t::udp)
+                {
+                    return internal_send_socket_packet(static_cast<const i_socket_packet&>(net_packet));
+                }
+            }
+        }
+        return false;
+    }
+
+    bool internal_send_socket_packet(const i_socket_packet& socket_packet)
+    {
+        if (socket_packet.size() > 0)
+        {
+            io::message_t message(socket_packet.data()
+                                  , socket_packet.size());
+
+            if (socket_packet.endpoint().ip_endpoint.is_valid())
+            {
+                return m_link.send_to(message
+                                      , socket_packet.endpoint().ip_endpoint);
+            }
+            else
+            {
+                return m_link.send(message);
+            }
+        }
+
+        return false;
+    }
+
+    void on_link_message(const io::message_t& message
+                         , const io::endpoint_t& endpoint)
+    {
+        if (endpoint.type == io::endpoint_t::type_t::ip)
+        {
+            socket_endpoint_t socket_endpoint(socket_type_t::udp
+                                              , static_cast<const ip_endpoint_t&>(endpoint));
+            smart_buffer packet_buffer(message.data()
+                                       , message.size());
+
+            socket_packet_impl socket_packet(std::move(packet_buffer)
+                                             , socket_endpoint);
+
+            m_router.send_message(socket_packet);
+        }
+    }
+
+    void on_link_state(io::link_state_t link_state
+                       , const std::string_view& reason)
+    {
+        change_channel_state(get_channel_state(link_state)
+                             , reason);
+    }
+
     // i_channel interface
 public:
     bool control(const channel_control_t &control) override
     {
+        switch(control.control_id)
+        {
+            case channel_control_id_t::open:
+                return m_link.control(io::link_control_id_t::open);
+            break;
+            case channel_control_id_t::close:
+                return m_link.control(io::link_control_id_t::close);
+            break;
+            case channel_control_id_t::connect:
+                return m_link.control(io::link_control_id_t::start);
+            break;
+            case channel_control_id_t::shutdown:
+                return m_link.control(io::link_control_id_t::stop);
+            break;
+            default:;
+        }
+
         return false;
     }
 
@@ -31,20 +163,15 @@ public:
 
     channel_state_t state() const override
     {
-        return get_channel_state(m_link.state());
+        return m_state;
     }
 
     // i_parametrizable interface
 public:
     bool set_params(const i_property &params) override
     {
-        if (!is_open())
-        {
-            return utils::property::deserialize(m_udp_params
-                                                , params);
-        }
-
-        return false;
+        return utils::property::deserialize(m_udp_params
+                                            , params);
     }
 
     bool get_params(i_property &params) const override
@@ -57,11 +184,21 @@ public:
 public:
     i_message_sink *sink(std::size_t index) override
     {
+        if (index == 0)
+        {
+            return this;
+        }
+
         return nullptr;
     }
 
     i_message_source *source(std::size_t index) override
     {
+        if (index == 0)
+        {
+            return &m_router;
+        }
+
         return nullptr;
     }
 
@@ -99,6 +236,21 @@ public:
     const socket_endpoint_t &remote_endpoint() const override
     {
         return m_udp_params.remote_endpoint;
+    }
+
+    // i_message_sink interface
+public:
+    bool send_message(const i_message &message) override
+    {
+        switch(message.category())
+        {
+            case message_category_t::packet:
+                return internal_send_packet(static_cast<const i_message_packet&>(message));
+            break;
+            default:;
+        }
+
+        return false;
     }
 };
 

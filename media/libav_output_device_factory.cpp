@@ -606,7 +606,8 @@ public:
         switch(message.category())
         {
             case message_category_t::data:
-            if (static_cast<const i_message_data&>(message).subtype() == message_subtype_media_frame)
+            if (static_cast<const i_message_data&>(message).subclass() == message_media_class
+                    && static_cast<const i_message_media_data&>(message).data_type() == media_data_type_t::frame)
             {
                 return on_message_frame(static_cast<const i_media_frame&>(message));
             }

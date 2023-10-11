@@ -5,10 +5,10 @@ namespace mpl::net
 
 udp_transport_params_t::udp_transport_params_t(const socket_endpoint_t &local_endpoint
                                                , const socket_endpoint_t &remote_endpoint
-                                               , bool reuse_address)
+                                               , const socket_options_t& options)
     : local_endpoint(local_endpoint)
     , remote_endpoint(remote_endpoint)
-    , reuse_address(reuse_address)
+    , options(options)
 {
 
 }

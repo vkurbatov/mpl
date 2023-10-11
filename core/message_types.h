@@ -16,10 +16,9 @@ enum class message_category_t
     application
 };
 
-using message_subtype_t = std::uint32_t;
+using message_subclass_t = std::uint32_t;
 
-constexpr message_subtype_t message_subtype_core_base = 0;
-constexpr message_subtype_t message_subtype_range = 1000;
+constexpr message_subclass_t message_core_class = 0;
 
 }
 

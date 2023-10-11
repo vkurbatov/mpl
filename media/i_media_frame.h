@@ -1,9 +1,8 @@
 #ifndef MPL_I_MEDIA_FRAME_H
 #define MPL_I_MEDIA_FRAME_H
 
-#include "core/i_message_data.h"
 #include "core/time_types.h"
-#include "media_types.h"
+#include "i_message_media_data.h"
 
 namespace mpl
 {
@@ -11,7 +10,7 @@ namespace mpl
 namespace media
 {
 
-class i_media_frame : public i_message_data
+class i_media_frame : public i_message_media_data
 {
 public:
     using u_ptr_t = std::unique_ptr<i_media_frame>;

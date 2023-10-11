@@ -47,9 +47,9 @@ message_category_t audio_frame_base_impl::category() const
     return message_category_t::data;
 }
 
-message_subtype_t audio_frame_base_impl::subtype() const
+message_subclass_t audio_frame_base_impl::subclass() const
 {
-    return message_subtype_media_frame;
+    return message_media_class;
 }
 
 const i_option *audio_frame_base_impl::options() const
@@ -76,6 +76,11 @@ timestamp_t audio_frame_base_impl::timestamp() const
 const i_buffer_collection &audio_frame_base_impl::data() const
 {
     return m_buffers;
+}
+
+media_data_type_t audio_frame_base_impl::data_type() const
+{
+    return media_data_type_t::frame;
 }
 
 audio_frame_impl::u_ptr_t audio_frame_impl::create(const audio_format_impl &audio_format

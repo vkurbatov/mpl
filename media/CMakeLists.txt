@@ -61,6 +61,7 @@ set(PUBLIC_HEADERS
     command_camera_control.h
     i_media_stream.h
     i_media_format.h
+    i_message_media_data.h
     i_media_frame.h
     i_media_converter_factory.h
     i_media_converter.h

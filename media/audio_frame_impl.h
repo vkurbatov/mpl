@@ -40,7 +40,7 @@ public:
 
     // i_message_data interface
 public:
-    message_subtype_t subtype() const override;
+    message_subclass_t subclass() const override;
     const i_option *options() const override;
 
     // i_media_frame interface
@@ -49,9 +49,13 @@ public:
     frame_id_t frame_id() const override;
     timestamp_t timestamp() const override;
     const i_buffer_collection& data() const override;
+
+    // i_message_media_data interface
+public:
+    media_data_type_t data_type() const override;
 };
 
-class audio_frame_impl : public audio_frame_base_impl
+class audio_frame_impl final : public audio_frame_base_impl
 {
     audio_format_impl   m_audio_format;
 public:
@@ -94,7 +98,7 @@ public:
     const i_audio_format &format() const override;
 };
 
-class audio_frame_ptr_impl : public audio_frame_base_impl
+class audio_frame_ptr_impl final : public audio_frame_base_impl
 {
     i_audio_format::s_ptr_t   m_audio_format_ptr;
 public:
@@ -128,7 +132,7 @@ public:
     const i_audio_format &format() const override;
 };
 
-class audio_frame_ref_impl : public audio_frame_base_impl
+class audio_frame_ref_impl final : public audio_frame_base_impl
 {
     const i_audio_format&           m_audio_format;
 public:

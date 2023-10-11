@@ -222,6 +222,11 @@ resolver::resolver(io_core &core)
 
 }
 
+resolver::~resolver()
+{
+
+}
+
 resolver::resolve_info_t::array_t resolver::resolve(const std::vector<std::string> &dns_names)
 {
     return m_pimpl->resolve(dns_names);

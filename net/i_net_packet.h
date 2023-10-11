@@ -14,6 +14,7 @@ public:
     using s_ptr_t = std::shared_ptr<i_net_packet>;
 
     virtual transport_id_t transport_id() const = 0;
+    virtual bool is_valid() const = 0;
 };
 
 }

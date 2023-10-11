@@ -54,9 +54,9 @@ message_category_t video_frame_base_impl::category() const
     return message_category_t::data;
 }
 
-message_subtype_t video_frame_base_impl::subtype() const
+message_subclass_t video_frame_base_impl::subclass() const
 {
-    return message_subtype_media_frame;
+    return message_media_class;
 }
 
 const i_option *video_frame_base_impl::options() const
@@ -88,6 +88,11 @@ const i_buffer_collection &video_frame_base_impl::data() const
 i_video_frame::frame_type_t video_frame_base_impl::frame_type() const
 {
     return m_frame_type;
+}
+
+media_data_type_t video_frame_base_impl::data_type() const
+{
+    return media_data_type_t::frame;
 }
 
 
