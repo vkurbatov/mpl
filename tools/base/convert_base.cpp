@@ -4,7 +4,7 @@
 #include <cstring>
 #include <sstream>
 
-namespace base
+namespace portable
 {
 
 using octet_string_t = std::vector<std::uint8_t>;

@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace base
+namespace portable
 {
 
 struct url_info_t

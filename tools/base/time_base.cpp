@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-namespace base
+namespace portable
 {
 
 adaptive_timer_t::adaptive_timer_t(std::uint64_t tick_size)

@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-namespace base
+namespace portable
 {
 
 using option_t = std::pair<std::string,std::string>;

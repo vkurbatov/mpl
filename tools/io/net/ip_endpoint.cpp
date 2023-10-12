@@ -39,7 +39,7 @@ ip_endpoint_t ip_endpoint_t::from_string(const std::string &string_enpoint)
         std::vector<std::string> args;
         if (string_enpoint.front() == '[')
         {
-            args = base::split_lines(string_enpoint, "]");
+            args = portable::split_lines(string_enpoint, "]");
             if (args.size() > 0)
             {
                 args[0] = args[0].substr(1);
@@ -51,7 +51,7 @@ ip_endpoint_t ip_endpoint_t::from_string(const std::string &string_enpoint)
         }
         else
         {
-            args = base::split_lines(string_enpoint, ":");
+            args = portable::split_lines(string_enpoint, ":");
         }
 
         if (args.size() == 1
@@ -65,7 +65,7 @@ ip_endpoint_t ip_endpoint_t::from_string(const std::string &string_enpoint)
             {
                 if (args.size() == 2)
                 {
-                    if (base::convert(args[1]
+                    if (portable::convert(args[1]
                                       , result_endpoint.port))
                     {
                         return result_endpoint;

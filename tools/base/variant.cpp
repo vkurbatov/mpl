@@ -4,7 +4,7 @@
 #include <sstream>
 #include <limits>
 
-namespace base
+namespace portable
 {
 
 using string = std::string;

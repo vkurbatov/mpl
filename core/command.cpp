@@ -9,7 +9,7 @@ namespace mpl
 
 namespace detail
 {
-    static base::spin_lock safe_mutex;
+    static portable::spin_lock safe_mutex;
     static std::vector<std::string> commands;
 
     inline command_t::command_id_t register_command(const std::string_view &command_name)

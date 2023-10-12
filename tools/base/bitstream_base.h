@@ -1,36 +1,13 @@
-#ifndef BASE_BITSTREAM_BASE_H
-#define BASE_BITSTREAM_BASE_H
+#ifndef PORTABLE_BITSTREAM_BASE_H
+#define PORTABLE_BITSTREAM_BASE_H
 
 #include <cstdint>
 
-namespace base
+namespace portable
 {
-
-enum class octet_order_t
-{
-    big_endian,
-    little_endian
-};
-
 
 namespace utils
 {
-
-octet_order_t this_order();
-void* convert_order(void* octet_string, std::size_t size);
-void* convert_order(octet_order_t ocetet_order, void* octet_string, std::size_t size);
-
-template<typename T>
-T convert_order(T value)
-{
-    return *static_cast<T*>(convert_order(&value, sizeof(T)));
-}
-
-template<typename T>
-T convert_order(octet_order_t ocetet_order, T value)
-{
-    return *static_cast<T*>(convert_order(ocetet_order, &value, sizeof(T)));
-}
 
 bool get_bit(const void* src_stream
              , std::int32_t src_bit_index);
@@ -45,20 +22,93 @@ void copy_bits(const void* src_stream
                , std::int32_t dst_idx
                , std::size_t bits);
 
-}
-
-static const octet_order_t this_octet_order = utils::this_order();
-
-class bitstream_reader
+class bit_stream_reader
 {
+    const void*			m_bit_stream;
+    std::size_t         m_bit_count;
+    std::int32_t        m_bit_index;
+    bool                m_big_endian_bits;
 
+
+public:
+    static void read_bits(const void* bit_stream
+                          , std::int32_t bit_index
+                          , void* bit_data
+                          , std::size_t bit_count
+                          , bool big_endian = false);
+
+public:
+    bit_stream_reader(const void* bit_stream
+                      , std::size_t bit_count
+                      , bool big_endian_bits = false);
+
+    bool pop(void* bit_data, std::size_t bit_count);
+    bool read(void* bit_data, std::size_t bit_count) const;
+    std::size_t pop_golomb(std::uint32_t& value);
+    std::size_t pop_golomb(std::int32_t& value);
+
+    std::int32_t pos() const;
+    std::size_t panding() const;
+    bool reset(std::int32_t bit_index = 0);
+    bool skip(std::int32_t bit_shift);
 };
 
-class bitstream_writer
-{
+//------------------------------------------------------------------
 
+class bit_stream_writer
+{
+    void*                   m_bit_stream;
+    std::size_t             m_bit_count;
+    std::int32_t            m_bit_index;
+    bool                    m_big_endian_bits;
+
+
+public:
+    static void write_bits(void* bit_stream
+                           , std::int32_t bit_index
+                           , const void* bit_data
+                           , std::size_t bit_count
+                           , bool big_endian = false);
+public:
+    bit_stream_writer(void* bit_stream
+                      , std::size_t bit_count
+                      , bool big_endian_bits = false);
+
+    bool push(const void* bit_data, std::size_t bit_count);
+    bool write(const void* bit_data, std::size_t bit_count);
+
+    std::size_t push_golomb(std::uint32_t value);
+
+    std::int32_t pos() const;
+    std::size_t pending() const;
+    bool reset(std::int32_t bit_index = 0);
+    bool skip(std::int32_t bit_shift);
 };
+
+//------------------------------------------------------------------
+
+class bit_converter
+{
+    void*			m_bit_stream;
+public:
+
+    static void reverse_bits(void* bit_stream
+                             , int32_t bit_index
+                             , std::size_t bit_count);
+
+    static void reverse_endian(void* bit_stream
+                               , int32_t byte_index
+                               , std::size_t byte_count);
+
+    bit_converter(void* bit_stream);
+
+    void reverse_bits(int32_t bit_index, std::size_t bit_count);
+    void reverse_endian(int32_t byte_index, std::size_t byte_count);
+};
+
 
 }
 
-#endif // BASE_BITSTREAM_BASE_H
+}
+
+#endif // PORTABLE_BITSTREAM_BASE_H

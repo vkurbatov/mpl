@@ -1,6 +1,6 @@
 #include "any_base.h"
 
-namespace base
+namespace portable
 {
 
 any::any()

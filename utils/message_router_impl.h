@@ -14,7 +14,7 @@ namespace mpl
 class message_router_impl : public i_message_sink
         , public i_message_source
 {
-    using mutex_t = base::shared_spin_lock;
+    using mutex_t = portable::shared_spin_lock;
     using sink_set_t = std::unordered_set<i_message_sink*>;
     mutable mutex_t     m_safe_mutex;
     sink_set_t          m_sinks;

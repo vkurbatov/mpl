@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <fstream>
 
-namespace base
+namespace portable
 {
 
 namespace

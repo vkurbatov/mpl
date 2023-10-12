@@ -18,6 +18,34 @@
 namespace io::utils
 {
 
+namespace detail
+{
+
+inline struct hostent* get_host_by_name(const std::string_view& name
+                                        , ip_version_t version)
+{
+    if (!name.empty())
+    {
+        switch(version)
+        {
+            case ip_version_t::ip4:
+                return gethostbyname2(name.data()
+                                      , AF_INET);
+            break;
+            case ip_version_t::ip6:
+                return gethostbyname2(name.data()
+                                      , AF_INET6);
+            break;
+            default:
+                return gethostbyname(name.data());
+        }
+    }
+
+    return nullptr;
+}
+
+}
+
 template<>
 boost::asio::ip::address convert(const ip_address_t& address)
 {
@@ -151,6 +179,34 @@ std::vector<net_info_t> get_net_info(ip_version_t ip_version)
 
 #endif
     return net_list;
+}
+
+ip_address_t get_host_by_name(const std::string_view &name
+                              , ip_version_t ip_version)
+{
+    if (auto host_entry = detail::get_host_by_name(name
+                                                   , ip_version))
+    {
+        if (const void* address = host_entry->h_addr_list[0])
+        {
+            switch(host_entry->h_addrtype)
+            {
+                case AF_INET:
+                {
+                    return ip_address_t::ip4_address_t(ntohl(*static_cast<const std::uint32_t*>(address)));
+                }
+                break;
+                case AF_INET6:
+                {
+                    return ip_address_t::ip6_address_t(address);
+                }
+                break;
+                default:;
+            }
+        }
+    }
+
+    return {};
 }
 
 

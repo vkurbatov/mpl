@@ -24,7 +24,7 @@ namespace detail
 
 std::pair<std::string, std::string> split_dns_names(const std::string& dns_name)
 {
-    auto args = base::split_lines(dns_name
+    auto args = portable::split_lines(dns_name
                                   , ":"
                                   , 2);
     if (args.size() == 1)

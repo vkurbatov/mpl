@@ -2,7 +2,7 @@
 
 #include "string_base.h"
 
-namespace base
+namespace portable
 {
 
 url_info_t::url_info_t(const std::string_view &protocol

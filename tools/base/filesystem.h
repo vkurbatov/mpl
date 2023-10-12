@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace base
+namespace portable
 {
 
 typedef std::vector<std::string> file_list_t;

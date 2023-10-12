@@ -3,7 +3,7 @@
 
 #include <atomic>
 
-namespace base
+namespace portable
 {
 
 class spin_lock

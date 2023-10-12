@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <ctime>
 
-namespace base::utils
+namespace portable::utils
 {
 
 void random(void *data, std::size_t size)

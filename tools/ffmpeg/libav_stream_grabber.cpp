@@ -129,7 +129,7 @@ std::int32_t init(const std::string& uri
 
     auto device_type = utils::fetch_device_type(uri);
 
-    base::url_info_t url_info;
+    portable::url_info_t url_info;
 
     url_info.parse_url(uri);
 
@@ -336,7 +336,7 @@ stream_info_list_t get_streams(stream_mask_t stream_mask)
                                                                                     , av_stream->codec->extradata_size
                                                                                     , true));
 
-                LOG_D << "Context #" << context_id << ". Stream #" << stream_info.stream_id << " extra header: " << base::hex_dump(av_stream->codec->extradata
+                LOG_D << "Context #" << context_id << ". Stream #" << stream_info.stream_id << " extra header: " << portable::hex_dump(av_stream->codec->extradata
                                                                                                         , av_stream->codec->extradata_size) LOG_END;
 
             }

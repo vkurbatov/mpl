@@ -36,6 +36,7 @@ set(SOURCES
     option_helper.cpp
     option_value_impl.cpp
     common_utils.cpp
+    endian_utils.cpp
     time_utils.cpp
     property_utils.cpp
     watch_timer.cpp
@@ -79,6 +80,7 @@ set(PUBLIC_HEADERS
     option_value_impl.h
     option_helper.h
     common_utils.h
+    endian_utils.h
     enum_utils.h
     time_utils.h
     property_utils.h

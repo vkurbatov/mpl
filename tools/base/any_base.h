@@ -4,7 +4,7 @@
 #include <any>
 #include <functional>
 
-namespace base
+namespace portable
 {
 
 class any
@@ -65,7 +65,7 @@ public:
 
     template<typename T
              , typename VT = std::decay_t<T>>
-    using decay_if_not_any = std::enable_if_t<!std::is_same_v<VT, base::any>>;
+    using decay_if_not_any = std::enable_if_t<!std::is_same_v<VT, portable::any>>;
 
     template <typename T, typename VT = decay_if_not_any<T>>
     any(T&& value

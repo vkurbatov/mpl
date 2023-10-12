@@ -15,7 +15,7 @@ namespace detail
 template<typename T>
 std::size_t get_value_size(const T& value)
 {
-    return base::get_value_size(value);
+    return portable::get_value_size(value);
 }
 
 template<>

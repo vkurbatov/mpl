@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace base
+namespace portable
 {
 
 struct adaptive_timer_t

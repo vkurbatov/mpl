@@ -1,7 +1,7 @@
 #ifndef MPL_NET_I_SOCKET_TRANSPORT_H
 #define MPL_NET_I_SOCKET_TRANSPORT_H
 
-#include "i_transport_channel.h"
+#include "net/i_transport_channel.h"
 
 namespace mpl::net
 {

@@ -3,6 +3,8 @@
 #include <boost/asio/ip/address_v6.hpp>
 #include <boost/asio/ip/address.hpp>
 
+#include "net_utils.h"
+
 namespace io
 {
 
@@ -13,18 +15,20 @@ boost::asio::ip::address address_from_string(const std::string& string_address
                                              , boost::system::error_code& error_code
                                              , ip_version_t version = ip_version_t::undefined)
 {
-    switch(version)
     {
-        case ip_version_t::ip4:
-            return boost::asio::ip::address_v4::from_string(string_address, error_code);
-        break;
-        case ip_version_t::ip6:
-            return boost::asio::ip::address_v6::from_string(string_address, error_code);
-        break;
-        default:;
+        switch(version)
+        {
+            case ip_version_t::ip4:
+                return boost::asio::ip::make_address_v4(string_address, error_code);
+            break;
+            case ip_version_t::ip6:
+                return boost::asio::ip::make_address_v6(string_address, error_code);
+            break;
+            default:;
+        }
     }
 
-    return boost::asio::ip::address::from_string(string_address, error_code);
+    return boost::asio::ip::make_address(string_address, error_code);
 }
 
 }
@@ -224,10 +228,30 @@ bool ip_address_t::from_string(const std::string &string_address
         {
             address = ip6_address_t(ip_address.to_v6().to_bytes());
         }
+
         return true;
+    }
+    else
+    {
+        auto resolved_address = utils::get_host_by_name(string_address);
+        if (resolved_address.is_valid())
+        {
+            address = std::move(resolved_address);
+            return true;
+        }
     }
 
     return false;
+}
+
+ip_address_t ip_address_t::build_from_string(const std::string &string_address
+                                             , ip_version_t version)
+{
+    ip_address_t ip_address;
+    from_string(string_address
+                , ip_address
+                , version);
+    return ip_address;
 }
 
 ip_address_t::ip_address_t()

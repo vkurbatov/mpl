@@ -81,7 +81,7 @@ message_sink_safe_impl::message_sink_safe_impl(i_message_sink *message_sink)
 
 bool message_sink_safe_impl::send_message(const i_message &message)
 {
-    std::lock_guard<base::spin_lock> lock(m_safe_mutex);
+    std::lock_guard<portable::spin_lock> lock(m_safe_mutex);
     return message_sink_impl::send_message(message);
 }
 

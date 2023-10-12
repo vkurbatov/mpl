@@ -18,12 +18,12 @@ namespace utils
 
 libav_option_list_t parse_option_list(const std::string &options)
 {
-    return base::parse_option_list(options);
+    return portable::parse_option_list(options);
 }
 
 libav_option_map_t parse_option_map(const std::string &options)
 {
-    return base::parse_option_map(options);
+    return portable::parse_option_map(options);
 }
 
 bool is_global_header_format(const std::string &format_name)
@@ -180,7 +180,7 @@ std::string error_string(int32_t av_errno)
 url_format_t fetch_url_format(const std::string &url)
 {
     url_format_t format;
-    base::url_info_t url_info;
+    portable::url_info_t url_info;
 
     format.url = url;
 

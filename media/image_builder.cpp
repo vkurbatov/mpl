@@ -114,7 +114,7 @@ struct image_builder::context_t
         if (input_frame.is_valid())
         {
             m_draw_processor.draw_format().draw_opacity = draw_options.opacity;
-            auto dst_rect = base::frame_utils::rect_from_relative(draw_options.target_rect
+            auto dst_rect = portable::frame_utils::rect_from_relative(draw_options.target_rect
                                                                  , m_output_frame->image_info.size
                                                                  , draw_options.margin);
 

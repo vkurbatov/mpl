@@ -78,7 +78,8 @@ struct ip_address_t
     static bool from_string(const std::string& string_address
                             , ip_address_t& address
                             , ip_version_t version = ip_version_t::undefined);
-    //static ip_address_t from_string(const std::string& string_address);
+    static ip_address_t build_from_string(const std::string& string_address
+                                           , ip_version_t version = ip_version_t::undefined);
 
     ip_address_t();
     ip_address_t(const std::string& string_address

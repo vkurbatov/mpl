@@ -16,7 +16,7 @@ namespace visca
 
 static std::string hex_dump(const std::vector<std::uint8_t>& dump)
 {
-    return base::hex_dump(dump.data(), dump.size());
+    return portable::hex_dump(dump.data(), dump.size());
 }
 
 void test1()

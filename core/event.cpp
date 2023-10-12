@@ -10,7 +10,7 @@ namespace mpl
 
 namespace detail
 {
-    static base::spin_lock safe_mutex;
+    static portable::spin_lock safe_mutex;
     static std::vector<std::string> events;
 
     inline event_t::event_id_t register_event(const std::string_view &event_name)

@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace base
+namespace portable
 {
 
 template class frame_point_base_t<std::int32_t>;

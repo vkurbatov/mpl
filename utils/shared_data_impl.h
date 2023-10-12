@@ -9,7 +9,7 @@ namespace mpl
 
 class shared_data_ref_impl : public i_shared_data
 {
-    using mutex_t = base::shared_spin_lock;
+    using mutex_t = portable::shared_spin_lock;
 
     mutable mutex_t     m_safe_mutex;
 

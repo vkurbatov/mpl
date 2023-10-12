@@ -245,7 +245,7 @@ struct timestamp_manager_t
 class libav_output_device : public i_device
 {
     using thread_t = std::thread;
-    using mutex_t = base::shared_spin_lock;
+    using mutex_t = portable::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
     using libav_frame_queue_t = std::queue<ffmpeg::frame_t>;

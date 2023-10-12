@@ -162,12 +162,12 @@ void test2()
 
 void test3()
 {
-    base::any any1, any2, any3;
+    portable::any any1, any2, any3;
 
     any1 = 1;
-    base::any any11 = any1;
+    portable::any any11 = any1;
     any2 = 4.567;
-    base::any any22(any2);
+    portable::any any22(any2);
     any3 = std::string("vasiliy");
     auto any33(any3);
 
@@ -367,7 +367,7 @@ void test7()
     std::string test_string = "vasiliy";
     std::int32_t test_int = 0;
 
-    base::any any_ep(test_int);
+    portable::any any_ep(test_int);
 
     std::any any_test(endpoint1);
 
@@ -724,7 +724,7 @@ void test11()
     for (const auto& u : test_urls)
     {
         std::cout << "Parse URL: " << u << std::endl;
-        base::url_info_t url;
+        portable::url_info_t url;
         if (url.parse_url(u))
         {
             std::cout << "Parse Completed! " << std::endl;

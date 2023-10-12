@@ -1,6 +1,6 @@
 #include "utils/enum_converter_defs.h"
 #include "net_types.h"
-#include "socket_types.h"
+#include "socket/socket_types.h"
 
 namespace mpl::utils
 {

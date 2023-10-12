@@ -47,7 +47,7 @@ declare_conversion_pair(octet_string_t)
 template<typename Tin, typename Tout>
 bool convert(const Tin& in_value, Tout& out_value)
 {
-    return base::convert(in_value
+    return portable::convert(in_value
                          , out_value);
 }
 

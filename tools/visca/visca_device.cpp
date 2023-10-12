@@ -246,7 +246,7 @@ struct visca_controller_t
 
             if (write_size > 0)
             {
-                LOG_D << "Send packet: " <<  base::hex_dump(command_buffer.data()
+                LOG_D << "Send packet: " <<  portable::hex_dump(command_buffer.data()
                                                             , command_buffer.size()) LOG_END;
 
                 return write_size == command_buffer.size();
@@ -275,7 +275,7 @@ struct visca_controller_t
 
             if (write_size > 0)
             {
-                LOG_D << "Send packet: " <<  base::hex_dump(command_buffer.data()
+                LOG_D << "Send packet: " <<  portable::hex_dump(command_buffer.data()
                                                             , command_buffer.size()) LOG_END;
 
                 return write_size == command_buffer.size();
@@ -306,7 +306,7 @@ struct visca_controller_t
 
             if (write_size > 0)
             {
-                LOG_D << "Send packet: " <<  base::hex_dump(command_buffer.data()
+                LOG_D << "Send packet: " <<  portable::hex_dump(command_buffer.data()
                                                             , command_buffer.size()) LOG_END;
 
                 return write_size == command_buffer.size();
@@ -340,7 +340,7 @@ struct visca_controller_t
                               , dt) > 0)
                 {
 
-                    LOG_D << "Recv packet: " <<  base::hex_dump(response_buffer.data()
+                    LOG_D << "Recv packet: " <<  portable::hex_dump(response_buffer.data()
                                                                 , response_buffer.size()) LOG_END;
 
                     auto response_packets = response_parser.push_data(response_buffer.data()

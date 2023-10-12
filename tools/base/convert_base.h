@@ -4,7 +4,7 @@
 #include <optional>
 #include <cstdint>
 
-namespace base
+namespace portable
 {
 
 enum class value_type_t

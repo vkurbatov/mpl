@@ -353,13 +353,13 @@ void test6()
 
     while (test_count-- > 0)
     {
-        auto frame_size = 1 + base::utils::random<std::size_t>() % 199;
+        auto frame_size = 1 + portable::utils::random<std::size_t>() % 199;
         std::vector<std::uint8_t> test_array(frame_size);
         std::uint32_t cs = 0;
 
         for (auto& v : test_array)
         {
-            v = base::utils::random<std::uint8_t>();
+            v = portable::utils::random<std::uint8_t>();
             cs += v;
         }
 

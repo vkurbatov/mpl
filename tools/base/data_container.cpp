@@ -1,6 +1,6 @@
 #include "data_container.h"
 
-namespace base
+namespace portable
 {
 
 data_container::data_container(data_handler_t &&data_handler)

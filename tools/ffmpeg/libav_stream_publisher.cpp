@@ -48,7 +48,7 @@ static const char* fetch_stream_name(device_type_t device_type)
 
 ff_const59 AVOutputFormat* find_output_format(const std::string& url)
 {
-    base::url_info_t url_info;
+    portable::url_info_t url_info;
 
     if (url_info.parse_url(url))
     {

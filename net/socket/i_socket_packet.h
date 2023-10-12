@@ -1,7 +1,7 @@
 #ifndef MPL_NET_I_SOCKET_PACKET_H
 #define MPL_NET_I_SOCKET_PACKET_H
 
-#include "i_net_packet.h"
+#include "net/i_net_packet.h"
 
 namespace mpl::net
 {

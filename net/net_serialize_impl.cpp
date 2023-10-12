@@ -3,8 +3,8 @@
 
 #include "net_types.h"
 
-#include "socket_endpoint.h"
-#include "udp_transport_params.h"
+#include "socket/socket_endpoint.h"
+#include "socket/udp_transport_params.h"
 
 namespace mpl
 {

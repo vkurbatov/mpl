@@ -37,7 +37,7 @@ public:
 
 class message_sink_safe_impl : public message_sink_impl
 {
-    mutable base::spin_lock m_safe_mutex;
+    mutable portable::spin_lock m_safe_mutex;
 public:
     using u_ptr_t = std::unique_ptr<message_sink_impl>;
     using s_ptr_t = std::shared_ptr<message_sink_impl>;

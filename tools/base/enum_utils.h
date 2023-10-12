@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace base
+namespace portable
 {
 
 template<typename T>

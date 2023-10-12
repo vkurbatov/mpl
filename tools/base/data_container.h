@@ -5,7 +5,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace base
+namespace portable
 {
 
 using data_ptr_t = void*;

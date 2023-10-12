@@ -16,7 +16,7 @@ namespace mpl
 
 class task_manager_impl : public i_task_manager
 {
-    using mutex_t = base::shared_spin_lock;
+    using mutex_t = portable::shared_spin_lock;
     using config_t = task_manager_factory::config_t;
 
     struct task_queue_t

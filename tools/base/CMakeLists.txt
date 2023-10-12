@@ -8,6 +8,7 @@ set(SOURCES
     frame_base.cpp
     option_base.cpp
     string_base.cpp
+    endian_base.cpp
     time_base.cpp
     variant.cpp
     sync_base.cpp
@@ -25,6 +26,7 @@ set(PUBLIC_HEADERS
     frame_base.h
     option_base.h
     string_base.h
+    endian_base.h
     time_base.h
     variant.h
     logger_base.h

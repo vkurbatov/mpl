@@ -15,7 +15,7 @@
 #define LOG_E LOG(error)
 #define LOG_F LOG(fatal)
 
-namespace base
+namespace portable
 {
 
 

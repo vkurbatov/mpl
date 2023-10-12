@@ -3,7 +3,7 @@
 #include <sstream>
 #include <algorithm>
 
-namespace base
+namespace portable
 {
 
 namespace detail

@@ -15,7 +15,7 @@
 #include "utils/message_sink_impl.h"
 
 
-#include "net_utils.h"
+#include "net/net_utils.h"
 
 #include "tools/io/net/udp_link.h"
 #include "tools/io/net/udp_link_config.h"
@@ -131,7 +131,7 @@ public:
         if (endpoint.type == io::endpoint_t::type_t::ip)
         {
             socket_endpoint_t socket_endpoint(socket_type_t::udp
-                                              , static_cast<const ip_endpoint_t&>(endpoint));
+                                              , static_cast<const socket_address_t&>(endpoint));
             smart_buffer packet_buffer(message.data()
                                        , message.size());
 

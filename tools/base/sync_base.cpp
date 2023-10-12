@@ -2,7 +2,7 @@
 #include <thread>
 #include <cassert>
 
-namespace base
+namespace portable
 {
 
 constexpr std::size_t idle_length = 100000;

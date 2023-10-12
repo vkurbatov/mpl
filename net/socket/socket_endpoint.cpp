@@ -16,7 +16,7 @@ inline transport_id_t transport_from_socket_type(socket_type_t socket_type)
 }
 
 socket_endpoint_t::socket_endpoint_t(socket_type_t socket_type
-                                     , const ip_endpoint_t &ip_endpoint)
+                                     , const socket_address_t &ip_endpoint)
     : endpoint_t(detail::transport_from_socket_type(socket_type))
     , socket_address(ip_endpoint)
 {

@@ -281,13 +281,13 @@ enum class option_format_t
     unknown
 };
 
-using frame_point_t = base::frame_point_t;
-using frame_size_t = base::frame_size_t;
-using frame_rect_t = base::frame_rect_t;
-using adaptive_timer_t = base::adaptive_timer_t;
-using option_t = base::option_t;
-using option_list_t = base::option_list_t;
-const auto parse_option_list = base::parse_option_list;
+using frame_point_t = portable::frame_point_t;
+using frame_size_t = portable::frame_size_t;
+using frame_rect_t = portable::frame_rect_t;
+using adaptive_timer_t = portable::adaptive_timer_t;
+using option_t = portable::option_t;
+using option_list_t = portable::option_list_t;
+const auto parse_option_list = portable::parse_option_list;
 
 struct audio_info_t
 {

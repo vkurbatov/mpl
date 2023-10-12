@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace base
+namespace portable
 {
 
 double cpu_usage();

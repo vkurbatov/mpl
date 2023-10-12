@@ -68,7 +68,7 @@ public:
         if (streams <= 1000)
         {
             static mosaic_layout_impl::array_t single_layouts;
-            static base::spin_lock safe_mutex;
+            static portable::spin_lock safe_mutex;
 
             if (single_layouts.size() <= streams)
             {

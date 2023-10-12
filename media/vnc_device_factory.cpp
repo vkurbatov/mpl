@@ -48,7 +48,7 @@ video_format_id_t format_form_bpp(std::uint32_t bpp)
 
 class vnc_device : public i_device
 {
-    using mutex_t = base::shared_spin_lock;
+    using mutex_t = portable::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
 
