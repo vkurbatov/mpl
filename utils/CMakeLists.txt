@@ -10,9 +10,11 @@ set(SOURCES
     shared_buffer_header.cpp
     shared_data_impl.cpp
     smart_buffer.cpp
+    smart_buffer_container.cpp
     smart_buffer_collection.cpp
     packetizer.cpp
     depacketizer.cpp
+    raw_packer.cpp
     packetize_impl.cpp
     adaptive_delay.cpp
     data_splitter.cpp
@@ -35,13 +37,16 @@ set(SOURCES
     option_impl.cpp
     option_helper.cpp
     option_value_impl.cpp
+    option_container.cpp
     common_utils.cpp
     endian_utils.cpp
+    hash_utils.cpp
     time_utils.cpp
     property_utils.cpp
     watch_timer.cpp
     throttler.cpp
     string_utils_impl.cpp
+    random_utils_impl.cpp
     json_utils.cpp
     enum_convert_impl.cpp
     sq/mapped_sq_header.cpp
@@ -55,10 +60,12 @@ set(PUBLIC_HEADERS
     ipc_manager_impl.h
     packetizer.h
     depacketizer.h
+    raw_packer.h
     bitrate_calculator.h
     shared_buffer_header.h
     shared_data_impl.h
     smart_buffer.h
+    smart_buffer_container.h
     smart_buffer_collection.h
     adaptive_delay.h
     data_splitter.h
@@ -78,9 +85,11 @@ set(PUBLIC_HEADERS
     property_writer.h
     option_impl.h
     option_value_impl.h
+    option_container.h
     option_helper.h
     common_utils.h
     endian_utils.h
+    hash_utils.h
     enum_utils.h
     time_utils.h
     property_utils.h

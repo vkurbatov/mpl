@@ -7,8 +7,8 @@
 #include "utils/pointer_utils.h"
 #include "utils/message_sink_impl.h"
 #include "utils/enum_utils.h"
-
 #include "utils/time_utils.h"
+#include "utils/hash_utils.h"
 
 #include "core/i_message_source.h"
 #include "core/i_message_event.h"
@@ -193,6 +193,10 @@ void test2()
     std::memcpy(a2.data(), &value2, sizeof(value2));
     std::memcpy(a3.data(), &value3, sizeof(value3));
 
+    auto h1 = utils::calc_hash(a1.data(), a1.size());
+    auto h2 = utils::calc_checksum(a1.data(), a1.size());
+    auto h3 = utils::calc_crc32(a1.data(), a1.size());
+    auto h4 = utils::calc_hmac_sha1(a1.data(), a1.size(), "Vasiliy");
 
     auto now = utils::time::get_ticks();
     auto address1 = io::utils::get_host_by_name("stun.l.google.com", ip_version_t::ip4);

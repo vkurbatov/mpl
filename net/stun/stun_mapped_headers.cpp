@@ -2,7 +2,7 @@
 #include "utils/common_utils.h"
 #include "utils/convert_utils.h"
 #include "utils/endian_utils.h"
-// #include "utils/crypto_utils.h"
+#include "utils/hash_utils.h"
 #include <cstring>
 
 
@@ -98,7 +98,7 @@ void stun_mapped_header_t::set_method(stun_method_t stun_method)
 stun_attribute_id_t stun_mapped_attribute_header_t::get_attribute_id() const
 {
     switch(auto normalize_attribute
-           = static_cast<stun_attribute_id_t>(utils::endian::big:convert(attribute)))
+           = static_cast<stun_attribute_id_t>(utils::endian::big::convert(attribute)))
     {
         case stun_attribute_id_t::mapped_address:
         case stun_attribute_id_t::username:
@@ -129,7 +129,7 @@ bool stun_mapped_attribute_header_t::is_optional_attribute() const
 
 std::size_t stun_mapped_attribute_t::payload_size() const
 {
-    return utils::endian::big_endian_convert(header.length);
+    return utils::endian::big::convert(header.length);
 }
 
 uint8_t *stun_mapped_attribute_t::payload(int32_t offset)
@@ -145,15 +145,18 @@ const uint8_t *stun_mapped_attribute_t::payload(int32_t offset) const
 template<typename T>
 T stun_mapped_attribute_t::get_value(std::int32_t offset) const
 {
-    return utils::endian::get_big_endian_value<T>(payload(offset));
+    return utils::endian::big::get_value<T>(payload(), sizeof(T), offset);
+    //return utils::endian::get_big_endian_value<T>(payload(offset));
 }
 
 template<typename T>
 void stun_mapped_attribute_t::set_value(const T& value
                                         , std::int32_t offset)
 {
+    utils::endian::big::set_value(value, payload(), sizeof(T), offset);
+    /*
     return utils::endian::set_big_endian_value(value
-                                               , payload(offset));
+                                               , payload(offset));*/
 }
 
 bool stun_mapped_message_t::is_valid(std::size_t length) const
@@ -168,12 +171,12 @@ bool stun_mapped_message_t::is_valid(std::size_t length) const
 
 std::size_t stun_mapped_message_t::payload_size() const
 {
-    return utils::endian::big_endian_convert(header.length);
+    return utils::endian::big::convert(header.length);
 }
 
 void stun_mapped_message_t::set_payload_size(std::size_t size)
 {
-    header.length = utils::endian::big_endian_convert<std::uint16_t>(size);
+    header.length = utils::endian::big::convert<std::uint16_t>(size);
 }
 
 uint8_t *stun_mapped_message_t::payload(int32_t offset)
@@ -233,9 +236,14 @@ stun_authentification_result_t stun_mapped_message_t::check_password(const std::
                     , hash_size);
 
         reinterpret_cast<stun_mapped_message_t*>(buffer.data())->set_payload_size(hash_size - sizeof(stun_mapped_header_t) + 24);
-        auto calc_hash = utils::crypto::hash_hmac_sha1(password
+        /*auto calc_hash = utils::crypto::hash_hmac_sha1(password
                                                        , buffer.data()
-                                                       , hash_size);
+                                                       , hash_size);*/
+
+        auto calc_hash = utils::calc_hmac_sha1(buffer.data()
+                                               , hash_size
+                                               , password);
+
         if (std::memcmp(calc_hash.data()
                         , attribute->payload()
                         , calc_hash.size()) == 0)

@@ -16,10 +16,10 @@ set(SOURCES
     socket/udp_transport_factory.cpp
     socket/udp_transport_params.cpp
 
-#    stun/stun_mapped_headers.cpp
-#    stun/stun_attributes.cpp
-#    stun/stun_packet_impl.cpp
-#    stun/stun_message.cpp
+     stun/stun_mapped_headers.cpp
+     stun/stun_attributes.cpp
+     stun/stun_packet_impl.cpp
+     stun/stun_message.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -49,7 +49,7 @@ set(PRIVATE_HEADERS
     socket/udp_transport_params.h
 
     stun/stun_mapped_headers.h
-#    stun/stun_packet_impl.h
+    stun/stun_packet_impl.h
     stun/stun_message.h
     stun/stun_error_codes.h
 )

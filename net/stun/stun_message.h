@@ -19,12 +19,12 @@ struct stun_message_t
     stun_message_class_t                message_class;
     stun_method_t                       method;
     stun_transaction_id_t               transaction_id;
-    stun_attribute_t::w_ptr_list_t      attributes;
+    stun_attribute_t::s_ptr_list_t      attributes;
 
     stun_message_t(stun_message_class_t message_class = stun_message_class_t::undefined
                       , stun_method_t method = stun_method_t::undefined
                       , const stun_transaction_id_t& transaction_id = generate_transaction_id()
-                      , const stun_attribute_t::w_ptr_list_t& attributes = {});
+                      , const stun_attribute_t::s_ptr_list_t& attributes = {});
 
     stun_attribute_t::s_ptr_t get_attribute(stun_attribute_id_t attribute_id);
 

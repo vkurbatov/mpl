@@ -2,16 +2,17 @@
 #define MPL_NET_SOCKET_PACKET_IMPL_H
 
 #include "i_socket_packet.h"
-#include "utils/smart_buffer.h"
-#include "utils/option_impl.h"
+#include "utils/smart_buffer_container.h"
+#include "utils/option_container.h"
 #include "socket_endpoint.h"
 
 namespace mpl::net
 {
 
 class socket_packet_impl : public i_socket_packet
+            , public utils::smart_buffer_container
+            , public utils::option_container
 {
-    smart_buffer            m_packet_buffer;
     socket_endpoint_t       m_socket_endpoint;
 
 public:
@@ -30,9 +31,6 @@ public:
 
     socket_packet_impl(smart_buffer&& packet_buffer = {}
                        , const socket_endpoint_t& endpoint = {});
-
-    smart_buffer& buffer();
-    const smart_buffer& buffer() const;
 
     void set_endpoint(const socket_endpoint_t& endpoint);
 

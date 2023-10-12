@@ -1,6 +1,9 @@
 #include "stun_message.h"
 #include "stun_mapped_headers.h"
 #include "utils/common_utils.h"
+#include "utils/hash_utils.h"
+#include "utils/endian_utils.h"
+#include "utils/raw_packer.h"
 // #include "core/crypto_utils.h"
 #include <algorithm>
 #include <cstring>
@@ -11,7 +14,7 @@ namespace mpl::net
 namespace
 {
     bool parse_attributes(const stun_mapped_message_t& stun_message
-                          , stun_attribute_t::w_ptr_list_t& attribute_list)
+                          , stun_attribute_t::s_ptr_list_t& attribute_list)
     {       
         bool has_fingerprint = false;
         bool has_message_integrity = false;
@@ -141,7 +144,7 @@ namespace
                     {
                         auto crc32 = a->get_value<std::uint32_t>();
                         auto crc_size = reinterpret_cast<std::size_t>(a) - reinterpret_cast<std::size_t>(&stun_message);
-                        auto calc_crc32 = utils::crypto::hash<utils::crypto::hash_method_t::crc32, std::uint32_t>(&stun_message, crc_size) ^ stun_fingerprint_xor_value;
+                        auto calc_crc32 = utils::calc_crc32(&stun_message, crc_size) ^ stun_fingerprint_xor_value;
 
                         if (crc32 == calc_crc32)
                         {
@@ -182,12 +185,12 @@ namespace
     }
 
     std::size_t pack_attributes(raw_array_t& packet_buffer
-                                , const stun_attribute_t::w_ptr_list_t& attributes
+                                , const stun_attribute_t::s_ptr_list_t& attributes
                                 , const std::string& password)
     {
         bool has_message_integrity = false;
 
-        raw_array_packer packer(packet_buffer);
+        utils::raw_packer packer(packet_buffer);
 
         auto saved_size = packet_buffer.size();
 
@@ -198,7 +201,7 @@ namespace
                 break;
             }
 
-            std::uint16_t attribute_id = utils::endian::big_endian_convert(static_cast<std::uint16_t>(a->attribute_id));
+            std::uint16_t attribute_id = utils::endian::big::convert(static_cast<std::uint16_t>(a->attribute_id));
 
             std::uint16_t payload_size = 0;
 
@@ -212,11 +215,11 @@ namespace
                     {
                         payload_size = 8;
                         packer.append(attribute_id)
-                              .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
+                              .append(utils::endian::big::convert<std::uint16_t>(payload_size))
                               .padding(1)
                               .append<std::uint8_t>(1)
-                              .append<std::uint16_t>(utils::endian::big_endian_convert<std::uint16_t>(mapped_address_attribute.endpoint.port))
-                              .append<std::uint32_t>(utils::endian::big_endian_convert<std::uint32_t>(mapped_address_attribute.endpoint.address.ip4_address.address));
+                              .append<std::uint16_t>(utils::endian::big::convert<std::uint16_t>(mapped_address_attribute.endpoint.port))
+                              .append<std::uint32_t>(utils::endian::big::convert<std::uint32_t>(mapped_address_attribute.endpoint.address.ip4_address.address));
                     }
                 }
                 break;
@@ -227,7 +230,7 @@ namespace
                     if (payload_size > 0)
                     {
                         packer.append(attribute_id)
-                              .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
+                              .append(utils::endian::big::convert<std::uint16_t>(payload_size))
                               .append(username_attribute.username.data()
                                       , payload_size);
 
@@ -256,7 +259,7 @@ namespace
                     payload_size = 4 + error_code_attribute.reason.size();
 
                     packer.append(attribute_id)
-                          .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
+                          .append(utils::endian::big::convert<std::uint16_t>(payload_size))
                           .padding(2)
                           .append(error_code_attribute.error_class())
                           .append(error_code_attribute.error_number());
@@ -275,7 +278,7 @@ namespace
                     if (payload_size > 0)
                     {
                         packer.append(attribute_id)
-                              .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
+                              .append(utils::endian::big::convert<std::uint16_t>(payload_size))
                               .append(unknown_attribute.unknown_data.data()
                                       , payload_size);
                     }
@@ -288,7 +291,7 @@ namespace
                     if (payload_size > 0)
                     {
                         packer.append(attribute_id)
-                              .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
+                              .append(utils::endian::big::convert<std::uint16_t>(payload_size))
                               .append(realm_attribute.value.data()
                                       , payload_size);
                     }
@@ -301,7 +304,7 @@ namespace
                     if (payload_size > 0)
                     {
                         packer.append(attribute_id)
-                              .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
+                              .append(utils::endian::big::convert<std::uint16_t>(payload_size))
                               .append(nonce_attribute.value.data()
                                       , payload_size);
                     }
@@ -325,11 +328,11 @@ namespace
                         reinterpret_cast<std::uint8_t*>(&address)[0] ^= xor_mapped[3];
                         payload_size = 8;
                         packer.append(attribute_id)
-                              .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
+                              .append(utils::endian::big::convert<std::uint16_t>(payload_size))
                               .padding(1)
                               .append<std::uint8_t>(1)
-                              .append<std::uint16_t>(utils::endian::big_endian_convert<std::uint16_t>(port))
-                              .append<std::uint32_t>(utils::endian::big_endian_convert<std::uint32_t>(address));
+                              .append<std::uint16_t>(utils::endian::big::convert<std::uint16_t>(port))
+                              .append<std::uint32_t>(utils::endian::big::convert<std::uint32_t>(address));
                     }
                 }
                 break;
@@ -338,15 +341,15 @@ namespace
                     const stun_attribute_priority_t&  priority_attribute = static_cast<const stun_attribute_priority_t&>(*a);
                     payload_size = 4;
                     packer.append(attribute_id)
-                          .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
-                          .append(utils::endian::big_endian_convert<std::uint32_t>(priority_attribute.priority));
+                          .append(utils::endian::big::convert<std::uint16_t>(payload_size))
+                          .append(utils::endian::big::convert<std::uint32_t>(priority_attribute.priority));
                 }
                 break;
                 case stun_attribute_id_t::use_candidate:
                 {
                     payload_size = 0;
                     packer.append(attribute_id)
-                          .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size));
+                          .append(utils::endian::big::convert<std::uint16_t>(payload_size));
                 }
                 break;
                 case stun_attribute_id_t::software:
@@ -369,8 +372,8 @@ namespace
                     const stun_attribute_ice_controlled_t& ice_controlled_attribute = static_cast<const stun_attribute_ice_controlled_t&>(*a);
                     payload_size = 8;
                     packer.append(attribute_id)
-                          .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
-                          .append(utils::endian::big_endian_convert<std::uint64_t>(ice_controlled_attribute.tie_breaker));
+                          .append(utils::endian::big::convert<std::uint16_t>(payload_size))
+                          .append(utils::endian::big::convert<std::uint64_t>(ice_controlled_attribute.tie_breaker));
                 }
                 break;
                 case stun_attribute_id_t::ice_controlling:
@@ -378,8 +381,8 @@ namespace
                     const stun_attribute_ice_controlling_t& ice_controlling_attribute = static_cast<const stun_attribute_ice_controlling_t&>(*a);
                     payload_size = 8;
                     packer.append(attribute_id)
-                          .append(utils::endian::big_endian_convert<std::uint16_t>(payload_size))
-                          .append(utils::endian::big_endian_convert<std::uint64_t>(ice_controlling_attribute.tie_breaker));
+                          .append(utils::endian::big::convert<std::uint16_t>(payload_size))
+                          .append(utils::endian::big::convert<std::uint64_t>(ice_controlling_attribute.tie_breaker));
                 }
                 break;
                 default:
@@ -402,20 +405,20 @@ namespace
                 payload_size += 24;
 
                 reinterpret_cast<stun_mapped_message_t*>(packet_buffer.data())->set_payload_size(payload_size);
-                auto calc_hash = utils::crypto::hash_hmac_sha1(password
-                                                               , packet_buffer.data()
-                                                               , hash_size);
-                packer.append(utils::endian::big_endian_convert<std::uint16_t>(static_cast<std::uint16_t>(stun_attribute_id_t::message_integrity)))
-                      .append(utils::endian::big_endian_convert<std::uint16_t>(calc_hash.size()))
+                auto calc_hash = utils::calc_hmac_sha1(packet_buffer.data()
+                                                       , hash_size
+                                                       , password);
+                packer.append(utils::endian::big::convert<std::uint16_t>(static_cast<std::uint16_t>(stun_attribute_id_t::message_integrity)))
+                      .append(utils::endian::big::convert<std::uint16_t>(calc_hash.size()))
                       .append(calc_hash.data()
                               , calc_hash.size());
 
                 reinterpret_cast<stun_mapped_message_t*>(packet_buffer.data())->set_payload_size(payload_size + 8);
-                auto calc_crc32 = utils::crypto::hash<utils::crypto::hash_method_t::crc32, std::uint32_t>(packet_buffer.data(), packet_buffer.size()) ^ stun_fingerprint_xor_value;
+                auto calc_crc32 = utils::calc_crc32(packet_buffer.data(), packet_buffer.size()) ^ stun_fingerprint_xor_value;
 
-                packer.append(utils::endian::big_endian_convert<std::uint16_t>(static_cast<std::uint16_t>(stun_attribute_id_t::fingerprint)))
-                      .append(utils::endian::big_endian_convert<std::uint16_t>(4))
-                      .append(utils::endian::big_endian_convert<std::uint32_t>(calc_crc32));
+                packer.append(utils::endian::big::convert<std::uint16_t>(static_cast<std::uint16_t>(stun_attribute_id_t::fingerprint)))
+                      .append(utils::endian::big::convert<std::uint16_t>(4))
+                      .append(utils::endian::big::convert<std::uint32_t>(calc_crc32));
 
             }
             else
@@ -465,7 +468,7 @@ stun_transaction_id_t stun_message_t::generate_transaction_id()
 stun_message_t::stun_message_t(stun_message_class_t message_class
                                      , stun_method_t method
                                      , const stun_transaction_id_t &transaction_id
-                                     , const stun_attribute_t::w_ptr_list_t& attributes)
+                                     , const stun_attribute_t::s_ptr_list_t& attributes)
     : message_class(message_class)
     , method(method)
     , transaction_id(transaction_id)
@@ -530,7 +533,7 @@ std::string stun_message_t::to_string() const
 
     return std::string("class: ").append(class_name_table[static_cast<std::int32_t>(message_class) + 1])
             .append(", method: ").append(method == stun_method_t::binding ? std::string{"binding"} : std::string{"undefined"})
-            .append(", transaction_id: ").append(utils::string::hex::to_string(transaction_id.data(), transaction_id.size()))
+            .append(", transaction_id: ").append(utils::hex_to_string(transaction_id.data(), transaction_id.size()))
             .append(", attributes: ").append(std::to_string(attributes.size()));
 }
 

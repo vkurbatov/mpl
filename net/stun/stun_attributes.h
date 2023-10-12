@@ -12,7 +12,7 @@ namespace mpl::net
 struct stun_attribute_t
 {
     using s_ptr_t = std::shared_ptr<stun_attribute_t>;
-    using w_ptr_list_t = std::vector<s_ptr_t>;
+    using s_ptr_list_t = std::vector<s_ptr_t>;
 
     const stun_attribute_id_t attribute_id;
 protected:
@@ -34,10 +34,10 @@ struct stun_attribute_mapped_address_t : public stun_attribute_t
 {
     using s_ptr_t = std::shared_ptr<stun_attribute_mapped_address_t>;
 
-    rtc_endpoint_t  endpoint;
+    socket_address_t  endpoint;
 
-    static s_ptr_t create(const rtc_endpoint_t& endpoint);
-    stun_attribute_mapped_address_t(const rtc_endpoint_t& endpoint);
+    static s_ptr_t create(const socket_address_t& endpoint);
+    stun_attribute_mapped_address_t(const socket_address_t& endpoint);
     std::string to_string() const override;
 };
 
@@ -143,10 +143,10 @@ struct stun_attribute_xor_mapped_address_t : public stun_attribute_t
 {
     using s_ptr_t = std::shared_ptr<stun_attribute_xor_mapped_address_t>;
 
-    rtc_endpoint_t  endpoint;
+    socket_address_t  endpoint;
 
-    static s_ptr_t create(const rtc_endpoint_t& endpoint);
-    stun_attribute_xor_mapped_address_t(const rtc_endpoint_t& endpoint);
+    static s_ptr_t create(const socket_address_t& endpoint);
+    stun_attribute_xor_mapped_address_t(const socket_address_t& endpoint);
 
     std::string to_string() const override;
 };

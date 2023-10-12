@@ -20,7 +20,7 @@ socket_packet_impl::u_ptr_t socket_packet_impl::create(smart_buffer &&packet_buf
 
 socket_packet_impl::socket_packet_impl(const smart_buffer &packet_buffer
                                        , const socket_endpoint_t &endpoint)
-    : m_packet_buffer(packet_buffer)
+    : smart_buffer_container(packet_buffer)
     , m_socket_endpoint(endpoint)
 {
 
@@ -28,21 +28,12 @@ socket_packet_impl::socket_packet_impl(const smart_buffer &packet_buffer
 
 socket_packet_impl::socket_packet_impl(smart_buffer &&packet_buffer
                                        , const socket_endpoint_t &endpoint)
-    : m_packet_buffer(std::move(packet_buffer))
+    : smart_buffer_container(std::move(packet_buffer))
     , m_socket_endpoint(endpoint)
 {
 
 }
 
-smart_buffer &socket_packet_impl::buffer()
-{
-    return m_packet_buffer;
-}
-
-const smart_buffer &socket_packet_impl::buffer() const
-{
-    return m_packet_buffer;
-}
 
 void socket_packet_impl::set_endpoint(const socket_endpoint_t &endpoint)
 {
@@ -51,12 +42,12 @@ void socket_packet_impl::set_endpoint(const socket_endpoint_t &endpoint)
 
 const void *socket_packet_impl::data() const
 {
-    return m_packet_buffer.data();
+    return m_buffer.data();
 }
 
 std::size_t socket_packet_impl::size() const
 {
-    return m_packet_buffer.size();
+    return m_buffer.size();
 }
 
 message_category_t socket_packet_impl::category() const
@@ -71,13 +62,13 @@ message_subclass_t socket_packet_impl::subclass() const
 
 i_message::u_ptr_t socket_packet_impl::clone() const
 {
-    return create(m_packet_buffer.fork()
+    return create(m_buffer.fork()
                   , m_socket_endpoint);
 }
 
 const i_option *socket_packet_impl::options() const
 {
-    return nullptr;
+    return &m_options;
 }
 
 transport_id_t socket_packet_impl::transport_id() const
@@ -87,7 +78,7 @@ transport_id_t socket_packet_impl::transport_id() const
 
 bool socket_packet_impl::is_valid() const
 {
-    return !m_packet_buffer.is_empty();
+    return !m_buffer.is_empty();
 }
 
 const socket_endpoint_t &socket_packet_impl::endpoint() const

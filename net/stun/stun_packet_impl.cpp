@@ -8,31 +8,47 @@
 namespace mpl::net
 {
 
-stun_packet_impl::u_ptr_t stun_packet_impl::create(const smart_buffer &buffer)
+stun_packet_impl::u_ptr_t stun_packet_impl::create(const smart_buffer &buffer
+                                                   , const socket_endpoint_t& endpoint)
 {
     return std::make_unique<stun_packet_impl>(buffer);
 }
 
-stun_packet_impl::u_ptr_t stun_packet_impl::create(smart_buffer &&buffer)
+stun_packet_impl::u_ptr_t stun_packet_impl::create(smart_buffer &&buffer
+                                                   , const socket_endpoint_t& endpoint)
 {
     return std::make_unique<stun_packet_impl>(std::move(buffer));
 }
 
-stun_packet_impl::stun_packet_impl(const smart_buffer &buffer)
-    : rtc_buffer_container(buffer)
+stun_packet_impl::stun_packet_impl(const smart_buffer &buffer
+                                   , const socket_endpoint_t& endpoint)
+    : smart_buffer_container(buffer)
+    , m_endpoint(endpoint)
 {
 
 }
 
-stun_packet_impl::stun_packet_impl(smart_buffer &&buffer)
-    : rtc_buffer_container(std::move(buffer))
+stun_packet_impl::stun_packet_impl(smart_buffer &&buffer
+                                   , const socket_endpoint_t& endpoint)
+    : smart_buffer_container(std::move(buffer))
+    , m_endpoint(endpoint)
 {
 
 }
 
-rtc_message_category_t stun_packet_impl::category() const
+void stun_packet_impl::set_endpoint(const socket_endpoint_t &endpoint)
 {
-    return rtc_message_category_t::packet;
+    m_endpoint = endpoint;
+}
+
+message_category_t stun_packet_impl::category() const
+{
+    return message_category_t::packet;
+}
+
+message_subclass_t stun_packet_impl::subclass() const
+{
+    return message_net_class;
 }
 
 bool stun_packet_impl::is_valid() const
@@ -50,14 +66,14 @@ std::size_t stun_packet_impl::size() const
     return m_buffer.size();
 }
 
-rtc_packet_type_t stun_packet_impl::packet_type() const
+transport_id_t stun_packet_impl::transport_id() const
 {
-    return rtc_packet_type_t::stun;
+    return transport_id_t::ice;
 }
 
-const i_option &stun_packet_impl::options() const
+const i_option* stun_packet_impl::options() const
 {
-    return m_options;
+    return &m_options;
 }
 
 const void *stun_packet_impl::payload_data() const
@@ -70,7 +86,7 @@ std::size_t stun_packet_impl::payload_size() const
     return mapped_message().payload_size();
 }
 
-i_rtc_message::u_ptr_t stun_packet_impl::clone() const
+i_message::u_ptr_t stun_packet_impl::clone() const
 {
    if (auto clone_packet = create(m_buffer.fork()))
    {
@@ -103,7 +119,7 @@ stun_transaction_id_t stun_packet_impl::transaction_id() const
     return transaction_id;
 }
 
-stun_attribute_t::w_ptr_list_t stun_packet_impl::attributes() const
+stun_attribute_t::s_ptr_list_t stun_packet_impl::attributes() const
 {
     if (is_valid())
     {
@@ -117,13 +133,9 @@ stun_attribute_t::w_ptr_list_t stun_packet_impl::attributes() const
     return {};
 }
 
-stun_authentification_result_t stun_packet_impl::check_authentification(const std::string &password) const
+const socket_endpoint_t &stun_packet_impl::endpoint() const
 {
-    if (!password.empty())
-    {
-        return mapped_message().check_password(password);
-    }
-    return stun_authentification_result_t::ok;
+    return m_endpoint;
 }
 
 const stun_mapped_message_t &stun_packet_impl::mapped_message() const

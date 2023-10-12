@@ -41,12 +41,12 @@ std::string stun_attribute_t::to_string() const
 }
 
 // mapped address
-stun_attribute_mapped_address_t::s_ptr_t stun_attribute_mapped_address_t::create(const rtc_endpoint_t &endpoint)
+stun_attribute_mapped_address_t::s_ptr_t stun_attribute_mapped_address_t::create(const socket_address_t &endpoint)
 {
     return std::make_shared<stun_attribute_mapped_address_t>(endpoint);
 }
 
-stun_attribute_mapped_address_t::stun_attribute_mapped_address_t(const rtc_endpoint_t &endpoint)
+stun_attribute_mapped_address_t::stun_attribute_mapped_address_t(const socket_address_t &endpoint)
      : stun_attribute_t(stun_attribute_id_t::mapped_address)
      , endpoint(endpoint)
 {
@@ -119,7 +119,7 @@ stun_attribute_message_integrity_t::stun_attribute_message_integrity_t(const voi
 
 std::string stun_attribute_message_integrity_t::to_string() const
 {
-    return stun_attribute_t::to_string().append(": hmac-sha1: ").append(wbs::utils::string::hex::to_string(value));
+    return stun_attribute_t::to_string().append(": hmac-sha1: ").append(utils::hex_to_string(value.data(), value.size()));
 }
 
 // error-code
@@ -186,7 +186,7 @@ stun_attribute_unknown_t::stun_attribute_unknown_t(const void *data
 
 std::string stun_attribute_unknown_t::to_string() const
 {
-    return stun_attribute_t::to_string().append(": unknown-data: ").append(wbs::utils::string::hex::to_string(unknown_data));
+    return stun_attribute_t::to_string().append(": unknown-data: ").append(utils::hex_to_string(unknown_data.data(), unknown_data.size()));
 }
 
 // realm
@@ -226,12 +226,12 @@ std::string stun_attribute_nonce_t::to_string() const
 }
 
 // xor-mapped-address
-stun_attribute_xor_mapped_address_t::s_ptr_t stun_attribute_xor_mapped_address_t::create(const rtc_endpoint_t &endpoint)
+stun_attribute_xor_mapped_address_t::s_ptr_t stun_attribute_xor_mapped_address_t::create(const socket_address_t &endpoint)
 {
     return std::make_shared<stun_attribute_xor_mapped_address_t>(endpoint);
 }
 
-stun_attribute_xor_mapped_address_t::stun_attribute_xor_mapped_address_t(const rtc_endpoint_t &endpoint)
+stun_attribute_xor_mapped_address_t::stun_attribute_xor_mapped_address_t(const socket_address_t &endpoint)
     : stun_attribute_t(stun_attribute_id_t::xor_mapped_address)
     , endpoint(endpoint)
 {
@@ -312,7 +312,7 @@ stun_attribute_fingerprint_t::stun_attribute_fingerprint_t(uint32_t value)
 
 std::string stun_attribute_fingerprint_t::to_string() const
 {
-    return stun_attribute_t::to_string().append(": crc32: ").append(wbs::utils::string::hex::to_string(&value, sizeof(value)));
+    return stun_attribute_t::to_string().append(": crc32: ").append(utils::hex_to_string(&value, sizeof(value)));
 }
 
 // ice-controlled
@@ -330,7 +330,7 @@ stun_attribute_ice_controlled_t::stun_attribute_ice_controlled_t(uint64_t tie_br
 
 std::string stun_attribute_ice_controlled_t::to_string() const
 {
-    return stun_attribute_t::to_string().append(": tie_breaker: ").append(wbs::utils::string::hex::to_string(&tie_breaker, sizeof(tie_breaker)));
+    return stun_attribute_t::to_string().append(": tie_breaker: ").append(utils::hex_to_string(&tie_breaker, sizeof(tie_breaker)));
 }
 
 // ice-controlling
@@ -348,7 +348,7 @@ stun_attribute_ice_controlling_t::stun_attribute_ice_controlling_t(uint64_t tie_
 
 std::string stun_attribute_ice_controlling_t::to_string() const
 {
-    return stun_attribute_t::to_string().append(": tie_breaker: ").append(wbs::utils::string::hex::to_string(&tie_breaker, sizeof(tie_breaker)));
+    return stun_attribute_t::to_string().append(": tie_breaker: ").append(utils::hex_to_string(&tie_breaker, sizeof(tie_breaker)));
 }
 
 

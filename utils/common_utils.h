@@ -24,11 +24,23 @@ using string_param_list_t = std::vector<string_param_t>;
 raw_array_t create_raw_array(const void* ref_data
                              , std::size_t ref_size);
 
+raw_array_t create_raw_array(const std::string_view& hex_string
+                             , const std::string_view& delimeter = {});
+
 template<typename T>
 property_type_t get_property_type();
 
 template<typename T>
 std::size_t get_value_size(const T& value);
+
+template<typename T>
+T random();
+
+template<typename T>
+std::vector<T> random_array(std::size_t len);
+
+const std::string& get_alphabet();
+std::string random_string(std::size_t len, const std::string& alphabet = get_alphabet());
 
 
 // string utils
@@ -68,6 +80,11 @@ bool is_equal(const std::string& lstr
 
 bool compare(const std::string& text
              , const std::string& filter);
+
+std::string hex_to_string(const void* data
+                          , std::size_t size
+                          , const std::string_view& delimiter = {}
+                          , bool upper_case = false);
 
 }
 

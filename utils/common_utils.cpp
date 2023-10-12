@@ -4,6 +4,7 @@
 #include "core/common_types.h"
 
 #include <string>
+#include "tools/base/string_base.h"
 #include "tools/base/convert_base.h"
 
 namespace mpl::utils
@@ -54,7 +55,25 @@ raw_array_t create_raw_array(const void *ref_data
     }
 
     return raw_array_t(static_cast<const raw_array_t::value_type*>(ref_data)
-                        , static_cast<const raw_array_t::value_type*>(ref_data) + ref_size / sizeof(raw_array_t::value_type));
+                       , static_cast<const raw_array_t::value_type*>(ref_data) + ref_size / sizeof(raw_array_t::value_type));
+}
+
+std::string hex_to_string(const void *data
+                          , std::size_t size
+                          , const std::string_view &delimiter
+                          , bool upper_case)
+{
+    return portable::hex_to_string(data
+                                   , size
+                                   , delimiter
+                                   , upper_case);
+}
+
+raw_array_t create_raw_array(const std::string_view &hex_string
+                             , const std::string_view &delimeter)
+{
+    return portable::string_to_hex(hex_string
+                                   , delimeter);
 }
 
 }

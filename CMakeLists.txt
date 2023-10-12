@@ -23,8 +23,11 @@ pkg_search_module(AVUTIL REQUIRED libavutil)
 pkg_search_module(SWSCALE REQUIRED libswscale)
 pkg_search_module(WEBRTC_AUDIO_PROCESSING REQUIRED webrtc-audio-processing >=0.3-1)
 pkg_search_module(V4L2 QUIET libv4l2>=0.8.8)
+pkg_search_module(OPENSSL REQUIRED openssl)
+pkg_search_module(SRTP REQUIRED libsrtp2)
 
 add_definitions (${WEBRTC_AUDIO_PROCESSING_CFLAGS})
+
 
 set(OpenCV_STATIC ON)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs freetype)
@@ -69,6 +72,8 @@ add_library(${PROJECT_NAME}
     ${PUBLIC_HEADERS}
 )
 
+message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
+
 target_link_libraries(${PROJECT_NAME}
     mplmedia
     mplnet
@@ -83,6 +88,7 @@ target_link_libraries(${PROJECT_NAME}
     ipcpt
     wappt
     iopt
+    sslpt
     ptbase
     vncclient
     ${WEBRTC_AUDIO_PROCESSING_LIBRARIES}
@@ -94,6 +100,9 @@ target_link_libraries(${PROJECT_NAME}
     ${SWSCALE_LIBRARIES}
     ${AVUTIL_LIBRARIES}
     ${AVFORMAT_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${SRTP_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
     )
 
 set(TEST_SOURCES

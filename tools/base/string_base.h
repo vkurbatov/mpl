@@ -67,11 +67,11 @@ bool compare(const std::string& text
 
 std::string hex_to_string(const void* hex_data
                           , std::size_t hex_size
-                          , const std::string& delimiter = {}
+                          , const std::string_view& delimiter = {}
                           , bool upper_case = false);
 
-hex_dump_t string_to_hex(const std::string& hex_string
-                         , const std::string& delimiter);
+hex_dump_t string_to_hex(const std::string_view& hex_string
+                         , const std::string_view& delimiter);
 
 }
 

@@ -469,7 +469,7 @@ bool compare(const std::string &text, const std::string &filter)
 
 std::string hex_to_string(const void *hex_data
                           , std::size_t hex_size
-                          , const std::string &delimiter
+                          , const std::string_view &delimiter
                           , bool upper_case)
 {
     std::string hex_string;
@@ -495,8 +495,8 @@ std::string hex_to_string(const void *hex_data
 
 
 
-hex_dump_t string_to_hex(const std::string &hex_string
-                         , const std::string &delimiter)
+hex_dump_t string_to_hex(const std::string_view &hex_string
+                         , const std::string_view &delimiter)
 {
     hex_dump_t hex_dump;
     try
@@ -506,12 +506,12 @@ hex_dump_t string_to_hex(const std::string &hex_string
             auto string_size = hex_string.size() - hex_string.size() % 2;
             for (std::size_t i = 0; i < string_size; i += 2)
             {
-                hex_dump.push_back(std::stoul(hex_string.substr(i, 2), nullptr, 16));
+                hex_dump.push_back(std::stoul(std::string(hex_string.substr(i, 2)), nullptr, 16));
             }
         }
         else
         {
-            for (const auto& h : split_lines(hex_string, delimiter))
+            for (const auto& h : split_lines(std::string(hex_string), std::string(delimiter)))
             {
                 hex_dump.push_back(std::stoul(h, nullptr, 16));
             }

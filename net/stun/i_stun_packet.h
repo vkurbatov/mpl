@@ -16,8 +16,8 @@ public:
     virtual stun_message_class_t stun_class() const = 0;
     virtual stun_method_t stun_method() const = 0;
     virtual stun_transaction_id_t transaction_id() const = 0;
-    virtual stun_attribute_t::w_ptr_list_t attributes() const = 0;
-    virtual stun_authentification_result_t check_authentification(const std::string& password) const = 0;
+    virtual stun_attribute_t::s_ptr_list_t attributes() const = 0;
+    virtual const socket_endpoint_t& endpoint() const = 0;
     virtual const void* payload_data() const = 0;
     virtual std::size_t payload_size() const = 0;
 
