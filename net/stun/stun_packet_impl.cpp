@@ -9,36 +9,38 @@ namespace mpl::net
 {
 
 stun_packet_impl::u_ptr_t stun_packet_impl::create(const smart_buffer &buffer
-                                                   , const socket_endpoint_t& endpoint)
+                                                   , const socket_address_t& address)
 {
-    return std::make_unique<stun_packet_impl>(buffer);
+    return std::make_unique<stun_packet_impl>(buffer
+                                              , address);
 }
 
 stun_packet_impl::u_ptr_t stun_packet_impl::create(smart_buffer &&buffer
-                                                   , const socket_endpoint_t& endpoint)
+                                                   , const socket_address_t& address)
 {
-    return std::make_unique<stun_packet_impl>(std::move(buffer));
+    return std::make_unique<stun_packet_impl>(std::move(buffer)
+                                              , address);
 }
 
 stun_packet_impl::stun_packet_impl(const smart_buffer &buffer
-                                   , const socket_endpoint_t& endpoint)
+                                   , const socket_address_t& address)
     : smart_buffer_container(buffer)
-    , m_endpoint(endpoint)
+    , m_address(address)
 {
 
 }
 
 stun_packet_impl::stun_packet_impl(smart_buffer &&buffer
-                                   , const socket_endpoint_t& endpoint)
+                                   , const socket_address_t& address)
     : smart_buffer_container(std::move(buffer))
-    , m_endpoint(endpoint)
+    , m_address(address)
 {
 
 }
 
-void stun_packet_impl::set_endpoint(const socket_endpoint_t &endpoint)
+void stun_packet_impl::set_address(const socket_address_t &address)
 {
-    m_endpoint = endpoint;
+    m_address = address;
 }
 
 message_category_t stun_packet_impl::category() const
@@ -133,9 +135,9 @@ stun_attribute_t::s_ptr_list_t stun_packet_impl::attributes() const
     return {};
 }
 
-const socket_endpoint_t &stun_packet_impl::endpoint() const
+const socket_address_t &stun_packet_impl::address() const
 {
-    return m_endpoint;
+    return m_address;
 }
 
 const stun_mapped_message_t &stun_packet_impl::mapped_message() const

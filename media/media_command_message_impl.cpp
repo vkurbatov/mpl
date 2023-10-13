@@ -1,6 +1,8 @@
 #include "media_command_message_impl.h"
 #include "command_camera_control.h"
 
+#include "media_types.h"
+
 namespace mpl::media
 {
 
@@ -41,7 +43,7 @@ message_category_t media_command_message_impl<MediaCommand>::category() const
 template<typename MediaCommand>
 message_subclass_t media_command_message_impl<MediaCommand>::subclass() const
 {
-    return static_cast<message_subclass_t>(m_command.command_id);
+    return message_media_class;
 }
 
 template<typename MediaCommand>

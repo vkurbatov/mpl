@@ -27,9 +27,10 @@ enum class tcp_type_t
 enum class role_t
 {
     undefined = 0,
-    active,
     passive,
-    actpass
+    active,
+    actpass,
+    so
 };
 
 constexpr message_subclass_t message_net_class = message_core_class + 2;

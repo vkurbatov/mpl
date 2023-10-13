@@ -14,23 +14,23 @@ class stun_packet_impl : public i_stun_packet
         , public utils::smart_buffer_container
         , public utils::option_container
 {
-    socket_endpoint_t       m_endpoint;
+    socket_address_t       m_address;
 
 public:
     using u_ptr_t = std::unique_ptr<stun_packet_impl>;
     using s_ptr_t = std::shared_ptr<stun_packet_impl>;
 
     static u_ptr_t create(const smart_buffer& buffer
-                          , const socket_endpoint_t& endpoint = {});
+                          , const socket_address_t& address = {});
     static u_ptr_t create(smart_buffer&& buffer
-                          , const socket_endpoint_t& endpoint = {});
+                          , const socket_address_t& address = {});
 
     stun_packet_impl(const smart_buffer& buffer
-                     , const socket_endpoint_t& endpoint = {});
+                     , const socket_address_t& address = {});
     stun_packet_impl(smart_buffer&& buffer
-                     , const socket_endpoint_t& endpoint = {});
+                     , const socket_address_t& address = {});
 
-    void set_endpoint(const socket_endpoint_t& endpoint);
+    void set_address(const socket_address_t& address);
 
     // i_rtc_message interface
 public:
@@ -60,7 +60,7 @@ public:
     stun_method_t stun_method() const override;
     stun_transaction_id_t transaction_id() const override;
     stun_attribute_t::s_ptr_list_t attributes() const override;
-    const socket_endpoint_t& endpoint() const override;
+    const socket_address_t& address() const override;
 
 private:
     const stun_mapped_message_t& mapped_message() const;

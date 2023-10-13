@@ -24,17 +24,6 @@ __declare_attribute_method(std::int16_t)
 __declare_attribute_method(std::int32_t)
 __declare_attribute_method(std::int64_t)
 
-stun_protocol_family_t stun_address_t::get_protocol_family() const
-{
-    switch(auto normalize_protocol_family = static_cast<stun_protocol_family_t>(protocol_family))
-    {
-        case stun_protocol_family_t::ip4:
-        case stun_protocol_family_t::ip6:
-            return normalize_protocol_family;
-    }
-    return stun_protocol_family_t::undefined;
-}
-
 bool stun_mapped_header_t::is_valid() const
 {
     if ((type & 0xff) < 3
@@ -189,7 +178,7 @@ const uint8_t *stun_mapped_message_t::payload(int32_t offset) const
     return reinterpret_cast<const std::uint8_t*>(this) + offset + sizeof(header);
 }
 
-stun_authentification_result_t stun_mapped_message_t::check_username(const std::string &username) const
+stun_authentification_result_t stun_mapped_message_t::check_username(const std::string_view &username) const
 {
     const stun_mapped_attribute_t* attribute = get_attribute(stun_attribute_id_t::username);
 
@@ -217,7 +206,7 @@ stun_authentification_result_t stun_mapped_message_t::check_username(const std::
     return stun_authentification_result_t::bad_request;
 }
 
-stun_authentification_result_t stun_mapped_message_t::check_password(const std::string &password) const
+stun_authentification_result_t stun_mapped_message_t::check_password(const std::string_view &password) const
 {
     const stun_mapped_attribute_t* attribute = get_attribute(stun_attribute_id_t::message_integrity);
 
@@ -236,9 +225,6 @@ stun_authentification_result_t stun_mapped_message_t::check_password(const std::
                     , hash_size);
 
         reinterpret_cast<stun_mapped_message_t*>(buffer.data())->set_payload_size(hash_size - sizeof(stun_mapped_header_t) + 24);
-        /*auto calc_hash = utils::crypto::hash_hmac_sha1(password
-                                                       , buffer.data()
-                                                       , hash_size);*/
 
         auto calc_hash = utils::calc_hmac_sha1(buffer.data()
                                                , hash_size
@@ -252,6 +238,10 @@ stun_authentification_result_t stun_mapped_message_t::check_password(const std::
         }
 
         return stun_authentification_result_t::unautorized;
+    }
+    else if (password.empty())
+    {
+        return stun_authentification_result_t::ok;
     }
 
     return stun_authentification_result_t::bad_request;

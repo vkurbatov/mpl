@@ -12,19 +12,6 @@ namespace mpl::net
 
 using stun_transaction_data_t = std::uint8_t[stun_transaction_data_size];
 
-struct stun_address_t
-{
-    std::uint8_t    protocol_family;
-    std::uint16_t   port;
-    union
-    {
-        std::uint32_t       ip4_address;
-        std::uint8_t        ip6_address[16];
-    };
-
-    stun_protocol_family_t get_protocol_family() const;
-};
-
 struct stun_mapped_attribute_header_t
 {
     std::uint16_t   attribute;
@@ -75,9 +62,9 @@ struct stun_mapped_message_t
     std::uint8_t* payload(std::int32_t offset = 0);
     const std::uint8_t* payload(std::int32_t offset = 0) const;
 
-    stun_authentification_result_t check_username(const std::string& username) const;
+    stun_authentification_result_t check_username(const std::string_view& username) const;
 
-    stun_authentification_result_t check_password(const std::string& password) const;
+    stun_authentification_result_t check_password(const std::string_view& password) const;
 
     std::vector<std::uint8_t> create_hash() const;
 
