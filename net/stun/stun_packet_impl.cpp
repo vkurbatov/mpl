@@ -3,6 +3,8 @@
 #include "stun_attributes.h"
 #include "stun_message.h"
 
+#include "net/net_message_types.h"
+
 #include <cstring>
 
 namespace mpl::net

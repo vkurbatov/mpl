@@ -10,6 +10,7 @@
 #include "utils/time_utils.h"
 #include "utils/hash_utils.h"
 
+#include "net_message_types.h"
 #include "core/i_message_source.h"
 #include "core/i_message_event.h"
 #include "core/event_channel_state.h"

@@ -7,25 +7,15 @@
 namespace mpl
 {
 
-namespace detail
+bool command_t::operator ==(const command_t &other) const
 {
-    static portable::spin_lock safe_mutex;
-    static std::vector<std::string> commands;
-
-    inline command_t::command_id_t register_command(const std::string_view &command_name)
-    {
-        std::lock_guard lock(safe_mutex);
-
-        command_t::command_id_t command_id = commands.size();
-        commands.emplace_back(command_name);
-
-        return command_id;
-    }
+    return command_id == other.command_id
+            && name == other.name;
 }
 
-command_t::command_id_t command_t::register_command(const std::string_view &command_name)
+bool command_t::operator !=(const command_t &other) const
 {
-    return detail::register_command(command_name);
+        return ! operator == (other);
 }
 
 command_t::command_t(const command_id_t command_id

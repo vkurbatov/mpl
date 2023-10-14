@@ -50,6 +50,8 @@ set(SOURCES
 
 set(PUBLIC_HEADERS
     media_types.h
+    media_event_types.h
+    media_command_types.h
     device_types.h
     audio_types.h
     audio_info.h
@@ -115,7 +117,6 @@ set(PRIVATE_HEADERS
     video_composer.h
     layout_manager_mosaic_impl.h
     media_composer_factory_impl.h
-    media_command_message_impl.h
 )
 
 

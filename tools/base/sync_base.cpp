@@ -1,4 +1,5 @@
 #include "sync_base.h"
+
 #include <thread>
 #include <cassert>
 

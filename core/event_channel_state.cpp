@@ -16,4 +16,16 @@ event_channel_state_t::event_channel_state_t(channel_state_t state
 
 }
 
+bool event_channel_state_t::operator ==(const event_channel_state_t &other) const
+{
+    return state == other.state
+            && reason == other.reason;
+}
+
+bool event_channel_state_t::operator ==(const event_t &other) const
+{
+    return event_t::operator == (other)
+            && *this == (static_cast<const event_channel_state_t&>(other));
+}
+
 }

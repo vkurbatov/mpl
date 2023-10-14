@@ -14,7 +14,7 @@
 #include "utils/message_router_impl.h"
 #include "utils/message_sink_impl.h"
 
-
+#include "net/net_message_types.h"
 #include "net/net_utils.h"
 
 #include "tools/io/net/udp_link.h"

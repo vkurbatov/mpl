@@ -1,6 +1,7 @@
 #ifndef MPL_EVENT_H
 #define MPL_EVENT_H
 
+#include "event_types.h"
 #include <string>
 
 namespace mpl
@@ -8,12 +9,11 @@ namespace mpl
 
 struct event_t
 {
-    using event_id_t = std::uint32_t;
-
     const event_id_t  event_id;
     const std::string name;
 
-    static event_id_t register_event(const std::string_view& event_name);
+    virtual bool operator == (const event_t& other) const;
+    virtual bool operator != (const event_t& other) const;
 
 protected:
     event_t(const event_id_t event_id

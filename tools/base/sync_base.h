@@ -1,5 +1,5 @@
-#ifndef SYNC_BASE_H
-#define SYNC_BASE_H
+#ifndef PORTABLE_SYNC_BASE_H
+#define PORTABLE_SYNC_BASE_H
 
 #include <atomic>
 
@@ -42,4 +42,4 @@ class fake_lock
 
 }
 
-#endif // SYNC_BASE_H
+#endif // PORTABLE_SYNC_BASE_H

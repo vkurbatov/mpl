@@ -1,4 +1,5 @@
 #include "socket_packet_impl.h"
+#include "net/net_message_types.h"
 //#include "net_types.h"
 
 namespace mpl::net

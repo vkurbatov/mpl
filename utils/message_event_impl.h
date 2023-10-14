@@ -6,7 +6,7 @@
 namespace mpl
 {
 
-template<typename Event>
+template<typename Event, message_subclass_t Subclass = message_core_class>
 class message_event_impl : public i_message_event
 {
     Event   m_event;

@@ -10,6 +10,8 @@ set(SOURCES
     net_serialize_impl.cpp
     net_engine_impl.cpp
     net_utils.cpp
+    net_event_message_impl.cpp
+    net_command_message_impl.cpp
 
     socket/socket_endpoint.cpp
     socket/socket_packet_impl.cpp
@@ -30,6 +32,7 @@ set(SOURCES
     ice/ice_server_params.cpp
     ice/ice_transport_params.cpp
     ice/ice_gathering_command.cpp
+    ice/ice_gathering_state_event.cpp
     ice/ice_utils.cpp
     ice/ice_config.cpp
     ice/ice_transport_factory.cpp
@@ -37,6 +40,9 @@ set(SOURCES
 
 set(PUBLIC_HEADERS
     net_types.h
+    net_message_types.h
+    net_event_types.h
+    net_command_types.h
     endpoint.h
     i_net_packet.h  
     i_transport_channel.h
@@ -57,6 +63,7 @@ set(PUBLIC_HEADERS
     ice/ice_candidate.h
     ice/ice_endpoint.h
     ice/ice_gathering_command.h
+    ice/ice_gathering_state_event.h
     ice/ice_server_params.h
     ice/i_ice_transport.h
     )

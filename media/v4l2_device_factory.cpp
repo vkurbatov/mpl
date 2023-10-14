@@ -12,7 +12,7 @@
 #include "utils/message_sink_impl.h"
 
 #include "video_frame_impl.h"
-#include "media_command_message_impl.h"
+#include "utils/message_command_impl.h"
 #include "command_camera_control.h"
 
 #include "v4l2_utils.h"
@@ -814,7 +814,7 @@ public:
                         {
                             camera_control.state = command_camera_control_t::state_t::failed;
                         }
-                        m_router.send_message(media_command_message_impl<command_camera_control_t>(camera_control));
+                        m_router.send_message(message_command_impl<command_camera_control_t, message_media_class>(camera_control));
                         continue;
                     }
 

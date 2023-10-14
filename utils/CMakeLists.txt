@@ -28,6 +28,8 @@ set(SOURCES
     fifo_reader_impl.cpp
     message_router_impl.cpp
     message_event_impl.cpp
+    message_event_impl.tpp
+    message_command_impl.tpp
     message_sink_impl.cpp
     property_value_impl.cpp
     property_tree_impl.cpp
@@ -77,6 +79,7 @@ set(PUBLIC_HEADERS
     fifo_reader_impl.h
     message_router_impl.h
     message_event_impl.h
+    message_command_impl.h
     message_sink_impl.h
     property_value_impl.h
     property_tree_impl.h

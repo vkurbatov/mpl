@@ -4,11 +4,15 @@
 
 #include "ice_transport_params.h"
 
+#include "tools/base/sync_base.h"
+#include <shared_mutex>
+
 namespace mpl::net
 {
 
 namespace detail
 {
+
 
 ice_transport_params_t create_ice_params(const i_property& ice_property)
 {
@@ -24,6 +28,9 @@ ice_transport_params_t create_ice_params(const i_property& ice_property)
 
 class ice_transport_impl : public i_ice_transport
 {
+    using mutex_t = std::shared_mutex;
+    using lock_t = std::lock_guard<mutex_t>;
+    using shared_lock_t = std::shared_lock<mutex_t>;
 
     using u_ptr_t = std::unique_ptr<ice_transport_impl>;
 
@@ -64,7 +71,7 @@ public:
 
     bool is_open() const override
     {
-        return false;
+        return m_open;
     }
 
     channel_state_t state() const override
@@ -76,8 +83,16 @@ public:
 public:
     bool set_params(const i_property &params) override
     {
-        return utils::property::deserialize(m_ice_params
-                                            , params);
+        auto ice_params = m_ice_params;
+        if (utils::property::deserialize(ice_params
+                                          , params))
+        {
+            ice_params.local_endpoint = m_ice_params.local_endpoint;
+            return true;
+
+        }
+
+        return false;
     }
 
     bool get_params(i_property &params) const override
