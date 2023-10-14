@@ -15,11 +15,6 @@ struct ip_endpoint_t : public endpoint_t
     ip_address_t    address;
     port_t          port;
 
-    struct hasher_t
-    {
-        std::size_t operator()(const ip_endpoint_t& endpoint) const;
-    };
-
     static const ip_endpoint_t& undefined();
     static const ip_endpoint_t& any_v4();
     static const ip_endpoint_t& any_v6();

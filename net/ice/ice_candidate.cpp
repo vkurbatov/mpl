@@ -4,14 +4,17 @@
 #include "utils/common_utils.h"
 #include "utils/convert_utils.h"
 
+template<>
+struct std::hash<mpl::net::ice_candidate_t>
+{
+    std::size_t operator()(const mpl::net::ice_candidate_t& s) const noexcept
+    {
+        return s.hash();
+    }
+};
+
 namespace mpl::net
 {
-
-std::size_t ice_candidate_t::hasher_t::operator()(const ice_candidate_t &candidate) const
-{
-    return candidate.hash();
-}
-
 
 std::uint8_t ice_candidate_t::get_type_preference(ice_candidate_type_t type)
 {
@@ -257,6 +260,12 @@ std::string ice_candidate_t::to_string() const
     }
 
     return result;
+}
+
+bool ice_candidate_t::is_equal_endpoint(const ice_candidate_t &other) const
+{
+    return transport == other.transport
+            && connection_address == other.connection_address;
 }
 
 std::size_t ice_candidate_t::hash() const

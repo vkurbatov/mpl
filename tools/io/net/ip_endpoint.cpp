@@ -2,6 +2,16 @@
 #include "tools/base/string_base.h"
 #include "tools/base/convert_base.h"
 
+
+template<>
+struct std::hash<io::ip_endpoint_t>
+{
+    std::size_t operator()(const io::ip_endpoint_t& s) const noexcept
+    {
+        return s.hash();
+    }
+};
+
 namespace io
 {
 
@@ -188,11 +198,6 @@ bool ip_endpoint_t::is_support(const ip_endpoint_t &other) const
 bool ip_endpoint_t::is_valid() const
 {
     return address.is_valid();
-}
-
-std::size_t ip_endpoint_t::hasher_t::operator()(const ip_endpoint_t &endpoint) const
-{
-    return endpoint.hash();
 }
 
 }

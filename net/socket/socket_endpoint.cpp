@@ -1,5 +1,14 @@
 #include "socket_endpoint.h"
 
+template<>
+struct std::hash<mpl::net::socket_endpoint_t>
+{
+    std::size_t operator()(const mpl::net::socket_endpoint_t& s) const noexcept
+    {
+        return s.hash();
+    }
+};
+
 namespace mpl::net
 {
 
@@ -23,6 +32,12 @@ socket_endpoint_t::socket_endpoint_t(socket_type_t socket_type
 
 }
 
+std::size_t socket_endpoint_t::hash() const
+{
+    return socket_address.hash()
+            ^ std::hash<std::size_t>()(static_cast<std::size_t>(transport_id));
+}
+
 bool socket_endpoint_t::operator ==(const endpoint_t &other) const
 {
     return transport_id == other.transport_id
@@ -35,7 +50,5 @@ bool socket_endpoint_t::is_valid() const
             || transport_id == transport_id_t::udp)
             && socket_address.is_valid();
 }
-
-
 
 }

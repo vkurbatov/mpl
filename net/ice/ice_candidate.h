@@ -27,12 +27,6 @@ struct ice_candidate_t
     std::string                     ufrag;
     std::uint32_t                   network_cost;
 
-
-    struct hasher_t
-    {
-        std::size_t operator()(const ice_candidate_t& candidate) const;
-    };
-
     static std::uint8_t get_type_preference(ice_candidate_type_t type);
 
     static ice_candidate_t build_candidate(const std::string& foundation
@@ -81,6 +75,8 @@ struct ice_candidate_t
     bool from_string(const std::string& param_line);
     bool is_valid() const;
     std::string to_string() const;
+
+    bool is_equal_endpoint(const ice_candidate_t& other) const;
 
     std::size_t hash() const;
 };

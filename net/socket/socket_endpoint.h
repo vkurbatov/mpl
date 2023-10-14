@@ -16,6 +16,9 @@ struct socket_endpoint_t : public endpoint_t
     socket_endpoint_t(socket_type_t socket_type = socket_type_t::udp
                       , const socket_address_t& ip_endpoint = {});
 
+    std::size_t hash() const;
+
+
     // endpoint_t interface
 public:
     bool operator ==(const endpoint_t &other) const override;

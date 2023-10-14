@@ -15,12 +15,19 @@ struct ice_transport_params_t
     ice_endpoint_t              local_endpoint;
     ice_endpoint_t              remote_endpoint;
 
+    static std::string make_username(const std::string& lfrag
+                                     , const std::string& rfrag);
+
 
     ice_transport_params_t(const socket_endpoint_t::array_t& sockets = {}
                            , ice_component_id_t component_id = 0
                            , ice_mode_t mode = ice_mode_t::undefined
                            , const ice_endpoint_t& local_endpoint = {}
                            , const ice_endpoint_t& remote_endpoint = {});
+
+
+    std::string local_username() const;
+    std::string remote_username() const;
 
     bool operator == (const ice_transport_params_t& other) const;
     bool operator != (const ice_transport_params_t& other) const;

@@ -14,6 +14,7 @@ public:
     using u_ptr_t = std::unique_ptr<i_socket_transport>;
     using s_ptr_t = std::shared_ptr<i_socket_transport>;
     using w_ptr_t = std::weak_ptr<i_socket_transport>;
+    using r_ptr_t = i_socket_transport*;
 
     virtual bool set_local_endpoint(const socket_endpoint_t& endpoint) = 0;
     virtual bool set_remote_endpoint(const socket_endpoint_t& endpoint) = 0;

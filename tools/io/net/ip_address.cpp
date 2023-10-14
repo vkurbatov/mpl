@@ -5,6 +5,16 @@
 
 #include "net_utils.h"
 
+template<>
+struct std::hash<io::ip_address_t>
+{
+    std::size_t operator()(const io::ip_address_t& s) const noexcept
+    {
+        return s.hash();
+    }
+};
+
+
 namespace io
 {
 

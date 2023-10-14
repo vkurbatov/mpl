@@ -7,6 +7,7 @@ namespace mpl::net
 {
 
 constexpr command_id_t net_base_command_id = core_base_command_id + 2000;
+constexpr command_id_t net_ice_gathering_command_id = net_base_command_id + 0;
 
 }
 
