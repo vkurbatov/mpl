@@ -32,6 +32,20 @@ ice_transport_params_t::ice_transport_params_t(const socket_endpoint_t::array_t 
 
 }
 
+bool ice_transport_params_t::is_full() const
+{
+    switch(mode)
+    {
+        case ice_mode_t::agressive:
+        case ice_mode_t::regular:
+            return true;
+        break;
+        default:;
+    }
+
+    return false;
+}
+
 std::string ice_transport_params_t::local_username() const
 {
     return make_username(local_endpoint.auth.ufrag

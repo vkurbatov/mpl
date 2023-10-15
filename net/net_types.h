@@ -31,6 +31,15 @@ enum class role_t
     so
 };
 
+enum class protocol_type_t
+{
+    undefined,
+    stun,
+    tls,
+    rtp,
+    rtcp
+};
+
 }
 
 #endif // MPL_NET_TYPES_H

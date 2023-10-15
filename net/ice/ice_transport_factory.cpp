@@ -12,8 +12,12 @@
 #include "utils/pointer_utils.h"
 #include "utils/common_utils.h"
 
+#include "net/stun/stun_packet_impl.h"
+#include "net/stun/stun_error_codes.h"
+
 #include "net/net_message_types.h"
 #include "net/socket/socket_packet_impl.h"
+#include "net/net_utils.h"
 
 #include "ice_gathering_command.h"
 #include "ice_gathering_state_event.h"
@@ -21,15 +25,39 @@
 #include "ice_controller.h"
 
 #include "tools/base/sync_base.h"
+#include "tools/io/net/net_utils.h"
 #include <shared_mutex>
 #include <list>
-#include <set>
+
 
 namespace mpl::net
 {
 
 namespace detail
 {
+
+socket_address_t::array_t extract_address_list(const socket_address_t& local_address)
+{
+    socket_address_t::array_t address_list;
+
+    if (!local_address.address.is_any())
+    {
+        address_list.push_back(local_address);
+    }
+    else
+    {
+        for (const auto& a : io::utils::get_net_info(net::ip_version_t::ip4))
+        {
+            if (!a.ip_address.is_loopback())
+            {
+                address_list.emplace_back(a.ip_address
+                                         , local_address.port);
+            }
+        }
+    }
+
+    return address_list;
+}
 
 ice_candidate_t* find_candidate(ice_candidate_t::array_t& candidates
                                 , const socket_address_t& socket_address
@@ -47,6 +75,28 @@ ice_candidate_t* find_candidate(ice_candidate_t::array_t& candidates
     return nullptr;
 }
 
+socket_address_t::array_t get_ice_server_address(const ice_server_params_t::array_t& ice_servers)
+{
+    socket_address_t::array_t ice_address_array;
+
+    for (const auto& dns_name : ice_server_params_t::get_dns_names(ice_servers))
+    {
+        socket_address_t address(dns_name);
+        if (address.is_valid())
+        {
+            if (address.port == port_any)
+            {
+                address.port = port_stun;
+            }
+
+            ice_address_array.emplace_back(address);
+        }
+    }
+
+    return ice_address_array;
+}
+
+/*
 ice_transport_params_t create_ice_params(const i_property& ice_property)
 {
     ice_transport_params_t ice_params;
@@ -55,7 +105,7 @@ ice_transport_params_t create_ice_params(const i_property& ice_property)
                                  , ice_property);
 
     return ice_params;
-}
+}*/
 
 }
 
@@ -75,12 +125,16 @@ class ice_transport_impl : public i_ice_transport
     struct ice_socket_t : public ice_controller::i_listener
     {
         using list_t = std::list<ice_socket_t>;
+        using pair_set_t = std::set<candidate_pair_t*>;
 
         ice_transport_impl&             m_owner;
         i_socket_transport::u_ptr_t     m_socket;
+        message_sink_impl               m_socket_sink;
 
         ice_candidate_t::array_t        m_local_candidates;
         socket_address_t                m_mapped_address;
+
+        pair_set_t                      m_pairs;
 
         ice_controller                  m_ice_controller;
         ice_gathering_state_t           m_gathering_state;
@@ -89,16 +143,40 @@ class ice_transport_impl : public i_ice_transport
                      , i_socket_transport::u_ptr_t&& socket)
             : m_owner(owner)
             , m_socket(std::move(socket))
+            , m_socket_sink([&](auto&& ...args) { return on_socket_message(args...); })
             , m_ice_controller(*this
                                , m_owner.m_timer_manager)
             , m_gathering_state(ice_gathering_state_t::ready)
         {
-            m_empl
+            m_socket->source(0)->add_sink(&m_socket_sink);
         }
 
         ~ice_socket_t()
         {
+            control(channel_control_t::close());
+            change_gathering_state(ice_gathering_state_t::closed);
+            m_socket->source(0)->remove_sink(&m_socket_sink);
+        }
 
+        inline bool add_pair(candidate_pair_t* pair)
+        {
+            return pair != nullptr
+                    && m_pairs.emplace(pair).second;
+        }
+
+        inline bool remove_pair(candidate_pair_t* pair)
+        {
+            return m_pairs.erase(pair) > 0;
+        }
+
+        inline const ice_candidate_t& candidate() const
+        {
+            return m_local_candidates.front();
+        }
+
+        inline std::uint32_t priority() const
+        {
+            return candidate().priority;
         }
 
         inline socket_type_t socket_type() const
@@ -108,7 +186,7 @@ class ice_transport_impl : public i_ice_transport
                     : socket_type_t::udp;
         }
 
-        void change_gathering_state(ice_gathering_state_t new_state)
+        inline void change_gathering_state(ice_gathering_state_t new_state)
         {
             if (m_gathering_state != new_state)
             {
@@ -118,16 +196,99 @@ class ice_transport_impl : public i_ice_transport
             }
         }
 
-        bool on_mapped_address(const socket_address_t& mapped_address)
+        inline bool add_candidate(const socket_address_t& address
+                                  , ice_candidate_type_t candidate_type = ice_candidate_type_t::host)
         {
-            if (m_mapped_address != mapped_address)
+            if (detail::find_candidate(m_local_candidates
+                                       , address
+                                       , m_socket->transport_id()) == nullptr)
             {
-                m_mapped_address = mapped_address;
+                auto candidate = m_owner.create_local_candidate(address
+                                                                , m_socket->transport_id()
+                                                                , candidate_type);
+
+                if (candidate_type != ice_candidate_type_t::host)
+                {
+                    candidate.relayed_address = m_socket->local_endpoint().socket_address;
+                }
+
+                m_local_candidates.emplace_back(candidate);
+
+                return true;
             }
 
             return false;
         }
 
+        inline bool on_mapped_address(const socket_address_t& mapped_address)
+        {
+            if (m_mapped_address != mapped_address)
+            {
+                m_mapped_address = mapped_address;
+                add_candidate(mapped_address
+                              , ice_candidate_type_t::srflx);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        inline const ice_config_t& ice_config() const
+        {
+            return m_owner.m_ice_config;
+        }
+
+        bool send_transaction(ice_transaction_t&& transaction
+                              , bool flush = true)
+        {
+            if (is_established())
+            {
+                if (flush)
+                {
+                    m_ice_controller.reset(transaction.tag);
+                }
+
+                return m_ice_controller.send_request(std::move(transaction)
+                                                     , ice_config().ice_timeout
+                                                     , ice_config().retry_count);
+            }
+
+            return false;
+        }
+
+        inline void start_gathering(const ice_server_params_t::array_t& servers)
+        {
+            stop_gathering();
+
+            if (m_socket->is_open())
+            {
+                auto stun_address = detail::get_ice_server_address(servers);
+                change_gathering_state(ice_gathering_state_t::gathering);
+
+                if (stun_address.empty())
+                {
+                    change_gathering_state(ice_gathering_state_t::completed);
+                }
+                else
+                {
+                    for (const auto& a : stun_address)
+                    {
+                        ice_transaction_t transaction;
+                        transaction.tag = ice_gathering_id;
+                        transaction.address = a;
+                        send_transaction(std::move(transaction)
+                                         , false);
+                    }
+                }
+            }
+        }
+
+        inline void stop_gathering()
+        {
+            m_ice_controller.reset(ice_gathering_id);
+            change_gathering_state(ice_gathering_state_t::completed);
+        }
 
         inline bool control(const channel_control_t& channel_control)
         {
@@ -137,23 +298,133 @@ class ice_transport_impl : public i_ice_transport
         bool send_packet(const i_message_packet& packet
                          , const socket_address_t& address)
         {
-            if (m_socket->state() == channel_state_t::connected)
+            if (is_established())
             {
-                socket_packet_impl socket_packet(smart_buffer(&packet)
-                                                 , socket_endpoint_t(socket_type()
-                                                                     , address));
+                if (auto sink = m_socket->sink(0))
+                {
+                    socket_packet_impl socket_packet(smart_buffer(&packet)
+                                                     , socket_endpoint_t(socket_type()
+                                                                         , address));
 
-                return m_socket->sink(0)->send_message(socket_packet);
+                    return sink->send_message(socket_packet);
+                }
             }
 
             return false;
+        }
+
+        inline candidate_pair_t* get_pair(const socket_address_t& address)
+        {
+            for (auto& p : m_pairs)
+            {
+                if (p->m_remote_candidate.connection_address == address)
+                {
+                    return p;
+                }
+            }
+
+            return nullptr;
+        }
+
+        inline bool on_socket_state(channel_state_t new_state
+                                    , const std::string_view& reason)
+        {
+            switch(new_state)
+            {
+                case channel_state_t::open:
+                {
+                    m_local_candidates.clear();
+                    m_mapped_address = socket_address_t::undefined();
+                    for (const auto& a : detail::extract_address_list(m_socket->local_endpoint().socket_address))
+                    {
+                        add_candidate(a
+                                      , ice_candidate_type_t::host);
+                    }
+                }
+                break;
+                default:;
+            }
+
+            return true;
+        }
+
+        inline bool on_socket_event(const i_message_event& event)
+        {
+            if (event.subclass() == message_core_class
+                    && event.event().event_id == event_channel_state_t::id)
+            {
+                return on_socket_state(static_cast<const event_channel_state_t&>(event.event()).state
+                                       , static_cast<const event_channel_state_t&>(event.event()).reason);
+            }
+
+            return false;
+        }
+
+        inline bool on_socket_packet(const i_message_packet& packet)
+        {
+            if (packet.subclass() == message_net_class)
+            {
+                auto& socket_packet = static_cast<const i_socket_packet&>(packet);
+                switch(utils::parse_protocol(packet.data()
+                                             , packet.size()))
+                {
+                    case protocol_type_t::stun:
+                    {
+                        stun_packet_impl stun_packet(smart_buffer(&packet)
+                                                     , socket_packet.endpoint().socket_address);
+
+                        return m_ice_controller.push_packet(stun_packet);
+                    }
+                    break;
+                    default:
+                    {
+                        if (auto pair = get_pair(socket_packet.endpoint().socket_address))
+                        {
+                            return pair->on_socket_packet(socket_packet);
+                        }
+                    };
+                }
+            }
+
+            return false;
+        }
+
+        inline bool on_socket_message(const i_message& socket_message)
+        {
+            switch(socket_message.category())
+            {
+                case message_category_t::event:
+                {
+                    return on_socket_event(static_cast<const i_message_event&>(socket_message));
+                }
+                break;
+                case message_category_t::packet:
+                {
+                    return on_socket_packet(static_cast<const i_message_packet&>(socket_message));
+                }
+                break;
+                default:;
+            }
+
+            return false;
+        }
+
+        inline bool is_established() const
+        {
+            return state() == channel_state_t::connected;
+        }
+
+        inline channel_state_t state() const
+        {
+            return m_socket->state();
         }
 
         // i_listener interface
     public:
         bool on_send_packet(const i_stun_packet &stun_packet) override
         {
-            return m_socket->sink(0)->send_message(stun_packet);
+            return send_packet(stun_packet
+                               , stun_packet.address());
         }
 
         std::string on_autorized(const ice_transaction_t &transaction) override
@@ -163,8 +434,29 @@ class ice_transport_impl : public i_ice_transport
 
         bool on_request(ice_transaction_t &transaction) override
         {
-            return m_owner.on_ice_request(*this
-                                          , transaction);
+            if (auto pair = get_pair(transaction.address))
+            {
+                return pair->on_ice_request(transaction);
+            }
+            else
+            {
+                ice_candidate_t new_candidate(std::to_string(utils::random<std::uint32_t>())
+                                              , m_owner.component_id()
+                                              , m_socket->transport_id()
+                                              , transaction.request.priority
+                                              , transaction.address
+                                              , ice_candidate_type_t::prflx);
+
+                if (m_owner.add_remote_candidate(new_candidate))
+                {
+                    if (auto pair = get_pair(transaction.address))
+                    {
+                        return pair->on_ice_request(transaction);
+                    }
+                }
+            }
+
+            return false;
         }
 
         bool on_response(ice_transaction_t &transaction) override
@@ -185,8 +477,10 @@ class ice_transport_impl : public i_ice_transport
                 break;
                 default:
                 {
-                    m_owner.on_ice_response(*this
-                                            , transaction);
+                    if (auto pair = get_pair(transaction.address))
+                    {
+                        return pair->on_ice_response(transaction);
+                    }
                 }
             }
 
@@ -196,8 +490,8 @@ class ice_transport_impl : public i_ice_transport
 
     struct candidate_pair_t
     {
-        using set_t = std::set<candidate_pair_t>;
-        using set_ptr_t = std::set<candidate_pair_t*>;
+        using list_t = std::list<candidate_pair_t>;
+        using iter_t = list_t::iterator;
 
         ice_transport_impl&         m_owner;
         ice_socket_t&               m_socket;
@@ -210,29 +504,20 @@ class ice_transport_impl : public i_ice_transport
             : m_owner(socket.m_owner)
             , m_socket(socket)
             , m_remote_candidate(candidate)
-            , m_state(ice_state_t::frozen)
+            , m_state(ice_state_t::waiting)
         {
-
+            m_socket.add_pair(this);
         }
 
         ~candidate_pair_t()
         {
-            change_state(ice_state_t::shutdown);
+            m_socket.remove_pair(this);
+            set_state(ice_state_t::shutdown);
         }
 
-        void on_timeout()
+        void set_state(ice_state_t new_state)
         {
-
-        }
-
-        bool send_packet(const i_message_packet& packet)
-        {
-            return false;
-        }
-
-        void change_state(ice_state_t new_state)
-        {
-            if (m_state == new_state)
+            if (m_state != new_state)
             {
                 m_state = new_state;
                 m_owner.on_pair_state(*this
@@ -240,9 +525,117 @@ class ice_transport_impl : public i_ice_transport
             }
         }
 
-        bool operator == (const candidate_pair_t& other) const
+
+        inline bool send_packet(const i_message_packet& packet)
+        {
+            return m_socket.send_packet(packet
+                                        , m_remote_candidate.connection_address);
+        }
+
+        bool checking()
+        {
+            set_state(ice_state_t::in_progress);
+            if (m_socket.send_transaction(m_owner.create_request(*this)))
+            {
+                return true;
+            }
+
+            set_state(ice_state_t::failed);
+            return false;
+        }
+
+        inline bool operator == (const candidate_pair_t& other) const
         {
             return this == &other;
+        }
+
+        inline bool operator < (const candidate_pair_t& other) const
+        {
+            return priority() < other.priority();
+        }
+
+        std::uint64_t priority() const
+        {
+            std::uint64_t g_priority = m_socket.priority();
+            std::uint64_t d_priority = m_remote_candidate.priority;
+
+            if (!m_owner.m_controlling)
+            {
+                std::swap(g_priority
+                          , d_priority);
+            }
+
+            // rfc8445: pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G>D?1:0)
+
+            return 0x100000000ul * std::min(g_priority, d_priority)
+                    + 2 * std::max(g_priority, d_priority)
+                    + (g_priority > d_priority ? 1 : 0);
+        }
+
+        bool on_ice_request(ice_transaction_t &transaction)
+        {
+            if (m_socket.is_established())
+            {
+                if (transaction.request.username == m_owner.m_ice_params.local_username())
+                {
+                    if (!m_owner.process_role_conflict(transaction))
+                    {
+                        transaction.response.result = ice_transaction_t::ice_result_t::success;
+
+                        set_state(transaction.request.use_candidate
+                                       ? ice_state_t::used
+                                       : ice_state_t::succeeded);
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        bool on_ice_response(ice_transaction_t &transaction)
+        {
+            if (!transaction.response.is_success())
+            {
+                if (transaction.response.result == ice_transaction_t::ice_result_t::failed)
+                {
+                    switch(transaction.response.error_code)
+                    {
+                        case error_role_conflict:
+                        {
+                            m_owner.m_controlling ^= true;
+                            transaction.request.controlling = m_owner.m_controlling;
+                            transaction.request.use_candidate &= transaction.request.controlling;
+                            return m_socket.send_transaction(std::move(transaction));
+                        }
+                        break;
+                        default:;
+                    }
+                }
+                set_state(ice_state_t::failed);
+            }
+            else
+            {
+                set_state(transaction.request.use_candidate
+                               ? ice_state_t::used
+                               : ice_state_t::succeeded);
+
+                if (transaction.request.controlling
+                        && !transaction.request.use_candidate)
+                {
+                    transaction.request.use_candidate = true;
+                    m_socket.send_transaction(std::move(transaction));
+                }
+
+            }
+            return true;
+        }
+
+        bool on_socket_packet(const i_socket_packet& packet)
+        {
+            return m_owner.on_pair_packet(*this
+                                          , packet);
         }
     };
 
@@ -261,7 +654,8 @@ class ice_transport_impl : public i_ice_transport
     message_router_impl         m_router;
     i_timer::u_ptr_t            m_checking_timer;
 
-    candidate_pair_t::set_t     m_pairs;
+
+    candidate_pair_t::list_t    m_pairs;
     candidate_pair_t*           m_active_pair;
 
     std::uint64_t               m_tie_breaker;
@@ -290,7 +684,7 @@ public:
                                                         , std::move(ice_params));
         }
 
-        return false;
+        return nullptr;
     }
 
     ice_transport_impl(const ice_config_t& ice_config
@@ -304,6 +698,7 @@ public:
         , m_ice_params(std::move(ice_params))
         , m_message_sink([&](auto&& args) { return on_message_sink(args); })
         , m_checking_timer(m_timer_manager.create_timer([&]{ on_checking_timeout(); }))
+        , m_active_pair(nullptr)
         , m_tie_breaker(utils::random<std::uint64_t>())
         , m_controlling(false)
         , m_open(false)
@@ -311,18 +706,19 @@ public:
         , m_state(channel_state_t::ready)
         , m_gathering_state(ice_gathering_state_t::ready)
     {
-
+        initialize();
+        update_pairs(m_ice_params.remote_endpoint.candidates);
     }
 
     ~ice_transport_impl()
     {
-
+        close();
     }
-
 
     bool initialize()
     {
         m_foundation_id = 0;
+        set_active_pair(nullptr);
         m_ice_params.local_endpoint.candidates.clear();
         m_pairs.clear();
         m_sockets.clear();
@@ -333,8 +729,8 @@ public:
         {
             if (auto socket = create_socket(*it))
             {
-                m_sockets.emplace(*this
-                                  , std::move(socket));
+                m_sockets.emplace_back(*this
+                                        , std::move(socket));
                 it = std::next(it);
                 continue;
             }
@@ -347,23 +743,96 @@ public:
 
     void update_pairs(const ice_candidate_t::array_t& remote_candidates)
     {
-        // работать тут
+        // 1. remove undefined pairs
+
         for (auto it = m_pairs.begin()
              ; it != m_pairs.end()
              ; )
         {
+
             for (const auto& c : remote_candidates)
             {
                 if (it->m_remote_candidate.is_equal_endpoint(c))
                 {
+                    it->m_remote_candidate = c;
                     it = std::next(it);
                     break;
                 }
             }
-
+            if (m_active_pair == &(*it))
+            {
+                set_active_pair(nullptr);
+            }
             it = m_pairs.erase(it);
+
         }
 
+        // 2. add new pairs
+        for (const auto& c : remote_candidates)
+        {
+            if (auto it = std::find_if(m_pairs.begin()
+                                       , m_pairs.end()
+                                       , [&c](auto&& args) { return args.m_remote_candidate == c; })
+                                       ; it != m_pairs.end()
+                    )
+            {
+                continue;
+            }
+
+            for (auto& s : m_sockets)
+            {
+                m_pairs.emplace_back(s
+                                     , c);
+            }
+        }
+
+        m_pairs.sort();
+
+    }
+
+    candidate_pair_t* next_pair(candidate_pair_t* pair)
+    {
+        if (!m_pairs.empty())
+        {
+            if (pair == nullptr)
+            {
+                return &m_pairs.front();
+            }
+
+            candidate_pair_t::iter_t it = std::find_if(m_pairs.begin()
+                                                       , m_pairs.end()
+                                                       , [pair] (const auto& p) { return pair == &p; } );
+            if (it != m_pairs.end())
+            {
+                it = std::next(it);
+            }
+
+            if (it == m_pairs.end())
+            {
+                it = m_pairs.begin();
+            }
+
+            return &(*it);
+        }
+
+        return nullptr;
+    }
+
+    void set_active_pair(candidate_pair_t* active_pair)
+    {
+        if (m_active_pair != active_pair)
+        {
+            if (m_active_pair != nullptr)
+            {
+                m_active_pair->set_state(ice_state_t::waiting);
+                if (m_state == channel_state_t::connected)
+                {
+                    change_channel_state(channel_state_t::disconnected);
+                }
+            }
+
+            m_active_pair = active_pair;
+        }
     }
 
     inline i_socket_transport::u_ptr_t create_socket(const socket_endpoint_t& socket_endpoint)
@@ -374,7 +843,7 @@ public:
             writer.set("local_endpoint", socket_endpoint);
             writer.set("options.reuse_address", true);
 
-            if (auto socket = static_pointer_cast<i_socket_transport>(m_socket_factory.create_transport(*socket_params)))
+            if (auto socket = utils::static_pointer_cast<i_socket_transport>(m_socket_factory.create_transport(*socket_params)))
             {
                 if (socket->transport_id() == socket_endpoint.transport_id)
                 {
@@ -386,17 +855,53 @@ public:
         return nullptr;
     }
 
-    inline ice_candidate_t create_candidate(const socket_address_t& connection_endpoint
-                                            , transport_id_t transport_id = transport_id_t::udp
-                                            , ice_candidate_type_t candidate_type = ice_candidate_type_t::host
-                                            , const socket_address_t& relayed_endpoint = {})
+    inline ice_candidate_t create_local_candidate(const socket_address_t& connection_endpoint
+                                                , transport_id_t transport_id = transport_id_t::udp
+                                                , ice_candidate_type_t candidate_type = ice_candidate_type_t::host
+                                                , const socket_address_t& relayed_endpoint = {})
     {
         return ice_candidate_t::build_candidate(++m_foundation_id
                                                 , m_ice_params.component_id
                                                 , connection_endpoint
                                                 , transport_id
                                                 , candidate_type
-                                                 , relayed_endpoint);
+                                                , relayed_endpoint);
+    }
+
+    inline bool has_role_conflict(bool controlling) const
+    {
+        switch(m_ice_params.mode)
+        {
+            case ice_mode_t::agressive:
+            case ice_mode_t::regular:
+                return m_controlling == controlling;
+            break;
+            case ice_mode_t::lite:
+                return !controlling;
+            break;
+            default:;
+        }
+
+        return false;
+    }
+
+    inline bool process_role_conflict(ice_transaction_t& transaction)
+    {
+        if (has_role_conflict(transaction.request.controlling))
+        {
+            bool need_switch_role = m_ice_params.mode == ice_mode_t::lite
+                    || m_controlling == (m_tie_breaker >= transaction.request.tie_breaker);
+            if (need_switch_role)
+            {
+                transaction.response.error_code = error_role_conflict;
+                transaction.response.result = ice_transaction_t::ice_result_t::failed;
+                return true;
+            }
+
+            m_controlling ^= true;
+        }
+
+        return false;
     }
 
     void change_gathering_state(ice_gathering_state_t new_state
@@ -405,8 +910,10 @@ public:
         if (m_gathering_state == new_state)
         {
             m_gathering_state = new_state;
-            m_router.send_message(message_event_impl(ice_gathering_state_event_t(new_state
-                                                                                 , reason));
+            m_router.send_message(message_event_impl<ice_gathering_state_event_t
+                                  , message_net_class>(ice_gathering_state_event_t(new_state
+                                                                                 , reason))
+                                  );
         }
     }
 
@@ -417,9 +924,11 @@ public:
         {
             m_state = new_state;
             m_router.send_message(message_event_impl(event_channel_state_t(new_state
-                                                                           , reason));
+                                                                           , reason))
+                                  );
         }
     }
+
 
     std::size_t control_sockets(const channel_control_t& control)
     {
@@ -480,6 +989,7 @@ public:
             m_connect = true;
             if (control_sockets(channel_control_t::connect()) > 0)
             {
+                start_timer(0);
                 return true;
             }
             change_channel_state(channel_state_t::failed);
@@ -494,6 +1004,8 @@ public:
         if (m_open
                 && m_connect)
         {
+            m_checking_timer->stop();
+            set_active_pair(nullptr);
             change_channel_state(channel_state_t::disconnecting);
             m_connect = false;
         }
@@ -503,7 +1015,22 @@ public:
 
     void on_checking_timeout()
     {
+        if (m_connect)
+        {
+            if (m_active_pair == nullptr
+                    || m_active_pair->m_state != ice_state_t::used)
+            {
+                set_active_pair(next_pair(m_active_pair));
+            }
 
+            if (auto pair = m_active_pair)
+            {
+                pair->checking();
+                return;
+            }
+
+            start_timer(m_ice_config.ice_check_interval);
+        }
     }
 
     bool on_message_packet(const i_message_packet& packet)
@@ -551,53 +1078,128 @@ public:
         return m_ice_params.local_endpoint.auth.password;
     }
 
-
-    inline void on_socket_local_candidate(ice_socket_t& socket
-                                          , const ice_candidate_t& candidate)
+    ice_transaction_t create_request(candidate_pair_t& pair
+                                     , bool use_candidate = false)
     {
+        ice_transaction_t request;
 
+        request.tag = ice_binding_id;
+        request.address = pair.m_remote_candidate.connection_address;
+        request.request.username = m_ice_params.remote_username();
+        request.request.password = m_ice_params.remote_endpoint.auth.password;
+
+
+        request.request.tie_breaker = m_tie_breaker;
+        request.request.priority = pair.m_socket.priority();
+        request.request.controlling = m_controlling;
+        use_candidate = request.request.controlling && (use_candidate || m_ice_params.mode == ice_mode_t::agressive);
+        request.request.use_candidate = use_candidate;
+
+        return request;
     }
 
-    inline void on_remote_candidate(ice_socket_t& socket
-                                    , const ice_candidate_t& candidate)
+    bool internal_add_remote_candidate(const ice_candidate_t& candidate)
     {
-
-    }
-
-    inline void on_socket_gathering_state(ice_socket_t& socket
-                                          , ice_gathering_state_t gathering_state)
-    {
-
-    }
-
-    bool on_ice_request(ice_socket_t& socket
-                        , ice_transaction_t &transaction)
-    {
-        if (transaction.request.username == m_ice_params.local_username())
+        if (detail::find_candidate(m_ice_params.remote_endpoint.candidates
+                                   , candidate.connection_address
+                                   , candidate.transport) == nullptr)
         {
-            return true;
+            m_ice_params.remote_endpoint.candidates.emplace_back(candidate);
+            update_pairs(m_ice_params.remote_endpoint.candidates);
         }
 
         return false;
     }
 
-    bool on_ice_response(ice_socket_t& socket
-                         , ice_transaction_t &transaction)
+    ice_candidate_t::array_t get_local_candidates() const
     {
+        ice_candidate_t::array_t candidates;
+        for (const auto& s : m_sockets)
+        {
+            candidates.insert(candidates.begin()
+                              , s.m_local_candidates.begin()
+                              , s.m_local_candidates.end());
+        }
 
-        return false;
+        return candidates;
+    }
+
+    inline void on_socket_gathering_state(ice_socket_t& socket
+                                          , ice_gathering_state_t gathering_state)
+    {
+        if (&socket == &m_sockets.front())
+        {
+            change_gathering_state(gathering_state);
+        }
+    }
+
+    inline void start_timer(timestamp_t timeout)
+    {
+        if (m_ice_params.is_full())
+        {
+            m_checking_timer->start(timeout);
+        }
     }
 
     bool on_pair_state(candidate_pair_t& pair
                        , ice_state_t state)
     {
+        if (state == ice_state_t::used)
+        {
+            set_active_pair(&pair);
+            change_channel_state(channel_state_t::connected);
+            start_timer(m_ice_config.ice_check_interval);
+        }
+        else
+        {
+            if (m_active_pair == &pair)
+            {
+                switch(state)
+                {
+                    case ice_state_t::failed:
+                    case ice_state_t::frozen:
+                        change_channel_state(channel_state_t::disconnected);
+                        start_timer(0);
+                    break;
+                    default:;
+                }
+            }
+        }
         return true;
+    }
+
+    bool on_pair_packet(candidate_pair_t& pair
+                        , const i_socket_packet& packet)
+    {
+        if (m_active_pair == &pair)
+        {
+            return m_router.send_message(packet);
+        }
+
+        return false;
     }
 
     // i_channel interface
 public:
     bool control(const channel_control_t &control) override
     {
+        switch(control.control_id)
+        {
+            case channel_control_id_t::open:
+                return open();
+            break;
+            case channel_control_id_t::close:
+                return close();
+            break;
+            case channel_control_id_t::connect:
+                return connect();
+            break;
+            case channel_control_id_t::shutdown:
+                return shutdown();
+            break;
+            default:;
+        }
+
         return false;
     }
 
@@ -619,7 +1221,8 @@ public:
         if (utils::property::deserialize(ice_params
                                           , params))
         {
-            ice_params.local_endpoint = m_ice_params.local_endpoint;
+            ice_params.local_endpoint.candidates = m_ice_params.local_endpoint.candidates;
+            m_ice_params = ice_params;
             return true;
 
         }
@@ -629,7 +1232,9 @@ public:
 
     bool get_params(i_property &params) const override
     {
-        return utils::property::serialize(m_ice_params
+        auto ice_params = m_ice_params;
+        ice_params.local_endpoint.candidates = get_local_candidates();
+        return utils::property::serialize(ice_params
                                           , params);
     }
 
@@ -691,7 +1296,7 @@ public:
 
     bool add_remote_candidate(const ice_candidate_t &candidate) override
     {
-        return false;
+        return internal_add_remote_candidate(candidate);
     }
 };
 

@@ -145,7 +145,7 @@ public:
     void on_link_state(io::link_state_t link_state
                        , const std::string_view& reason)
     {
-        change_channel_state(get_channel_state(link_state)
+        change_channel_state(utils::get_channel_state(link_state)
                              , reason);
     }
 

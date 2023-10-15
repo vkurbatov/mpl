@@ -25,6 +25,7 @@ struct ice_transport_params_t
                            , const ice_endpoint_t& local_endpoint = {}
                            , const ice_endpoint_t& remote_endpoint = {});
 
+    bool is_full() const;
 
     std::string local_username() const;
     std::string remote_username() const;

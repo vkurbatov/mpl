@@ -1,7 +1,7 @@
 #include "net_utils.h"
 #include "tools/io/io_base.h"
 
-namespace mpl::net
+namespace mpl::utils
 {
 
 template<>
@@ -43,6 +43,50 @@ channel_state_t get_channel_state(const io::link_state_t &other_state)
     }
 
     return channel_state_t::undefined;
+}
+
+net::protocol_type_t parse_protocol(const void *data, std::size_t size)
+{
+    if (size > 0
+            && data != nullptr)
+    {
+        const auto ptr = static_cast<const std::uint8_t*>(data);
+        const auto& signature = *ptr;
+        if (signature > 127
+                && signature < 192)
+        {
+            if (size >= 8)
+            {
+                const auto& pt = ptr[1];
+                if (pt >= 200 && pt <= 223)
+                {
+                    return net::protocol_type_t::rtcp;
+                }
+                else if (size >= 12)
+                {
+                    return net::protocol_type_t::rtp;
+                }
+            }
+        }
+        else if ((signature & 0xfe) == 0)
+        {
+            if (size >= 20)
+            {
+                return net::protocol_type_t::stun;
+            }
+        }
+        else if (signature > 19
+                  && signature < 24)
+        {
+            if (size >= 10
+                    && ptr[1] == 0xfe)
+            {
+                return net::protocol_type_t::tls;
+            }
+        }
+    }
+
+    return net::protocol_type_t::undefined;
 }
 
 

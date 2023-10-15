@@ -23,6 +23,7 @@ using socket_port_t = io::port_t;
 constexpr socket_port_t port_any = io::port_any;
 constexpr socket_port_t port_echo = io::port_echo;
 constexpr socket_port_t port_discard = io::port_discard;
+constexpr socket_port_t port_stun = 3478;
 
 }
 
