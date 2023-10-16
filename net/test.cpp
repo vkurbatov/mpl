@@ -314,6 +314,8 @@ void test4()
 {
     auto& engine = net_engine_impl::get_instance();
 
+    engine.start();
+
     const ice_server_params_t::array_t ice_servers =
     {
         { "stun:stun1.l.google.com:19302" },
@@ -332,13 +334,12 @@ void test4()
     auto socket_factory = engine.create_factory(transport_id_t::udp
                                                 , nullptr);
 
-    ice_transport_factory ice_factory(ice_config_t{}
+    ice_transport_factory ice_factory(ice_config_t(ice_servers)
                                       , *socket_factory
                                       , *timers);
 
 
 
-    message_command_impl<ice_gathering_command_t, message_net_class> ice_command(ice_servers);
 
     ice_transport_params_t ice_params_1;
     ice_transport_params_t ice_params_2;
@@ -361,11 +362,11 @@ void test4()
 
     ice_connection_1->control(channel_control_t::open());
 
-    ice_connection_1->sink(0)->send_message(ice_command);
-
     utils::time::sleep(durations::seconds(1));
 
     utils::time::sleep(durations::seconds(10));
+
+    engine.stop();
 
     return;
 

@@ -16,6 +16,24 @@ struct std::hash<mpl::net::ice_candidate_t>
 namespace mpl::net
 {
 
+namespace detail
+{
+
+inline bool is_valid_ice_transport(transport_id_t transport_id)
+{
+    switch(transport_id)
+    {
+        case transport_id_t::udp:
+        case transport_id_t::tcp:
+            return true;
+        break;
+    }
+
+    return false;
+}
+
+}
+
 std::uint8_t ice_candidate_t::get_type_preference(ice_candidate_type_t type)
 {
     static const std::uint8_t type_preference_table [] =
@@ -28,6 +46,36 @@ std::uint8_t ice_candidate_t::get_type_preference(ice_candidate_type_t type)
     };
 
     return type_preference_table[static_cast<std::int32_t>(type) + 1];
+}
+
+const ice_candidate_t *ice_candidate_t::find(const array_t &candidates
+                                             , const socket_address_t &address
+                                             , transport_id_t transport_id)
+{
+    if (auto it = std::find_if(candidates.begin()
+                               , candidates.end()
+                               , [&address, transport_id](const ice_candidate_t& c) { return c.connection_address == address && c.transport == transport_id; } )
+        ; it != candidates.end())
+    {
+        return &(*it);
+    }
+
+    return nullptr;
+}
+
+ice_candidate_t *ice_candidate_t::find(array_t &candidates
+                                       , const socket_address_t &address
+                                       , transport_id_t transport_id)
+{
+    if (auto it = std::find_if(candidates.begin()
+                               , candidates.end()
+                               , [&address, transport_id](const ice_candidate_t& c) { return c.connection_address == address && c.transport == transport_id; } )
+        ; it != candidates.end())
+    {
+        return &(*it);
+    }
+
+    return nullptr;
 }
 
 ice_candidate_t ice_candidate_t::build_candidate(const std::string& foundation
@@ -211,8 +259,8 @@ bool ice_candidate_t::from_string(const std::string &param_line)
 bool ice_candidate_t::is_valid() const
 {
     return !foundation.empty()
-            && component_id > 0 && component_id < 3
-            && transport != transport_id_t::undefined
+            // && component_id > 0 && component_id < 3
+            && detail::is_valid_ice_transport(transport)
             && connection_address.is_defined();
 }
 

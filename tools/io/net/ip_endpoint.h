@@ -26,6 +26,8 @@ struct ip_endpoint_t : public endpoint_t
     ip_endpoint_t(const ip_address_t& address = {}
                   , port_t port = port_any);
 
+    ~ip_endpoint_t() = default;
+
     bool operator == (const ip_endpoint_t& other) const;
 
     bool operator == (const endpoint_t& other) const override;

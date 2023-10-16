@@ -29,6 +29,13 @@ struct ice_candidate_t
 
     static std::uint8_t get_type_preference(ice_candidate_type_t type);
 
+    static ice_candidate_t* find(array_t& candidates
+                                           , const socket_address_t& address
+                                           , transport_id_t transport_id = transport_id_t::udp);
+    static const ice_candidate_t* find(const array_t& candidates
+                                       , const socket_address_t& address
+                                       , transport_id_t transport_id = transport_id_t::udp);
+
     static ice_candidate_t build_candidate(const std::string& foundation
                                                , std::uint16_t index
                                                , std::uint8_t component_id

@@ -82,6 +82,10 @@ public:
         if (m_state != new_state)
         {
             m_state = new_state;
+            if (new_state == channel_state_t::open)
+            {
+                m_udp_params.local_endpoint.socket_address = m_link.local_endpoint();
+            }
             m_router.send_message(message_event_impl(event_channel_state_t(new_state
                                                                             , reason))
                                   );
@@ -159,11 +163,7 @@ public:
             {
                 m_link.set_local_endpoint(m_udp_params.local_endpoint.socket_address);
                 m_link.set_remote_endpoint(m_udp_params.remote_endpoint.socket_address);
-                if (m_link.control(io::link_control_id_t::open))
-                {
-                    m_udp_params.local_endpoint.socket_address = m_link.local_endpoint();
-                    return true;
-                }
+                return m_link.control(io::link_control_id_t::open);
             }
             break;
             case channel_control_id_t::close:

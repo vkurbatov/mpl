@@ -2,7 +2,6 @@
 #include "tools/base/string_base.h"
 #include "tools/base/convert_base.h"
 
-
 template<>
 struct std::hash<io::ip_endpoint_t>
 {
@@ -201,3 +200,5 @@ bool ip_endpoint_t::is_valid() const
 }
 
 }
+
+
