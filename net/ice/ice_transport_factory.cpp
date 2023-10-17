@@ -10,6 +10,7 @@
 #include "utils/message_event_impl.h"
 #include "utils/pointer_utils.h"
 #include "utils/common_utils.h"
+#include "utils/enum_utils.h"
 
 #include "net/stun/stun_packet_impl.h"
 #include "net/stun/stun_error_codes.h"
@@ -24,9 +25,11 @@
 
 #include "tools/base/sync_base.h"
 #include "tools/io/net/net_utils.h"
+
 #include <shared_mutex>
 #include <list>
 #include <unordered_map>
+#include <iostream>
 
 template<>
 struct std::hash<mpl::net::socket_address_t>
@@ -461,11 +464,9 @@ class ice_transport_impl : public i_ice_transport
 
         bool on_request(ice_transaction_t &transaction) override
         {
-            if (auto pair = get_pair(transaction.address))
-            {
-                return pair->on_ice_request(transaction);
-            }
-            else
+            auto pair = get_pair(transaction.address);
+
+            if (pair == nullptr)
             {
                 ice_candidate_t new_candidate(std::to_string(utils::random<std::uint32_t>())
                                               , m_owner.component_id()
@@ -474,13 +475,17 @@ class ice_transport_impl : public i_ice_transport
                                               , transaction.address
                                               , ice_candidate_type_t::prflx);
 
-                if (m_owner.add_remote_candidate(new_candidate))
+                if (m_owner.internal_add_remote_candidate(new_candidate))
                 {
-                    if (auto pair = get_pair(transaction.address))
-                    {
-                        return pair->on_ice_request(transaction);
-                    }
+                    pair = get_pair(transaction.address);
                 }
+            }
+
+            if (pair != nullptr)
+            {
+                return m_owner.on_pair_ice_transaction(*pair
+                                                       , transaction
+                                                       , true);
             }
 
             return false;
@@ -499,6 +504,8 @@ class ice_transport_impl : public i_ice_transport
                         {
                             change_gathering_state(ice_gathering_state_t::completed);
                         }
+
+                        return true;
                     }
                 }
                 break;
@@ -506,7 +513,9 @@ class ice_transport_impl : public i_ice_transport
                 {
                     if (auto pair = get_pair(transaction.address))
                     {
-                        return pair->on_ice_response(transaction);
+                        return m_owner.on_pair_ice_transaction(*pair
+                                                               , transaction
+                                                               , false);
                     }
                 }
             }
@@ -539,22 +548,28 @@ class ice_transport_impl : public i_ice_transport
         ~candidate_pair_t()
         {
             m_socket.remove_pair(this);
+            if (is_active())
+            {
+                m_owner.set_active_pair(nullptr);
+            }
+
+            if (is_checking())
+            {
+                m_owner.m_checking_pair = nullptr;
+            }
+
             set_state(ice_state_t::shutdown);
         }
 
-        inline void set_state(ice_state_t new_state
-                              , bool use_candidate = false)
+        inline void set_state(ice_state_t new_state)
         {
-            if (m_state != new_state
-                    || use_candidate)
+            if (m_state != new_state)
             {
                 m_state = new_state;
                 m_owner.on_pair_state(*this
-                                      , new_state
-                                      , use_candidate);
+                                      , new_state);
             }
         }
-
 
         inline bool send_packet(const i_message_packet& packet)
         {
@@ -562,15 +577,49 @@ class ice_transport_impl : public i_ice_transport
                                         , m_remote_candidate.connection_address);
         }
 
+        inline bool send_check()
+        {
+            return m_socket.send_transaction(m_owner.create_ice_request(*this));
+        }
+
         bool checking()
         {
-            set_state(ice_state_t::in_progress);
-            if (m_socket.send_transaction(m_owner.create_ice_request(*this)))
+            std::clog << "checking: " << m_remote_candidate.to_string() << std::endl;
+            bool one_flag = true;
+            while(true)
             {
-                return true;
+                switch(m_state)
+                {
+                    case ice_state_t::frozen:
+                        set_state(ice_state_t::waiting);
+                    break;
+                    case ice_state_t::waiting:
+                        set_state(ice_state_t::in_progress);
+                    break;
+                    case ice_state_t::in_progress:
+                    case ice_state_t::succeeded:
+                        if (send_check())
+                        {
+                            return true;
+                        }
+                        set_state(ice_state_t::failed);
+                    break;
+                    case ice_state_t::failed:
+                        if (one_flag)
+                        {
+                            one_flag = false;
+                            set_state(ice_state_t::frozen);
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    break;
+                    default:
+                        return false;
+                }
             }
 
-            set_state(ice_state_t::failed);
             return false;
         }
 
@@ -607,67 +656,14 @@ class ice_transport_impl : public i_ice_transport
                     + (g_priority > d_priority ? 1 : 0);
         }
 
-        bool on_ice_request(ice_transaction_t &transaction)
+        inline bool is_active() const
         {
-            if (m_socket.is_established())
-            {
-                if (transaction.request.username == m_owner.m_ice_params.local_username())
-                {
-                    if (!m_owner.process_role_conflict(transaction))
-                    {
-                        transaction.response.result = ice_transaction_t::ice_result_t::success;
-
-                        if (transaction.request.use_candidate)
-                        {
-                            set_state(ice_state_t::succeeded
-                                      , transaction.request.use_candidate);
-                        }
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
+            return m_owner.m_active_pair == this;
         }
 
-        bool on_ice_response(ice_transaction_t &transaction)
+        inline bool is_checking() const
         {
-            if (!transaction.response.is_success())
-            {
-                if (transaction.response.result == ice_transaction_t::ice_result_t::failed)
-                {
-                    switch(transaction.response.error_code)
-                    {
-                        case error_role_conflict:
-                        {
-                            m_owner.m_controlling ^= true;
-                            transaction.request.controlling = m_owner.m_controlling;
-                            transaction.request.use_candidate &= transaction.request.controlling;
-                            m_owner.update_transaction_params(transaction);
-                            return m_socket.send_transaction(std::move(transaction));
-                        }
-                        break;
-                        default:;
-                    }
-                }
-                set_state(ice_state_t::failed);
-            }
-            else
-            {
-                set_state(ice_state_t::succeeded
-                          , transaction.request.use_candidate);
-
-                if (transaction.request.controlling
-                        && !transaction.request.use_candidate)
-                {
-                    transaction.request.use_candidate = true;
-                    m_owner.update_transaction_params(transaction);
-                    m_socket.send_transaction(std::move(transaction));
-                }
-
-            }
-            return true;
+            return m_owner.m_checking_pair == this;
         }
 
         bool on_socket_packet(const i_socket_packet& packet)
@@ -695,6 +691,8 @@ class ice_transport_impl : public i_ice_transport
 
     candidate_pair_t::list_t    m_pairs;
     candidate_pair_t*           m_active_pair;
+    candidate_pair_t*           m_checking_pair;
+    bool                        m_need_change_role;
 
     std::uint64_t               m_tie_breaker;
     bool                        m_controlling;
@@ -737,6 +735,8 @@ public:
         , m_message_sink([&](auto&& args) { return on_message_sink(args); })
         , m_checking_timer(m_timer_manager.create_timer([&]{ on_checking_timeout(); }))
         , m_active_pair(nullptr)
+        , m_checking_pair(nullptr)
+        , m_need_change_role(false)
         , m_tie_breaker(utils::random<std::uint64_t>())
         , m_controlling(false)
         , m_open(false)
@@ -872,16 +872,19 @@ public:
                 m_active_pair->set_state(ice_state_t::waiting);
                 if (m_state == channel_state_t::connected)
                 {
-                    change_channel_state(channel_state_t::disconnected);
+                    change_channel_state(channel_state_t::disconnected
+                                         , m_active_pair->m_remote_candidate.to_string());
                 }
             }
 
             m_active_pair = active_pair;
-            if (m_active_pair != nullptr)
-            {
-                change_channel_state(channel_state_t::connected);
-                start_timer(m_ice_config.ice_check_interval);
-            }
+        }
+
+        if (m_active_pair != nullptr)
+        {
+            change_channel_state(channel_state_t::connected
+                                 , m_active_pair->m_remote_candidate.to_string());
+            start_timer(m_ice_config.ice_check_interval);
         }
     }
 
@@ -936,25 +939,6 @@ public:
         return false;
     }
 
-    inline bool process_role_conflict(ice_transaction_t& transaction)
-    {
-        if (has_role_conflict(transaction.request.controlling))
-        {
-            bool need_switch_role = m_ice_params.mode == ice_mode_t::lite
-                    || m_controlling == (m_tie_breaker >= transaction.request.tie_breaker);
-            if (need_switch_role)
-            {
-                transaction.response.error_code = error_role_conflict;
-                transaction.response.result = ice_transaction_t::ice_result_t::failed;
-                return true;
-            }
-
-            m_controlling ^= true;
-        }
-
-        return false;
-    }
-
     void change_gathering_state(ice_gathering_state_t new_state
                                 , const std::string_view& reason = {})
     {
@@ -982,21 +966,26 @@ public:
     }
 
 
-    bool start_checking()
+    bool do_checking()
     {
         if (m_connect)
         {
             if (m_active_pair != nullptr)
             {
-                start_timer(m_ice_config.ice_check_interval);
-                m_active_pair->checking();
+                return m_active_pair->checking();
             }
             else
             {
-                if (auto pair = next_pair(nullptr))
+                m_checking_pair = next_pair(m_checking_pair);
+                if (auto pair = m_checking_pair)
                 {
-                    return pair->checking();
+                    if (pair->checking())
+                    {
+                        return true;
+                    }
                 }
+
+                start_timer(m_ice_config.ice_check_interval);
             }
         }
 
@@ -1068,7 +1057,8 @@ public:
         {
             change_channel_state(channel_state_t::connecting);
             m_connect = true;
-            start_checking();
+            start_timer();
+            return true;
             // change_channel_state(channel_state_t::failed);
         }
 
@@ -1089,23 +1079,9 @@ public:
     }
 
     void on_checking_timeout()
-    {
-        if (m_connect)
-        {
-            if (m_active_pair == nullptr
-                    || m_active_pair->m_state != ice_state_t::succeeded)
-            {
-                set_active_pair(next_pair(m_active_pair));
-            }
-
-            if (auto pair = m_active_pair)
-            {
-                pair->checking();
-                return;
-            }
-
-            start_timer(m_ice_config.ice_check_interval);
-        }
+    {   
+        lock_t lock(m_safe_mutex);
+        do_checking();
     }
 
     bool on_message_packet(const i_message_packet& packet)
@@ -1120,6 +1096,7 @@ public:
 
     bool on_message_sink(const i_message& message)
     {
+        shared_lock_t lock(m_safe_mutex);
         switch(message.category())
         {
             case message_category_t::packet:
@@ -1186,7 +1163,8 @@ public:
     }
 
     bool internal_add_remote_candidate(const ice_candidate_t& candidate)
-    {
+    {     
+        lock_t lock(m_safe_mutex);
         if (ice_candidate_t::find(m_ice_params.remote_endpoint.candidates
                                    , candidate.connection_address
                                    , candidate.transport) == nullptr)
@@ -1236,6 +1214,7 @@ public:
     inline bool on_socket_candidate(ice_socket_t& socket
                                     , const ice_candidate_t& candidate)
     {
+        lock_t lock(m_safe_mutex);
         if (ice_candidate_t::find(m_ice_params.local_endpoint.candidates
                                   , candidate.connection_address
                                   , candidate.transport) == nullptr)
@@ -1260,7 +1239,128 @@ public:
         }
     }
 
-    inline void start_timer(timestamp_t timeout)
+    bool on_pair_ice_transaction(candidate_pair_t& pair
+                                 , ice_transaction_t& transaction
+                                 , bool request)
+    {
+        if (m_connect)
+        {
+            lock_t lock(m_safe_mutex);
+
+            auto& socket = pair.m_socket;
+
+            if (request)
+            {
+                bool change_role = false;
+                if (has_role_conflict(transaction.request.controlling))
+                {
+                    bool need_switch_role = m_ice_params.mode == ice_mode_t::lite
+                            || m_controlling == (m_tie_breaker >= transaction.request.tie_breaker);
+                    if (need_switch_role)
+                    {
+                        transaction.response.error_code = error_role_conflict;
+                        transaction.response.result = ice_transaction_t::ice_result_t::failed;
+                        return true;
+                    }
+
+                    change_role = true;
+                    m_controlling ^= true;
+                }
+
+                transaction.response.result = ice_transaction_t::ice_result_t::success;
+
+                if (transaction.request.use_candidate)
+                {
+                    set_active_pair(&pair);
+                }
+                else
+                {
+                    if (change_role)
+                    {
+                        m_checking_pair = nullptr;
+                        start_timer();
+                    }
+                }
+            }
+            else
+            {
+                bool is_active = pair.is_active();
+                bool is_checking = pair.is_checking();
+
+                if (is_active
+                        || is_checking)
+                {
+                    if (transaction.response.is_success())
+                    {
+                        pair.set_state(ice_state_t::succeeded);
+
+                        if (transaction.request.use_candidate)
+                        {
+                            set_active_pair(&pair);
+                        }
+                        else
+                        {
+                            if (transaction.request.controlling)
+                            {
+                                transaction.request.use_candidate = true;
+                                transaction.retries = m_ice_config.retry_count;
+                                socket.send_transaction(std::move(transaction));
+                            }
+                            else
+                            {
+                                if (is_active)
+                                {
+                                    m_checking_timer->start(m_ice_config.ice_check_interval);
+                                }
+                                else
+                                {
+                                    start_timer();
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (is_active)
+                        {
+                            set_active_pair(nullptr);
+                        }
+
+                        if (transaction.response.result == ice_transaction_t::ice_result_t::failed)
+                        {
+                            switch(transaction.response.error_code)
+                            {
+                                case error_role_conflict:
+                                {
+                                    m_controlling ^= true;
+                                    transaction.request.controlling = m_controlling;
+                                    transaction.request.use_candidate = m_controlling;
+                                    transaction.retries = m_ice_config.retry_count;
+                                    return socket.send_transaction(std::move(transaction));
+                                }
+                                break;
+                                default:;
+                            }
+                        }
+
+                        pair.set_state(ice_state_t::failed);
+
+                        start_timer();
+                    }
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    inline void start_timer(timestamp_t timeout = 0)
     {
         if (m_ice_params.is_full())
         {
@@ -1268,53 +1368,10 @@ public:
         }
     }
 
-    bool on_pair_state(candidate_pair_t& pair
-                       , ice_state_t state
-                       , bool use_candidate)
+    void on_pair_state(candidate_pair_t& pair
+                       , ice_state_t state)
     {
-        if (use_candidate)
-        {
-            set_active_pair(&pair);
-        }
-        else
-        {
-            if (m_active_pair == &pair)
-            {
-                switch(state)
-                {
-                    case ice_state_t::failed:
-                    case ice_state_t::frozen:
-                        set_active_pair(nullptr);
-                        start_checking();
-                    break;
-                    default:;
-                }
-            }
-            else
-            {
-                if (m_active_pair == nullptr)
-                {
-                    switch(state)
-                    {
-                        case ice_state_t::failed:
-                        case ice_state_t::succeeded:
-                        {
-                            if (auto next = next_pair(&pair))
-                            {
-                                next->checking();
-                            }
-                            else
-                            {
-                                start_checking();
-                            }
-                        }
-                        break;
-                        default:;
-                    }
-                }
-            }
-        }
-        return true;
+
     }
 
     bool on_pair_packet(candidate_pair_t& pair
@@ -1366,14 +1423,16 @@ public:
 public:
     bool set_params(const i_property &params) override
     {
+        lock_t lock(m_safe_mutex);
         auto ice_params = m_ice_params;
         if (utils::property::deserialize(ice_params
                                           , params))
         {
             ice_params.local_endpoint.candidates = m_ice_params.local_endpoint.candidates;
             m_ice_params = ice_params;
-            return true;
 
+            update_pairs(m_ice_params.remote_endpoint.candidates);
+            return true;
         }
 
         return false;

@@ -16,6 +16,8 @@
 
 #include <thread>
 
+#include <iostream>
+
 namespace io
 {
 
@@ -242,9 +244,16 @@ struct udp_link::pimpl_t
         {
             auto buffer = boost::asio::buffer(message.data()
                                                , message.size());
+
+            std::clog << "udp send: from: " << m_local_endpoint.to_string()
+                      << ", to: " << endpoint.to_string()
+                      << ", size: " << message.size()
+                      << ", data = " << message.data()
+                      << std::endl;
             m_socket.async_send_to(buffer
                                    , utils::convert<udp_endpoint_t>(endpoint)
                                    , [&](auto&&... args) { on_send(args...); });
+            std::clog << "udp send: " << m_local_endpoint.to_string() << " after" << std::endl;
             return true;
         }
 
@@ -268,6 +277,9 @@ struct udp_link::pimpl_t
         {
             change_state(link_state_t::failed
                          , error_code.message());
+
+            std::clog << "udp send: failed:" << error_code.message() << std::endl;
+
             m_started = false;
         }
         // nothing
@@ -310,6 +322,12 @@ struct udp_link::pimpl_t
 
             m_link.on_recv_message(message
                                    , utils::convert<ip_endpoint_t>(m_recv_endpoint));
+
+            std::clog << "udp recv: from: " << utils::convert<ip_endpoint_t>(m_recv_endpoint).to_string()
+                      << ", to: " << m_local_endpoint.to_string()
+                      << ", size: " << bytes_transfered
+                      << ", data = " << message.data()
+                      << std::endl;
 
             do_receive();
             return;

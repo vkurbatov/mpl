@@ -345,7 +345,7 @@ void test4()
     ice_transport_params_t ice_params_1;
     ice_params_1.mode = ice_mode_t::agressive;
     ice_transport_params_t ice_params_2;
-    ice_params_1.mode = ice_mode_t::regular;
+    ice_params_2.mode = ice_mode_t::regular;
     ice_params_1.local_endpoint.auth = ice_auth_params_t::generate();
     ice_params_2.local_endpoint.auth = ice_auth_params_t::generate();
     ice_params_1.remote_endpoint.auth = ice_params_2.local_endpoint.auth;
@@ -420,7 +420,7 @@ void test4()
     message_sink_impl sink_2([&](auto&& ...args) { return message_handler("ice2", args...); } );
 
     ice_connection_1->source(0)->add_sink(&sink_1);
-    ice_connection_1->source(0)->add_sink(&sink_2);
+    ice_connection_2->source(0)->add_sink(&sink_2);
 
     ice_connection_1->control(channel_control_t::open());
     ice_connection_2->control(channel_control_t::open());
@@ -440,155 +440,12 @@ void test4()
     ice_connection_1->control(channel_control_t::connect());
     ice_connection_2->control(channel_control_t::connect());
 
-    utils::time::sleep(durations::seconds(10));
+    utils::time::sleep(durations::seconds(100));
 
     engine.stop();
 
     return;
 
-
-/*
-
-    for (auto& s : sockets_2)
-    {
-        ice_params_2.component_id = s.first;
-        if (auto ice_property_2 = wbs::utils::property::serialize(ice_params_2))
-        {
-            if (auto ice_connection = std::static_pointer_cast<i_ice_connection>(ice.query_connection(*ice_property_2)))
-            {
-                ice_connection->set_sockets(s.second);
-                connections_2.emplace_back(std::move(ice_connection));
-            }
-        }
-    }
-
-    if (!connections_1.empty()
-            && !connections_2.empty())
-    {
-        auto ice_connection_1 = connections_1.front();
-        auto ice_connection_2 = connections_2.front();
-
-        auto message_handler = [&](const std::string& name, const i_rtc_message& message)
-        {
-            switch(message.category())
-            {
-                case rtc_message_category_t::packet:
-                {
-                    const auto& packet = message.cast<i_rtc_message_packet>();
-                    std::cout << name << ": packet bytes: " << packet.size() << std::endl;
-                }
-                break;
-                case rtc_message_category_t::event:
-                {
-                    const auto& event = message.cast<i_rtc_message_event>();
-                    switch(event.event().event_id)
-                    {
-                        case rtc_event_id_t::channel_state:
-                            std::cout << name << ": channel state: " << enum_to_string(event.event().cast<rtc_event_channel_state_t>().state) << std::endl;
-                        break;
-                        case rtc_event_id_t::gathering_state:
-                            std::cout << name << ": gathering state: " << enum_to_string(event.event().cast<rtc_event_gathering_state_t>().state) << std::endl;
-                        break;
-                    }
-                }
-            }
-
-            return true;
-        };
-
-        auto message_handler_1 = [&](const i_rtc_message& message)
-        {
-            return message_handler("connection #1", message);
-        };
-
-        auto message_handler_2 = [&](const i_rtc_message& message)
-        {
-            return message_handler("connection #2", message);
-        };
-
-        custom_message_sender ice_sender_1(std::move(message_handler_1));
-        custom_message_sender ice_sender_2(std::move(message_handler_2));
-
-        ice_connection_1->add_sender(&ice_sender_1);
-        ice_connection_2->add_sender(&ice_sender_2);
-
-        ice_connection_1->control(channel_control_t::open());
-        ice_connection_2->control(channel_control_t::open());
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
-        for (const auto& c : ice_connection_1->local_candidates())
-        {
-            ice_connection_2->add_remote_candidate(c);
-        }
-
-        for (const auto& c : ice_connection_2->local_candidates())
-        {
-            ice_connection_1->add_remote_candidate(c);
-        }
-
-        auto ice_property_1 = wbs::utils::property::create_property(property_type_t::object);
-        auto ice_property_2 = wbs::utils::property::create_property(property_type_t::object);
-
-        ice_connection_1->get_params(*ice_property_1);
-        ice_connection_2->get_params(*ice_property_2);
-
-        property_merger(*ice_property_1
-                        , *ice_property_2).merge("remote.auth"
-                                                 , "local.auth");
-
-        property_merger(*ice_property_2
-                        , *ice_property_1).merge("remote.auth"
-                                                 , "local.auth");
-
-        ice_connection_1->set_params(*ice_property_1);
-        ice_connection_2->set_params(*ice_property_2);
-
-        ice_connection_1->control(channel_control_t::connect());
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        ice_connection_2->control(channel_control_t::connect());
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-        ice_connection_2->control(channel_control_t::shutdown());
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
-        ice_connection_2->control(channel_control_t::connect());
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
-        auto count = 1000;
-
-        while(count-- > 0)
-        {
-            auto& connection = count % 2 == 0
-                    ? *ice_connection_1
-                    : *ice_connection_2;
-
-            if (connection.state() == channel_state_t::connected)
-            {
-                std::string test_data = "Test data #";
-                test_data.append(std::to_string(1000 - count));
-                smart_buffer buffer(test_data.data()
-                                    , test_data.size());
-                const_raw_packet packet(buffer);
-                connection.send_message(packet);
-
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(60000));
-
-        ice_connection_2->control(channel_control_t::close());
-        ice_connection_1->control(channel_control_t::close());
-    }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));*/
 
 }
 

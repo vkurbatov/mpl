@@ -107,8 +107,15 @@ bool ice_socket_basic::start_gathering(const ice_server_params_t::array_t &stun_
                 ice_transaction_t transaction;
                 transaction.tag = ice_gathering_id;
                 transaction.address = a;
+                transaction.retries = 3;
+                transaction.timeout = timeout;
                 result = send_transaction(std::move(transaction)
                                             , false);
+            }
+
+            if (result)
+            {
+                return true;
             }
         }
 

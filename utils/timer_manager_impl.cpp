@@ -10,6 +10,8 @@
 #include <atomic>
 #include <condition_variable>
 
+#include <iostream>
+
 namespace mpl
 {
 
@@ -44,13 +46,10 @@ class timer_manager_impl final : public i_timer_manager
                               , timer_id_t id
                               , const timer_handler_t& handler)
         {
-            if (handler != nullptr)
-            {
-                return std::make_unique<timer_impl>(manager
+
+            return std::make_unique<timer_impl>(manager
                                                     , id
                                                     , handler);
-            }
-            return nullptr;
         }
 
         timer_impl(timer_manager_impl& manager
@@ -68,6 +67,7 @@ class timer_manager_impl final : public i_timer_manager
         ~timer_impl()
         {
             m_manager.remove_timer(this);
+            // std::clog << "timer #" << m_id << ": before destuctor wait loop" << std::endl;
             while(m_queued.load(std::memory_order_relaxed))
             {
                 std::this_thread::yield();
@@ -77,13 +77,27 @@ class timer_manager_impl final : public i_timer_manager
         void execute()
         {
             m_target_time = timestamp_null;
-            m_handler();
+            // std::clog << "timer #" << m_id << ": before handler" << std::endl;
+            if (m_handler)
+            {
+                m_handler();
+            }
+            // std::clog << "timer #" << m_id << ": after handler" << std::endl;
             m_queued.store(false, std::memory_order_release);
-
         }
-
         // i_timer interface
     public:
+        bool set_handler(const timer_handler_t &handler) override
+        {
+            if (m_target_time == timestamp_null)
+            {
+                m_handler = handler;
+                return true;
+            }
+
+            return false;
+        }
+
         timer_id_t id() const override
         {
             return m_id;
@@ -91,8 +105,9 @@ class timer_manager_impl final : public i_timer_manager
 
         bool start(timestamp_t timeout) override
         {
-            return m_manager.start_timer(this
-                                         , now() + timeout);
+            return m_handler != nullptr
+                    && m_manager.start_timer(this
+                                             , now() + timeout);
         }
 
         bool stop() override
@@ -115,6 +130,7 @@ class timer_manager_impl final : public i_timer_manager
         {
             return m_target_time;
         }
+
     };
 
     mutable mutex_t                 m_safe_mutex;
@@ -203,7 +219,8 @@ public:
     inline void execute(timer_impl* timer)
     {
         timer->m_queued.store(true, std::memory_order_release);
-        m_task_manager.add_task(timer->m_handler);
+        // std::clog << "timer #" << timer->id() << ": queued task" << std::endl;
+        m_task_manager.add_task([timer] { timer->execute(); });
     }
 
     void timer_proc()

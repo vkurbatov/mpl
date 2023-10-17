@@ -20,6 +20,7 @@ set(SOURCES
     data_splitter.cpp
     task_manager_impl.cpp
     timer_manager_impl.cpp
+    timer_queue.cpp
     convert_value_impl.cpp
     convert_property_impl.cpp
     cyclic_data_reader.cpp
@@ -73,6 +74,7 @@ set(PUBLIC_HEADERS
     data_splitter.h
     task_manager_impl.h
     timer_manager_impl.h
+    timer_queue.h
     cyclic_data_reader.h
     cyclic_data_writer.h
     fifo_writer_impl.h

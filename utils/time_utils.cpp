@@ -82,15 +82,6 @@ timestamp_t get_ticks(timestamp_t duration)
     return duration > 1
             ? std::chrono::steady_clock::now().time_since_epoch().count() / duration
             : std::chrono::steady_clock::now().time_since_epoch().count();
-    /*
-    struct timespec ts = {};
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    auto ticks = static_cast<timestamp_t>(ts.tv_sec) * durations::second
-            + static_cast<timestamp_t>(ts.tv_nsec);
-
-    return duration > 1
-            ? ticks / duration
-            : ticks;*/
 }
 
 uint32_t get_abs_time_24(timestamp_t timestamp)
