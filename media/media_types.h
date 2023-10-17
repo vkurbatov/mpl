@@ -40,7 +40,7 @@ constexpr std::int64_t extension_data_index = 1;
 
 
 
-constexpr message_subclass_t message_media_class = message_core_class + 1;
+constexpr message_subclass_t message_class_media = message_class_core + 1;
 
 }
 

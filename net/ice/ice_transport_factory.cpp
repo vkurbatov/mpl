@@ -225,7 +225,11 @@ class ice_transport_impl : public i_ice_transport
 
                 if (candidate.is_valid())
                 {
-                    m_local_candidates.emplace_back(candidate);
+                    if (m_owner.on_socket_candidate(*this
+                                                    , candidate))
+                    {
+                        m_local_candidates.emplace_back(candidate);
+                    };
                 }
 
                 return true;
@@ -373,7 +377,7 @@ class ice_transport_impl : public i_ice_transport
 
         inline bool on_socket_event(const i_message_event& event)
         {
-            if (event.subclass() == message_core_class
+            if (event.subclass() == message_class_core
                     && event.event().event_id == event_channel_state_t::id)
             {
                 return on_socket_state(static_cast<const event_channel_state_t&>(event.event()).state
@@ -385,7 +389,7 @@ class ice_transport_impl : public i_ice_transport
 
         inline bool on_socket_packet(const i_message_packet& packet)
         {
-            if (packet.subclass() == message_net_class)
+            if (packet.subclass() == message_class_net)
             {
                 auto& socket_packet = static_cast<const i_socket_packet&>(packet);
                 switch(utils::parse_protocol(packet.data()
@@ -541,7 +545,8 @@ class ice_transport_impl : public i_ice_transport
         inline void set_state(ice_state_t new_state
                               , bool use_candidate = false)
         {
-            if (m_state != new_state)
+            if (m_state != new_state
+                    || use_candidate)
             {
                 m_state = new_state;
                 m_owner.on_pair_state(*this
@@ -579,6 +584,11 @@ class ice_transport_impl : public i_ice_transport
             return priority() < other.priority();
         }
 
+        inline bool operator > (const candidate_pair_t& other) const
+        {
+            return priority() > other.priority();
+        }
+
         std::uint64_t priority() const
         {
             std::uint64_t g_priority = m_socket.priority();
@@ -607,7 +617,11 @@ class ice_transport_impl : public i_ice_transport
                     {
                         transaction.response.result = ice_transaction_t::ice_result_t::success;
 
-                        set_state(ice_state_t::succeeded);
+                        if (transaction.request.use_candidate)
+                        {
+                            set_state(ice_state_t::succeeded
+                                      , transaction.request.use_candidate);
+                        }
                     }
 
                     return true;
@@ -641,7 +655,8 @@ class ice_transport_impl : public i_ice_transport
             }
             else
             {
-                set_state(ice_state_t::succeeded);
+                set_state(ice_state_t::succeeded
+                          , transaction.request.use_candidate);
 
                 if (transaction.request.controlling
                         && !transaction.request.use_candidate)
@@ -772,22 +787,29 @@ public:
              ; it != m_pairs.end()
              ; )
         {
-
+            bool remove = true;
             for (const auto& c : remote_candidates)
             {
                 if (it->m_remote_candidate.is_equal_endpoint(c))
                 {
                     it->m_remote_candidate = c;
-                    it = std::next(it);
+                    remove = false;
                     break;
                 }
             }
-            if (m_active_pair == &(*it))
-            {
-                set_active_pair(nullptr);
-            }
-            it = m_pairs.erase(it);
 
+            if (remove)
+            {
+                if (m_active_pair == &(*it))
+                {
+                    set_active_pair(nullptr);
+                }
+                it = m_pairs.erase(it);
+            }
+            else
+            {
+                it = std::next(it);
+            }
         }
 
         // 2. add new pairs
@@ -809,7 +831,7 @@ public:
             }
         }
 
-        m_pairs.sort();
+        m_pairs.sort(std::greater<candidate_pair_t>());
 
     }
 
@@ -936,11 +958,11 @@ public:
     void change_gathering_state(ice_gathering_state_t new_state
                                 , const std::string_view& reason = {})
     {
-        if (m_gathering_state == new_state)
+        if (m_gathering_state != new_state)
         {
             m_gathering_state = new_state;
             m_router.send_message(message_event_impl<ice_gathering_state_event_t
-                                  , message_net_class>(ice_gathering_state_event_t(new_state
+                                  , message_class_net>(ice_gathering_state_event_t(new_state
                                                                                  , reason))
                                   );
         }
@@ -949,7 +971,7 @@ public:
     void change_channel_state(channel_state_t new_state
                               , const std::string_view& reason = {})
     {
-        if (m_state == new_state)
+        if (m_state != new_state)
         {
             m_state = new_state;
             m_router.send_message(message_event_impl(event_channel_state_t(new_state
@@ -1007,6 +1029,7 @@ public:
     {
         if (!m_open)
         {
+            m_ice_params.local_endpoint.candidates.clear();
             change_channel_state(channel_state_t::opening);
             m_open = true;
 
@@ -1046,7 +1069,7 @@ public:
             change_channel_state(channel_state_t::connecting);
             m_connect = true;
             start_checking();
-            change_channel_state(channel_state_t::failed);
+            // change_channel_state(channel_state_t::failed);
         }
 
         return false;
@@ -1140,8 +1163,7 @@ public:
         return request;
     }
 
-    ice_transaction_t create_ice_request(candidate_pair_t& pair
-                                        , bool use_candidate = false)
+    ice_transaction_t create_ice_request(candidate_pair_t& pair)
     {
         ice_transaction_t request;
 
@@ -1155,7 +1177,7 @@ public:
         request.request.tie_breaker = m_tie_breaker;
         request.request.priority = pair.m_socket.priority();
         request.request.controlling = m_controlling;
-        use_candidate = request.request.controlling && (use_candidate || m_ice_params.mode == ice_mode_t::agressive);
+        auto use_candidate = request.request.controlling && (pair.m_state == ice_state_t::succeeded || m_ice_params.mode == ice_mode_t::agressive);
         request.request.use_candidate = use_candidate;
 
         update_transaction_params(request);
@@ -1210,6 +1232,20 @@ public:
         }
     }
 
+
+    inline bool on_socket_candidate(ice_socket_t& socket
+                                    , const ice_candidate_t& candidate)
+    {
+        if (ice_candidate_t::find(m_ice_params.local_endpoint.candidates
+                                  , candidate.connection_address
+                                  , candidate.transport) == nullptr)
+        {
+           m_ice_params.local_endpoint.candidates.push_back(candidate);
+           return true;
+        }
+
+        return false;
+    }
 
     inline void on_socket_established(ice_socket_t& socket
                                       , bool established)

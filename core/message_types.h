@@ -18,7 +18,7 @@ enum class message_category_t
 
 using message_subclass_t = std::uint32_t;
 
-constexpr message_subclass_t message_core_class = 0;
+constexpr message_subclass_t message_class_core = 0;
 
 }
 

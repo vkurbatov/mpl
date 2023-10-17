@@ -6,6 +6,6 @@
 namespace mpl
 {
 
-template class message_event_impl<net::ice_gathering_state_event_t, net::message_net_class>;
+template class message_event_impl<net::ice_gathering_state_event_t, net::message_class_net>;
 
 }

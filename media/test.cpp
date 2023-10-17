@@ -1308,7 +1308,7 @@ void test16()
     command_camera_control_t camera_control;
     camera_control.control_id = 123;
 
-    input_video_device->sink(0)->send_message(message_command_impl<command_camera_control_t, message_media_class>(camera_control));
+    input_video_device->sink(0)->send_message(message_command_impl<command_camera_control_t, message_class_media>(camera_control));
 
     camera_control.commands = property_helper::create_array();
 
@@ -1321,7 +1321,7 @@ void test16()
         auto& a = static_cast<i_property_array&>(*camera_control.commands);
         a.get_value().clear();
         a.get_value().emplace_back(std::move(resolution_property));
-        input_video_device->sink(0)->send_message(message_command_impl<command_camera_control_t, message_media_class>(camera_control));
+        input_video_device->sink(0)->send_message(message_command_impl<command_camera_control_t, message_class_media>(camera_control));
     }
 
 
@@ -2569,7 +2569,7 @@ void test25()
 
         utils::time::sleep(durations::seconds(1));
 
-        visca_device->sink(0)->send_message(message_command_impl<command_camera_control_t, message_media_class>(camera_control));
+        visca_device->sink(0)->send_message(message_command_impl<command_camera_control_t, message_class_media>(camera_control));
 
         utils::time::sleep(durations::seconds(1));
 
@@ -2583,7 +2583,7 @@ void test25()
             camera_control.commands = property_helper::create_array();
             auto& a = static_cast<i_property_array&>(*camera_control.commands);
             a.get_value().emplace_back(std::move(tilt_property));
-            visca_device->sink(0)->send_message(message_command_impl<command_camera_control_t, message_media_class>(camera_control));
+            visca_device->sink(0)->send_message(message_command_impl<command_camera_control_t, message_class_media>(camera_control));
         }
 
         utils::time::sleep(durations::seconds(150));

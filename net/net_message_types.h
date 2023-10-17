@@ -6,7 +6,7 @@
 namespace mpl::net
 {
 
-constexpr message_subclass_t message_net_class = message_core_class + 2;
+constexpr message_subclass_t message_class_net = message_class_core + 2;
 
 
 }

@@ -52,7 +52,7 @@ message_category_t stun_packet_impl::category() const
 
 message_subclass_t stun_packet_impl::subclass() const
 {
-    return message_net_class;
+    return message_class_net;
 }
 
 bool stun_packet_impl::is_valid() const

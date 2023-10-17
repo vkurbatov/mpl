@@ -199,7 +199,7 @@ bool ice_socket_basic::on_socket_mesage(const i_message &message)
         case message_category_t::event:
         {
             auto& event = static_cast<const i_message_event&>(message).event();
-            if (message.subclass() == message_core_class
+            if (message.subclass() == message_class_core
                     && event.event_id == event_channel_state_t::id)
             {
                 on_socket_state(static_cast<const event_channel_state_t&>(event).state
@@ -210,7 +210,7 @@ bool ice_socket_basic::on_socket_mesage(const i_message &message)
         break;
         case message_category_t::packet:
         {
-            if (message.subclass() == message_net_class)
+            if (message.subclass() == message_class_net)
             {
                 auto& net_packet = static_cast<const i_net_packet&>(message);
                 switch(net_packet.transport_id())

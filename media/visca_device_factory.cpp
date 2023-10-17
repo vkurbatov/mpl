@@ -582,7 +582,7 @@ public:
                         {
                             camera_control.state = command_camera_control_t::state_t::failed;
                         }
-                        m_router.send_message(message_command_impl<command_camera_control_t, message_media_class>(camera_control));
+                        m_router.send_message(message_command_impl<command_camera_control_t, message_class_media>(camera_control));
                         continue;
                     }
                     m_command_signal.wait_for(signal_lock, std::chrono::seconds(1));

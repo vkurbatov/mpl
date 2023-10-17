@@ -56,7 +56,7 @@ message_category_t video_frame_base_impl::category() const
 
 message_subclass_t video_frame_base_impl::subclass() const
 {
-    return message_media_class;
+    return message_class_media;
 }
 
 const i_option *video_frame_base_impl::options() const

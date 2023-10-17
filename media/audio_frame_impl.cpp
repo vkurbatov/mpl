@@ -49,7 +49,7 @@ message_category_t audio_frame_base_impl::category() const
 
 message_subclass_t audio_frame_base_impl::subclass() const
 {
-    return message_media_class;
+    return message_class_media;
 }
 
 const i_option *audio_frame_base_impl::options() const

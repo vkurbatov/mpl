@@ -20,6 +20,7 @@
 #include "socket/socket_packet_impl.h"
 
 
+#include "ice/i_ice_transport.h"
 #include "ice/ice_transport_factory.h"
 #include "ice/ice_config.h"
 #include "ice/ice_server_params.h"
@@ -88,7 +89,7 @@ void test1()
                                 break;
                                 case message_category_t::packet:
                                 {
-                                    if (message.subclass() == message_net_class)
+                                    if (message.subclass() == message_class_net)
                                     {
                                         auto& net_packet = static_cast<const i_net_packet&>(message);
                                         if (net_packet.transport_id() == transport_id_t::udp)
@@ -126,7 +127,7 @@ void test1()
                                 break;
                                 case message_category_t::packet:
                                 {
-                                    if (message.subclass() == message_net_class)
+                                    if (message.subclass() == message_class_net)
                                     {
                                         auto& net_packet = static_cast<const i_net_packet&>(message);
                                         if (net_packet.transport_id() == transport_id_t::udp)
@@ -342,7 +343,9 @@ void test4()
 
 
     ice_transport_params_t ice_params_1;
+    ice_params_1.mode = ice_mode_t::agressive;
     ice_transport_params_t ice_params_2;
+    ice_params_1.mode = ice_mode_t::regular;
     ice_params_1.local_endpoint.auth = ice_auth_params_t::generate();
     ice_params_2.local_endpoint.auth = ice_auth_params_t::generate();
     ice_params_1.remote_endpoint.auth = ice_params_2.local_endpoint.auth;
@@ -354,15 +357,88 @@ void test4()
                                                         , socket_address_t("0.0.0.0:0")));
 
 
+
     auto ice_property_1 = utils::property::serialize(ice_params_1);
     auto ice_property_2 = utils::property::serialize(ice_params_2);
 
-    auto ice_connection_1 = ice_factory.create_transport(*ice_property_1);
-    auto ice_connection_2 = ice_factory.create_transport(*ice_property_2);
+    i_ice_transport::u_ptr_t ice_connection_1 = utils::static_pointer_cast<i_ice_transport>(ice_factory.create_transport(*ice_property_1));
+    i_ice_transport::u_ptr_t ice_connection_2 = utils::static_pointer_cast<i_ice_transport>(ice_factory.create_transport(*ice_property_2));
+
+    auto message_handler = [&](const std::string_view& name, const i_message& message)
+    {
+        switch(message.category())
+        {
+            case message_category_t::event:
+            {
+                auto& message_event = static_cast<const i_message_event&>(message).event();
+                switch(message_event.event_id)
+                {
+                    case event_channel_state_t::id:
+                    {
+                        auto &event_channel_state = static_cast<const event_channel_state_t&>(message_event);
+                        std::cout << name
+                                  << ": channel state: " <<  utils::enum_to_string(event_channel_state.state)
+                                  << ", reason: " << event_channel_state.reason
+                                  << std::endl;
+                    }
+                    break;
+                    case ice_gathering_state_event_t::id:
+                    {
+                        auto &event_gathering_state = static_cast<const ice_gathering_state_event_t&>(message_event);
+                        std::cout << name
+                                  << ": gathering state: " <<  utils::enum_to_string(event_gathering_state.state)
+                                  << ", reason: " << event_gathering_state.reason
+                                  << std::endl;
+                    }
+                    break;
+                    default:;
+                }
+            }
+            break;
+            case message_category_t::packet:
+            {
+                if (message.subclass() == message_class_net)
+                {
+                    auto& net_packet = static_cast<const i_net_packet&>(message);
+                    std::string_view text_message(static_cast<const char*>(net_packet.data())
+                                                                            , net_packet.size());
+                    std::cout << name
+                              << ": packet: transport: " << utils::enum_to_string(net_packet.transport_id())
+                              << ", size: " << net_packet.size()
+                              << ", message: " << text_message
+                              << std::endl;
+                }
+            }
+            break;
+            default:;
+        }
+
+        return true;
+    };
+
+    message_sink_impl sink_1([&](auto&& ...args) { return message_handler("ice1", args...); } );
+    message_sink_impl sink_2([&](auto&& ...args) { return message_handler("ice2", args...); } );
+
+    ice_connection_1->source(0)->add_sink(&sink_1);
+    ice_connection_1->source(0)->add_sink(&sink_2);
 
     ice_connection_1->control(channel_control_t::open());
+    ice_connection_2->control(channel_control_t::open());
 
     utils::time::sleep(durations::seconds(1));
+
+    for (const auto& c : ice_connection_1->local_endpoint().candidates)
+    {
+        ice_connection_2->add_remote_candidate(c);
+    }
+
+    for (const auto& c : ice_connection_2->local_endpoint().candidates)
+    {
+        ice_connection_1->add_remote_candidate(c);
+    }
+
+    ice_connection_1->control(channel_control_t::connect());
+    ice_connection_2->control(channel_control_t::connect());
 
     utils::time::sleep(durations::seconds(10));
 

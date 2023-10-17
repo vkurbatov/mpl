@@ -6,7 +6,7 @@
 namespace mpl
 {
 
-template class message_command_impl<media::command_camera_control_t, media::message_media_class>;
+template class message_command_impl<media::command_camera_control_t, media::message_class_media>;
 
 
 }

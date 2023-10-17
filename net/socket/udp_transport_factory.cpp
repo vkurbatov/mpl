@@ -96,7 +96,7 @@ public:
     {
         if (m_link.is_open())
         {
-            if (packet.subclass() == message_net_class)
+            if (packet.subclass() == message_class_net)
             {
                 auto& net_packet = static_cast<const i_net_packet&>(packet);
                 if (net_packet.transport_id() == transport_id_t::udp)

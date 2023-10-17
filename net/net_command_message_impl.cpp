@@ -7,6 +7,6 @@
 namespace mpl
 {
 
-template class message_command_impl<net::ice_gathering_command_t, net::message_net_class>;
+template class message_command_impl<net::ice_gathering_command_t, net::message_class_net>;
 
 }

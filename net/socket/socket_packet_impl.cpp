@@ -58,7 +58,7 @@ message_category_t socket_packet_impl::category() const
 
 message_subclass_t socket_packet_impl::subclass() const
 {
-    return message_net_class;
+    return message_class_net;
 }
 
 i_message::u_ptr_t socket_packet_impl::clone() const
