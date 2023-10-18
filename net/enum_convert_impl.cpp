@@ -10,11 +10,11 @@ using namespace net;
 
 __declare_enum_converter_begin(transport_id_t)
     __declare_enum_pair(transport_id_t, undefined),
-    __declare_enum_pair_name(transport_id_t, udp, "UDP"),
-    __declare_enum_pair_name(transport_id_t, tcp, "TCP"),
-    __declare_enum_pair_name(transport_id_t, ice, "ICE"),
-    __declare_enum_pair_name(transport_id_t, dtls, "DTLS"),
-    __declare_enum_pair_name(transport_id_t, ws, "WS"),
+    __declare_enum_pair_upper(transport_id_t, udp),
+    __declare_enum_pair_upper(transport_id_t, tcp),
+    __declare_enum_pair_upper(transport_id_t, ice),
+    __declare_enum_pair_upper(transport_id_t, dtls),
+    __declare_enum_pair_upper(transport_id_t, ws),
     __declare_enum_pair(transport_id_t, application)
 __declare_enum_converter_end(transport_id_t)
 
@@ -34,8 +34,8 @@ __declare_enum_converter_end(role_t)
 
 __declare_enum_converter_begin(ip_version_t)
     __declare_enum_pair(ip_version_t, undefined),
-    __declare_enum_pair_name(ip_version_t, ip4, "IP4"),
-    __declare_enum_pair_name(ip_version_t, ip6, "IP6")
+    __declare_enum_pair_upper(ip_version_t, ip4),
+    __declare_enum_pair_upper(ip_version_t, ip6)
 __declare_enum_converter_end(ip_version_t)
 
 __declare_enum_converter_begin(ice_option_t)
@@ -63,7 +63,7 @@ __declare_enum_converter_end(ice_gathering_state_t)
 __declare_enum_converter_begin(ice_mode_t)
     __declare_enum_pair(ice_mode_t, undefined),
     __declare_enum_pair(ice_mode_t, regular),
-    __declare_enum_pair(ice_mode_t, agressive),
+    __declare_enum_pair(ice_mode_t, aggressive),
     __declare_enum_pair(ice_mode_t, lite)
 __declare_enum_converter_end(ice_mode_t)
 

@@ -164,6 +164,9 @@ namespace detail
 #define __declare_enum_pair(type, value)\
     std::make_pair(type::value, #value)
 
+#define __declare_enum_pair_upper(type, value)\
+    std::make_pair(type::value, utils::to_upper(#value))
+
 #define __declare_enum_pair_name(type, value, name)\
     std::make_pair(type::value, name)
 

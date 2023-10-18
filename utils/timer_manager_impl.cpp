@@ -107,7 +107,7 @@ class timer_manager_impl final : public i_timer_manager
         {
             return m_handler != nullptr
                     && m_manager.start_timer(this
-                                             , now() + timeout);
+                                             , timeout);
         }
 
         bool stop() override
@@ -275,19 +275,27 @@ public:
     }
 
     inline bool start_timer(timer_impl::r_ptr_t timer
-                            , timestamp_t target_time)
+                            , timestamp_t timeout)
     {
         if (internal_is_started())
         {
             std::lock_guard lock(m_safe_mutex);
             remove_timeout(timer);
-            auto it = m_timeouts.emplace(target_time
-                                            , timer);
-            auto first = m_timeouts.begin() == it;
-            timer->m_target_time = target_time;
-            if (first)
+            if (timeout != timestamp_null)
             {
-                m_signal.notify_all();
+                auto target_time = now() + timeout;
+                auto it = m_timeouts.emplace(target_time
+                                                , timer);
+                auto first = m_timeouts.begin() == it;
+                timer->m_target_time = target_time;
+                if (first)
+                {
+                    m_signal.notify_all();
+                }
+            }
+            else
+            {
+                execute(timer);
             }
         }
         return true;

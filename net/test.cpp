@@ -343,18 +343,22 @@ void test4()
 
 
     ice_transport_params_t ice_params_1;
-    ice_params_1.mode = ice_mode_t::agressive;
+    ice_params_1.mode = ice_mode_t::regular;
     ice_transport_params_t ice_params_2;
-    ice_params_2.mode = ice_mode_t::regular;
+    ice_params_2.mode = ice_mode_t::aggressive;
     ice_params_1.local_endpoint.auth = ice_auth_params_t::generate();
     ice_params_2.local_endpoint.auth = ice_auth_params_t::generate();
     ice_params_1.remote_endpoint.auth = ice_params_2.local_endpoint.auth;
     ice_params_2.remote_endpoint.auth = ice_params_1.local_endpoint.auth;
 
-    ice_params_1.sockets.emplace_back(socket_endpoint_t(socket_type_t::udp
-                                                        , socket_address_t("0.0.0.0:0")));
-    ice_params_2.sockets.emplace_back(socket_endpoint_t(socket_type_t::udp
-                                                        , socket_address_t("0.0.0.0:0")));
+    socket_endpoint_t::array_t sockets;
+    sockets.emplace_back(socket_type_t::udp
+                         , socket_address_t("0.0.0.0:0"));
+    sockets.emplace_back(socket_type_t::udp
+                         , socket_address_t("0.0.0.0:0"));
+
+    ice_params_1.sockets = sockets;
+    ice_params_2.sockets = sockets;
 
 
 
@@ -438,6 +442,14 @@ void test4()
     }
 
     ice_connection_1->control(channel_control_t::connect());
+
+    utils::time::sleep(durations::seconds(2));
+    ice_connection_2->control(channel_control_t::connect());
+
+    utils::time::sleep(durations::seconds(2));
+    ice_connection_2->control(channel_control_t::shutdown());
+
+    utils::time::sleep(durations::seconds(2));
     ice_connection_2->control(channel_control_t::connect());
 
     utils::time::sleep(durations::seconds(100));

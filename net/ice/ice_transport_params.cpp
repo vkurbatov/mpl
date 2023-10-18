@@ -36,7 +36,7 @@ bool ice_transport_params_t::is_full() const
 {
     switch(mode)
     {
-        case ice_mode_t::agressive:
+        case ice_mode_t::aggressive:
         case ice_mode_t::regular:
             return true;
         break;
