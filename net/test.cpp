@@ -431,13 +431,17 @@ void test4()
 
     utils::time::sleep(durations::seconds(1));
 
+    std::clog << "ice1 candidates:" << std::endl;
     for (const auto& c : ice_connection_1->local_endpoint().candidates)
     {
+        std::clog << c.to_string() << std::endl;
         ice_connection_2->add_remote_candidate(c);
     }
 
+    std::clog << "ice2 candidates:" << std::endl;
     for (const auto& c : ice_connection_2->local_endpoint().candidates)
     {
+        std::clog << c.to_string() << std::endl;
         ice_connection_1->add_remote_candidate(c);
     }
 
@@ -446,12 +450,44 @@ void test4()
     utils::time::sleep(durations::seconds(2));
     ice_connection_2->control(channel_control_t::connect());
 
-    utils::time::sleep(durations::seconds(2));
-    ice_connection_2->control(channel_control_t::shutdown());
+    const std::string_view test_string = "Kurbatov Vailiy Vladimirovich #";
 
-    utils::time::sleep(durations::seconds(2));
-    ice_connection_2->control(channel_control_t::connect());
+    while (true)
+    {
+        while(ice_connection_2->state() != channel_state_t::connected)
+        {
+            utils::time::sleep(durations::seconds(1));
+        }
 
+        for (auto i = 0; i < 10; i++)
+        {
+            auto test_message = std::string(test_string).append(std::to_string(i));
+            socket_packet_impl test_packet(smart_buffer(test_message.data()
+                                                        , test_message.size()));
+
+            ice_connection_1->sink(0)->send_message(test_packet);
+            utils::time::sleep(durations::milliseconds(10));
+        }
+
+        ice_connection_2->control(channel_control_t::shutdown());
+
+        while(ice_connection_1->state() == channel_state_t::connected)
+        {
+            utils::time::sleep(durations::seconds(1));
+        }
+
+        ice_connection_2->control(channel_control_t::close());
+
+        utils::time::sleep(durations::seconds(1));
+
+        ice_connection_2->control(channel_control_t::open());
+
+        utils::time::sleep(durations::seconds(1));
+
+        ice_connection_2->control(channel_control_t::connect());
+
+        std::swap(ice_connection_1, ice_connection_2);
+    }
     utils::time::sleep(durations::seconds(100));
 
     engine.stop();

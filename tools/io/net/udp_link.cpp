@@ -175,6 +175,7 @@ struct udp_link::pimpl_t
         {
             change_state(link_state_t::closing);
             stop();
+            m_socket.close();
             change_state(link_state_t::closed);
             return true;
         }

@@ -282,8 +282,8 @@ std::string ice_candidate_t::to_string() const
         if (type != ice_candidate_type_t::host
                 && relayed_address.is_defined())
         {
-            result.append(" raddr ").append(connection_address.address.to_string());
-            result.append(" rport ").append(std::to_string(connection_address.port));
+            result.append(" raddr ").append(relayed_address.address.to_string());
+            result.append(" rport ").append(std::to_string(relayed_address.port));
         }
     }
 

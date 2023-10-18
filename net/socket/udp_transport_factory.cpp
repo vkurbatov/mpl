@@ -253,12 +253,12 @@ public:
         return true;
     }
 
-    const socket_endpoint_t &local_endpoint() const override
+    socket_endpoint_t local_endpoint() const override
     {
         return m_udp_params.local_endpoint;
     }
 
-    const socket_endpoint_t &remote_endpoint() const override
+    socket_endpoint_t remote_endpoint() const override
     {
         return m_udp_params.remote_endpoint;
     }

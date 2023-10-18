@@ -35,7 +35,6 @@ set(SOURCES
     ice/ice_gathering_state_event.cpp
     ice/ice_utils.cpp
     ice/ice_config.cpp
-    ice/ice_socket.cpp
     ice/ice_transport_factory.cpp
 )
 
@@ -88,7 +87,6 @@ set(PRIVATE_HEADERS
     ice/ice_controller.h
     ice/ice_transport_params.h
     ice/ice_config.h
-    ice/ice_socket.h
     ice/ice_transport_factory.h
 )
 

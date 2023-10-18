@@ -208,7 +208,7 @@ class ice_transport_impl : public i_ice_transport
                 m_owner.on_socket_gathering_state(*this
                                                   , new_state);
             }
-        }
+        }  
 
         inline bool add_candidate(const socket_address_t& address
                                   , ice_candidate_type_t candidate_type = ice_candidate_type_t::host)
@@ -220,6 +220,7 @@ class ice_transport_impl : public i_ice_transport
                 auto candidate = m_owner.create_local_candidate(address
                                                                 , m_socket->transport_id()
                                                                 , candidate_type);
+
 
                 if (candidate_type != ice_candidate_type_t::host)
                 {
@@ -558,7 +559,7 @@ class ice_transport_impl : public i_ice_transport
             , m_socket(socket)
             , m_remote_candidate(candidate)
             , m_recheck(false)
-            , m_state(ice_state_t::waiting)
+            , m_state(ice_state_t::frozen)
         {
             m_socket.add_pair(this);
         }
@@ -885,25 +886,39 @@ public:
         return nullptr;
     }
 
+    inline void set_checking_pair(candidate_pair_t* checking_pair)
+    {
+        if (m_checking_pair != checking_pair)
+        {
+            if (m_checking_pair != nullptr)
+            {
+                if (m_checking_pair->m_state != ice_state_t::succeeded)
+                {
+                    m_checking_pair->set_state(ice_state_t::frozen);
+                }
+            }
+
+            m_checking_pair = checking_pair;
+        }
+    }
+
     void set_active_pair(candidate_pair_t* active_pair)
     {
         if (m_active_pair != active_pair)
         {
             if (m_active_pair != nullptr)
             {
-                m_active_pair->set_state(ice_state_t::waiting);
-                if (m_state == channel_state_t::connected)
-                {
-                    change_channel_state(channel_state_t::disconnected
-                                         , m_active_pair->m_remote_candidate.to_string());
-                }
+                m_active_pair->set_state(ice_state_t::frozen);
+                change_channel_state(channel_state_t::disconnected
+                                     , m_active_pair->m_remote_candidate.to_string());
             }
+
 
             m_active_pair = active_pair;
 
             if (m_active_pair != nullptr)
             {
-                m_checking_pair = nullptr;
+                set_checking_pair(nullptr);
                 change_channel_state(channel_state_t::connected
                                      , m_active_pair->m_remote_candidate.to_string());
             }
@@ -930,17 +945,37 @@ public:
         return nullptr;
     }
 
-    inline ice_candidate_t create_local_candidate(const socket_address_t& connection_endpoint
+    inline std::string get_foundation(const socket_address_t& address
+                                       , transport_id_t transport_id
+                                       , ice_candidate_type_t candidate_type)
+    {
+        for (const auto& c : m_ice_params.local_endpoint.candidates)
+        {
+            if (c.connection_address.address == address.address
+                    && c.transport == transport_id
+                    && c.type == candidate_type)
+            {
+                return c.foundation;
+            }
+        }
+
+        return std::to_string(m_foundation_id++);
+    }
+
+    inline ice_candidate_t create_local_candidate(const socket_address_t& connection_address
                                                 , transport_id_t transport_id = transport_id_t::udp
                                                 , ice_candidate_type_t candidate_type = ice_candidate_type_t::host
-                                                , const socket_address_t& relayed_endpoint = {})
+                                                , const socket_address_t& relayed_address = {})
     {
-        return ice_candidate_t::build_candidate(++m_foundation_id
+        return ice_candidate_t::build_candidate(get_foundation(connection_address.address
+                                                               , transport_id
+                                                               , candidate_type)
+                                                , m_ice_params.local_endpoint.candidates.size()
                                                 , m_ice_params.component_id
-                                                , connection_endpoint
+                                                , connection_address
                                                 , transport_id
                                                 , candidate_type
-                                                , relayed_endpoint);
+                                                , relayed_address);
     }
 
 
@@ -992,17 +1027,20 @@ public:
                 && m_ice_params.is_full())
         {
             bool result = false;
-            m_checking_pair = next_pair(m_checking_pair);
+
+            set_checking_pair(next_pair(m_checking_pair));
+
             if (m_checking_pair != nullptr)
             {
                 if (m_active_pair == nullptr)
                 {
                     change_channel_state(channel_state_t::connecting);
                 }
+
                 result = m_checking_pair->checking();
             }
 
-            start_checking(m_ice_config.ice_check_interval);
+            start_checking(m_ice_config.ice_check_interval());
             return result;
         }
 
@@ -1072,7 +1110,6 @@ public:
         if (m_open
                 && !m_connect)
         {
-            m_ice_params.local_endpoint.candidates.clear();
             change_channel_state(channel_state_t::connecting);
             m_connect = true;
             start_checking();
@@ -1087,8 +1124,8 @@ public:
         if (m_open
                 && m_connect)
         {
-            stop_checking();
             change_channel_state(channel_state_t::disconnecting);
+            stop_checking();
             m_connect = false;
         }
 
@@ -1302,7 +1339,7 @@ public:
                 {
                     if (change_role)
                     {
-                        m_checking_pair = &pair;
+                        set_checking_pair(&pair);
                         pair.m_recheck = true;
                         start_checking();
                     }
@@ -1312,7 +1349,6 @@ public:
             {
                 bool is_active = pair.is_active();
                 bool is_checking = pair.is_checking();
-
 
                 if (is_active
                         || is_checking)
@@ -1362,6 +1398,10 @@ public:
                     }
 
                     start_checking();
+                }
+                else
+                {
+                    pair.set_state(ice_state_t::frozen);
                 }
             }
 

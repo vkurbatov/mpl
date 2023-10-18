@@ -1,12 +1,12 @@
 #ifndef MPL_NET_I_SOCKET_TRANSPORT_H
 #define MPL_NET_I_SOCKET_TRANSPORT_H
 
+#include "socket_endpoint.h"
 #include "net/i_transport_channel.h"
 
 namespace mpl::net
 {
 
-struct socket_endpoint_t;
 
 class i_socket_transport : public i_transport_channel
 {
@@ -18,8 +18,8 @@ public:
 
     virtual bool set_local_endpoint(const socket_endpoint_t& endpoint) = 0;
     virtual bool set_remote_endpoint(const socket_endpoint_t& endpoint) = 0;
-    virtual const socket_endpoint_t& local_endpoint() const = 0;
-    virtual const socket_endpoint_t& remote_endpoint() const = 0;
+    virtual socket_endpoint_t local_endpoint() const = 0;
+    virtual socket_endpoint_t remote_endpoint() const = 0;
 };
 
 }
