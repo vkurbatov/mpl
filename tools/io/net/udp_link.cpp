@@ -22,6 +22,7 @@ namespace io
 {
 
 constexpr static std::size_t recv_buffer_size = 10000;
+constexpr static std::size_t max_errors = 5;
 using socket_t = boost::asio::ip::udp::socket;
 using udp_endpoint_t = boost::asio::ip::udp::endpoint;
 using io_contex_t = boost::asio::io_context;
@@ -59,6 +60,7 @@ struct udp_link::pimpl_t
 
     bool                    m_started;
     std::atomic_bool        m_io_processed;
+    std::size_t             m_repeating_errors;
 
     static u_ptr_t create(udp_link& link
                           , const udp_link_config_t& config)
@@ -73,6 +75,8 @@ struct udp_link::pimpl_t
         , m_config(config)
         , m_socket(m_link.m_core.get<io_contex_t>())
         , m_started(false)
+        , m_io_processed(false)
+        , m_repeating_errors(0)
     {
 
     }
@@ -183,6 +187,7 @@ struct udp_link::pimpl_t
         if (!m_started
                 && is_open())
         {
+            m_repeating_errors = 0;
             change_state(link_state_t::connecting);
             m_started = true;
             change_state(link_state_t::connected);
@@ -245,15 +250,9 @@ struct udp_link::pimpl_t
             auto buffer = boost::asio::buffer(message.data()
                                                , message.size());
 
-            std::clog << "udp send: from: " << m_local_endpoint.to_string()
-                      << ", to: " << endpoint.to_string()
-                      << ", size: " << message.size()
-                      << ", data = " << message.data()
-                      << std::endl;
             m_socket.async_send_to(buffer
                                    , utils::convert<udp_endpoint_t>(endpoint)
                                    , [&](auto&&... args) { on_send(args...); });
-            std::clog << "udp send: " << m_local_endpoint.to_string() << " after" << std::endl;
             return true;
         }
 
@@ -273,14 +272,17 @@ struct udp_link::pimpl_t
     inline void on_send(boost::system::error_code error_code
                         , std::size_t bytes_transfered)
     {
-        if (error_code.failed())
+        if (m_started)
         {
-            change_state(link_state_t::failed
-                         , error_code.message());
-
-            std::clog << "udp send: failed:" << error_code.message() << std::endl;
-
-            m_started = false;
+            if (error_code.failed())
+            {
+                process_error(error_code);
+                // std::clog << "udp send: failed: " << error_code.message() << std::endl;
+            }
+            else
+            {
+                m_repeating_errors = 0;
+            }
         }
         // nothing
     }
@@ -307,33 +309,45 @@ struct udp_link::pimpl_t
     inline void on_receive(boost::system::error_code error_code
                            , std::size_t bytes_transfered)
     {
-        if (error_code.failed())
+        if (m_started)
         {
-            if (m_started)
+            if (error_code.failed())
             {
-                change_state(link_state_t::failed
-                             , error_code.message());
+                process_error(error_code);
+                if (m_started)
+                {
+                    do_receive();
+                    return;
+                }
+            }
+            else
+            {
+                m_repeating_errors = 0;
+                message_t message(m_recv_buffer.data()
+                                  , bytes_transfered);
+
+                m_link.on_recv_message(message
+                                       , utils::convert<ip_endpoint_t>(m_recv_endpoint));
+
+                do_receive();
+                return;
             }
         }
-        else
-        {
-            message_t message(m_recv_buffer.data()
-                              , bytes_transfered);
 
-            m_link.on_recv_message(message
-                                   , utils::convert<ip_endpoint_t>(m_recv_endpoint));
-
-            std::clog << "udp recv: from: " << utils::convert<ip_endpoint_t>(m_recv_endpoint).to_string()
-                      << ", to: " << m_local_endpoint.to_string()
-                      << ", size: " << bytes_transfered
-                      << ", data = " << message.data()
-                      << std::endl;
-
-            do_receive();
-            return;
-        }
         m_io_processed.store(false
                              , std::memory_order_release);
+    }
+
+    inline void process_error(const boost::system::error_code& error_code)
+    {
+        m_repeating_errors++;
+        if (m_repeating_errors >= max_errors)
+        {
+            change_state(link_state_t::failed
+                         , error_code.message());
+            m_repeating_errors = 0;
+            m_started = false;
+        }
     }
 
 };
