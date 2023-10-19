@@ -131,7 +131,6 @@ class ice_transport_impl : public i_ice_transport
 
         bool                            m_established;
 
-
         ice_socket_t(ice_transport_impl& owner
                      , i_socket_transport::u_ptr_t&& socket)
             : m_owner(owner)
@@ -1322,36 +1321,53 @@ public:
         }
     }
 
-    bool on_pair_ice_transaction(candidate_pair_t& pair
-                                 , ice_transaction_t& transaction
-                                 , bool request)
+    void on_pair_ice_request(candidate_pair_t& pair
+                             , ice_transaction_t& transaction)
     {
-        if (m_connect)
+        bool change_role = false;
+        if (has_role_conflict(transaction.request.controlling))
         {
-            lock_t lock(m_safe_mutex);
-
-            bool is_active = pair.is_active();
-            bool is_checking = pair.is_checking();
-
-            if (request)
+            bool need_switch_role = !m_ice_params.is_full()
+                    || m_controlling == (m_tie_breaker >= transaction.request.tie_breaker);
+            if (need_switch_role)
             {
-                bool change_role = false;
-                if (has_role_conflict(transaction.request.controlling))
-                {
-                    bool need_switch_role = !m_ice_params.is_full()
-                            || m_controlling == (m_tie_breaker >= transaction.request.tie_breaker);
-                    if (need_switch_role)
-                    {
-                        transaction.response.error_code = error_role_conflict;
-                        transaction.response.result = ice_transaction_t::ice_result_t::failed;
-                        return true;
-                    }
+                transaction.response.error_code = error_role_conflict;
+                transaction.response.result = ice_transaction_t::ice_result_t::failed;
+            }
 
-                    change_role = true;
-                    m_controlling ^= true;
-                }
+            change_role = true;
+            m_controlling ^= true;
+        }
 
-                transaction.response.result = ice_transaction_t::ice_result_t::success;
+        transaction.response.result = ice_transaction_t::ice_result_t::success;
+
+        if (transaction.request.use_candidate)
+        {
+            set_active_pair(&pair);
+        }
+        else
+        {
+            if (change_role)
+            {
+                pair.m_recheck = true;
+                set_checking_pair(&pair);
+                start_checking();
+            }
+        }
+    }
+
+    void on_pair_ice_response(candidate_pair_t& pair
+                             , ice_transaction_t& transaction)
+    {
+        bool is_active = pair.is_active();
+        bool is_checking = pair.is_checking();
+
+        if (is_active
+                || is_checking)
+        {
+            if (transaction.response.is_success())
+            {
+                pair.set_state(ice_state_t::succeeded);
 
                 if (transaction.request.use_candidate)
                 {
@@ -1359,69 +1375,66 @@ public:
                 }
                 else
                 {
-                    if (change_role)
+                    if (transaction.request.controlling)
                     {
                         pair.m_recheck = true;
-                        set_checking_pair(&pair);
-                        start_checking();
                     }
+                }
+
+                if (is_active)
+                {
+                    return;
                 }
             }
             else
             {
-                if (is_active
-                        || is_checking)
+                if (is_active)
                 {
-                    if (transaction.response.is_success())
-                    {
-                        pair.set_state(ice_state_t::succeeded);
-
-                        if (transaction.request.use_candidate)
-                        {
-                            set_active_pair(&pair);
-                        }
-                        else
-                        {
-                            if (transaction.request.controlling)
-                            {
-                                pair.m_recheck = true;
-                            }
-                        }
-
-                        if (is_active)
-                        {
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        if (is_active)
-                        {
-                            set_active_pair(nullptr);
-                        }
-
-                        if (transaction.response.result == ice_transaction_t::ice_result_t::failed)
-                        {
-                            switch(transaction.response.error_code)
-                            {
-                                case error_role_conflict:
-                                {
-                                    m_controlling ^= true;
-                                    pair.m_recheck = is_checking;
-                                }
-                                break;
-                                default:
-                                    pair.set_state(ice_state_t::failed);
-                            }
-                        }
-                    }
-
-                    start_checking();
+                    set_active_pair(nullptr);
                 }
-                else
+
+                if (transaction.response.result == ice_transaction_t::ice_result_t::failed)
                 {
-                    pair.set_state(ice_state_t::frozen);
+                    switch(transaction.response.error_code)
+                    {
+                        case error_role_conflict:
+                        {
+                            m_controlling ^= true;
+                            pair.m_recheck = is_checking;
+                        }
+                        break;
+                        default:
+                            pair.set_state(ice_state_t::failed);
+                    }
                 }
+            }
+
+            start_checking();
+        }
+        else
+        {
+            pair.set_state(ice_state_t::frozen);
+        }
+    }
+
+    inline bool on_pair_ice_transaction(candidate_pair_t& pair
+                                 , ice_transaction_t& transaction
+                                 , bool request)
+    {
+        if (m_connect)
+        {
+            lock_t lock(m_safe_mutex);
+
+            if (request)
+            {
+                on_pair_ice_request(pair
+                                    , transaction);
+            }
+            else
+            {
+                on_pair_ice_response(pair
+                                     , transaction);
+
             }
 
             return true;

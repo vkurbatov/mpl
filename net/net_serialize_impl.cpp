@@ -196,9 +196,9 @@ template<>
 bool utils::property::serialize(const ice_endpoint_t& value
                                     , i_property& property)
 {
-
     property_writer write(property);
-    return write.set("auth", value.auth)
+    return write.set("transport_id", value.transport_id)
+            && write.set("auth", value.auth)
             && write.set("candidates", value.candidates);
 }
 

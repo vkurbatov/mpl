@@ -36,6 +36,12 @@ set(SOURCES
     ice/ice_utils.cpp
     ice/ice_config.cpp
     ice/ice_transport_factory.cpp
+
+    tls/tls_fingerprint.cpp
+    tls/tls_endpoint.cpp
+    tls/tls_transport_params.cpp
+    tls/tls_transport_factory.cpp
+    tls/tls_packet_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -66,6 +72,14 @@ set(PUBLIC_HEADERS
     ice/ice_gathering_state_event.h
     ice/ice_server_params.h
     ice/i_ice_transport.h
+
+    tls/tls_types.h
+    tls/tls_fingerprint.h
+    tls/tls_endpoint.h
+    tls/tls_config.h
+    tls/tls_transport_params.h
+    tls/i_tls_transport.h
+    tls/i_tls_packet.h
     )
 
 set(PRIVATE_HEADERS
@@ -88,6 +102,10 @@ set(PRIVATE_HEADERS
     ice/ice_transport_params.h
     ice/ice_config.h
     ice/ice_transport_factory.h
+
+    tls/tls_transport_factory.h
+    tls/tls_packet_impl.h
+
 )
 
 

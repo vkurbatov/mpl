@@ -122,7 +122,7 @@ const BIO_METHOD* get_bio_method(bio_method_t method)
 
 const EVP_MD* get_hash_method(hash_method_t method)
 {
-    return get_method<EVP_MD, std::int32_t>(static_cast<std::int32_t>(method) + 1
+    return get_method<EVP_MD, std::int32_t>(static_cast<std::int32_t>(method)
                                              , EVP_md4
                                              , EVP_md5
                                              , EVP_sha1

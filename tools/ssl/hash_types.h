@@ -6,7 +6,7 @@ namespace ssl
 
 enum class hash_method_t
 {
-    none = -1,
+    none = 0,
     md4,
     md5,
     sha1,

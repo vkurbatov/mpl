@@ -2,6 +2,7 @@
 #include "net_types.h"
 #include "socket/socket_types.h"
 #include "ice/ice_types.h"
+#include "tls/tls_types.h"
 
 namespace mpl::utils
 {
@@ -10,11 +11,11 @@ using namespace net;
 
 __declare_enum_converter_begin(transport_id_t)
     __declare_enum_pair(transport_id_t, undefined),
-    __declare_enum_pair_upper(transport_id_t, udp),
-    __declare_enum_pair_upper(transport_id_t, tcp),
-    __declare_enum_pair_upper(transport_id_t, ice),
-    __declare_enum_pair_upper(transport_id_t, dtls),
-    __declare_enum_pair_upper(transport_id_t, ws),
+    __declare_enum_pair(transport_id_t, udp),
+    __declare_enum_pair(transport_id_t, tcp),
+    __declare_enum_pair(transport_id_t, ice),
+    __declare_enum_pair(transport_id_t, tls),
+    __declare_enum_pair(transport_id_t, ws),
     __declare_enum_pair(transport_id_t, application)
 __declare_enum_converter_end(transport_id_t)
 
@@ -34,8 +35,8 @@ __declare_enum_converter_end(role_t)
 
 __declare_enum_converter_begin(ip_version_t)
     __declare_enum_pair(ip_version_t, undefined),
-    __declare_enum_pair_upper(ip_version_t, ip4),
-    __declare_enum_pair_upper(ip_version_t, ip6)
+    __declare_enum_pair(ip_version_t, ip4),
+    __declare_enum_pair(ip_version_t, ip6)
 __declare_enum_converter_end(ip_version_t)
 
 __declare_enum_converter_begin(ice_option_t)
@@ -66,5 +67,22 @@ __declare_enum_converter_begin(ice_mode_t)
     __declare_enum_pair(ice_mode_t, aggressive),
     __declare_enum_pair(ice_mode_t, lite)
 __declare_enum_converter_end(ice_mode_t)
+
+__declare_enum_converter_begin(tls_hash_method_t)
+    __declare_enum_pair(tls_hash_method_t, undefined),
+    __declare_enum_pair(tls_hash_method_t, md4),
+    __declare_enum_pair(tls_hash_method_t, md5),
+    __declare_enum_pair(tls_hash_method_t, sha_1),
+    __declare_enum_pair(tls_hash_method_t, sha_224),
+    __declare_enum_pair(tls_hash_method_t, sha_256),
+    __declare_enum_pair(tls_hash_method_t, sha_384),
+    __declare_enum_pair(tls_hash_method_t, sha_512),
+    __declare_enum_pair(tls_hash_method_t, md5_sha1)
+__declare_enum_converter_end(tls_hash_method_t)
+
+__declare_enum_converter_begin(tls_method_t)
+    __declare_enum_pair(tls_method_t, dtls),
+    __declare_enum_pair(tls_method_t, tls)
+__declare_enum_converter_end(tls_method_t)
 
 }

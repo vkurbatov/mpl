@@ -86,6 +86,9 @@ std::string hex_to_string(const void* data
                           , const std::string_view& delimiter = {}
                           , bool upper_case = false);
 
+raw_array_t string_to_hex(const std::string_view& hex_string = {}
+                          , const std::string_view& delimiter = {});
+
 }
 
 #endif // MPL_UTILS_H

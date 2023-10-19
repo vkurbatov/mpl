@@ -10,7 +10,7 @@ enum class transport_id_t
     udp,
     tcp,
     ice,
-    dtls,
+    tls,
     ws,
     application
 };

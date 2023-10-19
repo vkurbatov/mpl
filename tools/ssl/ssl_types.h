@@ -191,7 +191,7 @@ enum class ssl_shutdown_state_t
 
 enum class ssl_role_t
 {
-    undefined = -1,
+    undefined = 0,
     server,
     client,
     srvcli

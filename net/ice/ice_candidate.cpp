@@ -269,7 +269,7 @@ std::string ice_candidate_t::to_string() const
     std::string result;
     result.append(foundation)
             .append(" ").append(std::to_string(component_id))
-            .append(" ").append(utils::enum_to_string(transport))
+            .append(" ").append(utils::to_upper(utils::enum_to_string(transport)))
             .append(" ").append(std::to_string(priority))
             .append(" ").append(connection_address.address.to_string())
             .append(" ").append(std::to_string(connection_address.port));
