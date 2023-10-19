@@ -20,7 +20,8 @@ public:
     virtual ice_gathering_state_t gathering_state() const = 0;
     virtual ice_endpoint_t local_endpoint() const = 0;
     virtual ice_endpoint_t remote_endpoint() const = 0;
-    virtual bool add_remote_candidate(const ice_candidate_t& candidate) = 0;
+    virtual bool set_local_endpoint(const ice_endpoint_t& local_endpoint) = 0;
+    virtual bool set_remote_endpoint(const ice_endpoint_t& remote_endpoint) = 0;
 };
 
 }

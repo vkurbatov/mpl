@@ -319,10 +319,10 @@ void test4()
 
     const ice_server_params_t::array_t ice_servers =
     {
-        { "stun:stun1.l.google.com:19302" },
+        /*{ "stun:stun1.l.google.com:19302" },
         { "stun:stun2.l.google.com:19302" },
-        { "stun:stun3.l.google.com:19302" },
-        { "stun:stun.l.google.com:19302" }
+        { "stun:stun3.l.google.com:19302" },*/
+        { "stun:stun.l.google1.com:19302" }
     };
 
     auto tasks = task_manager_factory::get_instance().create_manager({});
@@ -348,8 +348,8 @@ void test4()
     ice_params_2.mode = ice_mode_t::aggressive;
     ice_params_1.local_endpoint.auth = ice_auth_params_t::generate();
     ice_params_2.local_endpoint.auth = ice_auth_params_t::generate();
-    ice_params_1.remote_endpoint.auth = ice_params_2.local_endpoint.auth;
-    ice_params_2.remote_endpoint.auth = ice_params_1.local_endpoint.auth;
+    /*ice_params_1.remote_endpoint.auth = ice_params_2.local_endpoint.auth;
+    ice_params_2.remote_endpoint.auth = ice_params_1.local_endpoint.auth;*/
 
     socket_endpoint_t::array_t sockets;
     sockets.emplace_back(socket_type_t::udp
@@ -431,19 +431,19 @@ void test4()
 
     utils::time::sleep(durations::seconds(1));
 
+
     std::clog << "ice1 candidates:" << std::endl;
     for (const auto& c : ice_connection_1->local_endpoint().candidates)
     {
         std::clog << c.to_string() << std::endl;
-        ice_connection_2->add_remote_candidate(c);
     }
 
     std::clog << "ice2 candidates:" << std::endl;
     for (const auto& c : ice_connection_2->local_endpoint().candidates)
     {
         std::clog << c.to_string() << std::endl;
-        ice_connection_1->add_remote_candidate(c);
     }
+
 
     ice_connection_1->control(channel_control_t::connect());
 
@@ -454,6 +454,9 @@ void test4()
 
     while (true)
     {
+        ice_connection_1->set_remote_endpoint(ice_connection_2->local_endpoint());
+        ice_connection_2->set_remote_endpoint(ice_connection_1->local_endpoint());
+
         while(ice_connection_2->state() != channel_state_t::connected)
         {
             utils::time::sleep(durations::seconds(1));
@@ -475,14 +478,14 @@ void test4()
         {
             utils::time::sleep(durations::seconds(1));
         }
-
+/*
         ice_connection_2->control(channel_control_t::close());
 
         utils::time::sleep(durations::seconds(1));
 
         ice_connection_2->control(channel_control_t::open());
 
-        utils::time::sleep(durations::seconds(1));
+        utils::time::sleep(durations::seconds(1));*/
 
         ice_connection_2->control(channel_control_t::connect());
 

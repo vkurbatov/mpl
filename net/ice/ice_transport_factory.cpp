@@ -173,14 +173,14 @@ class ice_transport_impl : public i_ice_transport
             return false;
         }
 
-        inline const ice_candidate_t& candidate() const
-        {
-            return m_local_candidates.front();
-        }
 
         inline std::uint32_t priority() const
         {
-            return candidate().priority;
+            if (!m_local_candidates.empty())
+            {
+                return m_local_candidates.front().priority;
+            }
+            return 0;
         }
 
         inline socket_type_t socket_type() const
@@ -217,16 +217,10 @@ class ice_transport_impl : public i_ice_transport
                                      , address
                                      , m_socket->transport_id()) == nullptr)
             {
-                auto candidate = m_owner.create_local_candidate(address
-                                                                , m_socket->transport_id()
-                                                                , candidate_type);
-
-
-                if (candidate_type != ice_candidate_type_t::host)
-                {
-                    candidate.relayed_address = m_socket->local_endpoint().socket_address;
-                }
-
+                auto candidate = m_owner.add_local_candidate(address
+                                                             , m_socket->transport_id()
+                                                             , candidate_type
+                                                             , m_socket->local_endpoint().socket_address);
                 if (candidate.is_valid())
                 {
                     if (m_owner.on_socket_candidate(*this
@@ -286,7 +280,7 @@ class ice_transport_impl : public i_ice_transport
                 change_gathering_state(ice_gathering_state_t::gathering);
                 bool result = false;
 
-                m_gathering_timer->start(m_owner.m_ice_config.allocate_timeout);
+                m_gathering_timer->start(m_owner.m_ice_config.ice_check_interval());
 
                 for (const auto& s : servers)
                 {
@@ -393,11 +387,13 @@ class ice_transport_impl : public i_ice_transport
                 default:;
             }
 
+
             set_established(new_state == channel_state_t::connected);
 
             m_owner.on_socket_channel_state(*this
                                             , new_state
                                             , reason);
+
 
             return true;
         }
@@ -603,9 +599,9 @@ class ice_transport_impl : public i_ice_transport
 
         bool checking()
         {
-            std::clog << "checking: " << m_remote_candidate.to_string() << std::endl;
             bool one_flag = true;
             m_recheck = false;
+
             while(true)
             {
                 switch(m_state)
@@ -762,8 +758,7 @@ public:
         , m_state(channel_state_t::ready)
         , m_gathering_state(ice_gathering_state_t::ready)
     {
-        initialize();
-        update_pairs(m_ice_params.remote_endpoint.candidates);
+        // initialize();
     }
 
     ~ice_transport_impl()
@@ -796,6 +791,7 @@ public:
 
         return !m_sockets.empty();
     }
+
 
     void update_pairs(const ice_candidate_t::array_t& remote_candidates)
     {
@@ -851,6 +847,11 @@ public:
 
         m_pairs.sort(std::greater<candidate_pair_t>());
 
+    }
+
+    inline void update_pairs()
+    {
+        update_pairs(m_ice_params.remote_endpoint.candidates);
     }
 
     candidate_pair_t* next_pair(candidate_pair_t* pair)
@@ -947,13 +948,15 @@ public:
 
     inline std::string get_foundation(const socket_address_t& address
                                        , transport_id_t transport_id
-                                       , ice_candidate_type_t candidate_type)
+                                       , ice_candidate_type_t candidate_type
+                                       , const socket_address_t& relayed_address)
     {
         for (const auto& c : m_ice_params.local_endpoint.candidates)
         {
             if (c.connection_address.address == address.address
                     && c.transport == transport_id
-                    && c.type == candidate_type)
+                    && c.type == candidate_type
+                    && c.relayed_address.address == relayed_address.address)
             {
                 return c.foundation;
             }
@@ -962,20 +965,35 @@ public:
         return std::to_string(m_foundation_id++);
     }
 
-    inline ice_candidate_t create_local_candidate(const socket_address_t& connection_address
-                                                , transport_id_t transport_id = transport_id_t::udp
-                                                , ice_candidate_type_t candidate_type = ice_candidate_type_t::host
-                                                , const socket_address_t& relayed_address = {})
+    inline ice_candidate_t add_local_candidate(const socket_address_t& connection_address
+                                                        , transport_id_t transport_id = transport_id_t::udp
+                                                        , ice_candidate_type_t candidate_type = ice_candidate_type_t::host
+                                                        , const socket_address_t& relayed_address = {})
     {
-        return ice_candidate_t::build_candidate(get_foundation(connection_address.address
-                                                               , transport_id
-                                                               , candidate_type)
-                                                , m_ice_params.local_endpoint.candidates.size()
-                                                , m_ice_params.component_id
-                                                , connection_address
-                                                , transport_id
-                                                , candidate_type
-                                                , relayed_address);
+        lock_t lock(m_safe_mutex);
+        if (auto candidate = ice_candidate_t::find(m_ice_params.local_endpoint.candidates
+                                                   , connection_address
+                                                   , transport_id))
+        {
+            return *candidate;
+        }
+
+        auto new_candidate = ice_candidate_t::build_candidate(get_foundation(connection_address.address
+                                                                             , transport_id
+                                                                             , candidate_type
+                                                                             , relayed_address)
+                                                              , m_ice_params.local_endpoint.candidates.size()
+                                                              , m_ice_params.component_id
+                                                              , connection_address
+                                                              , transport_id
+                                                              , candidate_type
+                                                              , relayed_address);
+
+        if (new_candidate.is_valid())
+        {
+            m_ice_params.local_endpoint.candidates.push_back(new_candidate);
+        }
+        return new_candidate;
     }
 
 
@@ -1075,16 +1093,22 @@ public:
         {
             m_ice_params.local_endpoint.candidates.clear();
             change_channel_state(channel_state_t::opening);
-            m_open = true;
 
-            if (control_sockets(channel_control_t::open()) > 0)
+            if (initialize())
             {
-                change_channel_state(channel_state_t::open);
-                return true;
-            }
+                m_open = true;
 
-            change_channel_state(channel_state_t::failed);
-            m_open = false;
+                if (control_sockets(channel_control_t::open()) > 0)
+                {
+                    update_pairs();
+                    m_ice_params.sockets = get_local_addresses();
+                    change_channel_state(channel_state_t::open);
+                    return true;
+                }
+
+                change_channel_state(channel_state_t::failed);
+                m_open = false;
+            }
         }
 
         return false;
@@ -1163,14 +1187,7 @@ public:
     void update_transaction_params(ice_transaction_t& transaction)
     {
         transaction.retries = m_ice_config.retry_count;
-        if (transaction.tag == ice_gathering_id)
-        {
-            transaction.timeout = m_ice_config.allocate_timeout;
-        }
-        else
-        {
-            transaction.timeout = m_ice_config.ice_timeout;
-        }
+        transaction.timeout = m_ice_config.ice_timeout;
     }
 
     ice_transaction_t create_stun_request(const ice_server_params_t& stun_server)
@@ -1229,16 +1246,16 @@ public:
         return false;
     }
 
-    inline socket_endpoint_t::array_t get_local_enpoints() const
+    inline socket_endpoint_t::array_t get_local_addresses() const
     {
-        socket_endpoint_t::array_t socket_endpoints;
+        socket_endpoint_t::array_t socket_addresses;
 
         for (const auto& s : m_sockets)
         {
-            socket_endpoints.push_back(s.m_socket->local_endpoint());
+            socket_addresses.push_back(s.m_socket->local_endpoint());
         }
 
-        return socket_endpoints;
+        return socket_addresses;
     }
 
     inline ice_candidate_t::array_t get_local_candidates() const
@@ -1257,7 +1274,18 @@ public:
     inline void on_socket_gathering_state(ice_socket_t& socket
                                           , ice_gathering_state_t gathering_state)
     {
-        if (&socket == &m_sockets.front())
+        if (gathering_state == ice_gathering_state_t::completed)
+        {
+            for (const auto& s : m_sockets)
+            {
+                if (s.m_gathering_state != gathering_state)
+                {
+                    return;
+                }
+            }
+            change_gathering_state(gathering_state);
+        }
+        else if (&socket == &m_sockets.front())
         {
             change_gathering_state(gathering_state);
         }
@@ -1278,16 +1306,7 @@ public:
     inline bool on_socket_candidate(ice_socket_t& socket
                                     , const ice_candidate_t& candidate)
     {
-        lock_t lock(m_safe_mutex);
-        if (ice_candidate_t::find(m_ice_params.local_endpoint.candidates
-                                  , candidate.connection_address
-                                  , candidate.transport) == nullptr)
-        {
-           m_ice_params.local_endpoint.candidates.push_back(candidate);
-           return true;
-        }
-
-        return false;
+        return true;
     }
 
     inline void on_socket_established(ice_socket_t& socket
@@ -1310,6 +1329,9 @@ public:
         if (m_connect)
         {
             lock_t lock(m_safe_mutex);
+
+            bool is_active = pair.is_active();
+            bool is_checking = pair.is_checking();
 
             if (request)
             {
@@ -1339,17 +1361,14 @@ public:
                 {
                     if (change_role)
                     {
-                        set_checking_pair(&pair);
                         pair.m_recheck = true;
+                        set_checking_pair(&pair);
                         start_checking();
                     }
                 }
             }
             else
             {
-                bool is_active = pair.is_active();
-                bool is_checking = pair.is_checking();
-
                 if (is_active
                         || is_checking)
                 {
@@ -1519,7 +1538,7 @@ public:
         lock_t lock(m_safe_mutex);
         auto ice_params = m_ice_params;
         ice_params.sockets.clear();
-        ice_params.sockets = get_local_enpoints();
+        ice_params.sockets = get_local_addresses();
 
         return utils::property::serialize(ice_params
                                           , params);
@@ -1573,17 +1592,29 @@ public:
 
     ice_endpoint_t local_endpoint() const override
     {
+        shared_lock_t lock(m_safe_mutex);
         return m_ice_params.local_endpoint;
     }
 
     ice_endpoint_t remote_endpoint() const override
     {
+        shared_lock_t lock(m_safe_mutex);
         return m_ice_params.remote_endpoint;
     }
 
-    bool add_remote_candidate(const ice_candidate_t &candidate) override
+    bool set_local_endpoint(const ice_endpoint_t &local_endpoint) override
     {
-        return internal_add_remote_candidate(candidate);
+        lock_t lock(m_safe_mutex);
+        m_ice_params.local_endpoint.auth = local_endpoint.auth;
+        return true;
+    }
+
+    bool set_remote_endpoint(const ice_endpoint_t &remote_endpoint) override
+    {
+        lock_t lock(m_safe_mutex);
+        m_ice_params.remote_endpoint = remote_endpoint;
+        update_pairs();
+        return true;
     }
 };
 

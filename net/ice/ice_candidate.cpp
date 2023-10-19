@@ -45,7 +45,7 @@ std::uint8_t ice_candidate_t::get_type_preference(ice_candidate_type_t type)
         , 0
     };
 
-    return type_preference_table[static_cast<std::int32_t>(type) + 1];
+    return type_preference_table[static_cast<std::int32_t>(type)];
 }
 
 const ice_candidate_t *ice_candidate_t::find(const array_t &candidates
@@ -119,7 +119,7 @@ std::uint32_t ice_candidate_t::build_priority(std::uint8_t type_preference
 {
      return static_cast<std::uint32_t>(type_preference) << 24
              | static_cast<std::uint32_t>(local_preference - index) << 8
-                                                           | static_cast<std::uint32_t>(256 - component_id);
+             | static_cast<std::uint32_t>(255 - component_id);
 }
 
 std::uint32_t ice_candidate_t::build_priority(ice_candidate_type_t type
