@@ -95,7 +95,10 @@ public:
                           , ssl::ssl_manager& ssl_manager
                           , tls_transport_params_t&& tls_params)
     {
-        return nullptr;
+        return std::make_unique<tls_transport_impl>(tls_config
+                                                    , timer_manager
+                                                    , ssl_manager
+                                                    , std::move(tls_params));
     }
 
     tls_transport_impl(const tls_config_t& tls_config
@@ -244,10 +247,7 @@ public:
 
             if (m_ssl_connection != nullptr)
             {
-                if (m_ssl_connection->state() == ssl::ssl_handshake_state_t::done)
-                {
-                    change_channel_state(channel_state_t::closing);
-                }
+                change_channel_state(channel_state_t::closing);
 
                 m_ssl_connection->control(ssl::ssl_control_id_t::shutdown);
                 set_ssl_connection(nullptr);
@@ -490,13 +490,13 @@ public:
         {
             case ssl::ssl_data_type_t::application:
             {
-                m_router.send_message(tls_packet_impl(std::move(buffer)));
+                m_router.send_message(socket_packet_impl(std::move(buffer)
+                                                         , m_socket_endpoint));
             }
             break;
             case ssl::ssl_data_type_t::encrypted:
             {
-                m_router.send_message(socket_packet_impl(std::move(buffer)
-                                                         , m_socket_endpoint));
+                m_router.send_message(tls_packet_impl(std::move(buffer)));
                 // m_senders.send_message(const_dtls_packet(std::move(buffer)));
             }
             break;
@@ -521,14 +521,17 @@ public:
             {
                 timer_stop();
                 change_channel_state(channel_state_t::connected);
+                return;
             }
             break;
             case ssl::ssl_handshake_state_t::closed:
-                change_channel_state(channel_state_t::closed);
+                change_channel_state(channel_state_t::disconnected);
+                m_ssl_connection->control(ssl::ssl_control_id_t::reset);
             break;
             case ssl::ssl_handshake_state_t::failed:
                 timer_stop();
                 change_channel_state(channel_state_t::failed);
+                m_ssl_connection->control(ssl::ssl_control_id_t::reset);
             break;
         }
     }
@@ -552,20 +555,16 @@ public:
         }
     }
 
-    bool on_verify(int32_t ok) override
-    {
-        if (!ok)
-        {
-            return check_fingerprint(false
-                                     , m_tls_params.remote_endpoint.fingerprint);
-        }
-        return true;
-    }
-
     void on_error(ssl::ssl_alert_type_t alert_type
                   , const std::string &reason) override
     {
         // ???
+    }
+
+    ssl::hash_method_t query_peer_fingerprint(std::vector<uint8_t> &hash) override
+    {
+        hash = m_tls_params.remote_endpoint.fingerprint.hash;
+        return static_cast<ssl::hash_method_t>(m_tls_params.remote_endpoint.fingerprint.method);
     }
 };
 
@@ -602,7 +601,10 @@ public:
                                          , params)
                 && tls_params.is_valid())
         {
-
+            return tls_transport_impl::create(m_tls_config
+                                              , m_timer_manager
+                                              , m_ssl_manager
+                                              , std::move(tls_params));
         }
 
         return nullptr;

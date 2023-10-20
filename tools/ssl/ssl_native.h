@@ -8,6 +8,7 @@ struct ssl_ctx_st;
 struct ssl_st;
 struct bio_st;
 struct x509_st;
+struct x509_store_ctx_st;
 struct evp_pkey_st;
 struct ec_key_st;
 

@@ -343,6 +343,20 @@ void ssl_adapter::set_verify_handler(ssl_verify_handler_t verify_handler)
     m_verify_handler = std::move(verify_handler);
 }
 
+void ssl_adapter::set_ssl(ssl_ptr_t &&ssl_ptr)
+{
+    m_ssl = std::move(ssl_ptr);
+}
+
+void ssl_adapter::set_ssl(const ssl_ctx_ptr_t &ssl_ctx
+                          , const bio_ptr_t &bio_read
+                          , const bio_ptr_t &bio_write)
+{
+    m_ssl = create_ssl(ssl_ctx
+                       , bio_read
+                       , bio_write);
+}
+
 const ssl_ptr_t &ssl_adapter::native_handle() const
 {
     return m_ssl;
@@ -366,11 +380,13 @@ void ssl_adapter::on_ssl_info(std::int32_t type, std::int32_t value)
     }
 }
 
-bool ssl_adapter::on_verify(std::int32_t ok)
+bool ssl_adapter::on_verify(std::int32_t ok
+                            , x509_store_ctx_st* ctx)
 {
     if (m_verify_handler != nullptr)
     {
-        return m_verify_handler(ok);
+        return m_verify_handler(ok
+                                , ctx);
     }
 
     return true;

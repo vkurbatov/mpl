@@ -7,14 +7,12 @@ custom_ssl_connection_observer::s_ptr_t custom_ssl_connection_observer::create(m
                                                                                  , state_handler_t state_handler
                                                                                  , srtp_key_handler_t srtp_key_handler
                                                                                  , error_handler_t error_handler
-                                                                                 , verify_handler_t verify_handler
                                                                                  , wait_timeout_handler_t wait_timeout_handler)
 {
     return std::make_shared<custom_ssl_connection_observer>(std::move(message_handler)
                                                             , std::move(state_handler)
                                                             , std::move(srtp_key_handler)
                                                             , std::move(error_handler)
-                                                            , std::move(verify_handler)
                                                             , std::move(wait_timeout_handler));
 }
 
@@ -22,13 +20,11 @@ custom_ssl_connection_observer::custom_ssl_connection_observer(message_handler_t
                                                                , state_handler_t state_handler
                                                                , srtp_key_handler_t srtp_key_handler
                                                                , error_handler_t error_handler
-                                                               , verify_handler_t verify_handler
                                                                , wait_timeout_handler_t wait_timeout_handler)
     : m_message_handler(std::move(message_handler))
     , m_state_handler(std::move(state_handler))
     , m_srtp_key_handler(std::move(srtp_key_handler))
     , m_error_handler(std::move(error_handler))
-    , m_verify_handler(std::move(verify_handler))
     , m_wait_timeout_handler(std::move(wait_timeout_handler))
 {
 
@@ -98,16 +94,6 @@ void custom_ssl_connection_observer::on_wait_timeout(uint64_t timeout)
     }
 }
 
-bool custom_ssl_connection_observer::on_verify(int32_t ok)
-{
-    if (m_verify_handler != nullptr)
-    {
-        return m_verify_handler(ok);
-    }
-
-    return true;
-}
-
 void custom_ssl_connection_observer::on_error(ssl_alert_type_t alert_type
                                               , const std::string &reason)
 {
@@ -116,6 +102,11 @@ void custom_ssl_connection_observer::on_error(ssl_alert_type_t alert_type
         return m_error_handler(alert_type
                                , reason);
     }
+}
+
+hash_method_t custom_ssl_connection_observer::query_peer_fingerprint(std::vector<uint8_t> &hash)
+{
+    return hash_method_t::none;
 }
 
 

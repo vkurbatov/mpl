@@ -86,19 +86,19 @@ void ssl_context::set_verify(ssl_ctx_ptr_t& ssl_ctx, ssl_verify_flags_t verify_f
                                                                          )
                                               ))
         {
-            //auto peer1 = X509_STORE_CTX_get_current_cert(x509_store_ctx);
-            //auto peer2 = SSL_get_peer_certificate(ssl);
+            // auto cert = X509_STORE_CTX_get_current_cert(x509_store_ctx);
+            // auto peer2 = SSL_get_peer_certificate(ssl);
             if (auto adapter = static_cast<ssl_adapter*>(SSL_get_ex_data(ssl
                                                                          , 0)
                                                          ))
             {
-                return static_cast<std::int32_t>(adapter->on_verify(ok));
+                return static_cast<std::int32_t>(adapter->on_verify(ok
+                                                                    , x509_store_ctx));
             }
         }
 
         return 0;
     };
-
     return SSL_CTX_set_verify(ssl_ctx.get()
                               , static_cast<std::uint32_t>(verify_flags)
                               , verify_handler);

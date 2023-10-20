@@ -31,14 +31,12 @@ public:
                             , state_handler_t state_handler = nullptr
                             , srtp_key_handler_t srtp_key_handler = nullptr
                             , error_handler_t error_handler = nullptr
-                            , verify_handler_t verify_handler = nullptr
                             , wait_timeout_handler_t wait_timeout_handler = nullptr);
 
     custom_ssl_connection_observer(message_handler_t message_handler = nullptr
                                    , state_handler_t state_handler = nullptr
                                    , srtp_key_handler_t srtp_key_handler = nullptr
                                    , error_handler_t error_handler = nullptr
-                                   , verify_handler_t verify_handler = nullptr
                                    , wait_timeout_handler_t wait_timeout_handler = nullptr);
 
     void set_message_handler(message_handler_t message_handler);
@@ -55,10 +53,13 @@ public:
     void on_srtp_key_info(const srtp_key_info_t &client_key
                           , const srtp_key_info_t &server_key) override;
     void on_wait_timeout(uint64_t timeout) override;
-    bool on_verify(int32_t ok) override;
     void on_error(ssl_alert_type_t alert_type, const std::string &reason) override;
 
 
+
+    // i_ssl_connection_observer interface
+public:
+    hash_method_t query_peer_fingerprint(std::vector<uint8_t> &hash) override;
 };
 
 }

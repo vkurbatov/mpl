@@ -63,6 +63,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
         bio_context                             m_bio_input;
         bio_context                             m_bio_output;
         ssl_adapter                             m_ssl_adapter;
+        ssl_x509                                m_peer_certificate;
 
         ssl_handshake_state_t                   m_state;
 
@@ -97,13 +98,14 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             , m_ssl_adapter(m_manager->m_ssl_context.native_handle()
                             , m_bio_input.native_handle()
                             , m_bio_output.native_handle()
-                            , [&](std::int32_t type, std::int32_t value) { on_native_ssl_state(type, value); }
-                            , [&](std::int32_t ok) { return on_native_verify(ok); })
+                            , [&](auto&& ...args) { on_native_ssl_state(args...); }
+                            , [&](auto&& ...args) { return on_native_verify(args...); })
             , m_state(ssl_handshake_state_t::ready)
         {
             if (m_config.mtu > 0)
             {
                 m_ssl_adapter.set_mtu(m_config.mtu);
+                m_ssl_adapter.get_peer_certificate();
             }
         }
 
@@ -162,9 +164,36 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             }
         }
 
-        inline bool on_native_verify(std::int32_t ok)
+        inline bool on_native_verify(std::int32_t ok
+                                     , x509_store_ctx_st* ctx)
         {
-            return m_observer->on_verify(ok);
+            if (ok == 1)
+            {
+                m_peer_certificate = create_object<X509>(X509_STORE_CTX_get_current_cert(ctx));
+
+                fingerprint_t peer_fingerprint;
+                auto method = m_observer->query_peer_fingerprint(peer_fingerprint);
+                if (method == hash_method_t::none)
+                {
+                    return true;
+                }
+
+                if (m_peer_certificate.is_valid())
+                {
+                    fingerprint_t real_peer_fingerprint;
+
+                    m_peer_certificate.digest(method
+                                              , real_peer_fingerprint);
+
+                    return real_peer_fingerprint == peer_fingerprint;
+                }
+
+                return false;
+            }
+
+            return true;
+            // auto cert1 = m_manager->m_certificate.native_handle().get();
+            // return m_observer->on_verify(ok);
         }
 
         inline bool is_valid() const
@@ -289,7 +318,6 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
 
         bool server_handshake()
         {
-
             m_ssl_adapter.set_state(ssl_state_t::clear);
             change_state(ssl_handshake_state_t::prepare);
             m_ssl_adapter.set_state(ssl_state_t::accept);
@@ -350,7 +378,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             }
         }
 
-        ssl_io_result_t send_encription_data(const void* data, std::size_t size)
+        ssl_io_result_t send_encryption_data(const void* data, std::size_t size)
         {
             if (m_bio_input.write(data, size) == size)
             {
@@ -420,6 +448,11 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
                 m_ssl_adapter.set_state(ssl_state_t::shutdown);
             }
             m_ssl_adapter.set_state(ssl_state_t::clear);
+            m_ssl_adapter.set_ssl(m_manager->m_ssl_context.native_handle()
+                                  , m_bio_input.native_handle()
+                                  , m_bio_output.native_handle());
+            m_bio_input.reset();
+            m_bio_output.reset();
             change_state(reset_state);
         }
 
@@ -493,7 +526,7 @@ public:
                     return send_application_data(message.data(), message.size());
                 break;
                 case ssl_data_type_t::encrypted:
-                    return send_encription_data(message.data(), message.size());
+                    return send_encryption_data(message.data(), message.size());
                 break;
             }
 
@@ -514,12 +547,17 @@ public:
                                                              , fingerprint);
 
                 }
-                else if (auto remote_cert = m_ssl_adapter.get_peer_certificate())
+                else if (m_peer_certificate.is_valid())
+                {
+                    result = m_peer_certificate.digest(hash_method
+                                                       , fingerprint);
+                }
+                /*else if (auto remote_cert = m_ssl_adapter.get_peer_certificate())
                 {
                     result = ssl_x509::digest(remote_cert
                                               , hash_method
                                               , fingerprint);
-                }
+                }*/
             }
             if (result != fingerprint.size())
             {
@@ -603,7 +641,7 @@ public:
         , m_ssl_context(std::move(ssl_ctx))
     {
         m_ssl_context.set_read_ahead(true);
-        m_ssl_context.set_verify_depth(4);
+        m_ssl_context.set_verify_depth(1);
         if (m_config.ciper_list.empty())
         {
             m_ssl_context.set_cipher_list(m_config.ciper_list);

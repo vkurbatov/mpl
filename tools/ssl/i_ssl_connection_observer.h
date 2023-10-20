@@ -7,6 +7,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 namespace ssl
 {
@@ -23,7 +24,7 @@ public:
     virtual void on_srtp_key_info(const srtp_key_info_t& encrypted_key
                                   , const srtp_key_info_t& decrypted_key) = 0;
     virtual void on_wait_timeout(std::uint64_t timeout) = 0;
-    virtual bool on_verify(std::int32_t ok) = 0;
+    virtual hash_method_t query_peer_fingerprint(std::vector<std::uint8_t>& hash) = 0;
     virtual void on_error(ssl_alert_type_t alert_type, const std::string& reason) = 0;
 };
 

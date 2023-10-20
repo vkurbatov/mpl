@@ -11,7 +11,7 @@ namespace ssl
 
 class ssl_context;
 using ssl_state_handler_t = std::function<void(int, int)>;
-using ssl_verify_handler_t = std::function<bool(std::int32_t ok)>;
+using ssl_verify_handler_t = std::function<bool(std::int32_t ok, x509_store_ctx_st* cert)>;
 
 
 class ssl_adapter
@@ -93,13 +93,19 @@ public:
     void set_state_handler(ssl_state_handler_t state_handler);
     void set_verify_handler(ssl_verify_handler_t verify_handler);
 
+    void set_ssl(ssl_ptr_t&& ssl_ptr);
+    void set_ssl(const ssl_ctx_ptr_t& ssl_ctx
+                 , const bio_ptr_t& bio_read = nullptr
+                 , const bio_ptr_t& bio_write = nullptr);
+
     const ssl_ptr_t& native_handle() const;
     ssl_ptr_t release();
     bool is_valid() const;
 
 private:
     void on_ssl_info(std::int32_t type, std::int32_t value);
-    bool on_verify(std::int32_t ok);
+    bool on_verify(std::int32_t ok
+                   , x509_store_ctx_st* cert);
 };
 
 }
