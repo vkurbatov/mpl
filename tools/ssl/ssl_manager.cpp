@@ -313,29 +313,37 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
                                                              , key.data()
                                                              , key.size()))
                     {
-                        srtp_key_info_t client_key(srtp_profile
-                                                   , srtp_key_t(master_length));
-                        srtp_key_info_t server_key(srtp_profile
+
+                        srtp_key_info_t encrypted_key(srtp_profile
                                                    , srtp_key_t(master_length));
 
-                        std::memcpy(client_key.key.data()
+                        srtp_key_info_t decrypted_key(srtp_profile
+                                                   , srtp_key_t(master_length));
+
+                        std::memcpy(decrypted_key.key.data()
                                     , key.data()
                                     , key_length);
 
-                        std::memcpy(server_key.key.data()
+                        std::memcpy(encrypted_key.key.data()
                                     , key.data() + key_length
                                     , key_length);
 
-                        std::memcpy(client_key.key.data() + key_length
+                        std::memcpy(decrypted_key.key.data() + key_length
                                     , key.data() + key_length + key_length
                                     , salt_length);
 
-                        std::memcpy(server_key.key.data() + key_length
+                        std::memcpy(encrypted_key.key.data() + key_length
                                     , key.data() + key_length + key_length + salt_length
                                     , salt_length);
 
-                        m_observer->on_srtp_key_info(client_key
-                                                     , server_key);
+                        if (m_config.role == ssl_role_t::client)
+                        {
+                            std::swap(encrypted_key
+                                      , decrypted_key);
+                        }
+
+                        m_observer->on_srtp_key_info(encrypted_key
+                                                     , decrypted_key);
 
                     }
                 }

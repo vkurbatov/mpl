@@ -41,6 +41,7 @@ set(SOURCES
     tls/tls_endpoint.cpp
     tls/tls_transport_params.cpp
     tls/tls_transport_factory.cpp
+    tls/tls_keys_event.cpp
     tls/tls_packet_impl.cpp
 )
 
@@ -78,6 +79,7 @@ set(PUBLIC_HEADERS
     tls/tls_endpoint.h
     tls/tls_config.h
     tls/tls_transport_params.h
+    tls/tls_keys_event.h
     tls/i_tls_transport.h
     tls/i_tls_packet.h
     )

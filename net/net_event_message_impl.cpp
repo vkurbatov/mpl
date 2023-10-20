@@ -2,10 +2,13 @@
 #include "net_message_types.h"
 #include "net_event_types.h"
 #include "ice/ice_gathering_state_event.h"
+#include "tls/tls_keys_event.h"
 
 namespace mpl
 {
 
 template class message_event_impl<net::ice_gathering_state_event_t, net::message_class_net>;
+template class message_event_impl<net::tls_keys_event_t, net::message_class_net>;
+
 
 }

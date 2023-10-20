@@ -100,7 +100,7 @@ uint64_t ssl_adapter::get_timeout(const ssl_ptr_t &ssl)
     uint64_t result = 0;
     struct timeval timeout = { 0, 0 };
     if (DTLSv1_get_timeout(ssl.get()
-                           , &timeout));
+                           , &timeout))
     {
         result = static_cast<std::uint64_t>(timeout.tv_sec) * 1000000ul
                 + timeout.tv_usec;

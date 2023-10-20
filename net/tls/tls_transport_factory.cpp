@@ -18,12 +18,14 @@
 
 #include "tls_transport_params.h"
 #include "tls_packet_impl.h"
+#include "tls_keys_event.h"
 
 #include "tools/ssl/ssl_manager.h"
 #include "tools/ssl/ssl_manager_config.h"
 #include "tools/ssl/ssl_connection_config.h"
 #include "tools/ssl/custom_ssl_connection_observer.h"
 #include "tools/ssl/const_ssl_message.h"
+
 
 #include <shared_mutex>
 #include <iostream>
@@ -61,6 +63,12 @@ static ssl::ssl_manager_config_t create_ssl_config(const tls_config_t& tls_confi
 class tls_transport_impl : public i_tls_transport
         , private ssl::i_ssl_connection_observer
 {
+    using mutex_t = std::shared_mutex;
+    using lock_t = std::lock_guard<mutex_t>;
+    using shared_lock_t = std::shared_lock<mutex_t>;
+
+    mutable mutex_t                     m_safe_mutex;
+
     tls_config_t                        m_tls_config;
     i_timer_manager&                    m_timer_manager;
     ssl::ssl_manager&                   m_ssl_manager;
@@ -68,6 +76,7 @@ class tls_transport_impl : public i_tls_transport
 
     ssl::i_ssl_connection::s_ptr_t      m_ssl_connection;
 
+    socket_endpoint_t                   m_socket_endpoint;
     message_sink_impl                   m_message_sink;
     message_router_impl                 m_router;
     i_timer::u_ptr_t                    m_timer;
@@ -232,6 +241,7 @@ public:
         {
             m_open = false;
             timer_stop();
+
             if (m_ssl_connection != nullptr)
             {
                 if (m_ssl_connection->state() == ssl::ssl_handshake_state_t::done)
@@ -279,6 +289,22 @@ public:
         return false;
     }
 
+    bool send_dtls_packet(const i_data_object& packet_data
+                          , ssl::ssl_data_type_t type = ssl::ssl_data_type_t::encrypted)
+    {
+        ssl::const_ssl_message ssl_message(packet_data.data()
+                                           , packet_data.size()
+                                           , type);
+        switch (m_ssl_connection->send_message(ssl_message))
+        {
+            case ssl::ssl_io_result_t::ok:
+            case ssl::ssl_io_result_t::async:
+                return true;
+            break;
+            default:;
+        }
+        return false;
+    }
 
     bool on_message_packet(const i_message_packet& packet)
     {
@@ -288,14 +314,18 @@ public:
             switch(net_packet.transport_id())
             {
                 case transport_id_t::tls:
-
+                    return send_dtls_packet(net_packet);
+                break;
+                case transport_id_t::udp:
+                case transport_id_t::tcp:
+                    m_socket_endpoint = static_cast<const i_socket_packet&>(packet).endpoint();
                 break;
                 default:;
             }
-
-
         }
-        return false;
+
+        return send_dtls_packet(packet
+                                , ssl::ssl_data_type_t::application);
     }
 
     bool on_send_message(const i_message& message)
@@ -323,7 +353,19 @@ public:
 
     void on_timer()
     {
+        if (m_ssl_connection != nullptr)
+        {
+            if (m_ssl_connection->state() == ssl::ssl_handshake_state_t::handshaking)
+            {
+                if (m_ssl_connection->control(ssl::ssl_control_id_t::retransmit))
+                {
+                    return;
+                }
+            }
 
+            m_ssl_connection->control(ssl::ssl_control_id_t::reset);
+            change_channel_state(channel_state_t::failed);
+        }
     }
 
     // i_channel interface
@@ -364,11 +406,13 @@ public:
 public:
     bool set_params(const i_property &params) override
     {
+        lock_t lock(m_safe_mutex);
         return false;
     }
 
     bool get_params(i_property &params) const override
     {
+        shared_lock_t lock(m_safe_mutex);
         return false;
     }
 
@@ -445,11 +489,18 @@ public:
         switch(message.type())
         {
             case ssl::ssl_data_type_t::application:
-                // m_senders.send_message(const_raw_packet(std::move(buffer)));
+            {
+                m_router.send_message(tls_packet_impl(std::move(buffer)));
+            }
             break;
             case ssl::ssl_data_type_t::encrypted:
+            {
+                m_router.send_message(socket_packet_impl(std::move(buffer)
+                                                         , m_socket_endpoint));
                 // m_senders.send_message(const_dtls_packet(std::move(buffer)));
+            }
             break;
+            default:;
         }
     }
 
@@ -482,20 +533,12 @@ public:
         }
     }
 
-    void on_srtp_key_info(const ssl::srtp_key_info_t &client_key
-                          , const ssl::srtp_key_info_t &server_key) override
+    void on_srtp_key_info(const ssl::srtp_key_info_t &encrypted_key
+                          , const ssl::srtp_key_info_t &decrypted_key) override
     {
-        switch (m_ssl_connection->config().role)
-        {
-            case ssl::ssl_role_t::client:
-                // m_event_muxer.send_srtp_info(server_key
-                                             // , client_key);
-            break;
-            case ssl::ssl_role_t::server:
-                // m_event_muxer.send_srtp_info(client_key, server_key);
-            break;
-            default:;
-        }
+        tls_keys_event_t tls_key_event(encrypted_key
+                                       , decrypted_key);
+        m_router.send_message(message_event_impl<tls_keys_event_t, message_class_net>(std::move(tls_key_event)));
     }
 
     void on_wait_timeout(uint64_t timeout) override

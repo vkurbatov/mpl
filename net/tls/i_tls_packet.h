@@ -12,7 +12,7 @@ class i_tls_packet : public i_net_packet
 public:
     enum class content_type_t
     {
-        undefined = -1,
+        undefined = 0,
         change_cipher_spec = 20,
         alert = 21,
         handshake = 22,
