@@ -457,12 +457,12 @@ public:
         return m_tls_config.method;
     }
 
-    tls_endpoint_t get_local_endpoint() const override
+    tls_endpoint_t local_endpoint() const override
     {
         return m_tls_params.local_endpoint;
     }
 
-    tls_endpoint_t get_remote_endpoint() const override
+    tls_endpoint_t remote_endpoint() const override
     {
         return m_tls_params.remote_endpoint;
     }

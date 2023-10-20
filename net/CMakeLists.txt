@@ -37,6 +37,7 @@ set(SOURCES
     ice/ice_config.cpp
     ice/ice_transport_factory.cpp
 
+    tls/tls_config.cpp
     tls/tls_fingerprint.cpp
     tls/tls_endpoint.cpp
     tls/tls_transport_params.cpp

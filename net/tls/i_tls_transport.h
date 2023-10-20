@@ -18,8 +18,8 @@ public:
     virtual role_t role() const = 0;
     virtual tls_method_t method() const = 0;
 
-    virtual tls_endpoint_t get_local_endpoint() const = 0;
-    virtual tls_endpoint_t get_remote_endpoint() const = 0;
+    virtual tls_endpoint_t local_endpoint() const = 0;
+    virtual tls_endpoint_t remote_endpoint() const = 0;
 
     virtual bool set_local_endpoint(const tls_endpoint_t& endpoint) = 0;
     virtual bool set_remote_endpoint(const tls_endpoint_t& endpoint) = 0;

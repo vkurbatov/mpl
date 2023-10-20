@@ -11,6 +11,10 @@
 #include "ice/ice_endpoint.h"
 #include "ice/ice_transport_params.h"
 
+#include "tls/tls_fingerprint.h"
+#include "tls/tls_endpoint.h"
+#include "tls/tls_transport_params.h"
+
 namespace mpl
 {
 
@@ -242,5 +246,69 @@ bool utils::property::deserialize(ice_transport_params_t& value
 }
 
 
+// tls_fingerprint_t
+template<>
+bool utils::property::serialize(const tls_fingerprint_t& value, i_property& property)
+{
+
+    property_writer write(property);
+    return write.set("method", value.method)
+            && write.set("hash", value.hash);
+}
+
+template<>
+bool utils::property::deserialize(tls_fingerprint_t& value, const i_property &property)
+{
+    property_reader reader(property);
+    if (reader.get("method", value.method))
+    {
+        reader.get("hash", value.hash);
+        return true;
+    }
+
+    return false;
+}
+
+// tls_endpoint_t
+template<>
+bool utils::property::serialize(const tls_endpoint_t& value, i_property& property)
+{
+    property_writer write(property);
+    return write.set("transport_id", value.transport_id)
+            && write.set("fingerprint", value.fingerprint);
+}
+
+template<>
+bool utils::property::deserialize(tls_endpoint_t& value, const i_property &property)
+{
+    property_reader reader(property);
+    if (reader.get("transport_id", transport_id_t::tls) == value.transport_id)
+    {
+        reader.get("fingerprint", value.fingerprint);
+        return true;
+    }
+
+    return false;
+}
+
+// tls_transport_params_t
+template<>
+bool utils::property::serialize(const tls_transport_params_t& value, i_property& property)
+{
+
+    property_writer write(property);
+    return write.set("role", value.role)
+            && write.set("local_endpoint", value.local_endpoint)
+            && write.set("remote_endpoint", value.remote_endpoint);
+}
+
+template<>
+bool utils::property::deserialize(tls_transport_params_t& value, const i_property &property)
+{
+    property_reader reader(property);
+    return reader.get("role", value.role)
+            | reader.get("local_endpoint", value.local_endpoint)
+            | reader.get("remote_endpoint", value.remote_endpoint);
+}
 
 }

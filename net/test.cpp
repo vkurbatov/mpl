@@ -28,6 +28,13 @@
 #include "ice/ice_gathering_command.h"
 #include "ice/ice_transport_params.h"
 
+#include "tls/i_tls_transport.h"
+#include "tls/tls_transport_factory.h"
+#include "tls/tls_config.h"
+#include "tls/tls_transport_params.h"
+#include "tls/tls_packet_impl.h"
+#include "tls/tls_keys_event.h"
+
 #include "utils/endian_utils.h"
 
 #include "tools/io/net/net_utils.h"
@@ -496,14 +503,235 @@ void test4()
     engine.stop();
 
     return;
+}
+
+void test5()
+{
+    auto& engine = net_engine_impl::get_instance();
+
+    engine.start();
+
+    auto tasks = task_manager_factory::get_instance().create_manager({});
+    auto timers = timer_manager_factory::get_instance().create_timer_manager({}
+                                                                             , *tasks);
 
 
+    timers->start();
+
+    auto socket_factory = engine.create_factory(transport_id_t::udp
+                                                , nullptr);
+
+    tls_config_t tls_config;
+    tls_config.srtp_enable = true;
+
+    tls_transport_factory tls_factory(tls_config
+                                      , *timers);
+
+
+    tls_transport_params_t  tls_params_1;
+    tls_transport_params_t  tls_params_2;
+
+    tls_params_1.role = role_t::active;
+    tls_params_1.local_endpoint.fingerprint.method = tls_hash_method_t::sha_256;
+    tls_params_2.role = role_t::passive;
+    tls_params_2.local_endpoint.fingerprint.method = tls_hash_method_t::sha_256;
+
+    udp_transport_params_t socket_params_1;
+    udp_transport_params_t socket_params_2;
+
+    socket_params_1.local_endpoint.socket_address = socket_address_t::from_string("192.168.0.103:0");
+    socket_params_1.options.reuse_address = true;
+    socket_params_2.local_endpoint.socket_address = socket_address_t::from_string("localhost:0");
+    socket_params_2.options.reuse_address = true;
+
+
+    auto socket_property_1 = utils::property::serialize(socket_params_1);
+    auto socket_property_2 = utils::property::serialize(socket_params_2);
+    auto tls_property_1 = utils::property::serialize(tls_params_1);
+    auto tls_property_2 = utils::property::serialize(tls_params_1);
+
+    i_udp_transport::u_ptr_t udp_1 = utils::static_pointer_cast<i_udp_transport>(socket_factory->create_transport(*socket_property_1));
+    i_udp_transport::u_ptr_t udp_2 = utils::static_pointer_cast<i_udp_transport>(socket_factory->create_transport(*socket_property_2));
+
+
+    i_tls_transport::u_ptr_t tls_1 = utils::static_pointer_cast<i_tls_transport>(tls_factory.create_transport(*socket_property_1));
+    i_tls_transport::u_ptr_t tls_2 = utils::static_pointer_cast<i_tls_transport>(tls_factory.create_transport(*socket_property_2));
+
+
+    auto message_handler = [&](const std::string_view& name, const i_message& message)
+    {
+        bool is_udp_1 = name.find("udp1") == 0;
+        bool is_udp_2 = name.find("udp2") == 0;
+        bool is_tls_1 = name.find("tls1") == 0;
+        bool is_tls_2 = name.find("tls2") == 0;
+
+        bool is_udp = is_udp_1 || is_udp_2;
+        bool is_tls = is_tls_1 || is_tls_2;
+
+
+        switch(message.category())
+        {
+            case message_category_t::event:
+            {
+                auto& message_event = static_cast<const i_message_event&>(message).event();
+                switch(message_event.event_id)
+                {
+                    case event_channel_state_t::id:
+                    {
+                        auto &event_channel_state = static_cast<const event_channel_state_t&>(message_event);
+                        std::cout << name
+                                  << ": channel state: " <<  utils::enum_to_string(event_channel_state.state)
+                                  << ", reason: " << event_channel_state.reason
+                                  << std::endl;
+                    }
+                    break;
+                    case tls_keys_event_t::id:
+                    {
+                        auto &keys_event = static_cast<const tls_keys_event_t&>(message_event);
+                        std::cout << name
+                                  << ": tls_keys"
+                                  << std::endl;
+                    }
+                    break;
+                    default:;
+                }
+            }
+            break;
+            case message_category_t::packet:
+            {
+                if (message.subclass() == message_class_net)
+                {
+                    auto& net_packet = static_cast<const i_net_packet&>(message);
+
+                    switch(net_packet.transport_id())
+                    {
+                        case transport_id_t::udp:
+                        {
+                            if (is_tls)
+                            {
+                                std::string_view text_message(static_cast<const char*>(net_packet.data())
+                                                                                        , net_packet.size());
+                                std::cout << name
+                                          << ": packet: transport: " << utils::enum_to_string(net_packet.transport_id())
+                                          << ", size: " << net_packet.size()
+                                          << ", message: " << text_message
+                                          << std::endl;
+                            }
+                            else
+                            {
+                                std::cout << name
+                                          << ": packet: transport: " << utils::enum_to_string(net_packet.transport_id())
+                                          << ", size: " << net_packet.size()
+                                          << ", message: secure"
+                                          << std::endl;
+
+                                if (is_udp_1)
+                                {
+                                    tls_1->sink(0)->send_message(net_packet);
+                                }
+                                else if (is_udp_2)
+                                {
+                                    tls_2->sink(0)->send_message(net_packet);
+                                }
+                            }
+                        }
+                        break;
+                        case transport_id_t::tls:
+                        {
+
+                            if (is_tls_1)
+                            {
+                                udp_1->sink(0)->send_message(net_packet);
+                            }
+                            else if (is_tls_2)
+                            {
+                                udp_2->sink(0)->send_message(net_packet);
+                            }
+
+                            std::cout << name
+                                      << ": packet: transport: " << utils::enum_to_string(net_packet.transport_id())
+                                      << ", size: " << net_packet.size()
+                                      << std::endl;
+                        }
+                        break;
+                        default:;
+                    }
+                }
+            }
+            break;
+            default:;
+        }
+
+        return true;
+    };
+
+    message_sink_impl udp_sink_1([&](auto&& ...args) { return message_handler("udp_1", args...); });
+    message_sink_impl udp_sink_2([&](auto&& ...args) { return message_handler("udp_2", args...); });
+    message_sink_impl tls_sink_1([&](auto&& ...args) { return message_handler("tls_1", args...); });
+    message_sink_impl tls_sink_2([&](auto&& ...args) { return message_handler("tls_1", args...); });
+
+    udp_1->source(0)->add_sink(&udp_sink_1);
+    udp_2->source(0)->add_sink(&udp_sink_2);
+
+    tls_1->source(0)->add_sink(&tls_sink_1);
+    tls_2->source(0)->add_sink(&tls_sink_2);
+
+    udp_1->control(channel_control_t::open());
+    udp_2->control(channel_control_t::open());
+
+    udp_1->control(channel_control_t::connect());
+    udp_2->control(channel_control_t::connect());
+
+    utils::time::sleep(durations::milliseconds(100));
+
+    tls_1->control(channel_control_t::open());
+    tls_2->control(channel_control_t::open());
+
+    tls_1->set_remote_endpoint(tls_2->local_endpoint());
+    tls_2->set_remote_endpoint(tls_1->local_endpoint());
+
+    tls_1->control(channel_control_t::connect());
+    tls_2->control(channel_control_t::connect());
+
+    utils::time::sleep(durations::milliseconds(1000));
+
+    const std::string_view test_string = "Kurbatov Vailiy Vladimirovich #";
+
+    auto transport_1 = tls_1.get();
+    auto transport_2 = tls_2.get();
+
+    while (true)
+    {
+        if (transport_1->state() == channel_state_t::connected)
+        {
+            for (auto i = 0; i < 10; i++)
+            {
+                auto test_message = std::string(test_string).append(std::to_string(i));
+                socket_packet_impl test_packet(smart_buffer(test_message.data()
+                                                            , test_message.size()));
+
+                transport_1->sink(0)->send_message(test_packet);
+                utils::time::sleep(durations::milliseconds(10));
+            }
+        }
+        else
+        {
+            utils::time::sleep(durations::milliseconds(100));
+        }
+
+        std::swap(transport_1, transport_2);
+    }
+    utils::time::sleep(durations::seconds(100));
+
+    engine.stop();
+
+    return;
 }
 
 void test()
 {
 
-test4();
+test5();
 
 }
 
