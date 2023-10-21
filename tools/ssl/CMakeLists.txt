@@ -5,7 +5,6 @@ set(TARGET sslpt)
 set(SOURCES
     const_ssl_message.cpp
     dynamic_ssl_message.cpp
-    custom_ssl_connection_observer.cpp
     mapped_dtls_header.cpp
     ssl_context.cpp
     ssl_context_config.cpp
@@ -15,7 +14,6 @@ set(SOURCES
     ssl_x509.cpp
     ssl_connection_config.cpp
     ssl_utils.cpp
-    ssl_manager.cpp
     ssl_manager_config.cpp
     bio_handler.cpp
     bio_context.cpp
@@ -27,7 +25,7 @@ set(SOURCES
 
     ssl_session_params.cpp
     ssl_certificate_impl.cpp
-    ssl_session_factory.cpp
+    ssl_session_manager.cpp
     test.cpp
 )
 
@@ -35,8 +33,6 @@ set(PUBLIC_HEADERS
     i_ssl_channel.h
     i_ssl_message.h
     i_ssl_message_sink.h
-    i_ssl_connection.h
-    i_ssl_connection_observer.h
     i_ssl_session.h
     i_ssl_certificate.h
     ssl_pointers.h
@@ -50,7 +46,6 @@ set(PUBLIC_HEADERS
     bio_handler.h
     bio_context.h
     bio_config.h
-    ssl_manager.h
     ssl_manager_config.h
     ssl_utils.h
     hash_types.h
@@ -63,14 +58,13 @@ set(PUBLIC_HEADERS
 
     ssl_session_params.h
     ssl_certificate_impl.h
-    ssl_session_factory.h
+    ssl_session_manager.h
     test.h
 )
 
 set(PRIVATE_HEADERS
     dynamic_ssl_message.h
     const_ssl_message.h
-    custom_ssl_connection_observer.h
     mapped_dtls_header.h
     ssl_native.h
 )

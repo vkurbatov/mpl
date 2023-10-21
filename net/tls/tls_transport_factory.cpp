@@ -20,11 +20,13 @@
 #include "tls_packet_impl.h"
 #include "tls_keys_event.h"
 
-#include "tools/ssl/ssl_manager.h"
+#include "tools/ssl/ssl_session_manager.h"
 #include "tools/ssl/ssl_manager_config.h"
 #include "tools/ssl/ssl_connection_config.h"
-#include "tools/ssl/custom_ssl_connection_observer.h"
+#include "tools/ssl/ssl_session_params.h"
 #include "tools/ssl/const_ssl_message.h"
+#include "tools/ssl/i_ssl_certificate.h"
+#include "tools/ssl/i_ssl_message_sink.h"
 
 
 #include <shared_mutex>
@@ -61,7 +63,7 @@ static ssl::ssl_manager_config_t create_ssl_config(const tls_config_t& tls_confi
 }
 
 class tls_transport_impl : public i_tls_transport
-        , private ssl::i_ssl_connection_observer
+        , private ssl::i_ssl_session::i_listener
 {
     using mutex_t = std::shared_mutex;
     using lock_t = std::lock_guard<mutex_t>;
@@ -71,10 +73,10 @@ class tls_transport_impl : public i_tls_transport
 
     tls_config_t                        m_tls_config;
     i_timer_manager&                    m_timer_manager;
-    ssl::ssl_manager&                   m_ssl_manager;
+    ssl::ssl_session_manager&           m_ssl_manager;
     mutable tls_transport_params_t      m_tls_params;
 
-    ssl::i_ssl_connection::s_ptr_t      m_ssl_connection;
+    ssl::i_ssl_session::u_ptr_t         m_ssl_session;
 
     socket_endpoint_t                   m_socket_endpoint;
     message_sink_impl                   m_message_sink;
@@ -92,7 +94,7 @@ public:
 
     static u_ptr_t create(const tls_config_t& tls_config
                           , i_timer_manager &timer_manager
-                          , ssl::ssl_manager& ssl_manager
+                          , ssl::ssl_session_manager& ssl_manager
                           , tls_transport_params_t&& tls_params)
     {
         return std::make_unique<tls_transport_impl>(tls_config
@@ -103,7 +105,7 @@ public:
 
     tls_transport_impl(const tls_config_t& tls_config
                        , i_timer_manager& timer_manager
-                       , ssl::ssl_manager& ssl_manager
+                       , ssl::ssl_session_manager& ssl_manager
                        , tls_transport_params_t&& tls_params)
         : m_tls_config(tls_config)
         , m_timer_manager(timer_manager)
@@ -137,7 +139,7 @@ public:
 
     }
 
-    inline ssl::ssl_connection_config_t create_ssl_connection_config() const
+    inline ssl::ssl_session_params_t create_ssl_session_params() const
     {
         return
         {
@@ -149,26 +151,26 @@ public:
     }
 
 
-    inline ssl::i_ssl_connection::s_ptr_t create_ssl_connection()
+    inline ssl::i_ssl_session::u_ptr_t create_ssl_session()
     {
-        return m_ssl_manager.create_connection(create_ssl_connection_config()
+        return m_ssl_manager.create_session(create_ssl_session_params()
                                                , nullptr);
     }
 
-    void set_ssl_connection(ssl::i_ssl_connection::s_ptr_t&& ssl_connection)
+    void set_ssl_session(ssl::i_ssl_session::u_ptr_t&& ssl_session)
     {
-        if (m_ssl_connection != ssl_connection)
+        if (m_ssl_session != ssl_session)
         {
-            if (m_ssl_connection != nullptr)
+            if (m_ssl_session != nullptr)
             {
-                m_ssl_connection->set_observer(nullptr);
+                m_ssl_session->set_listener(nullptr);
             }
 
-            m_ssl_connection = std::move(ssl_connection);
+            m_ssl_session = std::move(ssl_session);
 
-            if (m_ssl_connection != nullptr)
+            if (m_ssl_session != nullptr)
             {
-                m_ssl_connection->set_observer(this);
+                m_ssl_session->set_listener(this);
             }
 
             update_local_params();
@@ -179,7 +181,7 @@ public:
     {
         m_tls_params.local_endpoint.fingerprint.hash.clear();
 
-        if (m_ssl_connection != nullptr)
+        if (m_ssl_session != nullptr)
         {
             if (m_tls_params.local_endpoint.fingerprint.is_defined())
             {
@@ -187,7 +189,7 @@ public:
                                                                 , m_tls_params.local_endpoint.fingerprint.method);
             }
 
-            return m_ssl_connection->set_config(create_ssl_connection_config());
+            return m_ssl_session->set_params(create_ssl_session_params());
             // m_ssl_connection
         }
 
@@ -197,12 +199,21 @@ public:
     inline tls_fingerprint_t::hash_t get_fingerprint(bool local
                                                      , tls_hash_method_t method) const
     {
-        if (m_ssl_connection != nullptr)
+        if (m_ssl_session != nullptr)
         {
-            return m_ssl_connection->get_fingerprint(local
+            if (local)
+            {
+                if (auto cert = local ? m_ssl_session->local_certificate() : m_ssl_session->remote_certificate())
+                {
+                    return cert->get_fingerprint(static_cast<ssl::hash_method_t>(method));
+                }
+            }
+
+            /*
+            return m_ssl_session->get_fingerprint(local
                                                      ? ssl::fingerprint_direction_t::self
                                                      : ssl::fingerprint_direction_t::peer
-                                                     , static_cast<ssl::hash_method_t>(method));
+                                                     , static_cast<ssl::hash_method_t>(method));*/
         }
         return {};
     }
@@ -243,9 +254,9 @@ public:
             change_channel_state(channel_state_t::opening);
             m_open = true;
 
-            if (auto ssl_connection = create_ssl_connection())
+            if (auto ssl_connection = create_ssl_session())
             {
-                set_ssl_connection(std::move(ssl_connection));
+                set_ssl_session(std::move(ssl_connection));
                 change_channel_state(channel_state_t::open);
                 return true;
             }
@@ -264,12 +275,12 @@ public:
             m_open = false;
             timer_stop();
 
-            if (m_ssl_connection != nullptr)
+            if (m_ssl_session != nullptr)
             {
                 change_channel_state(channel_state_t::closing);
 
-                m_ssl_connection->control(ssl::ssl_control_id_t::shutdown);
-                set_ssl_connection(nullptr);
+                m_ssl_session->control(ssl::ssl_control_id_t::shutdown);
+                set_ssl_session(nullptr);
             }
             change_channel_state(channel_state_t::closed);
             return true;
@@ -286,7 +297,7 @@ public:
             if (prepare_role())
             {
                 m_connect = true;
-                if (m_ssl_connection->control(ssl::ssl_control_id_t::handshake))
+                if (m_ssl_session->control(ssl::ssl_control_id_t::handshake))
                 {
                     return true;
                 }
@@ -304,7 +315,7 @@ public:
                 && m_connect)
         {
             timer_stop();
-            m_ssl_connection->control(ssl::ssl_control_id_t::shutdown);
+            m_ssl_session->control(ssl::ssl_control_id_t::shutdown);
             m_connect = false;
         }
 
@@ -317,7 +328,7 @@ public:
         ssl::const_ssl_message ssl_message(packet_data.data()
                                            , packet_data.size()
                                            , type);
-        switch (m_ssl_connection->send_message(ssl_message))
+        switch (m_ssl_session->sink()->send_message(ssl_message))
         {
             case ssl::ssl_io_result_t::ok:
             case ssl::ssl_io_result_t::async:
@@ -376,17 +387,17 @@ public:
 
     void on_timer()
     {
-        if (m_ssl_connection != nullptr)
+        if (m_ssl_session != nullptr)
         {
-            if (m_ssl_connection->state() == ssl::ssl_handshake_state_t::handshaking)
+            if (m_ssl_session->state() == ssl::ssl_handshake_state_t::handshaking)
             {
-                if (m_ssl_connection->control(ssl::ssl_control_id_t::retransmit))
+                if (m_ssl_session->control(ssl::ssl_control_id_t::retransmit))
                 {
                     return;
                 }
             }
 
-            m_ssl_connection->control(ssl::ssl_control_id_t::reset);
+            m_ssl_session->control(ssl::ssl_control_id_t::reset);
             change_channel_state(channel_state_t::failed);
         }
     }
@@ -555,12 +566,12 @@ public:
             break;
             case ssl::ssl_handshake_state_t::closed:
                 change_channel_state(channel_state_t::disconnected);
-                m_ssl_connection->control(ssl::ssl_control_id_t::reset);
+                m_ssl_session->control(ssl::ssl_control_id_t::reset);
             break;
             case ssl::ssl_handshake_state_t::failed:
                 timer_stop();
                 change_channel_state(channel_state_t::failed);
-                m_ssl_connection->control(ssl::ssl_control_id_t::reset);
+                m_ssl_session->control(ssl::ssl_control_id_t::reset);
             break;
         }
     }
@@ -590,20 +601,19 @@ public:
         // ???
     }
 
-    ssl::hash_method_t query_peer_fingerprint(std::vector<uint8_t> &hash) override
+    bool on_verify_certificate(const ssl::i_ssl_certificate *remote_certificate)
     {
-        hash = m_tls_params.remote_endpoint.fingerprint.hash;
-        return static_cast<ssl::hash_method_t>(m_tls_params.remote_endpoint.fingerprint.method);
+        return remote_certificate->get_fingerprint(static_cast<ssl::hash_method_t>(m_tls_params.remote_endpoint.fingerprint.method))
+                == m_tls_params.remote_endpoint.fingerprint.hash;
     }
-
 };
 
 class tls_transport_factory::pimpl_t
 {
-    tls_config_t        m_tls_config;
-    i_timer_manager&    m_timer_manager;
+    tls_config_t                m_tls_config;
+    i_timer_manager&            m_timer_manager;
 
-    ssl::ssl_manager    m_ssl_manager;
+    ssl::ssl_session_manager    m_ssl_manager;
 
 public:
     using u_ptr_t = std::unique_ptr<pimpl_t>;

@@ -1,23 +1,23 @@
-#include "ssl_manager.h"
+#include "ssl_session_manager.h"
+#include "ssl_certificate_impl.h"
 #include "ssl_manager_config.h"
-#include "ssl_context.h"
-#include "bio_context.h"
-#include "ssl_adapter.h"
-#include "ssl_x509.h"
+#include "ssl_session_params.h"
+#include "i_ssl_message_sink.h"
+
+#include "const_ssl_message.h"
 #include "ssl_private_key.h"
 #include "ssl_ec_key.h"
-#include "ssl_connection_config.h"
+#include "ssl_context.h"
+#include "ssl_adapter.h"
+#include "bio_context.h"
+
 #include "mapped_dtls_header.h"
-#include "const_ssl_message.h"
 #include "srtp_key_info.h"
 
 #include <openssl/ssl.h>
+
 #include <cstring>
 #include <mutex>
-
-// temporary:
-
-#include <iostream>
 
 namespace ssl
 {
@@ -47,75 +47,78 @@ ssl_alert_type_t get_alert_type(std::int32_t alert)
 
 constexpr const std::size_t ssl_read_buffer_size = 0xffff;
 
-struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::context_t>
+struct ssl_session_manager::pimpl_t
 {
     using mutex_t = std::mutex;
     using lock_t = std::lock_guard<mutex_t>;
 
-    struct ssl_connection_t : public i_ssl_connection
+    class ssl_session_impl : public i_ssl_session
+            , public i_ssl_message_sink
     {
-        using s_ptr_t = std::shared_ptr<ssl_connection_t>;
+        ssl_session_manager::pimpl_t&   m_owner;
 
-        ssl_connection_config_t                 m_config;
-        i_ssl_connection_observer*              m_observer;
+        ssl_session_params_t            m_params;
+        i_listener*                     m_listener;
 
-        ssl_manager::context_ptr_t              m_manager;
-        bio_context                             m_bio_input;
-        bio_context                             m_bio_output;
-        ssl_adapter                             m_ssl_adapter;
-        ssl_x509                                m_peer_certificate;
+        bio_context                     m_bio_input;
+        bio_context                     m_bio_output;
+        ssl_adapter                     m_ssl_adapter;
 
-        ssl_handshake_state_t                   m_state;
+        ssl_certificate_impl            m_peer_certificate;
 
-        static s_ptr_t create(ssl_manager::context_ptr_t&& manager
-                                , const ssl_connection_config_t& config
-                                , i_ssl_connection_observer* observer)
+        ssl_handshake_state_t           m_state;
+
+    public:
+
+
+
+        using u_ptr_t = std::unique_ptr<ssl_session_impl>;
+
+        static u_ptr_t create(pimpl_t& owner
+                              , const ssl_session_params_t& params
+                              , i_listener* listener)
         {
-            if (auto connection = std::make_shared<ssl_connection_t>(std::move(manager)
-                                                                     , config
-                                                                     , observer))
+            if (owner.is_valid())
             {
-                if (connection->is_valid())
+                if (auto session = std::make_unique<ssl_session_impl>(owner
+                                                                      , params
+                                                                      , listener))
                 {
-                    return connection;
+                    if (session->is_valid())
+                    {
+                        return session;
+                    }
                 }
             }
 
             return nullptr;
         }
 
-        ~ssl_connection_t()
-        {
-            internal_reset(ssl_handshake_state_t::closed);
-        }
-
-        ssl_connection_t(ssl_manager::context_ptr_t&& manager
-                         , const ssl_connection_config_t& config
-                         , i_ssl_connection_observer* observer)
-            : m_config(config)
-            , m_observer(observer)
-            , m_manager(std::move(manager))
-            , m_ssl_adapter(m_manager->m_ssl_context.native_handle()
+        ssl_session_impl(pimpl_t& owner
+                         , const ssl_session_params_t& params
+                         , i_listener* listener)
+            : m_owner(owner)
+            , m_params(params)
+            , m_listener(listener)
+            , m_ssl_adapter(m_owner.m_ssl_context.native_handle()
                             , m_bio_input.native_handle()
                             , m_bio_output.native_handle()
                             , [&](auto&& ...args) { on_native_ssl_state(args...); }
                             , [&](auto&& ...args) { return on_native_verify(args...); })
             , m_state(ssl_handshake_state_t::ready)
         {
-            if (m_config.mtu > 0)
-            {
-                m_ssl_adapter.set_mtu(m_config.mtu);
-            }
+            m_ssl_adapter.set_mtu(m_params.mtu);
         }
+
 
         inline void change_state(ssl_handshake_state_t new_state)
         {
             if (m_state != new_state)
             {
                 m_state = new_state;
-                if (m_observer)
+                if (m_listener)
                 {
-                    m_observer->on_state(new_state);
+                    m_listener->on_state(new_state);
                 }
             }
         }
@@ -168,23 +171,11 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
         {
             if (ok == 1)
             {
-                m_peer_certificate = create_object<X509>(X509_STORE_CTX_get_current_cert(ctx));
-
-                fingerprint_t peer_fingerprint;
-                auto method = m_observer->query_peer_fingerprint(peer_fingerprint);
-                if (method == hash_method_t::none)
-                {
-                    return true;
-                }
+                m_peer_certificate.x509().set(create_object<X509>(X509_STORE_CTX_get_current_cert(ctx)));
 
                 if (m_peer_certificate.is_valid())
                 {
-                    fingerprint_t real_peer_fingerprint;
-
-                    m_peer_certificate.digest(method
-                                              , real_peer_fingerprint);
-
-                    return real_peer_fingerprint == peer_fingerprint;
+                    return m_listener->on_verify_certificate(&m_peer_certificate);
                 }
 
                 return false;
@@ -195,7 +186,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
 
         inline bool is_valid() const
         {
-            return m_manager != nullptr
+            return m_owner.is_valid()
                     && m_ssl_adapter.is_valid()
                     && m_bio_input.is_valid()
                     && m_bio_output.is_valid();
@@ -219,7 +210,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
         {
             if (auto error_desc = SSL_alert_desc_string_long(error_code))
             {
-                m_observer->on_error(detail::get_alert_type(error_code)
+                m_listener->on_error(detail::get_alert_type(error_code)
                                      , error_desc);
             }
         }
@@ -229,7 +220,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             auto timeout = m_ssl_adapter.get_timeout();
             if (timeout > 0)
             {
-                m_observer->on_wait_timeout(timeout);
+                m_listener->on_wait_timeout(timeout);
             }
         }
 
@@ -267,7 +258,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
                 if (m_bio_output.get_data_info(data_info))
                 {
                     //std::cout << this << ": ssl outgoing data: " << data_info.size << std::endl;
-                    m_observer->on_message(const_ssl_message(data_info.data
+                    m_listener->on_message(const_ssl_message(data_info.data
                                                              , data_info.size
                                                              , ssl_data_type_t::encrypted));
                     m_bio_output.reset();
@@ -291,7 +282,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             {
                 if (read_bytes > 0)
                 {
-                    m_observer->on_message(const_ssl_message(ssl_read_buffer.data()
+                    m_listener->on_message(const_ssl_message(ssl_read_buffer.data()
                                                                , read_bytes
                                                                , ssl_data_type_t::application));
                     return read_bytes;
@@ -365,19 +356,20 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
                                     , key.data() + key_length + key_length + salt_length
                                     , salt_length);
 
-                        if (m_config.role == ssl_role_t::client)
+                        if (m_params.role == ssl_role_t::client)
                         {
                             std::swap(encrypted_key
                                       , decrypted_key);
                         }
 
-                        m_observer->on_srtp_key_info(encrypted_key
+                        m_listener->on_srtp_key_info(encrypted_key
                                                      , decrypted_key);
 
                     }
                 }
             }
         }
+
 
         inline ssl_io_result_t send_encryption_data(const void* data, std::size_t size)
         {
@@ -404,9 +396,10 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             return ssl_io_result_t::failed;
         }
 
+
         inline bool internal_handshake()
         {
-            switch(m_config.role)
+            switch(m_params.role)
             {
                 case ssl_role_t::client:
                     return client_handshake();
@@ -445,16 +438,12 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
         inline void reset_ssl()
         {
             m_ssl_adapter.set_state(ssl_state_t::clear);
-            m_ssl_adapter.set_ssl(m_manager->m_ssl_context.native_handle()
+            m_ssl_adapter.set_ssl(m_owner.m_ssl_context.native_handle()
                                   , m_bio_input.native_handle()
                                   , m_bio_output.native_handle());
             m_bio_input.reset();
             m_bio_output.reset();
-
-            if (m_config.mtu > 0)
-            {
-                m_ssl_adapter.set_mtu(m_config.mtu);
-            }
+            m_ssl_adapter.set_mtu(m_params.mtu);
         }
 
         inline void internal_reset(ssl_handshake_state_t reset_state = ssl_handshake_state_t::ready)
@@ -468,20 +457,19 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             change_state(reset_state);
         }
 
-        // i_ssl_connection interface
-public:
-        const ssl_connection_config_t &config() const override
+        // i_ssl_session interface
+    public:
+        const ssl_session_params_t &params() const override
         {
-            return m_config;
+            return m_params;
         }
 
-        bool set_config(const ssl_connection_config_t &ssl_connection_config) override
+        bool set_params(const ssl_session_params_t &params) override
         {
             if (is_ready())
             {
-                m_ssl_adapter.set_mtu(ssl_connection_config.mtu);
-                m_config = ssl_connection_config;
-
+                m_params = params;
+                m_ssl_adapter.set_mtu(m_params.mtu);
                 return true;
             }
 
@@ -495,7 +483,7 @@ public:
 
         bool control(ssl_control_id_t control_id) override
         {
-            if (m_observer)
+            if (m_listener)
             {
                 switch(control_id)
                 {
@@ -517,12 +505,25 @@ public:
 
             return false;
         }
+        i_ssl_message_sink *sink() override
+        {
+            return this;
+        }
+        const i_ssl_certificate *local_certificate() const override
+        {
+            return m_owner.certificate();
+        }
 
-        bool set_observer(i_ssl_connection_observer* observer) override
+        const i_ssl_certificate *remote_certificate() const override
+        {
+            return &m_peer_certificate;
+        }
+
+        bool set_listener(i_listener *listener) override
         {
             if (is_ready())
             {
-                m_observer = observer;
+                m_listener = listener;
                 return true;
             }
 
@@ -544,44 +545,17 @@ public:
 
             return ssl_io_result_t::not_impl;
         }
-        // i_ssl_connection interface
-    public:
-        fingerprint_t get_fingerprint(fingerprint_direction_t direction
-                                    , hash_method_t hash_method) const override
-        {
-            fingerprint_t fingerprint;
-            std::size_t result = 0;
-            if (hash_method != hash_method_t::none)
-            {
-                if (direction == fingerprint_direction_t::self)
-                {
-                    result = m_manager->m_certificate.digest(hash_method
-                                                             , fingerprint);
-
-                }
-                else if (m_peer_certificate.is_valid())
-                {
-                    result = m_peer_certificate.digest(hash_method
-                                                       , fingerprint);
-                }
-
-            }
-            if (result != fingerprint.size())
-            {
-                fingerprint.clear();
-            }
-
-            return fingerprint;
-        }
     };
 
-    mutable mutex_t         m_safe_mutex;
+    using u_ptr_t = std::unique_ptr<pimpl_t>;
 
-    ssl_manager_config_t    m_config;
+    mutable mutex_t             m_safe_mutex;
 
-    ssl_x509                m_certificate;
-    ssl_private_key         m_private_key;
-    ssl_context             m_ssl_context;
+    ssl_manager_config_t        m_config;
+
+    ssl_certificate_impl        m_certificate;
+    ssl_private_key             m_private_key;
+    ssl_context                 m_ssl_context;
 
     static evp_pkey_ptr_t load_private_key(const std::string& pkey_string)
     {
@@ -616,7 +590,7 @@ public:
         return nullptr;
     }
 
-    static ssl_manager::context_ptr_t create(const ssl_manager_config_t& config)
+    static u_ptr_t create(const ssl_manager_config_t &config)
     {
         if (auto pkey_ctx = load_private_key(config.private_key))
         {
@@ -628,63 +602,45 @@ public:
                                                                , cert_ctx
                                                                , pkey_ctx))
                 {
-                    return std::make_shared<context_t>(config
-                                                       , std::move(cert_ctx)
-                                                       , std::move(pkey_ctx)
-                                                       , std::move(ssl_ctx));
+                    return std::make_unique<pimpl_t>(config
+                                                     , std::move(cert_ctx)
+                                                     , std::move(pkey_ctx)
+                                                     , std::move(ssl_ctx));
                 }
             }
         }
         return nullptr;
     }
 
-    context_t(const ssl_manager_config_t& config
-              , x509_ptr_t&& x509_ctx
-              , evp_pkey_ptr_t&&  pkey_ctx
-              , ssl_ctx_ptr_t&& ssl_ctx)
+    pimpl_t(const ssl_manager_config_t &config
+            , x509_ptr_t&& x509_ctx
+            , evp_pkey_ptr_t&& pkey_ctx
+            , ssl_ctx_ptr_t&& ssl_ctx)
         : m_config(config)
         , m_certificate(std::move(x509_ctx))
         , m_private_key(std::move(pkey_ctx))
         , m_ssl_context(std::move(ssl_ctx))
     {
-        m_ssl_context.set_read_ahead(true);
-        m_ssl_context.set_verify_depth(1);
-        if (m_config.ciper_list.empty())
-        {
-            m_ssl_context.set_cipher_list(m_config.ciper_list);
-        }
-        m_ssl_context.set_ecdh_auto(true);
-        if (config.has_srtp())
-        {
-            m_ssl_context.set_tlsext_use_srtp(m_config.srtp_profile_list());
-        }
 
     }
 
-    ~context_t()
+    ~pimpl_t()
     {
 
     }
 
-    std::size_t get_fingerprint(fingerprint_t &fingerprint
-                                , hash_method_t hash_method) const
+    const i_ssl_certificate* certificate() const
     {
-        lock_t lock(m_safe_mutex);
-        return m_certificate.digest(hash_method
-                                    , fingerprint);
+        return &m_certificate;
     }
 
-    i_ssl_connection::s_ptr_t create_connection(const ssl_connection_config_t& connection_config
-                                                  , i_ssl_connection_observer* observer)
+    i_ssl_session::u_ptr_t create_session(const ssl_session_params_t& params
+                                          , i_ssl_session::i_listener* listener)
     {
-        lock_t lock(m_safe_mutex);
-        return ssl_connection_t::create(shared_from_this()
-                                        , connection_config
-                                        , observer);
-
-        return nullptr;
+        return ssl_session_impl::create(*this
+                                        , params
+                                        , listener);
     }
-
 
     bool is_valid() const
     {
@@ -692,34 +648,37 @@ public:
                 && m_certificate.is_valid()
                 && m_private_key.is_valid();
     }
-
 };
 
-ssl_manager::ssl_manager(const ssl_manager_config_t& manager_config)
-    : m_context(context_t::create(manager_config))
+
+ssl_session_manager::ssl_session_manager(const ssl_manager_config_t &config)
+    : m_pimpl(pimpl_t::create(config))
 {
 
 }
 
-std::size_t ssl_manager::get_fingerprint(fingerprint_t &fingerprint
-                                         , hash_method_t hash_method) const
+ssl_session_manager::~ssl_session_manager()
 {
-    return m_context->get_fingerprint(fingerprint
-                                      , hash_method);
+
 }
 
-i_ssl_connection::s_ptr_t ssl_manager::create_connection(const ssl_connection_config_t &connection_config
-                                                           , i_ssl_connection_observer* observer)
+const i_ssl_certificate *ssl_session_manager::certificate() const
 {
-    return m_context->create_connection(connection_config
-                                        , observer);
+    return m_pimpl->certificate();
 }
 
-
-bool ssl_manager::is_valid() const
+i_ssl_session::u_ptr_t ssl_session_manager::create_session(const ssl_session_params_t &params
+                                                           , i_ssl_session::i_listener *listener)
 {
-    return m_context != nullptr
-            && m_context->is_valid();
+    return m_pimpl->create_session(params
+                                   , listener);
 }
+
+bool ssl_session_manager::is_valid() const
+{
+    return m_pimpl != nullptr
+            && m_pimpl->is_valid();
+}
+
 
 }

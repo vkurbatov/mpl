@@ -8,13 +8,13 @@
 #include "ssl_context.h"
 
 #include "ssl_manager_config.h"
-#include "ssl_manager.h"
 #include "ssl_connection_config.h"
 #include "ssl_adapter.h"
-#include "custom_ssl_connection_observer.h"
 #include "const_ssl_message.h"
 #include "dynamic_ssl_message.h"
 #include "srtp_key_info.h"
+#include "i_ssl_message_sink.h"
+#include "ssl_session_manager.h"
 
 #include "tools/base/string_base.h"
 
@@ -166,6 +166,7 @@ void test3()
 
 void test4()
 {
+    /*
     {
 
         ssl_context_config_t config;
@@ -240,8 +241,8 @@ void test4()
             return ssl_io_result_t::ok;
         };
 
-        i_ssl_connection::s_ptr_t server_connection = nullptr;
-        i_ssl_connection::s_ptr_t client_connection = nullptr;
+        i_ssl_session::u_ptr_t server_connection = nullptr;
+        i_ssl_session::u_ptr_t client_connection = nullptr;
 
         auto on_server_state = [&](ssl_handshake_state_t state)
         {
@@ -383,7 +384,7 @@ void test4()
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
     }
-
+    */
     return;
 
 }

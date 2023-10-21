@@ -1,5 +1,5 @@
-#ifndef SSL_SESSION_FACTORY_H
-#define SSL_SESSION_FACTORY_H
+#ifndef SSL_SESSION_MANAGER_H
+#define SSL_SESSION_MANAGER_H
 
 #include "i_ssl_session.h"
 
@@ -9,7 +9,7 @@ namespace ssl
 
 struct ssl_manager_config_t;
 
-class ssl_session_factory
+class ssl_session_manager
 {
 private:
     struct pimpl_t;
@@ -18,8 +18,8 @@ private:
     pimpl_ptr_t     m_pimpl;
 
 public:
-    ssl_session_factory(const ssl_manager_config_t& config);
-    ~ssl_session_factory();
+    ssl_session_manager(const ssl_manager_config_t& config);
+    ~ssl_session_manager();
 
     const i_ssl_certificate* certificate() const;
 
@@ -31,4 +31,4 @@ public:
 
 }
 
-#endif // SSL_SESSION_FACTORY_H
+#endif // SSL_SESSION_MANAGER_H
