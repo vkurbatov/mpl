@@ -12,8 +12,8 @@
 
 #include "utils/depacketizer.h"
 
-#include "utils/sq/sq_parser.h"
-#include "utils/sq/sq_stitcher.h"
+#include "net/sq/sq_parser.h"
+#include "net/sq/sq_stitcher.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
@@ -34,8 +34,8 @@ class wrapped_in_device
     i_sync_shared_data::s_ptr_t     m_shared_data;
     i_message_sink&                 m_message_sink;
     fifo_reader_impl                m_fifo_reader;
-    sq::sq_parser                   m_sq_parser;
-    sq::sq_stitcher                 m_sq_stitcher;
+    net::sq_parser                  m_sq_parser;
+    net::sq_stitcher                m_sq_stitcher;
     std::size_t                     m_frame_counter;
 
     raw_array_t                     m_recv_buffer;
@@ -47,7 +47,7 @@ public:
         : m_shared_data(std::move(shared_data))
         , m_message_sink(message_sink)
         , m_fifo_reader(*m_shared_data)
-        , m_sq_parser([&](sq::sq_packet&& packet) { on_sq_packet(std::move(packet)); })
+        , m_sq_parser([&](net::sq_packet&& packet) { on_sq_packet(std::move(packet)); })
         , m_sq_stitcher([&](smart_buffer&& frame) { on_frame(std::move(frame)); }
                         , 4)
         , m_frame_counter(0)
@@ -108,7 +108,7 @@ public:
 
 private:
 
-    void on_sq_packet(sq::sq_packet&& packet)
+    void on_sq_packet(net::sq_packet&& packet)
     {
         if (packet.is_valid())
         {

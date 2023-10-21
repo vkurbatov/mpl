@@ -11,7 +11,7 @@
 
 #include "utils/packetizer.h"
 
-#include "utils/sq/sq_packet_builder.h"
+#include "net/sq/sq_packet_builder.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
@@ -30,7 +30,7 @@ class wrapped_out_device: public i_message_sink
 {
     i_sync_shared_data::s_ptr_t     m_shared_data;
     fifo_writer_impl                m_fifo_writer;
-    sq::sq_packet_builder_t         m_sq_builder;
+    net::sq_packet_builder_t        m_sq_builder;
     std::size_t                     m_frame_counter;
 
     smart_buffer                    m_frame_buffer;

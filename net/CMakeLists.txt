@@ -44,6 +44,12 @@ set(SOURCES
     tls/tls_transport_factory.cpp
     tls/tls_keys_event.cpp
     tls/tls_packet_impl.cpp
+
+    sq/mapped_sq_header.cpp
+    sq/sq_packet_builder.cpp
+    sq/sq_packet.cpp
+    sq/sq_parser.cpp
+    sq/sq_stitcher.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -83,6 +89,8 @@ set(PUBLIC_HEADERS
     tls/tls_keys_event.h
     tls/i_tls_transport.h
     tls/i_tls_packet.h
+
+
     )
 
 set(PRIVATE_HEADERS
@@ -108,6 +116,13 @@ set(PRIVATE_HEADERS
 
     tls/tls_transport_factory.h
     tls/tls_packet_impl.h
+
+    sq/sq_types.h
+    sq/sq_packet_builder.h
+    sq/sq_packet.h
+    sq/sq_parser.h
+    sq/sq_stitcher.h
+    sq/mapped_sq_header.h
 
 )
 

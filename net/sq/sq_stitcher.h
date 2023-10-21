@@ -1,12 +1,12 @@
-#ifndef MPL_SQ_STITCHER_H
-#define MPL_SQ_STITCHER_H
+#ifndef MPL_NET_SQ_STITCHER_H
+#define MPL_NET_SQ_STITCHER_H
 
 #include "sq_packet.h"
 
 #include <functional>
 #include <set>
 
-namespace mpl::sq
+namespace mpl::net
 {
 
 class sq_stitcher
@@ -47,4 +47,4 @@ private:
 
 }
 
-#endif // MPL_SQ_STITCHER_H
+#endif // MPL_NET_SQ_STITCHER_H

@@ -35,6 +35,10 @@
 #include "tls/tls_packet_impl.h"
 #include "tls/tls_keys_event.h"
 
+#include "sq/sq_packet_builder.h"
+#include "sq/sq_parser.h"
+#include "sq/sq_stitcher.h"
+
 #include "utils/endian_utils.h"
 
 #include "tools/io/net/net_utils.h"
@@ -732,7 +736,6 @@ void test5()
         transport_1->control(channel_control_t::shutdown());
         transport_2->control(channel_control_t::shutdown());
 
-
         utils::time::sleep(durations::milliseconds(1000));
 
         transport_1->set_role(role_t::passive);
@@ -749,6 +752,55 @@ void test5()
 
     return;
 }
+
+void test6()
+{
+    constexpr std::size_t test_count = 200;
+    std::vector<std::uint8_t> test_array;
+
+    for (std::size_t n = 0; n < test_count; n++)
+    {
+        test_array.push_back(static_cast<std::uint8_t>(n));
+    }
+
+    sq_packet_builder_t builder(0
+                                    , 0
+                                    , 50);
+
+    auto packets = builder.build_fragments(test_array.data()
+                                           , test_array.size());
+
+    smart_buffer stream_buffer;
+
+    for (const auto& p : packets)
+    {
+        stream_buffer.append_data(p.data()
+                                  , p.size());
+    }
+
+    auto packet_handler = [&](sq_packet&& packet)
+    {
+        if (packet.is_valid())
+        {
+            std::vector<std::uint8_t> data(static_cast<const std::uint8_t*>(packet.payload_data())
+                                           , static_cast<const std::uint8_t*>(packet.payload_data()) + packet.payload_size());
+
+            std::cout << "Packet #" << packet.id() << ": size: " << data.size() << std::endl;
+        }
+    };
+
+   sq_parser parser(packet_handler);
+
+    for (std::size_t i = 0; i < stream_buffer.size() - 3; i += 4)
+    {
+        parser.push_stream(&stream_buffer[i]
+                           , 4);
+    }
+
+    return;
+
+}
+
 
 void test()
 {

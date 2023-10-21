@@ -3,7 +3,7 @@
 
 #include <cstring>
 
-namespace mpl::sq
+namespace mpl::net
 {
 
 sq_packet_builder_t::sq_packet_builder_t(uint8_t session_id
@@ -33,13 +33,13 @@ smart_buffer::array_t sq_packet_builder_t::build_fragments(const void *data
             part_size = max_fragment_size;
         }
 
-        smart_buffer fragment(nullptr, sizeof(mapped_packet_header_t) + part_size, true);
-        mapped_packet_header_t& header = *static_cast<mapped_packet_header_t*>(fragment.map());
-        auto payload = static_cast<std::uint8_t*>(fragment.map()) + sizeof(mapped_packet_header_t);
+        smart_buffer fragment(nullptr, sizeof(sq_mapped_packet_header_t) + part_size, true);
+        sq_mapped_packet_header_t& header = *static_cast<sq_mapped_packet_header_t*>(fragment.map());
+        auto payload = static_cast<std::uint8_t*>(fragment.map()) + sizeof(sq_mapped_packet_header_t);
 
         header.session_id = session_id;
         header.id = packet_id;
-        header.set_packet_type(packet_type_t::fragment);
+        header.set_packet_type(sq_packet_type_t::fragment);
         header.head = static_cast<std::uint8_t>(payload_ptr == data);
         header.tail =  static_cast<std::uint8_t>(part_size == size);
         header.tune();
@@ -88,14 +88,14 @@ smart_buffer::array_t sq_packet_builder_t::build_nack_request(const std::set<uin
             auto ids_dist = group.back() - group.front();
             auto nack_record_size = 2 + (ids_dist + 7) / 8;
 
-            smart_buffer request(nullptr, sizeof(mapped_packet_header_t) + nack_record_size);
+            smart_buffer request(nullptr, sizeof(sq_mapped_packet_header_t) + nack_record_size);
             auto it = group.begin();
-            mapped_packet_header_t& header = *static_cast<mapped_packet_header_t*>(request.map());
-            mapped_nack_record_t& nack_record = *reinterpret_cast<mapped_nack_record_t*>(static_cast<std::uint8_t*>(request.map()) + sizeof(mapped_packet_header_t));
+            sq_mapped_packet_header_t& header = *static_cast<sq_mapped_packet_header_t*>(request.map());
+            sq_mapped_nack_record_t& nack_record = *reinterpret_cast<sq_mapped_nack_record_t*>(static_cast<std::uint8_t*>(request.map()) + sizeof(sq_mapped_packet_header_t));
 
             header.session_id = session_id;
             header.id = packet_id;
-            header.set_packet_type(packet_type_t::request_nack);
+            header.set_packet_type(sq_packet_type_t::request_nack);
             header.head = 1;
             header.tail = 1;
             header.tune();

@@ -1,7 +1,7 @@
 #include "sq_parser.h"
 #include "mapped_sq_header.h"
 
-namespace mpl::sq
+namespace mpl::net
 {
 
 sq_parser::sq_parser(const packet_handler_t& packet_handler)
@@ -27,12 +27,12 @@ void sq_parser::push_stream(const smart_buffer &stream)
         std::size_t processed_size = 1;
         if (m_packet_buffer.is_empty())
         {
-            if (*ptr == fragment_signature)
+            if (*ptr == sq_fragment_signature)
             {
                 bool handled = false;
-                if (size >= sizeof(mapped_packet_header_t))
+                if (size >= sizeof(sq_mapped_packet_header_t))
                 {
-                    const mapped_packet_header_t& header = *reinterpret_cast<const mapped_packet_header_t*>(ptr);
+                    const sq_mapped_packet_header_t& header = *reinterpret_cast<const sq_mapped_packet_header_t*>(ptr);
                     if (header.is_valid())
                     {
                         if (header.packet_size() <= size)
@@ -60,9 +60,9 @@ void sq_parser::push_stream(const smart_buffer &stream)
         else
         {
             bool packet_completed = false;
-            if (m_packet_buffer.size() >= sizeof(mapped_packet_header_t))
+            if (m_packet_buffer.size() >= sizeof(sq_mapped_packet_header_t))
             {
-                const mapped_packet_header_t& header = *reinterpret_cast<const mapped_packet_header_t*>(m_packet_buffer.data());
+                const sq_mapped_packet_header_t& header = *reinterpret_cast<const sq_mapped_packet_header_t*>(m_packet_buffer.data());
                 if (header.is_valid())
                 {
                     auto need_size = header.packet_size() - m_packet_buffer.size();
@@ -72,7 +72,7 @@ void sq_parser::push_stream(const smart_buffer &stream)
             }
             else
             {
-                auto need_size = sizeof(mapped_packet_header_t) - m_packet_buffer.size();
+                auto need_size = sizeof(sq_mapped_packet_header_t) - m_packet_buffer.size();
                 processed_size = std::min(need_size, size);
             }
 

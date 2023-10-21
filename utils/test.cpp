@@ -17,10 +17,6 @@
 
 #include "ipc_manager_impl.h"
 
-#include "sq/sq_packet_builder.h"
-#include "sq/sq_parser.h"
-#include "sq/sq_stitcher.h"
-
 #include "common_utils.h"
 
 #include "task_manager_impl.h"
@@ -255,53 +251,6 @@ void test4()
 
 }
 
-void test5()
-{
-    constexpr std::size_t test_count = 200;
-    std::vector<std::uint8_t> test_array;
-
-    for (std::size_t n = 0; n < test_count; n++)
-    {
-        test_array.push_back(static_cast<std::uint8_t>(n));
-    }
-
-    sq::sq_packet_builder_t builder(0
-                                    , 0
-                                    , 50);
-
-    auto packets = builder.build_fragments(test_array.data()
-                                           , test_array.size());
-
-    smart_buffer stream_buffer;
-
-    for (const auto& p : packets)
-    {
-        stream_buffer.append_data(p.data()
-                                  , p.size());
-    }
-
-    auto packet_handler = [&](sq::sq_packet&& packet)
-    {
-        if (packet.is_valid())
-        {
-            std::vector<std::uint8_t> data(static_cast<const std::uint8_t*>(packet.payload_data())
-                                           , static_cast<const std::uint8_t*>(packet.payload_data()) + packet.payload_size());
-
-            std::cout << "Packet #" << packet.id() << ": size: " << data.size() << std::endl;
-        }
-    };
-
-    sq::sq_parser parser(packet_handler);
-
-    for (std::size_t i = 0; i < stream_buffer.size() - 3; i += 4)
-    {
-        parser.push_stream(&stream_buffer[i]
-                           , 4);
-    }
-
-    return;
-
-}
 
 std::uint32_t calc_cs(const void* data, std::size_t size)
 {
@@ -313,74 +262,6 @@ std::uint32_t calc_cs(const void* data, std::size_t size)
     }
 
     return cs;
-}
-
-void test6()
-{
-
-
-    auto frame_handler = [&](smart_buffer&& frame)
-    {
-        auto cs = calc_cs(frame.data()
-                            , frame.size());
-
-        std::cout << "on_frame: size: " << frame.size()
-                  << ", cs: " << cs << std::endl;
-    };
-
-    sq::sq_stitcher stitcher(frame_handler);
-
-    auto packet_handler = [&](sq::sq_packet&& packet)
-    {
-        if (packet.is_valid())
-        {
-            std::cout << "Packet #" << packet.id() << ": size: " << packet.payload_size() << std::endl;
-
-            stitcher.push_packet(std::move(packet));
-        }
-    };
-
-    sq::sq_parser parser(packet_handler);
-
-    auto test_count = 1000;
-
-
-    sq::sq_packet_builder_t builder(0
-                                    , 0
-                                    , 50);
-
-    builder.packet_id = 65501;
-
-    while (test_count-- > 0)
-    {
-        auto frame_size = 1 + portable::utils::random<std::size_t>() % 199;
-        std::vector<std::uint8_t> test_array(frame_size);
-        std::uint32_t cs = 0;
-
-        for (auto& v : test_array)
-        {
-            v = portable::utils::random<std::uint8_t>();
-            cs += v;
-        }
-
-        auto packets = builder.build_fragments(test_array.data()
-                                               , test_array.size());
-
-        std::cout << "frame create: size: " << test_array.size()
-                  << ", cs: " << cs
-                  << ", packets: " << packets.size() << std::endl;
-
-        for (auto& p : packets)
-        {
-            parser.push_stream(p.data()
-                               , p.size());
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-
-
-    return;
 }
 
 void test7()

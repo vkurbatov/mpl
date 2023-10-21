@@ -1,11 +1,11 @@
-#ifndef MPL_SEQ_PARSER_H
-#define MPL_SEQ_PARSER_H
+#ifndef MPL_NET_SEQ_PARSER_H
+#define MPL_NET_SEQ_PARSER_H
 
 #include "utils/smart_buffer.h"
 #include "sq_packet.h"
 #include <functional>
 
-namespace mpl::sq
+namespace mpl::net
 {
 
 class sq_parser
@@ -31,4 +31,4 @@ public:
 
 }
 
-#endif // MPL_SEQ_PARSER_H
+#endif // MPL_NET_SEQ_PARSER_H

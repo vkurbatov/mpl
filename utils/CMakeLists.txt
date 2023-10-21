@@ -52,11 +52,6 @@ set(SOURCES
     random_utils_impl.cpp
     json_utils.cpp
     enum_convert_impl.cpp
-    sq/mapped_sq_header.cpp
-    sq/sq_packet_builder.cpp
-    sq/sq_packet.cpp
-    sq/sq_parser.cpp
-    sq/sq_stitcher.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -105,17 +100,11 @@ set(PUBLIC_HEADERS
     json_utils.h
     enum_converter_defs.h
     enum_serialize_defs.h
-    sq/sq_types.h
-    sq/sq_packet_builder.h
-    sq/sq_packet.h
-    sq/sq_parser.h
-    sq/sq_stitcher.h
     )
 
 set(PRIVATE_HEADERS
     test.h
     mapped_packet.h
-    sq/mapped_sq_header.h
 )
 
 

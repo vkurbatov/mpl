@@ -1,7 +1,7 @@
 #include "sq_packet.h"
 #include "mapped_sq_header.h"
 
-namespace mpl::sq
+namespace mpl::net
 {
 
 sq_packet::sq_packet(const smart_buffer &fragment_data)
@@ -33,7 +33,7 @@ smart_buffer sq_packet::fetch_fragment_data()
 
 bool sq_packet::is_valid() const
 {
-    if (m_fragment_data.size() >= sizeof(mapped_packet_header_t)
+    if (m_fragment_data.size() >= sizeof(sq_mapped_packet_header_t)
             && m_fragment_data.size() >= header().length
             && header().is_valid())
     {
@@ -56,7 +56,7 @@ void sq_packet::clear()
 
 const void *sq_packet::payload_data() const
 {
-    return static_cast<const std::uint8_t*>(m_fragment_data.data()) + sizeof(mapped_packet_header_t);
+    return static_cast<const std::uint8_t*>(m_fragment_data.data()) + sizeof(sq_mapped_packet_header_t);
 }
 
 std::size_t sq_packet::payload_size() const
@@ -85,9 +85,9 @@ bool sq_packet::is_full() const
             && is_last();
 }
 
-const mapped_packet_header_t &sq_packet::header() const
+const sq_mapped_packet_header_t &sq_packet::header() const
 {
-    return *reinterpret_cast<const mapped_packet_header_t*>(m_fragment_data.data());
+    return *reinterpret_cast<const sq_mapped_packet_header_t*>(m_fragment_data.data());
 }
 
 }

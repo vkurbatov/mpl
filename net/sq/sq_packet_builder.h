@@ -1,10 +1,10 @@
-#ifndef MPL_SEQ_PACKET_BUILDER_H
-#define MPL_SEQ_PACKET_BUILDER_H
+#ifndef MPL_NET_SEQ_PACKET_BUILDER_H
+#define MPL_NET_SEQ_PACKET_BUILDER_H
 
 #include "utils/smart_buffer.h"
 #include <set>
 
-namespace mpl::sq
+namespace mpl::net
 {
 
 struct sq_packet_builder_t
@@ -27,4 +27,4 @@ struct sq_packet_builder_t
 
 }
 
-#endif // MPL_SEQ_PACKET_BUILDER_H
+#endif // MPL_NET_SEQ_PACKET_BUILDER_H

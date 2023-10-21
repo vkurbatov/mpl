@@ -1,6 +1,6 @@
 #include "sq_stitcher.h"
 
-namespace mpl::sq
+namespace mpl::net
 {
 
 namespace detail

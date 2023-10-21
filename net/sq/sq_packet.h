@@ -1,13 +1,13 @@
-#ifndef MPL_SEQ_PACKET_H
-#define MPL_SEQ_PACKET_H
+#ifndef MPL_NET_SEQ_PACKET_H
+#define MPL_NET_SEQ_PACKET_H
 
 #include "sq_types.h"
 #include "utils/smart_buffer.h"
 
-namespace mpl::sq
+namespace mpl::net
 {
 
-struct mapped_packet_header_t;
+struct sq_mapped_packet_header_t;
 
 class sq_packet
 {
@@ -38,9 +38,9 @@ public:
 
 
 private:
-    const mapped_packet_header_t& header() const;
+    const sq_mapped_packet_header_t& header() const;
 };
 
 }
 
-#endif // MPL_SEQ_PACKET_H
+#endif // MPL_NET_SEQ_PACKET_H
