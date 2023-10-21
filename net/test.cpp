@@ -522,6 +522,7 @@ void test5()
                                                 , nullptr);
 
     tls_config_t tls_config;
+    tls_config.method = tls_method_t::dtls;
     tls_config.srtp_enable = true;
 
     tls_transport_factory tls_factory_1(tls_config
@@ -534,7 +535,7 @@ void test5()
     tls_transport_params_t  tls_params_1;
     tls_transport_params_t  tls_params_2;
 
-    tls_params_1.role = role_t::active;
+    tls_params_1.role = role_t::actpass;
     tls_params_1.local_endpoint.fingerprint.method = tls_hash_method_t::sha_256;
     tls_params_2.role = role_t::passive;
     tls_params_2.local_endpoint.fingerprint.method = tls_hash_method_t::sha_256;
@@ -701,7 +702,7 @@ void test5()
     tls_2->control(channel_control_t::connect());
     tls_1->control(channel_control_t::connect());
 
-    utils::time::sleep(durations::seconds(1));
+    // utils::time::sleep(durations::seconds(1));
 
     const std::string_view test_string = "Kurbatov Vailiy Vladimirovich #";
 
@@ -710,21 +711,22 @@ void test5()
 
     while (true)
     {
-        if (transport_1->state() == channel_state_t::connected)
-        {
-            for (auto i = 0; i < 10; i++)
-            {
-                auto test_message = std::string(test_string).append(std::to_string(i));
-                socket_packet_impl test_packet(smart_buffer(test_message.data()
-                                                            , test_message.size()));
+        std::clog << "transport1: fingerprint: " << transport_1->local_endpoint().fingerprint.to_string() << std::endl;
+        std::clog << "transport2: fingerprint: " << transport_2->local_endpoint().fingerprint.to_string() << std::endl;
 
-                transport_1->sink(0)->send_message(test_packet);
-                utils::time::sleep(durations::milliseconds(10));
-            }
-        }
-        else
+        while (transport_1->state() != channel_state_t::connected)
         {
             utils::time::sleep(durations::milliseconds(100));
+        }
+
+        for (auto i = 0; i < 10; i++)
+        {
+            auto test_message = std::string(test_string).append(std::to_string(i));
+            socket_packet_impl test_packet(smart_buffer(test_message.data()
+                                                        , test_message.size()));
+
+            transport_1->sink(0)->send_message(test_packet);
+            utils::time::sleep(durations::milliseconds(10));
         }
 
         transport_1->control(channel_control_t::shutdown());
@@ -732,6 +734,9 @@ void test5()
 
 
         utils::time::sleep(durations::milliseconds(1000));
+
+        transport_1->set_role(role_t::passive);
+        transport_2->set_role(role_t::actpass);
 
         transport_1->control(channel_control_t::connect());
         transport_2->control(channel_control_t::connect());

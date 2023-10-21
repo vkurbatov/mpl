@@ -58,12 +58,17 @@ bool tls_fingerprint_t::from_string(const std::string &params_line)
 
 std::string tls_fingerprint_t::to_string() const
 {
-    return utils::enum_to_string(method)
-            .append(" ")
-            .append(utils::hex_to_string(hash.data()
-                                         , hash.size()
-                                         , ":", true)
-                    );
+    if (is_defined())
+    {
+        return utils::enum_to_string(method)
+                .append(" ")
+                .append(utils::hex_to_string(hash.data()
+                                             , hash.size()
+                                             , ":", true)
+                        );
+    }
+
+    return {};
 }
 
 

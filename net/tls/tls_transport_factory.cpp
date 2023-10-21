@@ -215,6 +215,25 @@ public:
                                    , fingerprint.method) == fingerprint.hash);
     }
 
+    bool prepare_role()
+    {
+        switch(m_tls_params.role)
+        {
+            case role_t::active:
+            case role_t::passive:
+                return true;
+            break;
+            case role_t::actpass:
+            {
+
+                m_tls_params.role = role_t::active;
+                return update_local_params();
+            }
+            break;
+        }
+
+        return true;
+    }
 
     bool open()
     {
@@ -264,12 +283,15 @@ public:
         if (m_open
                 && !m_connect)
         {
-            m_connect = true;
-            if (m_ssl_connection->control(ssl::ssl_control_id_t::handshake))
+            if (prepare_role())
             {
-                return true;
+                m_connect = true;
+                if (m_ssl_connection->control(ssl::ssl_control_id_t::handshake))
+                {
+                    return true;
+                }
+                m_connect = false;
             }
-            m_connect = false;
             change_channel_state(channel_state_t::failed);
         }
 
@@ -330,12 +352,13 @@ public:
 
     bool on_send_message(const i_message& message)
     {
-        // shared_lock_t lock(m_safe_mutex);
+        lock_t lock(m_safe_mutex);
         switch(message.category())
         {
             case message_category_t::packet:
                 return on_message_packet(static_cast<const i_message_packet&>(message));
             break;
+            default:;
         }
 
         return false;
@@ -452,6 +475,12 @@ public:
         return m_tls_params.role;
     }
 
+    bool set_role(role_t role) override
+    {
+        m_tls_params.role = role;
+        return update_local_params();
+    }
+
     tls_method_t method() const override
     {
         return m_tls_config.method;
@@ -566,6 +595,7 @@ public:
         hash = m_tls_params.remote_endpoint.fingerprint.hash;
         return static_cast<ssl::hash_method_t>(m_tls_params.remote_endpoint.fingerprint.method);
     }
+
 };
 
 class tls_transport_factory::pimpl_t

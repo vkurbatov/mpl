@@ -23,6 +23,16 @@ namespace detail
         right_map_t         m_right_map;
         reverse_map_t       m_reverse_map;
 
+        static std::string normalize_string(std::string enum_string)
+        {
+            to_lower(enum_string);
+            replace(enum_string
+                    , "_"
+                    , "-");
+
+            return enum_string;
+        }
+
 
     public:
 
@@ -33,7 +43,7 @@ namespace detail
             for (const auto& t : table)
             {
                 result_map.emplace(t.first
-                                   , to_lower(t.second));
+                                   , normalize_string(t.second));
             }
 
             return result_map;
@@ -45,7 +55,7 @@ namespace detail
 
             for (const auto& t : table)
             {
-                result_map.emplace(to_lower(t.second)
+                result_map.emplace(normalize_string(t.second)
                                    , t.first);
             }
 
@@ -72,7 +82,7 @@ namespace detail
 
         bool convert(const std::string& string_value, E& enum_value) const
         {
-            if (auto it = m_reverse_map.find(to_lower(string_value)); it != m_reverse_map.end())
+            if (auto it = m_reverse_map.find(normalize_string(string_value)); it != m_reverse_map.end())
             {
                 enum_value = it->second;
                 return true;

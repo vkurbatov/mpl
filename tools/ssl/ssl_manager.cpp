@@ -105,7 +105,6 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             if (m_config.mtu > 0)
             {
                 m_ssl_adapter.set_mtu(m_config.mtu);
-                m_ssl_adapter.get_peer_certificate();
             }
         }
 
@@ -192,8 +191,6 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             }
 
             return true;
-            // auto cert1 = m_manager->m_certificate.native_handle().get();
-            // return m_observer->on_verify(ok);
         }
 
         inline bool is_valid() const
@@ -210,7 +207,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
                     || m_state == ssl_handshake_state_t::closed;
         }
 
-        void check_shutdown()
+        inline void check_shutdown()
         {
             if (m_ssl_adapter.get_shutdown_state() != ssl_shutdown_state_t::none)
             {
@@ -218,7 +215,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             }
         }
 
-        void process_alert(std::int32_t error_code)
+        inline void process_alert(std::int32_t error_code)
         {
             if (auto error_desc = SSL_alert_desc_string_long(error_code))
             {
@@ -227,7 +224,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             }
         }
 
-        void check_timeout()
+        inline void check_timeout()
         {
             auto timeout = m_ssl_adapter.get_timeout();
             if (timeout > 0)
@@ -236,10 +233,13 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             }
         }
 
-        void process_result(ssl_result_t result)
+        inline void process_result(ssl_result_t result)
         {
             switch(result)
             {
+                case ssl_result_t::ok:
+                    // nothng ??
+                break;
                 case ssl_result_t::error_syscall:
                     change_state(ssl_handshake_state_t::failed);
                 break;
@@ -305,24 +305,25 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             return 0;
         }
 
-        bool client_handshake()
+        inline bool client_handshake()
         {
             change_state(ssl_handshake_state_t::prepare);
             m_ssl_adapter.set_state(ssl_state_t::clear);
             m_ssl_adapter.set_state(ssl_state_t::connect);
             auto result = m_ssl_adapter.set_state(ssl_state_t::handshaking);
             process_result(result);
-            process_outgoing_data();
-            return true;
+            // process_outgoing_data();
+            return process_outgoing_data() > 0;
         }
 
-        bool server_handshake()
+        inline bool server_handshake()
         {
             m_ssl_adapter.set_state(ssl_state_t::clear);
             change_state(ssl_handshake_state_t::prepare);
-            m_ssl_adapter.set_state(ssl_state_t::accept);
+            auto result = m_ssl_adapter.set_state(ssl_state_t::accept);
+
             // m_ssl_adapter.set_state(ssl_state_t::handshaking);
-            return true;
+            return result == ssl_result_t::ok;
         }
 
         void srtp_keys_process()
@@ -378,7 +379,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             }
         }
 
-        ssl_io_result_t send_encryption_data(const void* data, std::size_t size)
+        inline ssl_io_result_t send_encryption_data(const void* data, std::size_t size)
         {
             if (m_bio_input.write(data, size) == size)
             {
@@ -388,7 +389,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             return ssl_io_result_t::ok;
         }
 
-        ssl_io_result_t send_application_data(const void* data, std::size_t size)
+        inline ssl_io_result_t send_application_data(const void* data, std::size_t size)
         {
             if (m_state == ssl_handshake_state_t::done)
             {
@@ -403,7 +404,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             return ssl_io_result_t::failed;
         }
 
-        bool internal_handshake()
+        inline bool internal_handshake()
         {
             switch(m_config.role)
             {
@@ -418,7 +419,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             return false;
         }
 
-        bool internal_shutdown()
+        inline bool internal_shutdown()
         {
             m_ssl_adapter.set_state(ssl_state_t::shutdown);
             if (process_outgoing_data() > 0)
@@ -428,7 +429,7 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             return false;
         }
 
-        bool internal_retransmit()
+        inline bool internal_retransmit()
         {
             if (m_ssl_adapter.set_state(ssl_state_t::timeout) == ssl_result_t::ok)
             {
@@ -441,18 +442,29 @@ struct ssl_manager::context_t : std::enable_shared_from_this<ssl_manager::contex
             return false;
         }
 
-        void internal_reset(ssl_handshake_state_t reset_state = ssl_handshake_state_t::ready)
+        inline void reset_ssl()
         {
-            if (m_state != ssl_handshake_state_t::ready)
-            {
-                m_ssl_adapter.set_state(ssl_state_t::shutdown);
-            }
             m_ssl_adapter.set_state(ssl_state_t::clear);
             m_ssl_adapter.set_ssl(m_manager->m_ssl_context.native_handle()
                                   , m_bio_input.native_handle()
                                   , m_bio_output.native_handle());
             m_bio_input.reset();
             m_bio_output.reset();
+
+            if (m_config.mtu > 0)
+            {
+                m_ssl_adapter.set_mtu(m_config.mtu);
+            }
+        }
+
+        inline void internal_reset(ssl_handshake_state_t reset_state = ssl_handshake_state_t::ready)
+        {
+            if (m_state != ssl_handshake_state_t::ready)
+            {
+                m_ssl_adapter.set_state(ssl_state_t::shutdown);
+            }
+
+            reset_ssl();
             change_state(reset_state);
         }
 
@@ -552,12 +564,7 @@ public:
                     result = m_peer_certificate.digest(hash_method
                                                        , fingerprint);
                 }
-                /*else if (auto remote_cert = m_ssl_adapter.get_peer_certificate())
-                {
-                    result = ssl_x509::digest(remote_cert
-                                              , hash_method
-                                              , fingerprint);
-                }*/
+
             }
             if (result != fingerprint.size())
             {

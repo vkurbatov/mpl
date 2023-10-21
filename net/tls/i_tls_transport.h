@@ -16,6 +16,7 @@ public:
     using w_ptr_t = std::weak_ptr<i_tls_transport>;
 
     virtual role_t role() const = 0;
+    virtual bool set_role(role_t role) = 0;
     virtual tls_method_t method() const = 0;
 
     virtual tls_endpoint_t local_endpoint() const = 0;

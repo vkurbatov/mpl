@@ -70,9 +70,16 @@ std::string build_string(const string_param_list_t& param_list
 
 std::string& to_lower(std::string& input);
 std::string& to_upper(std::string& input);
+std::string& replace(std::string& input
+                     , const std::string_view& from
+                     , const std::string_view& to);
 
 std::string to_lower(const std::string& input);
 std::string to_upper(const std::string& input);
+std::string replace(const std::string_view& input
+                     , const std::string_view& from
+                     , const std::string_view& to);
+
 
 bool is_equal(const std::string& lstr
               , const std::string& rstr

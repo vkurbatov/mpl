@@ -346,15 +346,21 @@ void ssl_adapter::set_verify_handler(ssl_verify_handler_t verify_handler)
 void ssl_adapter::set_ssl(ssl_ptr_t &&ssl_ptr)
 {
     m_ssl = std::move(ssl_ptr);
+    if (m_ssl)
+    {
+        SSL_set_ex_data(m_ssl.get()
+                        , 0
+                        , static_cast<void*>(this));
+    }
 }
 
 void ssl_adapter::set_ssl(const ssl_ctx_ptr_t &ssl_ctx
                           , const bio_ptr_t &bio_read
                           , const bio_ptr_t &bio_write)
 {
-    m_ssl = create_ssl(ssl_ctx
+    set_ssl(create_ssl(ssl_ctx
                        , bio_read
-                       , bio_write);
+                       , bio_write));
 }
 
 const ssl_ptr_t &ssl_adapter::native_handle() const

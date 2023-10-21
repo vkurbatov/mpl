@@ -78,6 +78,24 @@ std::string& to_upper(std::string& input)
     return input;
 }
 
+
+std::string &replace(std::string &input
+                     , const std::string_view &from
+                     , const std::string_view &to)
+{
+    if(!from.empty())
+    {
+        size_t start_pos = 0;
+        while((start_pos = input.find(from, start_pos)) != std::string::npos)
+        {
+            input.replace(start_pos, from.length(), to);
+            start_pos += to.length();
+        }
+    }
+
+    return input;
+}
+
 std::string to_lower(const std::string& input)
 {
     auto copy_input = input;
@@ -88,6 +106,18 @@ std::string to_upper(const std::string& input)
     auto copy_input = input;
     return to_upper(copy_input);
 }
+
+
+std::string replace(const std::string_view& input
+                    , const std::string_view &from
+                    , const std::string_view &to)
+{
+    std::string copy_input(input);
+    return replace(copy_input
+                   , from
+                   , to);
+}
+
 
 bool is_equal(const std::string& lstr
               , const std::string& rstr
