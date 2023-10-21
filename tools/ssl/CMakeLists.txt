@@ -24,6 +24,10 @@ set(SOURCES
     srtp_session_config.cpp
     srtp_packet.cpp
     srtp_key_info.cpp
+
+    ssl_session_params.cpp
+    ssl_certificate_impl.cpp
+    ssl_session_factory.cpp
     test.cpp
 )
 
@@ -33,6 +37,8 @@ set(PUBLIC_HEADERS
     i_ssl_message_sink.h
     i_ssl_connection.h
     i_ssl_connection_observer.h
+    i_ssl_session.h
+    i_ssl_certificate.h
     ssl_pointers.h
     ssl_context.h
     ssl_context_config.h
@@ -54,6 +60,10 @@ set(PUBLIC_HEADERS
     srtp_session_config.h
     srtp_packet.h
     srtp_key_info.h
+
+    ssl_session_params.h
+    ssl_certificate_impl.h
+    ssl_session_factory.h
     test.h
 )
 

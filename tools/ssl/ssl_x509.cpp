@@ -95,9 +95,8 @@ ssl_x509::ssl_x509()
 }
 
 ssl_x509::ssl_x509(x509_ptr_t &&x509)
-    : m_x509(std::move(x509))
 {
-
+    set(std::move(x509));
 }
 
 ssl_x509::ssl_x509(const bio_ptr_t &bio)
@@ -119,6 +118,11 @@ ssl_x509::ssl_x509(const evp_pkey_ptr_t &evp_pkey
                                      , hash_method)))
 {
 
+}
+
+void ssl_x509::set(x509_ptr_t &&x509)
+{
+    m_x509 = std::move(x509);
 }
 
 bool ssl_x509::set_version(int32_t version)

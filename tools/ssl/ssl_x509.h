@@ -43,6 +43,8 @@ public:
              , const std::string& subject_name = {}
              , hash_method_t hash_method = hash_method_t::sha1);
 
+    void set(x509_ptr_t&& x509);
+
     bool set_version(std::int32_t version);
     std::size_t digest(hash_method_t hash_method
                        , void* data) const;
