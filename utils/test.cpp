@@ -23,7 +23,7 @@
 #include "timer_manager_impl.h"
 
 #include "tools/ipc/test.h"
-#include "tools/base/random_base.h"
+#include "tools/utils/random_base.h"
 
 #include "tools/io/net/udp_link.h"
 #include "tools/io/net/udp_link_config.h"
@@ -313,31 +313,31 @@ void test7()
 
 void test8()
 {
-    auto& core = io::io_core::get_instance();
+    auto& core = pt::io::io_core::get_instance();
     core.run();
 
-    io::udp_link link1(core
+    pt::io::udp_link link1(core
                        , {});
-    io::udp_link link2(core
+    pt::io::udp_link link2(core
                        , {});
 
-    io::ip_endpoint_t ep1("127.0.0.1:0");
-    io::ip_endpoint_t ep2("127.0.0.1:0");
+    pt::io::ip_endpoint_t ep1("127.0.0.1:0");
+    pt::io::ip_endpoint_t ep2("127.0.0.1:0");
 
-    auto link_state_handler_1 = [](io::link_state_t state
+    auto link_state_handler_1 = [](pt::io::link_state_t state
                                    , const std::string_view& reason)
     {
         std::clog << "Link #1 state: " << static_cast<std::int32_t>(state) << std::endl;
     };
 
-    auto link_state_handler_2 = [](io::link_state_t state
+    auto link_state_handler_2 = [](pt::io::link_state_t state
                                    , const std::string_view& reason)
     {
         std::clog << "Link #2 state: " << static_cast<std::int32_t>(state) << std::endl;
     };
 
-    auto link_message_handler_1 = [&](const io::message_t& message
-                                      , const io::endpoint_t& endpoint)
+    auto link_message_handler_1 = [&](const pt::io::message_t& message
+                                      , const pt::io::endpoint_t& endpoint)
     {
         std::string_view msg(static_cast<const char*>(message.data())
                              , message.size());
@@ -347,8 +347,8 @@ void test8()
                   << std::endl;
     };
 
-    auto link_message_handler_2 = [&](const io::message_t& message
-                                      , const io::endpoint_t& endpoint)
+    auto link_message_handler_2 = [&](const pt::io::message_t& message
+                                      , const pt::io::endpoint_t& endpoint)
     {
         std::string_view msg(static_cast<const char*>(message.data())
                              , message.size());
@@ -373,11 +373,11 @@ void test8()
     const auto count = 1000;
     const std::string_view test_string = "Test string";
 
-    if (link1.control(io::link_control_id_t::open)
-            && link2.control(io::link_control_id_t::open))
+    if (link1.control(pt::io::link_control_id_t::open)
+            && link2.control(pt::io::link_control_id_t::open))
     {
-        if (link1.control(io::link_control_id_t::start)
-                && link2.control(io::link_control_id_t::start))
+        if (link1.control(pt::io::link_control_id_t::start)
+                && link2.control(pt::io::link_control_id_t::start))
         {
             for (auto i = 0; i < count; i++)
             {
@@ -385,7 +385,7 @@ void test8()
                         .append(" #")
                         .append(std::to_string(i));
 
-                io::message_t msg(send_sting.data(), send_sting.size());
+                pt::io::message_t msg(send_sting.data(), send_sting.size());
 
                 link1.send_to(msg
                               , link2.local_endpoint());
@@ -396,12 +396,12 @@ void test8()
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            link2.control(io::link_control_id_t::stop);
-            link1.control(io::link_control_id_t::stop);
+            link2.control(pt::io::link_control_id_t::stop);
+            link1.control(pt::io::link_control_id_t::stop);
         }
 
-        link2.control(io::link_control_id_t::close);
-        link1.control(io::link_control_id_t::close);
+        link2.control(pt::io::link_control_id_t::close);
+        link1.control(pt::io::link_control_id_t::close);
     }
 
 
@@ -410,7 +410,7 @@ void test8()
 
 void ipc_test()
 {
-    ipc::test();
+    pt::ipc::test();
 }
 
 }

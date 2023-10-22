@@ -9,7 +9,7 @@ namespace mpl::net
 
 class net_engine_impl : public i_net_engine
 {
-    io::io_core     m_io_core;
+    pt::io::io_core     m_io_core;
 
 public:
 

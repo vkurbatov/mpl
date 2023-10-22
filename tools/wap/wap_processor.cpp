@@ -6,7 +6,7 @@
 #include <queue>
 #include <iostream>
 
-namespace wap
+namespace pt::wap
 {
 
 namespace detail

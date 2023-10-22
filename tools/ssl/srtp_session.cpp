@@ -9,7 +9,7 @@
 #include <mutex>
 #include <iostream>
 
-namespace ssl
+namespace pt::ssl
 {
 
 static constexpr size_t crypto_buffer_size = 1500 + SRTP_MAX_TRAILER_LEN;

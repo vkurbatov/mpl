@@ -1,6 +1,6 @@
 #include "layout_manager_mosaic_impl.h"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 
 #include <cmath>
 #include <vector>
@@ -68,7 +68,7 @@ public:
         if (streams <= 1000)
         {
             static mosaic_layout_impl::array_t single_layouts;
-            static portable::spin_lock safe_mutex;
+            static pt::utils::spin_lock safe_mutex;
 
             if (single_layouts.size() <= streams)
             {

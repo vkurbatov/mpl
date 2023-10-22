@@ -1,6 +1,6 @@
 #include "ipc_base.h"
 
-namespace ipc
+namespace pt::ipc
 {
 
 

@@ -3,8 +3,8 @@
 namespace mpl::net
 {
 
-tls_keys_event_t::tls_keys_event_t(const ssl::srtp_key_info_t &encryption_key
-                                   , const ssl::srtp_key_info_t &decryption_key)
+tls_keys_event_t::tls_keys_event_t(const pt::ssl::srtp_key_info_t &encryption_key
+                                   , const pt::ssl::srtp_key_info_t &decryption_key)
     : event_t(id
               , event_name)
     , encryption_key(encryption_key)

@@ -4,7 +4,7 @@
 #include "hash_types.h"
 #include <cstdint>
 
-namespace ssl
+namespace pt::ssl
 {
 
 enum class ssl_version_t
@@ -139,7 +139,7 @@ enum class ssl_handshake_state_t
     failed
 };
 
-enum class ssl_state_t
+enum class ssl_control_id_t
 {
     connecting,
     connect,
@@ -152,7 +152,7 @@ enum class ssl_state_t
     renegotiate
 };
 
-enum class ssl_control_id_t
+enum class ssl_session_control_id_t
 {
     handshake,
     shutdown,

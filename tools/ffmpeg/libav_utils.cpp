@@ -6,10 +6,10 @@ extern "C"
 #include <libavformat/avformat.h>
 }
 
-#include "tools/base/url_base.h"
+#include "tools/utils/url_base.h"
 
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 
@@ -18,12 +18,12 @@ namespace utils
 
 libav_option_list_t parse_option_list(const std::string &options)
 {
-    return portable::parse_option_list(options);
+    return pt::utils::parse_option_list(options);
 }
 
 libav_option_map_t parse_option_map(const std::string &options)
 {
-    return portable::parse_option_map(options);
+    return pt::utils::parse_option_map(options);
 }
 
 bool is_global_header_format(const std::string &format_name)
@@ -180,7 +180,7 @@ std::string error_string(int32_t av_errno)
 url_format_t fetch_url_format(const std::string &url)
 {
     url_format_t format;
-    portable::url_info_t url_info;
+    pt::utils::url_info_t url_info;
 
     format.url = url;
 

@@ -2,7 +2,7 @@
 #define IPC_BASE_H
 
 
-namespace ipc
+namespace pt::ipc
 {
 
 

@@ -4,7 +4,7 @@
 #include "ssl_native.h"
 #include <cstdint>
 
-namespace ssl
+namespace pt::ssl
 {
 
 class ssl_ec_key

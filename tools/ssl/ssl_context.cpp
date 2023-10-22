@@ -7,7 +7,7 @@
 
 #include <functional>
 
-namespace ssl
+namespace pt::ssl
 {
 
 bool ssl_context::use_x509(ssl_ctx_ptr_t &ssl_ctx, const x509_ptr_t &x509)

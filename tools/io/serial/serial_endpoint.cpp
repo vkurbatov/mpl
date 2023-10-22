@@ -1,6 +1,6 @@
 #include "serial_endpoint.h"
 
-namespace io
+namespace pt::io
 {
 
 serial_endpoint_t::serial_endpoint_t(const std::string_view &port_name)

@@ -5,7 +5,7 @@
 #include <opencv2/highgui.hpp>
 #include <iostream>
 
-namespace ocv
+namespace pt::ocv
 {
 
 void transparent_overlay(cv::Mat& src, cv::Mat& overlay)
@@ -80,7 +80,7 @@ void test1()
 
 void test2()
 {
-    frame_info_t   frame_info(ocv::frame_format_t::bgra
+    frame_info_t   frame_info(pt::ocv::frame_format_t::bgra
                               , { 600, 600 });
     frame_data_t   frame_data(frame_info.frame_size(), 0);
 

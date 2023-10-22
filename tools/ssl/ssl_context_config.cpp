@@ -1,7 +1,7 @@
 #include "ssl_context_config.h"
 #include "ssl_utils.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 ssl_context_config_t::ssl_context_config_t(ssl_method_t method

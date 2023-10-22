@@ -3,7 +3,7 @@
 
 #include "srtp_key_info.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 struct srtp_session_config_t

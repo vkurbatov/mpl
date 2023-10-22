@@ -1,7 +1,7 @@
 #ifndef IPC_TEST_H
 #define IPC_TEST_H
 
-namespace ipc
+namespace pt::ipc
 {
 
 void test();

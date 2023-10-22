@@ -5,7 +5,7 @@
 #include "tools/io/endpoint.h"
 #include "ip_address.h"
 
-namespace io
+namespace pt::io
 {
 
 struct ip_endpoint_t : public endpoint_t

@@ -43,6 +43,8 @@
 
 #include "tools/io/net/net_utils.h"
 
+#include <shared_mutex>
+#include <mutex>
 #include <iostream>
 #include <thread>
 #include <cstring>
@@ -225,10 +227,10 @@ void test2()
     auto h4 = utils::calc_hmac_sha1(a1.data(), a1.size(), "Vasiliy");
 
     auto now = utils::time::get_ticks();
-    auto address1 = io::utils::get_host_by_name("stun.l.google.com", ip_version_t::ip4);
+    auto address1 = pt::io::utils::get_host_by_name("stun.l.google.com", ip_version_t::ip4);
     auto delay = utils::time::get_ticks() - now;
 
-    io::ip_endpoint_t endpoint2(std::string("stun.l.google.com:19302"));
+    pt::io::ip_endpoint_t endpoint2(std::string("stun.l.google.com:19302"));
 
     std::cout << "address1: " << address1.to_string()
               << ", endpoint2: " << endpoint2.to_string()
@@ -378,6 +380,7 @@ void test4()
 
     i_ice_transport::u_ptr_t ice_connection_1 = utils::static_pointer_cast<i_ice_transport>(ice_factory.create_transport(*ice_property_1));
     i_ice_transport::u_ptr_t ice_connection_2 = utils::static_pointer_cast<i_ice_transport>(ice_factory.create_transport(*ice_property_2));
+
 
     auto message_handler = [&](const std::string_view& name, const i_message& message)
     {
@@ -566,8 +569,11 @@ void test5()
     i_tls_transport::u_ptr_t tls_2 = utils::static_pointer_cast<i_tls_transport>(tls_factory_2.create_transport(*tls_property_2));
 
 
+    //std::shared_mutex safe_mutex;
+
     auto message_handler = [&](const std::string_view& name, const i_message& message)
     {
+
         bool is_udp_1 = name.find("udp1") == 0;
         bool is_udp_2 = name.find("udp2") == 0;
         bool is_tls_1 = name.find("tls1") == 0;
@@ -715,10 +721,12 @@ void test5()
 
     while (true)
     {
+
         std::clog << "transport1: fingerprint: " << transport_1->local_endpoint().fingerprint.to_string() << std::endl;
         std::clog << "transport2: fingerprint: " << transport_2->local_endpoint().fingerprint.to_string() << std::endl;
 
-        while (transport_1->state() != channel_state_t::connected)
+        while (transport_1->state() != channel_state_t::connected
+               && transport_2->state() != channel_state_t::connected)
         {
             utils::time::sleep(durations::milliseconds(100));
         }
@@ -736,7 +744,7 @@ void test5()
         transport_1->control(channel_control_t::shutdown());
         transport_2->control(channel_control_t::shutdown());
 
-        utils::time::sleep(durations::milliseconds(1000));
+        utils::time::sleep(durations::milliseconds(300));
 
         transport_1->set_role(role_t::passive);
         transport_2->set_role(role_t::actpass);

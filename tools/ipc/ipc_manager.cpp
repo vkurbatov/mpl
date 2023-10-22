@@ -1,7 +1,7 @@
 #include "ipc_manager.h"
 #include "ipc_segment.h"
 
-namespace ipc
+namespace pt::ipc
 {
 
 namespace detail

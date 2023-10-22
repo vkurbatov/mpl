@@ -4,7 +4,7 @@
 #include "ssl_x509.h"
 #include "bio_context.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 evp_pkey_ptr_t ssl_private_key::create_evp_pkey(ec_key_ptr_t &&ec_key)

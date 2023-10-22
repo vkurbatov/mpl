@@ -6,13 +6,13 @@
 #include <thread>
 #include <cstring>
 
-#include "tools/base/string_base.h"
+#include "tools/utils/string_base.h"
 
 #define WBS_MODULE_NAME "visca:device"
-#include "tools/base/logger_base.h"
+#include "tools/utils/logger_base.h"
 
 
-namespace visca
+namespace pt::visca
 {
 
 const std::size_t any_size = 0;
@@ -275,7 +275,7 @@ struct visca_controller_t
 
             if (write_size > 0)
             {
-                LOG_D << "Send packet: " <<  portable::hex_dump(command_buffer.data()
+                LOG_D << "Send packet: " <<  pt::utils::hex_dump(command_buffer.data()
                                                             , command_buffer.size()) LOG_END;
 
                 return write_size == command_buffer.size();
@@ -304,7 +304,7 @@ struct visca_controller_t
 
             if (write_size > 0)
             {
-                LOG_D << "Send packet: " <<  portable::hex_dump(command_buffer.data()
+                LOG_D << "Send packet: " <<  pt::utils::hex_dump(command_buffer.data()
                                                             , command_buffer.size()) LOG_END;
 
                 return write_size == command_buffer.size();
@@ -335,7 +335,7 @@ struct visca_controller_t
 
             if (write_size > 0)
             {
-                LOG_D << "Send packet: " <<  portable::hex_dump(command_buffer.data()
+                LOG_D << "Send packet: " <<  pt::utils::hex_dump(command_buffer.data()
                                                             , command_buffer.size()) LOG_END;
 
                 return write_size == command_buffer.size();
@@ -368,7 +368,7 @@ struct visca_controller_t
                          , dt) > 0)
                 {
 
-                    LOG_D << "Recv packet: " <<  portable::hex_dump(response_buffer.data()
+                    LOG_D << "Recv packet: " <<  pt::utils::hex_dump(response_buffer.data()
                                                                 , response_buffer.size()) LOG_END;
 
                     auto response_packets = response_parser.push_data(response_buffer.data()

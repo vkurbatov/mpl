@@ -1,7 +1,7 @@
 #include "ssl_connection_config.h"
 #include "ssl_utils.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 ssl_connection_config_t::ssl_connection_config_t(ssl_role_t role

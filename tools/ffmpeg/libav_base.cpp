@@ -16,7 +16,7 @@ extern "C"
 #include <map>
 #include <set>
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 static bool libav_register_flag = false;

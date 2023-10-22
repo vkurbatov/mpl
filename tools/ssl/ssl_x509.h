@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace ssl
+namespace pt::ssl
 {
 
 class ssl_x509

@@ -57,8 +57,8 @@ int test()
 int main()
 {
     // return test();
-    ffmpeg::set_log_level(ffmpeg::log_level_t::quiet);
-    ffmpeg::libav_register();
+    pt::ffmpeg::set_log_level(pt::ffmpeg::log_level_t::quiet);
+    pt::ffmpeg::libav_register();
     std::string input_audio_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     std::string input_video_url = "/dev/video0";
 

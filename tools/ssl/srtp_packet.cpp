@@ -1,6 +1,6 @@
 #include "srtp_packet.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 srtp_packet_t::srtp_packet_t(srtp_packet_type_t type

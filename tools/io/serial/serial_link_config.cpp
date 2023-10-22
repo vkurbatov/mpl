@@ -1,6 +1,6 @@
 #include "serial_link_config.h"
 
-namespace io
+namespace pt::io
 {
 
 serial_link_config_t::serial_link_config_t(baud_rate_t baud_rate

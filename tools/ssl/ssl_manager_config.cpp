@@ -1,7 +1,7 @@
 #include "ssl_manager_config.h"
 #include "ssl_utils.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 srtp_profile_id_set_t ssl_manager_config_t::default_srtp_profiles =

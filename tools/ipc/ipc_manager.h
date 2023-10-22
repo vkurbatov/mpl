@@ -4,7 +4,7 @@
 #include "ipc_types.h"
 #include <functional>
 
-namespace ipc
+namespace pt::ipc
 {
 
 class ipc_segment;

@@ -6,7 +6,7 @@
 #include "srtp_types.h"
 #include <functional>
 
-namespace ssl
+namespace pt::ssl
 {
 
 class ssl_context;
@@ -27,12 +27,12 @@ public:
                                 , const bio_ptr_t& bio_read = nullptr
                                 , const bio_ptr_t& bio_write = nullptr);
 
-    static void set_bio(ssl_ptr_t& ssl
+    static void set_bio(const ssl_ptr_t& ssl
                         , const bio_ptr_t& bio_read
                         , const bio_ptr_t& bio_write);
 
-    static void set_mtu(ssl_ptr_t& ssl, std::uint32_t mtu);
-    static ssl_result_t set_state(ssl_ptr_t& ssl, ssl_state_t state);
+    static void set_mtu(const ssl_ptr_t& ssl, std::uint32_t mtu);
+    static ssl_result_t control(const ssl_ptr_t& ssl, ssl_control_id_t control);
     static std::uint64_t get_timeout(const ssl_ptr_t& ssl);
 
     static bool is_server(const ssl_ptr_t& ssl);
@@ -42,14 +42,14 @@ public:
     static ssl_result_t get_result(const ssl_ptr_t& ssl, std::int32_t io_result);
     static ssl_shutdown_state_t get_shutdown_state(const ssl_ptr_t& ssl);
 
-    static std::int32_t read(ssl_ptr_t& ssl, void* data, std::size_t size);
-    static std::int32_t write(ssl_ptr_t& ssl, const void* data, std::size_t size);
+    static std::int32_t read(const ssl_ptr_t& ssl, void* data, std::size_t size);
+    static std::int32_t write(const ssl_ptr_t& ssl, const void* data, std::size_t size);
 
-    static std::size_t read(ssl_ptr_t& ssl, void* data, std::size_t size, ssl_result_t& result);
-    static std::size_t write(ssl_ptr_t& ssl, const void* data, std::size_t size, ssl_result_t& result);
+    static std::size_t read(const ssl_ptr_t& ssl, void* data, std::size_t size, ssl_result_t& result);
+    static std::size_t write(const ssl_ptr_t& ssl, const void* data, std::size_t size, ssl_result_t& result);
 
     static x509_ptr_t get_peer_certificate(const ssl_ptr_t& ssl);
-    static bool export_keying_material(ssl_ptr_t& ssl
+    static bool export_keying_material(const ssl_ptr_t& ssl
                                        , const std::string& label
                                        , void* material
                                        , std::size_t material_size);
@@ -70,7 +70,7 @@ public:
                  , const bio_ptr_t& bio_write);
 
     void set_mtu(std::uint32_t mtu);
-    ssl_result_t set_state(ssl_state_t state);
+    ssl_result_t control(ssl_control_id_t control_id);
     std::uint64_t get_timeout() const;
 
     bool is_server() const;
@@ -95,8 +95,8 @@ public:
 
     void set_ssl(ssl_ptr_t&& ssl_ptr);
     void set_ssl(const ssl_ctx_ptr_t& ssl_ctx
-                 , const bio_ptr_t& bio_read = nullptr
-                 , const bio_ptr_t& bio_write = nullptr);
+                 , const bio_ptr_t& bio_read
+                 , const bio_ptr_t& bio_write);
 
     const ssl_ptr_t& native_handle() const;
     ssl_ptr_t release();

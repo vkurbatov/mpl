@@ -20,7 +20,7 @@
 
 #include "video_frame_impl.h"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 #include "tools/v4l2/v4l2_input_device.h"
 
 #include <shared_mutex>
@@ -132,7 +132,7 @@ namespace detail
 class v4l2_device : public i_device
 {
 
-    using mutex_t = portable::shared_spin_lock;
+    using mutex_t = pt::utils::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
     using cond_t = std::condition_variable;

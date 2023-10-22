@@ -1,6 +1,6 @@
 #include "io_base.h"
 
-namespace io
+namespace pt::io
 {
 
 link_config_t::link_config_t()

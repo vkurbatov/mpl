@@ -11,26 +11,26 @@ namespace mpl::media
 namespace detail
 {
 
-inline ocv::frame_format_t get_ocv_format(video_format_id_t format_id)
+inline pt::ocv::frame_format_t get_ocv_format(video_format_id_t format_id)
 {
     switch(format_id)
     {
         case video_format_id_t::bgr24:
-            return ocv::frame_format_t::bgr;
+            return pt::ocv::frame_format_t::bgr;
         break;
         case video_format_id_t::bgra32:
-            return ocv::frame_format_t::bgra;
+            return pt::ocv::frame_format_t::bgra;
         break;
         case video_format_id_t::rgb24:
-            return ocv::frame_format_t::rgb;
+            return pt::ocv::frame_format_t::rgb;
         break;
         case video_format_id_t::rgba32:
-            return ocv::frame_format_t::rgba;
+            return pt::ocv::frame_format_t::rgba;
         break;
         default:;
     }
 
-    return ocv::frame_format_t::undefined;
+    return pt::ocv::frame_format_t::undefined;
 }
 
 }
@@ -158,7 +158,7 @@ bool image_frame_t::is_empty() const
 bool image_frame_t::load(const std::string &path
                          , video_format_id_t format_id)
 {
-    ocv::image_t image;
+    pt::ocv::image_t image;
     if (!path.empty()
             && image.load(path, detail::get_ocv_format(format_id))
             && image.is_valid())

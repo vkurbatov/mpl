@@ -4,7 +4,7 @@
 #include "io_base.h"
 #include <memory>
 
-namespace io
+namespace pt::io
 {
 
 class io_core

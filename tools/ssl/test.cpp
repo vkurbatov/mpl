@@ -16,7 +16,7 @@
 #include "i_ssl_message_sink.h"
 #include "ssl_session_manager.h"
 
-#include "tools/base/string_base.h"
+#include "tools/utils/string_base.h"
 
 #include <vector>
 #include <iostream>
@@ -24,7 +24,7 @@
 #include <queue>
 
 
-namespace ssl
+namespace pt::ssl
 {
 
 void test1()

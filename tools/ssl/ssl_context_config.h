@@ -3,7 +3,7 @@
 
 #include "ssl_types.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 struct ssl_context_config_t

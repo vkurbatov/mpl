@@ -5,7 +5,7 @@
 #include <vector>
 #include <queue>
 
-namespace visca
+namespace pt::visca
 {
 
 typedef std::vector<std::uint8_t> packet_data_t;

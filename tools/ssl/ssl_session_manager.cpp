@@ -19,7 +19,7 @@
 #include <cstring>
 #include <mutex>
 
-namespace ssl
+namespace pt::ssl
 {
 
 static std::string dtls_srtp_label = "EXTRACTOR-dtls_srtp";
@@ -329,17 +329,17 @@ struct ssl_session_manager::pimpl_t
                     break;
                     case fsm_t::clear:
                     {
-                        result = m_ssl_adapter.set_state(ssl_state_t::clear);
+                        result = m_ssl_adapter.control(ssl_control_id_t::clear);
                     }
                     break;
                     case fsm_t::connect:
                     {
-                        result = m_ssl_adapter.set_state(ssl_state_t::connect);
+                        result = m_ssl_adapter.control(ssl_control_id_t::connect);
                     }
                     break;
                     case fsm_t::handshake:
                     {
-                        result = m_ssl_adapter.set_state(ssl_state_t::handshaking);
+                        result = m_ssl_adapter.control(ssl_control_id_t::handshaking);
                         process_outgoing_data();
                     }
                     break;
@@ -390,12 +390,12 @@ struct ssl_session_manager::pimpl_t
                     break;
                     case fsm_t::clear:
                     {
-                        result = m_ssl_adapter.set_state(ssl_state_t::clear);
+                        result = m_ssl_adapter.control(ssl_control_id_t::clear);
                     }
                     break;
                     case fsm_t::accept:
                     {
-                        result = m_ssl_adapter.set_state(ssl_state_t::accept);
+                        result = m_ssl_adapter.control(ssl_control_id_t::accept);
                     }
                     break;
                     case fsm_t::completed:
@@ -417,13 +417,6 @@ struct ssl_session_manager::pimpl_t
             }
 
             return false;
-            /*
-            m_ssl_adapter.set_state(ssl_state_t::clear);
-            change_state(ssl_handshake_state_t::prepare);
-            auto result = m_ssl_adapter.set_state(ssl_state_t::accept);
-
-            // m_ssl_adapter.set_state(ssl_state_t::handshaking);
-            return result == ssl_result_t::ok;*/
         }
 
         void srtp_keys_process()
@@ -523,17 +516,18 @@ struct ssl_session_manager::pimpl_t
 
         inline bool internal_shutdown()
         {
-            m_ssl_adapter.set_state(ssl_state_t::shutdown);
+            m_ssl_adapter.control(ssl_control_id_t::shutdown);
             if (process_outgoing_data() > 0)
             {
                 return true;
             }
+
             return false;
         }
 
         inline bool internal_retransmit()
         {
-            if (m_ssl_adapter.set_state(ssl_state_t::timeout) == ssl_result_t::ok)
+            if (m_ssl_adapter.control(ssl_control_id_t::timeout) == ssl_result_t::ok)
             {
                 if (process_outgoing_data() > 0)
                 {
@@ -546,12 +540,12 @@ struct ssl_session_manager::pimpl_t
 
         inline void reset_ssl()
         {
-            m_ssl_adapter.set_state(ssl_state_t::clear);
+
+            m_ssl_adapter.control(ssl_control_id_t::clear);
+            m_peer_certificate.x509().set(nullptr);
             m_ssl_adapter.set_ssl(m_owner.m_ssl_context.native_handle()
                                   , m_bio_input.native_handle()
                                   , m_bio_output.native_handle());
-            m_bio_input.reset();
-            m_bio_output.reset();
             m_ssl_adapter.set_mtu(m_params.mtu);
         }
 
@@ -559,7 +553,7 @@ struct ssl_session_manager::pimpl_t
         {
             if (m_state != ssl_handshake_state_t::ready)
             {
-                m_ssl_adapter.set_state(ssl_state_t::shutdown);
+                m_ssl_adapter.control(ssl_control_id_t::shutdown);
             }
 
             reset_ssl();
@@ -590,22 +584,22 @@ struct ssl_session_manager::pimpl_t
             return m_state;
         }
 
-        bool control(ssl_control_id_t control_id) override
+        bool control(ssl_session_control_id_t control_id) override
         {
             if (m_listener)
             {
                 switch(control_id)
                 {
-                    case ssl_control_id_t::handshake:
+                    case ssl_session_control_id_t::handshake:
                         return internal_handshake();
                     break;
-                    case ssl_control_id_t::shutdown:
+                    case ssl_session_control_id_t::shutdown:
                         return internal_shutdown();
                     break;
-                    case ssl_control_id_t::retransmit:
+                    case ssl_session_control_id_t::retransmit:
                         return internal_retransmit();
                     break;
-                    case ssl_control_id_t::reset:
+                    case ssl_session_control_id_t::reset:
                         internal_reset();
                         return true;
                     break;
@@ -763,6 +757,7 @@ struct ssl_session_manager::pimpl_t
 ssl_session_manager::ssl_session_manager(const ssl_manager_config_t &config)
     : m_pimpl(pimpl_t::create(config))
 {
+
 
 }
 

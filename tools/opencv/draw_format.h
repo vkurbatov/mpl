@@ -3,7 +3,7 @@
 
 #include "font_format.h"
 
-namespace ocv
+namespace pt::ocv
 {
 
 struct draw_format_t

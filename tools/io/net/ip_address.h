@@ -6,7 +6,7 @@
 #include <string>
 #include "net_types.h"
 
-namespace io
+namespace pt::io
 {
 
 struct ip_address_t

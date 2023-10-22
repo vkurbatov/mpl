@@ -4,8 +4,8 @@
 #include "core/common_types.h"
 
 #include <string>
-#include "tools/base/string_base.h"
-#include "tools/base/convert_base.h"
+#include "tools/utils/string_base.h"
+#include "tools/utils/convert_base.h"
 
 namespace mpl::utils
 {
@@ -16,7 +16,7 @@ namespace detail
 template<typename T>
 std::size_t get_value_size(const T& value)
 {
-    return portable::get_value_size(value);
+    return pt::utils::get_value_size(value);
 }
 
 template<>
@@ -63,7 +63,7 @@ std::string hex_to_string(const void *data
                           , const std::string_view &delimiter
                           , bool upper_case)
 {
-    return portable::hex_to_string(data
+    return pt::utils::hex_to_string(data
                                    , size
                                    , delimiter
                                    , upper_case);
@@ -72,7 +72,7 @@ std::string hex_to_string(const void *data
 raw_array_t create_raw_array(const std::string_view &hex_string
                              , const std::string_view &delimeter)
 {
-    return portable::string_to_hex(hex_string
+    return pt::utils::string_to_hex(hex_string
                                    , delimeter);
 }
 

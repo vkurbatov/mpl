@@ -27,7 +27,7 @@
 #include "audio_level.h"
 #include "audio_format_helper.h"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 
 #include <future>
 #include <shared_mutex>
@@ -106,7 +106,7 @@ void animation(relative_frame_rect_t& dst_rect
 
 class media_composer : public i_media_composer
 {
-    using mutex_t = portable::shared_spin_lock;
+    using mutex_t = pt::utils::shared_spin_lock;
     template<typename T>
     using shared_lock_t = std::shared_lock<T>;
     template<typename T>

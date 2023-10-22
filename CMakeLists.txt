@@ -79,17 +79,16 @@ target_link_libraries(${PROJECT_NAME}
     mplnet
     mplutils
     mplcore
-    vncpt
-    viscapt
-    v4l2pt
-    srlpt
-    ocvpt
-    avpt
-    ipcpt
-    wappt
-    iopt
-    sslpt
-    ptbase
+    ptvnc
+    ptvsc
+    ptv4l2
+    ptcv
+    ptav
+    ptipc
+    ptwap
+    ptio
+    ptssl
+    ptutils
     vncclient
     ${WEBRTC_AUDIO_PROCESSING_LIBRARIES}
     ${OpenCV_LIBRARIES}

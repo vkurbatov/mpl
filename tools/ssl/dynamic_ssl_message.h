@@ -4,7 +4,7 @@
 #include "i_ssl_message.h"
 #include <vector>
 
-namespace ssl
+namespace pt::ssl
 {
 
 

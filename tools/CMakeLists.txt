@@ -1,7 +1,6 @@
-add_subdirectory(base)
+add_subdirectory(utils)
 add_subdirectory(ffmpeg)
 add_subdirectory(opencv)
-add_subdirectory(serial)
 add_subdirectory(v4l2)
 add_subdirectory(visca)
 add_subdirectory(vnc)

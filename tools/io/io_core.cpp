@@ -5,7 +5,7 @@
 #include <thread>
 #include <atomic>
 
-namespace io
+namespace pt::io
 {
 
 struct io_core::pimpl_t

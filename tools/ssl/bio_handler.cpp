@@ -1,7 +1,7 @@
 #include "bio_handler.h"
 #include <openssl/ssl.h>
 
-namespace ssl
+namespace pt::ssl
 {
     // TO DO
 }

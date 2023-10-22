@@ -114,12 +114,12 @@ void set_key_frame(video_frame_impl& frame_impl, bool key_frame)
 }
 
 template<typename FormatImpl>
-void tune_frame_format(const ffmpeg::frame_t& libav_frame
+void tune_frame_format(const pt::ffmpeg::frame_t& libav_frame
                  , FormatImpl& format);
 
 
 template<>
-void tune_frame_format(const ffmpeg::frame_t& libav_frame
+void tune_frame_format(const pt::ffmpeg::frame_t& libav_frame
                  , audio_format_impl& format)
 {
     audio_format_id_t format_id = format.format_id();
@@ -134,7 +134,7 @@ void tune_frame_format(const ffmpeg::frame_t& libav_frame
 }
 
 template<>
-void tune_frame_format(const ffmpeg::frame_t& libav_frame
+void tune_frame_format(const pt::ffmpeg::frame_t& libav_frame
                       , video_format_impl& format)
 {
     video_format_id_t format_id = format.format_id();
@@ -179,7 +179,7 @@ class libav_transcoder : public i_media_converter
     using format_impl_t = typename detail::format_types_t<MediaType>::format_impl_t;
     using frame_impl_t = typename detail::format_types_t<MediaType>::frame_impl_t;
 
-    ffmpeg::libav_transcoder    m_native_transcoder;
+    pt::ffmpeg::libav_transcoder    m_native_transcoder;
     i_message_sink*             m_output_sink;
 
     format_impl_t               m_input_format;
@@ -244,7 +244,7 @@ public:
         {
             switch(m_native_transcoder.type())
             {
-                case ffmpeg::transcoder_type_t::decoder:
+                case pt::ffmpeg::transcoder_type_t::decoder:
                     return detail::compare_format_id(m_input_format
                                                      , format);
                 break;
@@ -263,9 +263,9 @@ public:
     void tune_format(audio_format_impl& format)
     {
         auto tune_stream_info = m_native_transcoder.config();
-        tune_stream_info.codec_info.id = ffmpeg::codec_id_none;
+        tune_stream_info.codec_info.id = pt::ffmpeg::codec_id_none;
 
-        if (m_native_transcoder.type() == ffmpeg::transcoder_type_t::encoder
+        if (m_native_transcoder.type() == pt::ffmpeg::transcoder_type_t::encoder
             && tune_stream_info.codec_info.codec_params.frame_size > 0)
         {
             m_frame_splitter.setup(format
@@ -290,7 +290,7 @@ public:
                 case media_type_t::audio:
                 case media_type_t::video:
                 {
-                    ffmpeg::stream_info_t stream_info;
+                    pt::ffmpeg::stream_info_t stream_info;
                     if (utils::convert(media_format
                                        , stream_info))
                     {
@@ -298,8 +298,8 @@ public:
                         std::string transcoder_options = options.get<std::string>(opt_codec_params, {});
                         if (m_native_transcoder.open(stream_info
                                                      , encoder
-                                                     ? ffmpeg::transcoder_type_t::encoder
-                                                     : ffmpeg::transcoder_type_t::decoder
+                                                     ? pt::ffmpeg::transcoder_type_t::encoder
+                                                     : pt::ffmpeg::transcoder_type_t::decoder
                                                      , transcoder_options))
                         {
                             m_input_format.assign(media_format);
@@ -310,7 +310,7 @@ public:
                                                 : m_output_format;
 
                             auto tune_stream_info = m_native_transcoder.config();
-                            tune_stream_info.codec_info.id = ffmpeg::codec_id_none;
+                            tune_stream_info.codec_info.id = pt::ffmpeg::codec_id_none;
 
                             if (utils::convert(tune_stream_info
                                                , target_format))
@@ -334,7 +334,7 @@ public:
     }
 
 
-    bool push_frame(ffmpeg::frame_t&& libav_frame
+    bool push_frame(pt::ffmpeg::frame_t&& libav_frame
                    , const i_frame_t& input_frame
                    , timestamp_t timestamp)
     {
@@ -369,15 +369,15 @@ public:
         {
             if (auto buffer = media_frame.data().get_buffer(media_buffer_index))
             {
-                ffmpeg::frame_queue_t frame_queue;
+                pt::ffmpeg::frame_queue_t frame_queue;
                 auto frame_time = media_frame.timestamp();
                 std::int32_t result = 0;
 
                 auto key_frame = detail::is_key_frame(media_frame);
 
                 auto flag = key_frame
-                        ? ffmpeg::transcode_flag_t::key_frame
-                        : ffmpeg::transcode_flag_t::none;
+                        ? pt::ffmpeg::transcode_flag_t::key_frame
+                        : pt::ffmpeg::transcode_flag_t::none;
 
 
                 if (m_wait_first_frame)
@@ -452,7 +452,7 @@ public:
 
     const i_media_format& transcoder_format() const
     {
-        return m_native_transcoder.type() == ffmpeg::transcoder_type_t::encoder
+        return m_native_transcoder.type() == pt::ffmpeg::transcoder_type_t::encoder
                 ? m_output_format
                 : m_input_format;
     }

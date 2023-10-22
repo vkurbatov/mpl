@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET sslpt)
+set(TARGET ptssl)
 
 set(SOURCES
     const_ssl_message.cpp

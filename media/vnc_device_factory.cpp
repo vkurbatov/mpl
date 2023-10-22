@@ -9,7 +9,7 @@
 
 #include "video_frame_impl.h"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 #include "tools/vnc/vnc_device.h"
 
 #include <thread>
@@ -48,7 +48,7 @@ video_format_id_t format_form_bpp(std::uint32_t bpp)
 
 class vnc_device : public i_device
 {
-    using mutex_t = portable::shared_spin_lock;
+    using mutex_t = pt::utils::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
 
@@ -64,9 +64,9 @@ class vnc_device : public i_device
 
         device_params_t(device_type_t device_type = device_type_t::vnc
                         , const std::string_view& host = {}
-                        , std::uint16_t port = vnc::default_port
+                        , std::uint16_t port = pt::vnc::default_port
                         , const std::string_view& password = {}
-                        , std::uint32_t fps = vnc::default_fps)
+                        , std::uint32_t fps = pt::vnc::default_fps)
             : device_type(device_type)
             , host(host)
             , port(port)
@@ -114,7 +114,7 @@ class vnc_device : public i_device
                     && fps > 0;
         }
 
-        vnc::vnc_config_t native_config()
+        pt::vnc::vnc_config_t native_config()
         {
             return { host, password, port };
         }
@@ -122,7 +122,7 @@ class vnc_device : public i_device
 
     device_params_t             m_device_params;
     message_router_impl         m_router;
-    vnc::vnc_device             m_native_device;
+    pt::vnc::vnc_device             m_native_device;
 
     frame_id_t                  m_frame_counter;
     timestamp_t                 m_frame_timestamp;
@@ -237,7 +237,7 @@ public:
         }
     }
 
-    bool on_native_frame(vnc::frame_t&& frame)
+    bool on_native_frame(pt::vnc::frame_t&& frame)
     {
         video_format_impl video_format(detail::format_form_bpp(frame.bpp)
                                        , frame.frame_size.width
@@ -283,21 +283,21 @@ public:
                 while (is_running()
                        && error_counter < 10)
                 {
-                    vnc::frame_t v4l2_frame;
+                    pt::vnc::frame_t v4l2_frame;
                     switch(m_native_device.fetch_frame(v4l2_frame
                                                        , frame_time * 2))
                     {
-                        case vnc::io_result_t::complete:
+                        case pt::vnc::io_result_t::complete:
                         {
                             error_counter = 0;
                             on_native_frame(std::move(v4l2_frame));
                         }
                         break;
-                        case vnc::io_result_t::timeout:
+                        case pt::vnc::io_result_t::timeout:
                             error_counter++;
                         break;
-                        case vnc::io_result_t::error:
-                        case vnc::io_result_t::not_ready:
+                        case pt::vnc::io_result_t::error:
+                        case pt::vnc::io_result_t::not_ready:
                             error_counter = 11;
                         break;
                     }

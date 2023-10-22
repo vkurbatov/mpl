@@ -4,7 +4,7 @@
 #include "tools/io/io_base.h"
 #include "serial_types.h"
 
-namespace io
+namespace pt::io
 {
 
 struct serial_link_config_t : public link_config_t

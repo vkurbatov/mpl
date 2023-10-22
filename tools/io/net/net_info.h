@@ -3,7 +3,7 @@
 
 #include "ip_address.h"
 
-namespace io
+namespace pt::io
 {
 
 struct net_info_t

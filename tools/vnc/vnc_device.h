@@ -6,7 +6,7 @@
 #include <string>
 #include <memory>
 
-namespace vnc
+namespace pt::vnc
 {
 
 struct vnc_device_context_t;

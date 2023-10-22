@@ -4,7 +4,7 @@
 #include "ssl_pointers.h"
 #include <string>
 
-namespace ssl
+namespace pt::ssl
 {
 
 template<typename T, class ...Args>

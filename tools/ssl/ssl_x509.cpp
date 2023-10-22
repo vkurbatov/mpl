@@ -4,7 +4,7 @@
 #include <openssl/ssl.h>
 #include <cstring>
 
-namespace ssl
+namespace pt::ssl
 {
 
 

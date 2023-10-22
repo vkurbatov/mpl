@@ -1,6 +1,6 @@
 #include "ssl_session_params.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 ssl_session_params_t::ssl_session_params_t(ssl_role_t role

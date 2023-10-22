@@ -1,13 +1,13 @@
 #include "endian_utils.h"
 
-#include "tools/base/endian_base.h"
+#include "tools/utils/endian_base.h"
 #include <algorithm>
 #include <cstring>
 
 namespace mpl::utils::endian
 {
 
-using order_t = portable::octet_order_t;
+using order_t = pt::utils::octet_order_t;
 
 namespace detail
 {
@@ -16,7 +16,7 @@ template<order_t Order>
 void* convert(void *value
               , std::size_t size)
 {
-    return portable::utils::convert_order(Order, value, size);
+    return pt::utils::utils::convert_order(Order, value, size);
 }
 
 template<order_t Order, typename T>
@@ -81,12 +81,12 @@ std::size_t set_value(const T& value
 
 namespace big
 {
-    __declare_endian_convert_order(portable::octet_order_t::big_endian)
+    __declare_endian_convert_order(pt::utils::octet_order_t::big_endian)
 }
 
 namespace little
 {
-    __declare_endian_convert_order(portable::octet_order_t::little_endian)
+    __declare_endian_convert_order(pt::utils::octet_order_t::little_endian)
 }
 
 

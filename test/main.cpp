@@ -4,7 +4,7 @@
 #include "utils/test.h"
 #include "media/test.h"
 #include "net/test.h"
-#include "tools/base/string_base.h"
+#include "tools/utils/string_base.h"
 
 #include <string>
 

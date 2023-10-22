@@ -7,7 +7,7 @@
 #include <functional>
 #include <system_error>
 
-namespace io
+namespace pt::io
 {
 
 class io_core;

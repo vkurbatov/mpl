@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET iopt)
+set(TARGET ptio)
 
 set(SOURCES
     io_base.cpp

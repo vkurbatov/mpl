@@ -17,9 +17,9 @@ namespace detail
 {
 
 bool audio_info_from_format(const i_audio_format& format
-                            , ffmpeg::audio_info_t& audio_info)
+                            , pt::ffmpeg::audio_info_t& audio_info)
 {
-    ffmpeg::stream_info_t stream_info;
+    pt::ffmpeg::stream_info_t stream_info;
     if (utils::convert(format
                        , stream_info))
     {
@@ -34,13 +34,13 @@ bool audio_info_from_format(const i_audio_format& format
 
 class libav_audio_converter : public i_media_converter
 {
-    ffmpeg::libav_resampler     m_native_resampler;
+    pt::ffmpeg::libav_resampler     m_native_resampler;
     audio_format_impl           m_input_format;
     audio_format_impl           m_output_format;
     i_message_sink*             m_output_sink;
 
-    ffmpeg::audio_info_t        m_input_audio_info;
-    ffmpeg::audio_info_t        m_output_audio_info;
+    pt::ffmpeg::audio_info_t        m_input_audio_info;
+    pt::ffmpeg::audio_info_t        m_output_audio_info;
 
 public:
     using u_ptr_t = std::unique_ptr<libav_audio_converter>;

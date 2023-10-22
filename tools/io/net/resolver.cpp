@@ -3,7 +3,7 @@
 #include "net_utils.h"
 #include "tools/io/io_core.h"
 
-#include "tools/base/string_base.h"
+#include "tools/utils/string_base.h"
 
 #include <boost/asio/ip/udp.hpp>
 #include <boost/system/error_code.hpp>
@@ -11,7 +11,7 @@
 #include <queue>
 
 
-namespace io
+namespace pt::io
 {
 
 using io_context_t = boost::asio::io_context;
@@ -24,7 +24,7 @@ namespace detail
 
 std::pair<std::string, std::string> split_dns_names(const std::string& dns_name)
 {
-    auto args = portable::split_lines(dns_name
+    auto args = pt::utils::split_lines(dns_name
                                   , ":"
                                   , 2);
     if (args.size() == 1)
@@ -131,7 +131,7 @@ struct resolver::pimpl_t
 
                     while (endpoint_iterator != end)
                     {
-                        resolve_info.endpoints.emplace_back(io::utils::convert<ip_endpoint_t, udp_endpoint_t>(*endpoint_iterator));
+                        resolve_info.endpoints.emplace_back(pt::io::utils::convert<ip_endpoint_t, udp_endpoint_t>(*endpoint_iterator));
                         endpoint_iterator++;
                     }
                 }
@@ -173,7 +173,7 @@ struct resolver::pimpl_t
 
             while (it != end)
             {
-                result.endpoints.emplace_back(io::utils::convert<ip_endpoint_t, udp_endpoint_t>(*it));
+                result.endpoints.emplace_back(pt::io::utils::convert<ip_endpoint_t, udp_endpoint_t>(*it));
                 it++;
             }
 

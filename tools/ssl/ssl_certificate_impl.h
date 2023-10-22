@@ -4,7 +4,7 @@
 #include "i_ssl_certificate.h"
 #include "ssl_x509.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 class ssl_certificate_impl : public i_ssl_certificate

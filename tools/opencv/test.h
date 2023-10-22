@@ -1,7 +1,7 @@
 #ifndef OCV_TEST_H
 #define OCV_TEST_H
 
-namespace ocv
+namespace pt::ocv
 {
 
 void test();

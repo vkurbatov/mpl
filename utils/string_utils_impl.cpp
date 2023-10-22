@@ -1,6 +1,6 @@
 #include "common_utils.h"
 
-#include "tools/base/string_base.h"
+#include "tools/utils/string_base.h"
 
 namespace mpl::utils
 {
@@ -9,7 +9,7 @@ string_list_t split_lines(const std::string &input
                           , const std::string& delimiter
                           , std::size_t max_split)
 {
-    return portable::split_lines(input
+    return pt::utils::split_lines(input
                               , delimiter
                               , max_split);
 }
@@ -18,7 +18,7 @@ string_list_t split_lines(const std::string& input
                           , char delimiter
                           , std::size_t max_split)
 {
-    return portable::split_lines(input
+    return pt::utils::split_lines(input
                               , delimiter
                               , max_split);
 }
@@ -27,7 +27,7 @@ std::string erase_substings(const std::string& input
                             , const std::string& substring
                             , std::size_t max_erase)
 {
-    return portable::erase_substings(input
+    return pt::utils::erase_substings(input
                                  , substring
                                  , max_erase);
 }
@@ -37,7 +37,7 @@ string_param_list_t split_params(const std::string& input
                                 , const std::string& param_delimiter
                                 , std::size_t max_split)
 {
-    return portable::split_params(input
+    return pt::utils::split_params(input
                               , delimiter
                               , param_delimiter
                               , max_split);
@@ -46,7 +46,7 @@ string_param_list_t split_params(const std::string& input
 std::string build_string(const string_list_t& string_list
                          , const std::string& delimiter)
 {
-    return portable::build_string(string_list
+    return pt::utils::build_string(string_list
                               , delimiter);
 }
 
@@ -54,7 +54,7 @@ std::string build_string(const string_param_list_t& param_list
                          , const std::string& delimiter
                          , const std::string& param_delimiter)
 {
-    return portable::build_string(param_list
+    return pt::utils::build_string(param_list
                               , delimiter
                               , param_delimiter);
 }
@@ -123,7 +123,7 @@ bool is_equal(const std::string& lstr
               , const std::string& rstr
               , bool case_sensetive)
 {
-    return portable::is_equal(lstr
+    return pt::utils::is_equal(lstr
                           , rstr
                           , case_sensetive);
 }
@@ -132,7 +132,7 @@ bool is_equal(const std::string& lstr
 bool compare(const std::string& text
              , const std::string& filter)
 {
-    return portable::compare(text
+    return pt::utils::compare(text
                          , filter);
 }
 

@@ -1,7 +1,7 @@
 #include "visca_base.h"
 #include <cstring>
 
-namespace visca
+namespace pt::visca
 {
 
 response_packet_t::response_packet_t(std::uint8_t address

@@ -16,13 +16,13 @@ extern "C"
 }
 
 #define WBS_MODULE_NAME "ff:publisher"
-#include "tools/base/logger_base.h"
+#include "tools/utils/logger_base.h"
 
 #include <iostream>
-#include "tools/base/string_base.h"
-#include "tools/base/url_base.h"
+#include "tools/utils/string_base.h"
+#include "tools/utils/url_base.h"
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 namespace detail
@@ -48,7 +48,7 @@ static const char* fetch_stream_name(device_type_t device_type)
 
 ff_const59 AVOutputFormat* find_output_format(const std::string& url)
 {
-    portable::url_info_t url_info;
+    pt::utils::url_info_t url_info;
 
     if (url_info.parse_url(url))
     {

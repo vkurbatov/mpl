@@ -1,7 +1,7 @@
 #ifndef SSL_TEST_H
 #define SSL_TEST_H
 
-namespace ssl
+namespace pt::ssl
 {
 
 void test();

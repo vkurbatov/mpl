@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace ssl
+namespace pt::ssl
 {
 
 enum class ssl_io_result_t

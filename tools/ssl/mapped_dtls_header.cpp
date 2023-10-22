@@ -4,7 +4,7 @@
 #include <bit>
 #include <algorithm>
 
-namespace ssl
+namespace pt::ssl
 {
 
 namespace

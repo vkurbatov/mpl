@@ -1,6 +1,6 @@
 #include "common_utils.h"
 
-#include "tools/base/random_base.h"
+#include "tools/utils/random_base.h"
 
 namespace mpl::utils
 {
@@ -8,7 +8,7 @@ namespace mpl::utils
 
 #define __declare_template_random_function(type)\
     template<>\
-    type random() { return portable::utils::random<type>(); }\
+    type random() { return pt::utils::random<type>(); }\
     template std::vector<type> random_array(std::size_t len);
 
 __declare_template_random_function(std::int8_t)
@@ -45,7 +45,7 @@ const std::string &get_alphabet()
 std::string random_string(std::size_t len
                           , const std::string &alphabet)
 {
-    return portable::utils::random_string(len, alphabet);
+    return pt::utils::random_string(len, alphabet);
 }
 
 }

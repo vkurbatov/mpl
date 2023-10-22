@@ -1,7 +1,8 @@
 #include "srtp_key_info.h"
 #include <srtp2/srtp.h>
+#include "ssl_utils.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 std::size_t srtp_key_info_t::get_key_length(srtp_profile_id_t profile_id)

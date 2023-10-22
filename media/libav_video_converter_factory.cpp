@@ -17,9 +17,9 @@ namespace mpl::media
 namespace detail
 {
     bool fragment_info_from_format(const i_video_format& format
-                                   , ffmpeg::fragment_info_t& fragment_info)
+                                   , pt::ffmpeg::fragment_info_t& fragment_info)
     {
-        ffmpeg::stream_info_t stream_info;
+        pt::ffmpeg::stream_info_t stream_info;
         if (utils::convert(format
                            , stream_info))
         {
@@ -37,13 +37,13 @@ namespace detail
 
 class libav_video_converter : public i_media_converter
 {
-    ffmpeg::libav_converter     m_native_converter;
+    pt::ffmpeg::libav_converter     m_native_converter;
     video_format_impl           m_input_format;
     video_format_impl           m_output_format;
     i_message_sink*             m_output_sink;
 
-    ffmpeg::fragment_info_t     m_input_fragment_info;
-    ffmpeg::fragment_info_t     m_output_fragment_info;
+    pt::ffmpeg::fragment_info_t     m_input_fragment_info;
+    pt::ffmpeg::fragment_info_t     m_output_fragment_info;
     raw_array_t                 m_output_buffer;
 
 public:
@@ -107,7 +107,7 @@ public:
             {
                 auto input_fragment_info = m_input_fragment_info;
 
-                ffmpeg::frame_rect_t::aspect_ratio(m_output_fragment_info.frame_rect
+                pt::ffmpeg::frame_rect_t::aspect_ratio(m_output_fragment_info.frame_rect
                                                    , input_fragment_info.frame_rect);
 
                 if (m_native_converter.convert_frames(input_fragment_info

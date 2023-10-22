@@ -3,7 +3,7 @@
 
 #include "ssl_types.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 struct bio_config_t

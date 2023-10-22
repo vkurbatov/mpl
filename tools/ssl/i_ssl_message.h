@@ -4,7 +4,7 @@
 #include "ssl_types.h"
 #include <cstdint>
 
-namespace ssl
+namespace pt::ssl
 {
 
 class i_ssl_message

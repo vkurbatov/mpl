@@ -3,7 +3,7 @@
 
 #include "net/i_transport_factory.h"
 
-namespace io
+namespace pt::io
 {
 
 class io_core;
@@ -15,15 +15,15 @@ namespace mpl::net
 
 class udp_transport_factory : public i_transport_factory
 {
-    io::io_core&            m_io_core;
+    pt::io::io_core&            m_io_core;
 
 public:
 
     using u_ptr_t = std::unique_ptr<i_transport_factory>;
 
-    static u_ptr_t create(io::io_core& io_core);
+    static u_ptr_t create(pt::io::io_core& io_core);
 
-    udp_transport_factory(io::io_core& io_core);
+    udp_transport_factory(pt::io::io_core& io_core);
 
     // i_transport_factory interface
 public:

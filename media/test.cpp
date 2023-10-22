@@ -15,7 +15,7 @@
 #include "video_format_impl.h"
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
-#include "tools/base/any_base.h"
+#include "tools/utils/any_base.h"
 
 #include "media_option_types.h"
 
@@ -68,7 +68,7 @@
 #include "tools/ffmpeg/libav_stream_grabber.h"
 #include "tools/ffmpeg/libav_stream_publisher.h"
 #include "tools/ffmpeg/libav_input_format.h"
-#include "tools/base/url_base.h"
+#include "tools/utils/url_base.h"
 #include "tools/io/io_core.h"
 #include "tools/io/serial/serial_link.h"
 #include "tools/io/serial/serial_endpoint.h"
@@ -162,12 +162,12 @@ void test2()
 
 void test3()
 {
-    portable::any any1, any2, any3;
+    pt::utils::any any1, any2, any3;
 
     any1 = 1;
-    portable::any any11 = any1;
+    pt::utils::any any11 = any1;
     any2 = 4.567;
-    portable::any any22(any2);
+    pt::utils::any any22(any2);
     any3 = std::string("vasiliy");
     auto any33(any3);
 
@@ -367,7 +367,7 @@ void test7()
     std::string test_string = "vasiliy";
     std::int32_t test_int = 0;
 
-    portable::any any_ep(test_int);
+    pt::utils::any any_ep(test_int);
 
     std::any any_test(endpoint1);
 
@@ -386,7 +386,7 @@ void test7()
 void test8()
 {
 
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
 
     std::string libav_url = "rtsp://wowzaec2demo.streamlock.net/vod/mp4";
     std::string libav_options = "rtsp_transport=tcp";
@@ -513,7 +513,7 @@ void test8()
 
 void test9()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
 
     std::string input_url = "rtsp://wowzaec2demo.streamlock.net/vod/mp4";
     std::string input_options = "rtsp_transport=tcp";
@@ -592,12 +592,12 @@ void test9()
 
 void test10()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
 
-    auto audio_input_class_list = ffmpeg::device_info_t::device_class_list(ffmpeg::media_type_t::audio, true);
-    auto audio_output_class_list = ffmpeg::device_info_t::device_class_list(ffmpeg::media_type_t::audio, false);
-    auto video_input_class_list = ffmpeg::device_info_t::device_class_list(ffmpeg::media_type_t::video, true);
-    auto video_output_class_list = ffmpeg::device_info_t::device_class_list(ffmpeg::media_type_t::video, false);
+    auto audio_input_class_list = pt::ffmpeg::device_info_t::device_class_list(pt::ffmpeg::media_type_t::audio, true);
+    auto audio_output_class_list = pt::ffmpeg::device_info_t::device_class_list(pt::ffmpeg::media_type_t::audio, false);
+    auto video_input_class_list = pt::ffmpeg::device_info_t::device_class_list(pt::ffmpeg::media_type_t::video, true);
+    auto video_output_class_list = pt::ffmpeg::device_info_t::device_class_list(pt::ffmpeg::media_type_t::video, false);
 
     std::cout << "Audio input class list: " << std::endl;
     for (const auto& c : audio_input_class_list)
@@ -623,11 +623,11 @@ void test10()
         std::cout << c << std::endl;
     }
 
-    auto audio_input_device_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+    auto audio_input_device_list = pt::ffmpeg::device_info_t::device_list(pt::ffmpeg::media_type_t::audio
                                                                       , true
                                                                       , "pulse");
 
-    auto audio_output_device_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+    auto audio_output_device_list = pt::ffmpeg::device_info_t::device_list(pt::ffmpeg::media_type_t::audio
                                                                       , false
                                                                       , "pulse");
     /*    std::string name;
@@ -659,12 +659,12 @@ void test10()
 
 
     std::string output_url = "pulse://alsa_output.pci-0000_00_05.0.analog-stereo";
-    ffmpeg::libav_stream_publisher libav_publisher;
-    ffmpeg::stream_info_t stream_info;
-    stream_info.codec_info.id = ffmpeg::codec_id_none;
+    pt::ffmpeg::libav_stream_publisher libav_publisher;
+    pt::ffmpeg::stream_info_t stream_info;
+    stream_info.codec_info.id = pt::ffmpeg::codec_id_none;
     stream_info.stream_id = 0;
-    stream_info.media_info.media_type = ffmpeg::media_type_t::audio;
-    stream_info.media_info.audio_info.sample_format = ffmpeg::sample_format_pcm16;
+    stream_info.media_info.media_type = pt::ffmpeg::media_type_t::audio;
+    stream_info.media_info.audio_info.sample_format = pt::ffmpeg::sample_format_pcm16;
     stream_info.media_info.audio_info.sample_rate = 48000;
     stream_info.media_info.audio_info.channels = 2;
 
@@ -674,8 +674,8 @@ void test10()
 
 
 
-    auto frame_handler = [&](const ffmpeg::stream_info_t& stream_info
-            , ffmpeg::frame_t&& frame) ->
+    auto frame_handler = [&](const pt::ffmpeg::stream_info_t& stream_info
+            , pt::ffmpeg::frame_t&& frame) ->
     bool
     {
         std::cout << "Frame #" << frame.info.stream_id << std::endl;
@@ -688,17 +688,17 @@ void test10()
         return true;
     };
 
-    auto event_handler = [](const ffmpeg::streaming_event_t& streaming_event) ->
+    auto event_handler = [](const pt::ffmpeg::streaming_event_t& streaming_event) ->
     void
     {
         std::cout << "device event: " << static_cast<std::int32_t>(streaming_event) << std::endl;
     };
 
-    ffmpeg::libav_stream_grabber libav_grabber(frame_handler
+    pt::ffmpeg::libav_stream_grabber libav_grabber(frame_handler
                                                , event_handler);
 
-    ffmpeg::libav_grabber_config_t config;
-    config.stream_mask = ffmpeg::stream_mask_all;
+    pt::ffmpeg::libav_grabber_config_t config;
+    config.stream_mask = pt::ffmpeg::stream_mask_all;
     // config.url = "alsa://hw:0,0";
     config.url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     libav_grabber.open(config.url);
@@ -724,7 +724,7 @@ void test11()
     for (const auto& u : test_urls)
     {
         std::cout << "Parse URL: " << u << std::endl;
-        portable::url_info_t url;
+        pt::utils::url_info_t url;
         if (url.parse_url(u))
         {
             std::cout << "Parse Completed! " << std::endl;
@@ -741,7 +741,7 @@ void test11()
 
 void test12()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
     libav_input_device_factory input_device_factory;
 
     std::string input_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
@@ -834,7 +834,7 @@ void test12()
 
 void test13()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
     libav_input_device_factory input_audio_factory;
     v4l2_device_factory input_video_factory;
 
@@ -938,7 +938,7 @@ void test13()
 
 void test13_2()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
     libav_input_device_factory input_audio_factory;
     vnc_device_factory input_video_factory;
 
@@ -1045,22 +1045,22 @@ void test13_2()
 
 void test14()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
 
     // std::string url = "rtsp://wowzaec2demo.streamlock.net/vod/mp4";
     std::string url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
     //std::string options = "rtsp_transport=tcp";
     std::string options;
 
-    ffmpeg::libav_input_format::config_t config(url
+    pt::ffmpeg::libav_input_format::config_t config(url
                                                 , options);
 
-    ffmpeg::libav_input_format input_format(config);
+    pt::ffmpeg::libav_input_format input_format(config);
 
     if (input_format.open())
     {
         std::cout << "libav format opened" << std::endl;
-        ffmpeg::frame_t libav_frame;
+        pt::ffmpeg::frame_t libav_frame;
         while(input_format.read(libav_frame))
         {
             std::cout << "Read frame: stream: " << libav_frame.info.stream_id
@@ -1076,12 +1076,12 @@ void test14()
 
 void test15()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
 
-    auto audio_input_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+    auto audio_input_list = pt::ffmpeg::device_info_t::device_list(pt::ffmpeg::media_type_t::audio
                                                                , true
                                                                , "pulse");
-    auto audio_output_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+    auto audio_output_list = pt::ffmpeg::device_info_t::device_list(pt::ffmpeg::media_type_t::audio
                                                                 , false
                                                                 , "pulse");
 
@@ -1167,7 +1167,7 @@ void test15()
 
 void test16()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
     libav_input_device_factory input_audio_factory;
     v4l2_device_factory input_video_factory;
 
@@ -1506,7 +1506,7 @@ void test18()
 
 void test19()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
     libav_input_device_factory libav_input_factory;
     v4l2_device_factory v4l2_input_factory;
 
@@ -1795,7 +1795,7 @@ void test19()
 
 void test20()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
     libav_input_device_factory libav_input_factory;
     v4l2_device_factory v4l2_input_factory;
     vnc_device_factory vnc_factory;
@@ -2137,26 +2137,26 @@ void test21()
 
 void test22()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
 
-    wap::wap_processor::config_t wap_config;
+    pt::wap::wap_processor::config_t wap_config;
     wap_config.format.sample_rate = 32000;
     wap_config.format.channels = 1;
     wap_config.processing_config.ap_delay_offset_ms = 0;
     wap_config.processing_config.ap_delay_stream_ms = 0;
     wap_config.processing_config.aec_auto_delay_period = 10;
-    wap_config.processing_config.aec_mode = wap::echo_cancellation_mode_t::moderation;
+    wap_config.processing_config.aec_mode = pt::wap::echo_cancellation_mode_t::moderation;
     wap_config.processing_config.aec_drift_ms = 0;
-    wap_config.processing_config.gc_mode = wap::gain_control_mode_t::none;
-    wap_config.processing_config.ns_mode = wap::noise_suppression_mode_t::none;
-    wap_config.processing_config.vad_mode = wap::voice_detection_mode_t::none;
+    wap_config.processing_config.gc_mode = pt::wap::gain_control_mode_t::none;
+    wap_config.processing_config.ns_mode = pt::wap::noise_suppression_mode_t::none;
+    wap_config.processing_config.vad_mode = pt::wap::voice_detection_mode_t::none;
 
-    wap::wap_processor wap_processor(wap_config);
+    pt::wap::wap_processor wap_processor(wap_config);
 
-    auto audio_input_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+    auto audio_input_list = pt::ffmpeg::device_info_t::device_list(pt::ffmpeg::media_type_t::audio
                                                                , true
                                                                , "pulse");
-    auto audio_output_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+    auto audio_output_list = pt::ffmpeg::device_info_t::device_list(pt::ffmpeg::media_type_t::audio
                                                                 , false
                                                                 , "pulse");
 
@@ -2236,7 +2236,7 @@ void test22()
                         if (media_frame.media_type() == media_type_t::audio)
                         {
                             auto& audio_frame = static_cast<const i_audio_frame&>(media_frame);
-                            wap::sample_t input_sample({ audio_frame.format().sample_rate()
+                            pt::wap::sample_t input_sample({ audio_frame.format().sample_rate()
                                                         , audio_frame.format().channels() });
 
                             if (auto buffer = audio_frame.data().get_buffer(media_buffer_index))
@@ -2245,7 +2245,7 @@ void test22()
                                 input_samples += input_sample.samples();
                                 wap_processor.push_playback(input_sample.sample_data.data(), input_sample.samples());
                                 wap_processor.push_capture(input_sample.sample_data.data(), input_sample.samples());
-                                wap::sample_t output_sample;
+                                pt::wap::sample_t output_sample;
                                 if (wap_processor.pop_result(output_sample))
                                 {
                                     std::vector<std::uint8_t> output_pcm16(output_sample.samples() * 2);
@@ -2307,7 +2307,7 @@ void test22()
 
 void test23()
 {
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
 
 
     apm_device_factory apm_factory;
@@ -2319,19 +2319,19 @@ void test23()
         writer.set("format.channels", 1);
         writer.set("delay_offset_ms", 0);
         writer.set("delay_stream_ms", 0);
-        writer.set("aec.mode", wap::echo_cancellation_mode_t::moderation);
+        writer.set("aec.mode", pt::wap::echo_cancellation_mode_t::moderation);
         writer.set("aec.drift_ms", 100);
         writer.set("aec.auto_delay_frames", 50);
-        writer.set("gc.mode", wap::gain_control_mode_t::adaptive_analog);
-        writer.set("ns.mode", wap::noise_suppression_mode_t::none);
-        writer.set("vad.mode", wap::voice_detection_mode_t::none);
+        writer.set("gc.mode", pt::wap::gain_control_mode_t::adaptive_analog);
+        writer.set("ns.mode", pt::wap::noise_suppression_mode_t::none);
+        writer.set("vad.mode", pt::wap::voice_detection_mode_t::none);
 
     }
 
-    auto audio_input_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+    auto audio_input_list = pt::ffmpeg::device_info_t::device_list(pt::ffmpeg::media_type_t::audio
                                                                , true
                                                                , "pulse");
-    auto audio_output_list = ffmpeg::device_info_t::device_list(ffmpeg::media_type_t::audio
+    auto audio_output_list = pt::ffmpeg::device_info_t::device_list(pt::ffmpeg::media_type_t::audio
                                                                 , false
                                                                 , "pulse");
 
@@ -2448,17 +2448,17 @@ void test23()
 
 void test24()
 {
-    io::io_core core;
+    pt::io::io_core core;
 
-    auto state_handler = [](io::link_state_t new_state
+    auto state_handler = [](pt::io::link_state_t new_state
             , const std::string_view& reason)
     {
         std::cout << "link state: " << static_cast<std::int32_t>(new_state)
                   << ", reason: " << reason << std::endl;
     };
 
-    auto message_handler = [](const io::message_t& message
-                            , const io::endpoint_t& endpoint)
+    auto message_handler = [](const pt::io::message_t& message
+                            , const pt::io::endpoint_t& endpoint)
     {
         std::string string_message(static_cast<const char*>(message.data())
                                    , message.size());
@@ -2467,16 +2467,16 @@ void test24()
                   << " from ep: " << endpoint.to_string() << std::endl;
     };
 
-    io::serial_link_config_t serial_config;
+    pt::io::serial_link_config_t serial_config;
     serial_config.baud_rate = 9600;
     serial_config.char_size = 8;
-    serial_config.stop_bits = io::serial_stop_bits_t::one;
-    serial_config.parity = io::serial_parity_t::none;
-    serial_config.flow_control = io::serial_flow_control_t::none;
+    serial_config.stop_bits = pt::io::serial_stop_bits_t::one;
+    serial_config.parity = pt::io::serial_parity_t::none;
+    serial_config.flow_control = pt::io::serial_flow_control_t::none;
 
-    io::serial_endpoint_t serial_endpoint("/tmp/vstty1");
+    pt::io::serial_endpoint_t serial_endpoint("/tmp/vstty1");
 
-    io::serial_link link(core
+    pt::io::serial_link link(core
                          , serial_config);
 
     link.set_state_handler(state_handler);
@@ -2486,14 +2486,14 @@ void test24()
 
     if (link.set_endpoint(serial_endpoint))
     {
-        if (link.control(io::link_control_id_t::open))
+        if (link.control(pt::io::link_control_id_t::open))
         {
-            if (link.control(io::link_control_id_t::start))
+            if (link.control(pt::io::link_control_id_t::start))
             {
                 std::this_thread::sleep_for(std::chrono::seconds(60));
-                link.control(io::link_control_id_t::stop);
+                link.control(pt::io::link_control_id_t::stop);
             }
-            link.control(io::link_control_id_t::close);
+            link.control(pt::io::link_control_id_t::close);
         }
     }
 

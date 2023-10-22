@@ -17,45 +17,45 @@
 namespace mpl::utils
 {
 
-__declare_enum_converter_begin(wap::echo_cancellation_mode_t)
-    __declare_enum_pair(wap::echo_cancellation_mode_t, none),
-    __declare_enum_pair(wap::echo_cancellation_mode_t, low),
-    __declare_enum_pair(wap::echo_cancellation_mode_t, moderation),
-    __declare_enum_pair(wap::echo_cancellation_mode_t, high)
-__declare_enum_converter_end(wap::echo_cancellation_mode_t)
+__declare_enum_converter_begin(pt::wap::echo_cancellation_mode_t)
+    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, none),
+    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, low),
+    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, moderation),
+    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, high)
+__declare_enum_converter_end(pt::wap::echo_cancellation_mode_t)
 
-__declare_enum_converter_begin(wap::gain_control_mode_t)
-    __declare_enum_pair(wap::gain_control_mode_t, none),
-    __declare_enum_pair(wap::gain_control_mode_t, adaptive_analog),
-    __declare_enum_pair(wap::gain_control_mode_t, adaptive_digital),
-    __declare_enum_pair(wap::gain_control_mode_t, fixed_digital)
-__declare_enum_converter_end(wap::gain_control_mode_t)
+__declare_enum_converter_begin(pt::wap::gain_control_mode_t)
+    __declare_enum_pair(pt::wap::gain_control_mode_t, none),
+    __declare_enum_pair(pt::wap::gain_control_mode_t, adaptive_analog),
+    __declare_enum_pair(pt::wap::gain_control_mode_t, adaptive_digital),
+    __declare_enum_pair(pt::wap::gain_control_mode_t, fixed_digital)
+__declare_enum_converter_end(pt::wap::gain_control_mode_t)
 
-__declare_enum_converter_begin(wap::noise_suppression_mode_t)
-    __declare_enum_pair(wap::noise_suppression_mode_t, none),
-    __declare_enum_pair(wap::noise_suppression_mode_t, low),
-    __declare_enum_pair(wap::noise_suppression_mode_t, moderate),
-    __declare_enum_pair(wap::noise_suppression_mode_t, high),
-    __declare_enum_pair(wap::noise_suppression_mode_t, very_high)
-__declare_enum_converter_end(wap::noise_suppression_mode_t)
+__declare_enum_converter_begin(pt::wap::noise_suppression_mode_t)
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, none),
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, low),
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, moderate),
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, high),
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, very_high)
+__declare_enum_converter_end(pt::wap::noise_suppression_mode_t)
 
-__declare_enum_converter_begin(wap::voice_detection_mode_t)
-    __declare_enum_pair(wap::voice_detection_mode_t, none),
-    __declare_enum_pair(wap::voice_detection_mode_t, very_low),
-    __declare_enum_pair(wap::voice_detection_mode_t, low),
-    __declare_enum_pair(wap::voice_detection_mode_t, moderate),
-    __declare_enum_pair(wap::voice_detection_mode_t, high)
-__declare_enum_converter_end(wap::voice_detection_mode_t)
+__declare_enum_converter_begin(pt::wap::voice_detection_mode_t)
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, none),
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, very_low),
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, low),
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, moderate),
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, high)
+__declare_enum_converter_end(pt::wap::voice_detection_mode_t)
 
 }
 
 namespace mpl
 {
 
-__declare_enum_serializer(wap::echo_cancellation_mode_t)
-__declare_enum_serializer(wap::gain_control_mode_t)
-__declare_enum_serializer(wap::noise_suppression_mode_t)
-__declare_enum_serializer(wap::voice_detection_mode_t)
+__declare_enum_serializer(pt::wap::echo_cancellation_mode_t)
+__declare_enum_serializer(pt::wap::gain_control_mode_t)
+__declare_enum_serializer(pt::wap::noise_suppression_mode_t)
+__declare_enum_serializer(pt::wap::voice_detection_mode_t)
 
 }
 
@@ -69,10 +69,10 @@ class apm_device : public i_device
     struct device_params_t
     {
         device_type_t                   device_type;
-        wap::wap_processor::config_t    wap_config;
+        pt::wap::wap_processor::config_t    wap_config;
 
         device_params_t(device_type_t device_type = device_type_t::apm
-                        , const wap::wap_processor::config_t& wap_config = {})
+                        , const pt::wap::wap_processor::config_t& wap_config = {})
             : device_type(device_type)
             , wap_config(wap_config)
         {
@@ -138,7 +138,7 @@ class apm_device : public i_device
     message_router_impl         m_router;
     message_sink_impl           m_capture_sink;
     message_sink_impl           m_playback_sink;
-    wap::wap_processor          m_native_device;
+    pt::wap::wap_processor          m_native_device;
 
     frame_id_t                  m_frame_counter;
     timestamp_t                 m_frame_timestamp;
@@ -208,7 +208,7 @@ public:
         {
             if (auto buffer = audio_frame.data().get_buffer(media_buffer_index))
             {
-                wap::sample_t sample(m_device_params.wap_config.format);
+                pt::wap::sample_t sample(m_device_params.wap_config.format);
 
                 sample.append_pcm16(buffer->data()
                                     , buffer->size() / 2);
@@ -224,13 +224,13 @@ public:
         return false;
     }
 
-    bool on_playback_sample(wap::sample_t&& sample)
+    bool on_playback_sample(pt::wap::sample_t&& sample)
     {
         return m_native_device.push_playback(sample.sample_data.data()
                                              , sample.samples());
     }
 
-    bool on_capture_sample(wap::sample_t&& sample)
+    bool on_capture_sample(pt::wap::sample_t&& sample)
     {
         if (m_native_device.push_capture(sample.sample_data.data()
                                           , sample.samples()))

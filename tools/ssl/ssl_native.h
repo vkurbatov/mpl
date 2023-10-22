@@ -12,7 +12,7 @@ struct x509_store_ctx_st;
 struct evp_pkey_st;
 struct ec_key_st;
 
-namespace ssl
+namespace pt::ssl
 {
 
 using ssl_ctx_ptr_t = ssl_s_ptr_t<ssl_ctx_st>;

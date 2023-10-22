@@ -4,7 +4,7 @@
 #include "tools/io/endpoint.h"
 #include <string>
 
-namespace io
+namespace pt::io
 {
 
 struct serial_endpoint_t : public endpoint_t

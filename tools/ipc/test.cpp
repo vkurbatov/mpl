@@ -8,7 +8,7 @@
 #include <iostream>
 #include <cstring>
 
-namespace ipc
+namespace pt::ipc
 {
 
 void test()

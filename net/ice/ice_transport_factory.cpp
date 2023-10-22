@@ -23,7 +23,7 @@
 #include "ice_transport_params.h"
 #include "ice_controller.h"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 #include "tools/io/net/net_utils.h"
 
 #include <shared_mutex>
@@ -57,7 +57,7 @@ socket_address_t::array_t extract_address_list(const socket_address_t& local_add
     }
     else
     {
-        for (const auto& a : io::utils::get_net_info(net::ip_version_t::ip4))
+        for (const auto& a : pt::io::utils::get_net_info(net::ip_version_t::ip4))
         {
             if (!a.ip_address.is_loopback())
             {
@@ -109,7 +109,7 @@ class ice_transport_impl : public i_ice_transport
         {
             std::size_t operator()(const socket_address_t& s) const noexcept
             {
-                return std::hash<io::ip_endpoint_t>()(static_cast<const io::ip_endpoint_t&>(s));
+                return std::hash<pt::io::ip_endpoint_t>()(static_cast<const pt::io::ip_endpoint_t&>(s));
             }
         };
 

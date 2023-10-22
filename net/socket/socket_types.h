@@ -14,15 +14,15 @@ enum class socket_type_t
     tcp
 };
 
-using ip_version_t = io::ip_version_t;
-using ip_address_t = io::ip_address_t;
-using socket_address_t = io::ip_endpoint_t;
-using socket_options_t = io::socket_options_t;
+using ip_version_t = pt::io::ip_version_t;
+using ip_address_t = pt::io::ip_address_t;
+using socket_address_t = pt::io::ip_endpoint_t;
+using socket_options_t = pt::io::socket_options_t;
 
-using socket_port_t = io::port_t;
-constexpr socket_port_t port_any = io::port_any;
-constexpr socket_port_t port_echo = io::port_echo;
-constexpr socket_port_t port_discard = io::port_discard;
+using socket_port_t = pt::io::port_t;
+constexpr socket_port_t port_any = pt::io::port_any;
+constexpr socket_port_t port_echo = pt::io::port_echo;
+constexpr socket_port_t port_discard = pt::io::port_discard;
 constexpr socket_port_t port_stun = 3478;
 
 }

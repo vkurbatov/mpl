@@ -7,7 +7,7 @@
 #include <set>
 #include <unordered_set>
 
-namespace ssl
+namespace pt::ssl
 {
 
 namespace detail

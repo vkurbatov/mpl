@@ -9,10 +9,10 @@ class ipc_shared_data_manager : public i_shared_data_manager
 {
     class ipc_shared_data : public i_sync_shared_data
     {
-        mutable ipc::ipc_segment    m_ipc_segment;
+        mutable pt::ipc::ipc_segment    m_ipc_segment;
     public:
         using s_ptr_t = std::shared_ptr<ipc_shared_data>;
-        static s_ptr_t create(ipc::ipc_manager& ipc_manager
+        static s_ptr_t create(pt::ipc::ipc_manager& ipc_manager
                               , const std::string_view& name
                               , std::size_t size)
         {
@@ -32,7 +32,7 @@ class ipc_shared_data_manager : public i_shared_data_manager
             return nullptr;
         }
 
-        ipc_shared_data(ipc::ipc_manager& ipc_manager
+        ipc_shared_data(pt::ipc::ipc_manager& ipc_manager
                         , const std::string_view& name
                         , std::size_t size)
             : m_ipc_segment(ipc_manager.create_segment(std::string(name)
@@ -100,14 +100,14 @@ class ipc_shared_data_manager : public i_shared_data_manager
         }
     };
 
-    ipc::ipc_manager        m_ipc_manager;
+    pt::ipc::ipc_manager        m_ipc_manager;
     // i_shared_data_manager interface
 public:
     using u_ptr_t = std::unique_ptr<ipc_shared_data_manager>;
 
     static u_ptr_t create(const std::string_view &name, std::size_t total_size)
     {
-        ipc::ipc_manager ipc_manager({name, total_size });
+        pt::ipc::ipc_manager ipc_manager({name, total_size });
         if (ipc_manager.is_valid())
         {
             return std::make_unique<ipc_shared_data_manager>(std::move(ipc_manager));
@@ -116,7 +116,7 @@ public:
         return nullptr;
     }
 
-    ipc_shared_data_manager(ipc::ipc_manager&& ipc_manager)
+    ipc_shared_data_manager(pt::ipc::ipc_manager&& ipc_manager)
         : m_ipc_manager(std::move(ipc_manager))
     {
 

@@ -1,6 +1,6 @@
 #include "endpoint.h"
 
-namespace io
+namespace pt::io
 {
 
 const endpoint_t &endpoint_t::undefined()

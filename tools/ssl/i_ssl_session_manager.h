@@ -3,7 +3,7 @@
 
 #include "i_ssl_session.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 class i_ssl_session_manager

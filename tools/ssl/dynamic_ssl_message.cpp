@@ -1,6 +1,6 @@
 #include "dynamic_ssl_message.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 dynamic_ssl_message::dynamic_ssl_message(const void *data

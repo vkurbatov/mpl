@@ -3,7 +3,9 @@
 
 #include <openssl/ssl.h>
 
-namespace ssl
+#include <iostream>
+
+namespace pt::ssl
 {
 
 ssl_ptr_t ssl_adapter::create_ssl(const ssl_ctx_ptr_t &ssl_ctx
@@ -25,7 +27,7 @@ ssl_ptr_t ssl_adapter::create_ssl(const ssl_ctx_ptr_t &ssl_ctx
     return nullptr;
 }
 
-void ssl_adapter::set_bio(ssl_ptr_t &ssl
+void ssl_adapter::set_bio(const ssl_ptr_t &ssl
                           , const bio_ptr_t &bio_read
                           , const bio_ptr_t &bio_write)
 {
@@ -36,7 +38,7 @@ void ssl_adapter::set_bio(ssl_ptr_t &ssl
     BIO_up_ref(bio_write.get());
 }
 
-void ssl_adapter::set_mtu(ssl_ptr_t &ssl
+void ssl_adapter::set_mtu(const ssl_ptr_t &ssl
                           , std::uint32_t mtu)
 {
     SSL_set_mtu(ssl.get()
@@ -44,51 +46,55 @@ void ssl_adapter::set_mtu(ssl_ptr_t &ssl
 
 }
 
-ssl_result_t ssl_adapter::set_state(ssl_ptr_t &ssl, ssl_state_t state)
+ssl_result_t ssl_adapter::control(const ssl_ptr_t &ssl
+                                  , ssl_control_id_t control)
 {
     ssl_result_t result = ssl_result_t::ok;
-    switch(state)
+    switch(control)
     {
-        case ssl_state_t::connecting:
+        case ssl_control_id_t::connecting:
             result = get_result(ssl
                                 , SSL_connect(ssl.get())
                                 );
         break;
-        case ssl_state_t::connect:
+        case ssl_control_id_t::connect:
             SSL_set_connect_state(ssl.get());
+            result = get_result(ssl
+                                , SSL_connect(ssl.get())
+                                );
         break;
-        case ssl_state_t::accepting:
+        case ssl_control_id_t::accepting:
             result = get_result(ssl
                                 , SSL_accept(ssl.get())
                                 );
         break;
-        case ssl_state_t::accept:
+        case ssl_control_id_t::accept:
             SSL_set_accept_state(ssl.get());
             result = get_result(ssl
                                 , SSL_accept(ssl.get())
                                 );
         break;
-        case ssl_state_t::handshaking:
+        case ssl_control_id_t::handshaking:
             result = get_result(ssl
                                 , SSL_do_handshake(ssl.get())
                                 );
         break;
-        case ssl_state_t::shutdown:
+        case ssl_control_id_t::shutdown:
             result = get_result(ssl
                                 , SSL_shutdown(ssl.get())
                                 );
         break;
-        case ssl_state_t::timeout: // only dtls
+        case ssl_control_id_t::timeout: // only dtls
             result = get_result(ssl
                                 , DTLSv1_handle_timeout(ssl.get())
                                 );
         break;
-        case ssl_state_t::clear:
+        case ssl_control_id_t::clear:
             result = get_result(ssl
                                 , SSL_clear(ssl.get())
                                 );
         break;
-        case ssl_state_t::renegotiate:
+        case ssl_control_id_t::renegotiate:
             result = get_result(ssl
                                 , SSL_renegotiate(ssl.get())
                                 );
@@ -138,7 +144,7 @@ ssl_shutdown_state_t ssl_adapter::get_shutdown_state(const ssl_ptr_t &ssl)
     return static_cast<ssl_shutdown_state_t>(SSL_get_shutdown(ssl.get()));
 }
 
-std::int32_t ssl_adapter::read(ssl_ptr_t &ssl
+std::int32_t ssl_adapter::read(const ssl_ptr_t &ssl
                                , void *data
                                , std::size_t size)
 {
@@ -147,7 +153,7 @@ std::int32_t ssl_adapter::read(ssl_ptr_t &ssl
                     , size);
 }
 
-std::int32_t ssl_adapter::write(ssl_ptr_t &ssl
+std::int32_t ssl_adapter::write(const ssl_ptr_t &ssl
                                 , const void *data
                                 , std::size_t size)
 {
@@ -156,7 +162,7 @@ std::int32_t ssl_adapter::write(ssl_ptr_t &ssl
                     , size);
 }
 
-std::size_t ssl_adapter::read(ssl_ptr_t &ssl
+std::size_t ssl_adapter::read(const ssl_ptr_t &ssl
                               , void *data
                               , std::size_t size
                               , ssl_result_t &result)
@@ -176,7 +182,7 @@ std::size_t ssl_adapter::read(ssl_ptr_t &ssl
 
 }
 
-std::size_t ssl_adapter::write(ssl_ptr_t &ssl
+std::size_t ssl_adapter::write(const ssl_ptr_t &ssl
                                , const void *data
                                , std::size_t size
                                , ssl_result_t &result)
@@ -205,7 +211,7 @@ x509_ptr_t ssl_adapter::get_peer_certificate(const ssl_ptr_t &ssl)
     return nullptr;
 }
 
-bool ssl_adapter::export_keying_material(ssl_ptr_t &ssl
+bool ssl_adapter::export_keying_material(const ssl_ptr_t &ssl
                                         , const std::string &label
                                         , void *material
                                         , std::size_t material_size)
@@ -276,9 +282,9 @@ void ssl_adapter::set_mtu(uint32_t mtu)
     set_mtu(m_ssl, mtu);
 }
 
-ssl_result_t ssl_adapter::set_state(ssl_state_t state)
+ssl_result_t ssl_adapter::control(ssl_control_id_t control_id)
 {
-    return set_state(m_ssl, state);
+    return control(m_ssl, control_id);
 }
 
 uint64_t ssl_adapter::get_timeout() const
@@ -348,6 +354,7 @@ void ssl_adapter::set_verify_handler(ssl_verify_handler_t verify_handler)
 
 void ssl_adapter::set_ssl(ssl_ptr_t &&ssl_ptr)
 {
+    std::clog << "before change ssl: " << m_ssl.get() << "->" << ssl_ptr.get() << std::endl;
     m_ssl = std::move(ssl_ptr);
     if (m_ssl)
     {
@@ -355,6 +362,7 @@ void ssl_adapter::set_ssl(ssl_ptr_t &&ssl_ptr)
                         , 0
                         , static_cast<void*>(this));
     }
+    std::clog << "after change ssl: " << m_ssl.get() << std::endl;
 }
 
 void ssl_adapter::set_ssl(const ssl_ctx_ptr_t &ssl_ctx

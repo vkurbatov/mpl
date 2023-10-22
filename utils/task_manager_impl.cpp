@@ -4,7 +4,7 @@
 #include <thread>
 #include <shared_mutex>
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 #include <list>
 #include <map>
 #include <future>
@@ -16,7 +16,7 @@ namespace mpl
 
 class task_manager_impl : public i_task_manager
 {
-    using mutex_t = portable::shared_spin_lock;
+    using mutex_t = pt::utils::shared_spin_lock;
     using config_t = task_manager_factory::config_t;
 
     struct task_queue_t

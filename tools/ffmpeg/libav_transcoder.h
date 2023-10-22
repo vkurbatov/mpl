@@ -4,7 +4,7 @@
 #include "libav_base.h"
 #include <set>
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 struct libav_transcoder_context_t;

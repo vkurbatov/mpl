@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-namespace ssl
+namespace pt::ssl
 {
 
 class i_ssl_certificate

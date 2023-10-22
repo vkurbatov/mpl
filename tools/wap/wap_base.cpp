@@ -1,6 +1,6 @@
 #include "wap_base.h"
 
-namespace wap
+namespace pt::wap
 {
 
 sample_format_t::sample_format_t(uint32_t sample_rate

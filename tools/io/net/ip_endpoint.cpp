@@ -1,17 +1,17 @@
 #include "ip_endpoint.h"
-#include "tools/base/string_base.h"
-#include "tools/base/convert_base.h"
+#include "tools/utils/string_base.h"
+#include "tools/utils/convert_base.h"
 
 template<>
-struct std::hash<io::ip_endpoint_t>
+struct std::hash<pt::io::ip_endpoint_t>
 {
-    std::size_t operator()(const io::ip_endpoint_t& s) const noexcept
+    std::size_t operator()(const pt::io::ip_endpoint_t& s) const noexcept
     {
         return s.hash();
     }
 };
 
-namespace io
+namespace pt::io
 {
 
 const ip_endpoint_t &ip_endpoint_t::undefined()
@@ -48,7 +48,7 @@ ip_endpoint_t ip_endpoint_t::from_string(const std::string &string_enpoint)
         std::vector<std::string> args;
         if (string_enpoint.front() == '[')
         {
-            args = portable::split_lines(string_enpoint, "]");
+            args = pt::utils::split_lines(string_enpoint, "]");
             if (args.size() > 0)
             {
                 args[0] = args[0].substr(1);
@@ -60,7 +60,7 @@ ip_endpoint_t ip_endpoint_t::from_string(const std::string &string_enpoint)
         }
         else
         {
-            args = portable::split_lines(string_enpoint, ":");
+            args = pt::utils::split_lines(string_enpoint, ":");
         }
 
         if (args.size() == 1
@@ -74,7 +74,7 @@ ip_endpoint_t ip_endpoint_t::from_string(const std::string &string_enpoint)
             {
                 if (args.size() == 2)
                 {
-                    if (portable::convert(args[1]
+                    if (pt::utils::convert(args[1]
                                       , result_endpoint.port))
                     {
                         return result_endpoint;

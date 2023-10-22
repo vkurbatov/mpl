@@ -8,7 +8,7 @@
 
 #include <shared_mutex>
 
-namespace ipc
+namespace pt::ipc
 {
 
 using ipc_shmem_manager_t = boost::interprocess::managed_shared_memory;

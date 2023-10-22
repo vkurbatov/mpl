@@ -3,7 +3,7 @@
 #include "ssl_private_key.h"
 #include <openssl/ssl.h>
 
-namespace ssl
+namespace pt::ssl
 {
 
 evp_pkey_ptr_t ssl_ec_key::create_evp_pkey(ec_key_ptr_t &&ec_key)

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET wappt)
+set(TARGET ptwap)
 
 set(SOURCES
     wap_base.cpp

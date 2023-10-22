@@ -16,7 +16,7 @@
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 
 #include <atomic>
 #include <thread>

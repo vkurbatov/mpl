@@ -9,7 +9,7 @@
 #include <cstring>
 #include <iostream>
 
-namespace ssl
+namespace pt::ssl
 {
 
 static constexpr std::size_t max_chunk_size = 1024;

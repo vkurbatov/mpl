@@ -3,7 +3,7 @@
 
 #include "i_io_link.h"
 
-namespace io
+namespace pt::io
 {
 
 class io_core;

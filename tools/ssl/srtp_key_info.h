@@ -3,9 +3,10 @@
 
 #include "srtp_types.h"
 #include <vector>
+#include <string>
 #include <cstdint>
 
-namespace ssl
+namespace pt::ssl
 {
 
 using srtp_key_t = std::vector<std::uint8_t>;
@@ -32,8 +33,6 @@ struct srtp_key_info_t
     std::size_t key_length() const;
     std::size_t salt_length() const;
     std::size_t master_length() const;
-
-
 };
 
 }

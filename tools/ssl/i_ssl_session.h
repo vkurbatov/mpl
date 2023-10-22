@@ -5,7 +5,7 @@
 
 #include <memory>
 
-namespace ssl
+namespace pt::ssl
 {
 
 struct ssl_session_params_t;
@@ -38,7 +38,7 @@ public:
     virtual const ssl_session_params_t& params() const = 0;
     virtual bool set_params(const ssl_session_params_t& params) = 0;
     virtual ssl_handshake_state_t state() const = 0;
-    virtual bool control(ssl_control_id_t control_id) = 0;
+    virtual bool control(ssl_session_control_id_t control_id) = 0;
     virtual i_ssl_message_sink* sink() = 0;
     virtual const i_ssl_certificate* local_certificate() const = 0;
     virtual const i_ssl_certificate* remote_certificate() const = 0;

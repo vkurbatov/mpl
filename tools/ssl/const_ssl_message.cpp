@@ -1,6 +1,6 @@
 #include "const_ssl_message.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 const_ssl_message::const_ssl_message(const void *data

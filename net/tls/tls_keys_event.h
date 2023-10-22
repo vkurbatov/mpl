@@ -14,11 +14,11 @@ struct tls_keys_event_t : public event_t
     constexpr static event_id_t id = net_tls_keys_event_id;
     constexpr static std::string_view event_name = "tls_keys_event";
 
-    ssl::srtp_key_info_t     encryption_key;
-    ssl::srtp_key_info_t     decryption_key;
+    pt::ssl::srtp_key_info_t     encryption_key;
+    pt::ssl::srtp_key_info_t     decryption_key;
 
-    tls_keys_event_t(const ssl::srtp_key_info_t& encryption_key
-                     , const ssl::srtp_key_info_t& decryption_key);
+    tls_keys_event_t(const pt::ssl::srtp_key_info_t& encryption_key
+                     , const pt::ssl::srtp_key_info_t& decryption_key);
 
     bool operator == (const tls_keys_event_t& other) const;
 

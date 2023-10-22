@@ -6,7 +6,7 @@
 #include <vector>
 #include <functional>
 
-namespace ssl
+namespace pt::ssl
 {
 
 using bio_buffer_t = std::vector<std::uint8_t>;

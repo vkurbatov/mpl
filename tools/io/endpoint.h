@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace io
+namespace pt::io
 {
 
 struct endpoint_t

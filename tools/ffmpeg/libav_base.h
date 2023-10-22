@@ -1,9 +1,9 @@
 #ifndef FFMPEG_LIBAV_BASE_H
 #define FFMPEG_LIBAV_BASE_H
 
-#include "tools/base/frame_base.h"
-#include "tools/base/time_base.h"
-#include "tools/base/option_base.h"
+#include "tools/utils/frame_base.h"
+#include "tools/utils/time_base.h"
+#include "tools/utils/option_base.h"
 
 #include <string>
 #include <vector>
@@ -12,7 +12,7 @@
 #include <functional>
 #include <map>
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 using libav_option_t = std::pair<std::string, std::string>;
@@ -281,13 +281,13 @@ enum class option_format_t
     unknown
 };
 
-using frame_point_t = portable::frame_point_t;
-using frame_size_t = portable::frame_size_t;
-using frame_rect_t = portable::frame_rect_t;
-using adaptive_timer_t = portable::adaptive_timer_t;
-using option_t = portable::option_t;
-using option_list_t = portable::option_list_t;
-const auto parse_option_list = portable::parse_option_list;
+using frame_point_t = pt::utils::frame_point_t;
+using frame_size_t = pt::utils::frame_size_t;
+using frame_rect_t = pt::utils::frame_rect_t;
+using adaptive_timer_t = pt::utils::adaptive_timer_t;
+using option_t = pt::utils::option_t;
+using option_list_t = pt::utils::option_list_t;
+const auto parse_option_list = pt::utils::parse_option_list;
 
 struct audio_info_t
 {

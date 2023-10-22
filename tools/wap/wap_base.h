@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace wap
+namespace pt::wap
 {
 
 using sample_data_t = std::vector<std::uint8_t>;

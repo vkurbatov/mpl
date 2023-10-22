@@ -7,7 +7,7 @@
 #include <memory>
 #include <cstdint>
 
-namespace ssl
+namespace pt::ssl
 {
 
 class bio_handler

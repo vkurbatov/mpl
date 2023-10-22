@@ -1,6 +1,6 @@
 #include "visca_proto.h"
 
-namespace visca
+namespace pt::visca
 {
 
 static uint32_t to_visca_value(uint32_t normal_value)

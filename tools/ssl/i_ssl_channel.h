@@ -1,7 +1,7 @@
 #ifndef I_SSL_CHANNEL_H
 #define I_SSL_CHANNEL_H
 
-namespace ssl
+namespace pt::ssl
 {
 
 class i_ssl_channel

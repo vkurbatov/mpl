@@ -13,7 +13,7 @@
 #include <queue>
 #include "shared_mutex"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 
 #include <cstring>
 #include <iostream>
@@ -223,7 +223,7 @@ template<media_type_t MediaType>
 class smart_transcoder : public i_media_converter
 {
 
-    using mutex_t = portable::spin_lock;
+    using mutex_t = pt::utils::spin_lock;
     using i_format_t = typename detail::format_types_t<MediaType>::i_format_t;
     using i_frame_t = typename detail::format_types_t<MediaType>::i_frame_t;
     using format_impl_t = typename detail::format_types_t<MediaType>::format_impl_t;

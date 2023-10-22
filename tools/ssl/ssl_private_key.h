@@ -5,7 +5,7 @@
 #include "ssl_types.h"
 #include <string>
 
-namespace ssl
+namespace pt::ssl
 {
 
 class ssl_private_key

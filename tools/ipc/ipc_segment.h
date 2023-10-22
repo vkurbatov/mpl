@@ -3,7 +3,7 @@
 
 #include "ipc_types.h"
 
-namespace ipc
+namespace pt::ipc
 {
 
 class ipc_segment

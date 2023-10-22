@@ -10,7 +10,7 @@ extern "C"
 #include <cstring>
 #include <iostream>
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 struct swr_wrapper

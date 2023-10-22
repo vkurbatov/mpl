@@ -1,7 +1,7 @@
 #ifndef SSL_HASH_TYPES_H
 #define SSL_HASH_TYPES_H
 
-namespace ssl
+namespace pt::ssl
 {
 
 enum class hash_method_t

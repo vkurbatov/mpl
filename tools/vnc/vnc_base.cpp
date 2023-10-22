@@ -1,8 +1,8 @@
 #include "vnc_base.h"
 
-#include "tools/base/string_base.h"
+#include "tools/utils/string_base.h"
 
-namespace vnc
+namespace pt::vnc
 {
 
 vnc_server_config_t vnc_server_config_t::from_uri(const std::string &uri)

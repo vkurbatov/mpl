@@ -3,7 +3,7 @@
 
 #include <set>
 
-namespace ssl
+namespace pt::ssl
 {
 
 enum class srtp_profile_id_t

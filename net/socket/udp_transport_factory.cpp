@@ -29,8 +29,8 @@ class udp_transport_impl final: public i_udp_transport
         , public i_message_sink
 {
     udp_transport_params_t          m_udp_params;
-    io::udp_link                    m_link;
-    io::resolver                    m_resolver;
+    pt::io::udp_link                    m_link;
+    pt::io::resolver                    m_resolver;
 
     message_router_impl             m_router;
 
@@ -41,7 +41,7 @@ public:
     using u_ptr_t = std::unique_ptr<udp_transport_impl>;
 
     static u_ptr_t create(const i_property& params
-                          , io::io_core& core)
+                          , pt::io::io_core& core)
     {
         udp_transport_params_t udp_params;
         if (utils::property::deserialize(udp_params
@@ -55,7 +55,7 @@ public:
     }
 
     udp_transport_impl(udp_transport_params_t&& udp_params
-                       , io::io_core& core)
+                       , pt::io::io_core& core)
         : m_udp_params(std::move(udp_params))
         , m_link(core
                  , m_udp_params.options)
@@ -69,7 +69,7 @@ public:
     ~udp_transport_impl()
     {
         m_resolver.reset();
-        m_link.control(io::link_control_id_t::close);
+        m_link.control(pt::io::link_control_id_t::close);
         m_link.set_message_handler(nullptr);
         m_link.set_state_handler(nullptr);
     }
@@ -112,7 +112,7 @@ public:
     {
         if (socket_packet.size() > 0)
         {
-            io::message_t message(socket_packet.data()
+            pt::io::message_t message(socket_packet.data()
                                   , socket_packet.size());
 
             if (socket_packet.endpoint().socket_address.is_valid())
@@ -129,10 +129,10 @@ public:
         return false;
     }
 
-    void on_link_message(const io::message_t& message
-                         , const io::endpoint_t& endpoint)
+    void on_link_message(const pt::io::message_t& message
+                         , const pt::io::endpoint_t& endpoint)
     {
-        if (endpoint.type == io::endpoint_t::type_t::ip)
+        if (endpoint.type == pt::io::endpoint_t::type_t::ip)
         {
             socket_endpoint_t socket_endpoint(socket_type_t::udp
                                               , static_cast<const socket_address_t&>(endpoint));
@@ -146,7 +146,7 @@ public:
         }
     }
 
-    void on_link_state(io::link_state_t link_state
+    void on_link_state(pt::io::link_state_t link_state
                        , const std::string_view& reason)
     {
         change_channel_state(utils::get_channel_state(link_state)
@@ -163,17 +163,17 @@ public:
             {
                 m_link.set_local_endpoint(m_udp_params.local_endpoint.socket_address);
                 m_link.set_remote_endpoint(m_udp_params.remote_endpoint.socket_address);
-                return m_link.control(io::link_control_id_t::open);
+                return m_link.control(pt::io::link_control_id_t::open);
             }
             break;
             case channel_control_id_t::close:
-                return m_link.control(io::link_control_id_t::close);
+                return m_link.control(pt::io::link_control_id_t::close);
             break;
             case channel_control_id_t::connect:
-                return m_link.control(io::link_control_id_t::start);
+                return m_link.control(pt::io::link_control_id_t::start);
             break;
             case channel_control_id_t::shutdown:
-                return m_link.control(io::link_control_id_t::stop);
+                return m_link.control(pt::io::link_control_id_t::stop);
             break;
             default:;
         }
@@ -280,12 +280,12 @@ public:
 };
 
 
-udp_transport_factory::u_ptr_t udp_transport_factory::create(io::io_core &io_core)
+udp_transport_factory::u_ptr_t udp_transport_factory::create(pt::io::io_core &io_core)
 {
     return std::make_unique<udp_transport_factory>(io_core);
 }
 
-udp_transport_factory::udp_transport_factory(io::io_core &io_core)
+udp_transport_factory::udp_transport_factory(pt::io::io_core &io_core)
     : m_io_core(io_core)
 {
 

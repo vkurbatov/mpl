@@ -29,32 +29,32 @@
 namespace mpl::utils
 {
 
-__declare_enum_converter_begin(io::serial_parity_t)
-    __declare_enum_pair(io::serial_parity_t, none),
-    __declare_enum_pair(io::serial_parity_t, odd),
-    __declare_enum_pair(io::serial_parity_t, even)
-__declare_enum_converter_end(io::serial_parity_t)
+__declare_enum_converter_begin(pt::io::serial_parity_t)
+    __declare_enum_pair(pt::io::serial_parity_t, none),
+    __declare_enum_pair(pt::io::serial_parity_t, odd),
+    __declare_enum_pair(pt::io::serial_parity_t, even)
+__declare_enum_converter_end(pt::io::serial_parity_t)
 
-__declare_enum_converter_begin(io::serial_stop_bits_t)
-    __declare_enum_pair(io::serial_stop_bits_t, one),
-    __declare_enum_pair(io::serial_stop_bits_t, onepointfive),
-    __declare_enum_pair(io::serial_stop_bits_t, two)
-__declare_enum_converter_end(io::serial_stop_bits_t)
+__declare_enum_converter_begin(pt::io::serial_stop_bits_t)
+    __declare_enum_pair(pt::io::serial_stop_bits_t, one),
+    __declare_enum_pair(pt::io::serial_stop_bits_t, onepointfive),
+    __declare_enum_pair(pt::io::serial_stop_bits_t, two)
+__declare_enum_converter_end(pt::io::serial_stop_bits_t)
 
-__declare_enum_converter_begin(io::serial_flow_control_t)
-    __declare_enum_pair(io::serial_flow_control_t, none),
-    __declare_enum_pair(io::serial_flow_control_t, software),
-    __declare_enum_pair(io::serial_flow_control_t, hardware)
-__declare_enum_converter_end(io::serial_flow_control_t)
+__declare_enum_converter_begin(pt::io::serial_flow_control_t)
+    __declare_enum_pair(pt::io::serial_flow_control_t, none),
+    __declare_enum_pair(pt::io::serial_flow_control_t, software),
+    __declare_enum_pair(pt::io::serial_flow_control_t, hardware)
+__declare_enum_converter_end(pt::io::serial_flow_control_t)
 
 }
 
 namespace mpl
 {
 
-__declare_enum_serializer(io::serial_parity_t)
-__declare_enum_serializer(io::serial_stop_bits_t)
-__declare_enum_serializer(io::serial_flow_control_t)
+__declare_enum_serializer(pt::io::serial_parity_t)
+__declare_enum_serializer(pt::io::serial_stop_bits_t)
+__declare_enum_serializer(pt::io::serial_flow_control_t)
 
 }
 
@@ -127,9 +127,9 @@ struct control_info_t
 
 static const control_info_t::array_t visca_control_table =
 {
-    { "pan_absolute", "Pan Absolute", 0, visca::visca_pan_min, visca::visca_pan_max, 1 },
-    { "tilt_absolute", "Tilt Absolute", 0, visca::visca_tilt_min, visca::visca_tilt_max, 1 },
-    { "zoom_absolute", "Zoom Absolute", 0, visca::visca_zoom_min, visca::visca_zoom_max, 1 }
+    { "pan_absolute", "Pan Absolute", 0, pt::visca::visca_pan_min, pt::visca::visca_pan_max, 1 },
+    { "tilt_absolute", "Tilt Absolute", 0, pt::visca::visca_tilt_min, pt::visca::visca_tilt_max, 1 },
+    { "zoom_absolute", "Zoom Absolute", 0, pt::visca::visca_zoom_min, pt::visca::visca_zoom_max, 1 }
 };
 
 }
@@ -144,18 +144,18 @@ class visca_device : public i_device
     using cond_t = std::condition_variable;
 
 
-    class visca_channel : public visca::i_visca_channel
+    class visca_channel : public pt::visca::i_visca_channel
     {
         mutable std::mutex      m_sync_mutex;
         cond_t                  m_cond;
         visca_device&           m_owner;
-        io::serial_link         m_serial_link;
-        visca::packet_data_t    m_recv_data;
-        visca::visca_control    m_visca_control;
+        pt::io::serial_link         m_serial_link;
+        pt::visca::packet_data_t    m_recv_data;
+        pt::visca::visca_control    m_visca_control;
 
     public:
         visca_channel(visca_device& owner
-                      , io::io_core& io_core
+                      , pt::io::io_core& io_core
                       , const device_params_t& device_params)
             : m_owner(owner)
             , m_serial_link(io_core
@@ -170,18 +170,18 @@ class visca_device : public i_device
 
         ~visca_channel()
         {
-            m_serial_link.control(io::link_control_id_t::close);
+            m_serial_link.control(pt::io::link_control_id_t::close);
         }
 
-        void on_link_state(io::link_state_t new_state
+        void on_link_state(pt::io::link_state_t new_state
                            , const std::string_view& reason)
         {
             m_owner.on_link_state(new_state
                                   , reason);
         }
 
-        void on_message(const io::message_t& message
-                        , const io::endpoint_t& endpoint)
+        void on_message(const pt::io::message_t& message
+                        , const pt::io::endpoint_t& endpoint)
         {
             std::lock_guard lock(m_sync_mutex);
             if (auto data = static_cast<const std::uint8_t*>(message.data()))
@@ -313,18 +313,18 @@ class visca_device : public i_device
     public:
         bool open() override
         {
-            return m_serial_link.control(io::link_control_id_t::open)
-                    && m_serial_link.control(io::link_control_id_t::start);
+            return m_serial_link.control(pt::io::link_control_id_t::open)
+                    && m_serial_link.control(pt::io::link_control_id_t::start);
         }
 
         bool close() override
         {
-            return m_serial_link.control(io::link_control_id_t::close);
+            return m_serial_link.control(pt::io::link_control_id_t::close);
         }
 
         std::size_t write(const void *data, std::size_t size) override
         {
-            io::message_t message(data
+            pt::io::message_t message(data
                                   , size);
             if (m_serial_link.send(message))
             {
@@ -334,7 +334,7 @@ class visca_device : public i_device
             return 0;
         }
 
-        std::size_t read(visca::packet_data_t &data, uint32_t timeout) override
+        std::size_t read(pt::visca::packet_data_t &data, uint32_t timeout) override
         {
             auto handler = [&]{ return !m_recv_data.empty(); };
             std::unique_lock lock(m_sync_mutex);
@@ -366,13 +366,13 @@ class visca_device : public i_device
 
     struct device_params_t
     {
-        visca::visca_config_t       visca_config;
-        io::serial_link_config_t    serial_config;
-        io::serial_endpoint_t       serial_endpoint;
+        pt::visca::visca_config_t       visca_config;
+        pt::io::serial_link_config_t    serial_config;
+        pt::io::serial_endpoint_t       serial_endpoint;
 
-        device_params_t(const visca::visca_config_t& visca_config = {}
-                        , const io::serial_link_config_t& serial_config = {}
-                        , const io::serial_endpoint_t& serial_endpoint = {})
+        device_params_t(const pt::visca::visca_config_t& visca_config = {}
+                        , const pt::io::serial_link_config_t& serial_config = {}
+                        , const pt::io::serial_endpoint_t& serial_endpoint = {})
         {
 
         }
@@ -446,9 +446,9 @@ public:
 
     using u_ptr_t = std::unique_ptr<visca_device>;
 
-    static io::io_core& get_core()
+    static pt::io::io_core& get_core()
     {
-        auto& core = io::io_core::get_instance();
+        auto& core = pt::io::io_core::get_instance();
         if (!core.is_running())
         {
             core.run();
@@ -485,7 +485,7 @@ public:
         close();
     }
 
-    void on_link_state(io::link_state_t new_state
+    void on_link_state(pt::io::link_state_t new_state
                        , const std::string_view& reason)
     {
 

@@ -1,6 +1,6 @@
 #include "bio_config.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 bio_config_t::bio_config_t()

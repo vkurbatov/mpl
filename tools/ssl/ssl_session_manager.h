@@ -4,7 +4,7 @@
 #include "i_ssl_session.h"
 #include "i_ssl_session_manager.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 struct ssl_manager_config_t;

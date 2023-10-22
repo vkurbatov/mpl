@@ -2,14 +2,14 @@
 #define MPL_SHARED_DATA_IMPL_H
 
 #include "core/i_shared_data.h"
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 
 namespace mpl
 {
 
 class shared_data_ref_impl : public i_shared_data
 {
-    using mutex_t = portable::shared_spin_lock;
+    using mutex_t = pt::utils::shared_spin_lock;
 
     mutable mutex_t     m_safe_mutex;
 

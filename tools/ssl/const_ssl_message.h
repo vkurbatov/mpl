@@ -3,7 +3,7 @@
 
 #include "i_ssl_message.h"
 
-namespace ssl
+namespace pt::ssl
 {
 
 class const_ssl_message : public i_ssl_message

@@ -1,7 +1,7 @@
 #include "ssl_certificate_impl.h"
 
 
-namespace ssl
+namespace pt::ssl
 {
 
 ssl_certificate_impl::u_ptr_t ssl_certificate_impl::create(x509_ptr_t &&x509)

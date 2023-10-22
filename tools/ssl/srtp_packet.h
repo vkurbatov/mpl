@@ -4,7 +4,7 @@
 #include "srtp_types.h"
 #include <cstdint>
 
-namespace ssl
+namespace pt::ssl
 {
 
 struct srtp_packet_t

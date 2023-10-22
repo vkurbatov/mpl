@@ -73,18 +73,18 @@ transport_id_t tls_packet_impl::transport_id() const
 
 bool tls_packet_impl::is_valid() const
 {
-    return m_buffer.size() >= sizeof(ssl::mapped_dtls_header_t)
-            && static_cast<const ssl::mapped_dtls_header_t*>(m_buffer.data())->is_valid();
+    return m_buffer.size() >= sizeof(pt::ssl::mapped_dtls_header_t)
+            && static_cast<const pt::ssl::mapped_dtls_header_t*>(m_buffer.data())->is_valid();
 }
 
 uint64_t tls_packet_impl::sequension_number() const
 {
-    return static_cast<const ssl::mapped_dtls_header_t*>(m_buffer.data())->get_seq_number();
+    return static_cast<const pt::ssl::mapped_dtls_header_t*>(m_buffer.data())->get_seq_number();
 }
 
 i_tls_packet::content_type_t tls_packet_impl::content_type() const
 {
-    return static_cast<i_tls_packet::content_type_t>(static_cast<const ssl::mapped_dtls_header_t*>(m_buffer.data())->get_content_type());
+    return static_cast<i_tls_packet::content_type_t>(static_cast<const pt::ssl::mapped_dtls_header_t*>(m_buffer.data())->get_content_type());
 }
 
 }

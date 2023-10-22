@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET ipcpt)
+set(TARGET ptipc)
 
 set(SOURCES
     ipc_base.cpp

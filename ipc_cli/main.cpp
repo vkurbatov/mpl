@@ -57,7 +57,7 @@ int test()
 int main()
 {
     //return test();
-    ffmpeg::libav_register();
+    pt::ffmpeg::libav_register();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     std::string output_url = "rtmp://127.0.0.1/cam1/stream";

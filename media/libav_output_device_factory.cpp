@@ -15,7 +15,7 @@
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 //#include "tools/ffmpeg/libav_stream_publisher.h"
 #include "tools/ffmpeg/libav_output_format.h"
 
@@ -146,11 +146,11 @@ struct timestamp_manager_t
     struct stream_context_t
     {
         using list_t = std::vector<stream_context_t>;
-        ffmpeg::stream_info_t       stream;
+        pt::ffmpeg::stream_info_t       stream;
         std::size_t                 frame_id;
         timestamp_t                 first_timestamp;
 
-        stream_context_t(const ffmpeg::stream_info_t& stream_info)
+        stream_context_t(const pt::ffmpeg::stream_info_t& stream_info)
             : stream(stream_info)
             , frame_id(0)
             , first_timestamp(0)
@@ -179,7 +179,7 @@ struct timestamp_manager_t
     stream_context_t::list_t        streams;
     bool                            open;
 
-    static stream_context_t::list_t create_stream_context_list(const ffmpeg::stream_info_list_t& streams)
+    static stream_context_t::list_t create_stream_context_list(const pt::ffmpeg::stream_info_list_t& streams)
     {
         stream_context_t::list_t stream_context_list;
 
@@ -191,7 +191,7 @@ struct timestamp_manager_t
         return stream_context_list;
     }
 
-    timestamp_manager_t(const ffmpeg::stream_info_list_t& streams)
+    timestamp_manager_t(const pt::ffmpeg::stream_info_list_t& streams)
         : streams(create_stream_context_list(streams))
         , open(false)
     {
@@ -218,7 +218,7 @@ struct timestamp_manager_t
         return result;
     }
 
-    bool check_and_rescale_frame(ffmpeg::frame_t& libav_frame)
+    bool check_and_rescale_frame(pt::ffmpeg::frame_t& libav_frame)
     {
         if (static_cast<std::size_t>(libav_frame.info.stream_id) < streams.size())
         {
@@ -245,10 +245,10 @@ struct timestamp_manager_t
 class libav_output_device : public i_device
 {
     using thread_t = std::thread;
-    using mutex_t = portable::shared_spin_lock;
+    using mutex_t = pt::utils::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
-    using libav_frame_queue_t = std::queue<ffmpeg::frame_t>;
+    using libav_frame_queue_t = std::queue<pt::ffmpeg::frame_t>;
 
     struct device_params_t
     {
@@ -309,13 +309,13 @@ class libav_output_device : public i_device
             return false;
         }
 
-        ffmpeg::stream_info_list_t native_streams() const
+        pt::ffmpeg::stream_info_list_t native_streams() const
         {
-            ffmpeg::stream_info_list_t stream_list;
+            pt::ffmpeg::stream_info_list_t stream_list;
             stream_id_t stream_id = 0;
             for (const auto& s : streams)
             {
-                ffmpeg::stream_info_t stream_info;
+                pt::ffmpeg::stream_info_t stream_info;
                 if (s != nullptr
                         && utils::convert(*s
                                           , stream_info))
@@ -365,7 +365,7 @@ class libav_output_device : public i_device
             return stream_id_undefined;
         }
 
-        ffmpeg::libav_output_format::config_t native_config() const
+        pt::ffmpeg::libav_output_format::config_t native_config() const
         {
             return
             {
@@ -401,7 +401,7 @@ class libav_output_device : public i_device
             clear();
         }
 
-        void push_frame(ffmpeg::frame_t&& libav_frame)
+        void push_frame(pt::ffmpeg::frame_t&& libav_frame)
         {
             lock_t lock(m_safe_mutex);
             m_frame_queue.emplace(std::move(libav_frame));
@@ -411,7 +411,7 @@ class libav_output_device : public i_device
             }
         }
 
-        bool fetch_frame(ffmpeg::frame_t& frame)
+        bool fetch_frame(pt::ffmpeg::frame_t& frame)
         {
             lock_t lock(m_safe_mutex);
             if (!m_frame_queue.empty())
@@ -536,8 +536,8 @@ public:
         {
             if (auto buffer = frame.data().get_buffer(media_buffer_index))
             {
-                ffmpeg::frame_t libav_frame;
-                libav_frame.info.media_info.media_type = ffmpeg::media_type_t::audio;
+                pt::ffmpeg::frame_t libav_frame;
+                libav_frame.info.media_info.media_type = pt::ffmpeg::media_type_t::audio;
                 libav_frame.info.stream_id = stream_id;
                 libav_frame.media_data = utils::create_raw_array(buffer->data()
                                                                  , buffer->size());
@@ -562,8 +562,8 @@ public:
         {
             if (auto buffer = frame.data().get_buffer(media_buffer_index))
             {
-                ffmpeg::frame_t libav_frame;
-                libav_frame.info.media_info.media_type = ffmpeg::media_type_t::video;
+                pt::ffmpeg::frame_t libav_frame;
+                libav_frame.info.media_info.media_type = pt::ffmpeg::media_type_t::video;
                 libav_frame.info.stream_id = stream_id;
                 libav_frame.media_data = utils::create_raw_array(buffer->data()
                                                                  , buffer->size());
@@ -624,9 +624,9 @@ public:
 
         while(libav_output_device::is_open())
         {
-            ffmpeg::libav_output_format::config_t native_config = m_device_params.native_config();
+            pt::ffmpeg::libav_output_format::config_t native_config = m_device_params.native_config();
 
-            ffmpeg::libav_output_format native_publisher(native_config);
+            pt::ffmpeg::libav_output_format native_publisher(native_config);
             timestamp_manager_t pts_manager(native_config.streams);
 
             change_state(channel_state_t::connecting);
@@ -636,7 +636,7 @@ public:
                 change_state(channel_state_t::connected);
                 while(libav_output_device::is_open())
                 {
-                    ffmpeg::frame_t libav_frame;
+                    pt::ffmpeg::frame_t libav_frame;
                     while(m_frame_manager.fetch_frame(libav_frame)
                           && libav_output_device::is_open())
                     {

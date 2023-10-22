@@ -6,7 +6,7 @@
 
 #include <opencv2/imgproc.hpp>
 
-namespace ocv
+namespace pt::ocv
 {
 
 struct image_t

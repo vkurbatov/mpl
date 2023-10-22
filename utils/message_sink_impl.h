@@ -4,7 +4,7 @@
 #include "core/i_message_sink.h"
 
 #include <functional>
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 
 namespace mpl
 {
@@ -37,7 +37,7 @@ public:
 
 class message_sink_safe_impl : public message_sink_impl
 {
-    mutable portable::spin_lock m_safe_mutex;
+    mutable pt::utils::spin_lock m_safe_mutex;
 public:
     using u_ptr_t = std::unique_ptr<message_sink_impl>;
     using s_ptr_t = std::shared_ptr<message_sink_impl>;

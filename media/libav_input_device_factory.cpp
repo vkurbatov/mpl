@@ -9,7 +9,7 @@
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
 #include "tools/ffmpeg/libav_input_format.h"
 
@@ -24,13 +24,13 @@ namespace mpl::media
 struct stream_t
 {
     using list_t = std::vector<stream_t>;
-    ffmpeg::stream_info_t   stream_info;
+    pt::ffmpeg::stream_info_t   stream_info;
     timestamp_t             start_timestamp;
     frame_id_t              frame_id;
     timestamp_t             last_timestamp;
     timestamp_t             real_timestamp;
 
-    static stream_t::list_t create_list(ffmpeg::stream_info_t::list_t&& streams)
+    static stream_t::list_t create_list(pt::ffmpeg::stream_info_t::list_t&& streams)
     {
         stream_t::list_t stream_list;
 
@@ -42,7 +42,7 @@ struct stream_t
         return stream_list;
     }
 
-    stream_t(ffmpeg::stream_info_t&& stream_info)
+    stream_t(pt::ffmpeg::stream_info_t&& stream_info)
         : stream_info(std::move(stream_info))
         , start_timestamp(0)
         , frame_id(0)
@@ -98,7 +98,7 @@ struct stream_t
 
 class libav_input_device : public i_device
 {
-    using mutex_t = portable::shared_spin_lock;
+    using mutex_t = pt::utils::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
     using shared_lock_t = std::shared_lock<mutex_t>;
 
@@ -145,7 +145,7 @@ class libav_input_device : public i_device
                     && !url.empty();
         }
 
-        ffmpeg::libav_input_format::config_t native_config() const
+        pt::ffmpeg::libav_input_format::config_t native_config() const
         {
             return { url
                      , options };
@@ -258,7 +258,7 @@ public:
 
         while(is_open())
         {
-            ffmpeg::libav_input_format native_input_device(m_device_params.native_config());
+            pt::ffmpeg::libav_input_format native_input_device(m_device_params.native_config());
 
             change_state(channel_state_t::connecting);
 
@@ -271,7 +271,7 @@ public:
                 while(is_open()
                       && error_counter < 10)
                 {
-                    ffmpeg::frame_ref_t libav_frame;
+                    pt::ffmpeg::frame_ref_t libav_frame;
                     if (native_input_device.read(libav_frame))
                     {
                         auto& stream = streams[libav_frame.info.stream_id];
@@ -316,13 +316,13 @@ public:
 
 
     bool on_native_frame(stream_t& stream
-                         , ffmpeg::frame_ref_t& libav_frame)
+                         , pt::ffmpeg::frame_ref_t& libav_frame)
     {
         if (libav_frame.size > 0)
         {
             switch(stream.stream_info.media_info.media_type)
             {
-                case ffmpeg::media_type_t::audio:
+                case pt::ffmpeg::media_type_t::audio:
                 {
                     audio_format_impl format;
                     if (utils::convert(stream.stream_info
@@ -340,7 +340,7 @@ public:
                     }
                 }
                 break;
-                case ffmpeg::media_type_t::video:
+                case pt::ffmpeg::media_type_t::video:
                 {
                     video_format_impl format;
                     if (utils::convert(stream.stream_info

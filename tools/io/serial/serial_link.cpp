@@ -14,7 +14,7 @@
 
 #include <thread>
 
-namespace io
+namespace pt::io
 {
 
 constexpr static std::size_t recv_buffer_size = 1000;

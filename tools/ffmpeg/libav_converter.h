@@ -3,7 +3,7 @@
 
 #include "libav_base.h"
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 struct libav_converter_context_t;

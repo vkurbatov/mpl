@@ -20,87 +20,87 @@ namespace detail
 {
 
 using video_table_t = std::unordered_map<video_format_id_t
-                                         , ffmpeg::format_info_t>;
+                                         , pt::ffmpeg::format_info_t>;
 
 using audio_table_t = std::unordered_map<audio_format_id_t
-                                         , ffmpeg::format_info_t>;
+                                         , pt::ffmpeg::format_info_t>;
 
 static const video_table_t video_format_table =
 {
-    { video_format_id_t::undefined, { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_none } },
-    { video_format_id_t::yuv420p,   { ffmpeg::pixel_format_yuv420p, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::yuv422p,   { ffmpeg::pixel_format_yuv422p, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::yuv444p,   { ffmpeg::pixel_format_yuv444p, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::yuv411p,   { ffmpeg::pixel_format_yuv411p, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::yuyv,      { ffmpeg::pixel_format_yuyv,    ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::uyvy,      { ffmpeg::pixel_format_uyvy,    ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::yuv410,    { ffmpeg::pixel_format_yuv410,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::nv12,      { ffmpeg::pixel_format_nv12,    ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::nv21,      { ffmpeg::pixel_format_nv21,    ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::nv16,      { ffmpeg::pixel_format_nv16,    ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::bgr555,    { ffmpeg::pixel_format_bgr555,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::bgr555x,   { ffmpeg::pixel_format_bgr555x, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::bgr565,    { ffmpeg::pixel_format_bgr565,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::bgr565x,   { ffmpeg::pixel_format_bgr565x, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::rgb555,    { ffmpeg::pixel_format_rgb555,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::rgb555x,   { ffmpeg::pixel_format_rgb555x, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::rgb565,    { ffmpeg::pixel_format_rgb565,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::rgb565x,   { ffmpeg::pixel_format_rgb565x, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::bgr8,      { ffmpeg::pixel_format_bgr8,    ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::rgb8,      { ffmpeg::pixel_format_rgb8,    ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::bgr24,     { ffmpeg::pixel_format_bgr24,   ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::rgb24,     { ffmpeg::pixel_format_rgb24,   ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::bgr32,     { ffmpeg::pixel_format_bgr32,   ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::rgb32,     { ffmpeg::pixel_format_rgb32,   ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::abgr32,    { ffmpeg::pixel_format_abgr32,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::argb32,    { ffmpeg::pixel_format_argb32,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::bgra32,    { ffmpeg::pixel_format_bgra32,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::rgba32,    { ffmpeg::pixel_format_rgba32,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::gray8,     { ffmpeg::pixel_format_gray8,   ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::gray16,    { ffmpeg::pixel_format_gray16,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::gray16x,   { ffmpeg::pixel_format_gray16x, ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::sbggr8,    { ffmpeg::pixel_format_sbggr8,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::sgbrg8,    { ffmpeg::pixel_format_sgbrg8,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::sgrbg8,    { ffmpeg::pixel_format_sgrbg8,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::srggb8,    { ffmpeg::pixel_format_srggb8,  ffmpeg::codec_id_raw_video } },
-    { video_format_id_t::png,       { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_png     } },
-    { video_format_id_t::jpeg,      { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_jpeg    } },
-    { video_format_id_t::mjpeg,     { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_mjpeg   } },
-    { video_format_id_t::gif,       { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_gif     } },
-    { video_format_id_t::h265,      { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_h265    } },
-    { video_format_id_t::h264,      { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_h264    } },
-    { video_format_id_t::h263,      { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_h263    } },
-    { video_format_id_t::h263p,     { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_h263p   } },
-    { video_format_id_t::h261,      { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_h261    } },
-    { video_format_id_t::vp8,       { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_vp8     } },
-    { video_format_id_t::vp9,       { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_vp9     } },
-    { video_format_id_t::mpeg4,     { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_mpeg4   } },
-    { video_format_id_t::cpia,      { ffmpeg::unknown_pixel_format, ffmpeg::codec_id_cpia    } },
+    { video_format_id_t::undefined, { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_none } },
+    { video_format_id_t::yuv420p,   { pt::ffmpeg::pixel_format_yuv420p, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::yuv422p,   { pt::ffmpeg::pixel_format_yuv422p, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::yuv444p,   { pt::ffmpeg::pixel_format_yuv444p, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::yuv411p,   { pt::ffmpeg::pixel_format_yuv411p, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::yuyv,      { pt::ffmpeg::pixel_format_yuyv,    pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::uyvy,      { pt::ffmpeg::pixel_format_uyvy,    pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::yuv410,    { pt::ffmpeg::pixel_format_yuv410,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::nv12,      { pt::ffmpeg::pixel_format_nv12,    pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::nv21,      { pt::ffmpeg::pixel_format_nv21,    pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::nv16,      { pt::ffmpeg::pixel_format_nv16,    pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::bgr555,    { pt::ffmpeg::pixel_format_bgr555,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::bgr555x,   { pt::ffmpeg::pixel_format_bgr555x, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::bgr565,    { pt::ffmpeg::pixel_format_bgr565,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::bgr565x,   { pt::ffmpeg::pixel_format_bgr565x, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::rgb555,    { pt::ffmpeg::pixel_format_rgb555,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::rgb555x,   { pt::ffmpeg::pixel_format_rgb555x, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::rgb565,    { pt::ffmpeg::pixel_format_rgb565,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::rgb565x,   { pt::ffmpeg::pixel_format_rgb565x, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::bgr8,      { pt::ffmpeg::pixel_format_bgr8,    pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::rgb8,      { pt::ffmpeg::pixel_format_rgb8,    pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::bgr24,     { pt::ffmpeg::pixel_format_bgr24,   pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::rgb24,     { pt::ffmpeg::pixel_format_rgb24,   pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::bgr32,     { pt::ffmpeg::pixel_format_bgr32,   pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::rgb32,     { pt::ffmpeg::pixel_format_rgb32,   pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::abgr32,    { pt::ffmpeg::pixel_format_abgr32,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::argb32,    { pt::ffmpeg::pixel_format_argb32,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::bgra32,    { pt::ffmpeg::pixel_format_bgra32,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::rgba32,    { pt::ffmpeg::pixel_format_rgba32,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::gray8,     { pt::ffmpeg::pixel_format_gray8,   pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::gray16,    { pt::ffmpeg::pixel_format_gray16,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::gray16x,   { pt::ffmpeg::pixel_format_gray16x, pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::sbggr8,    { pt::ffmpeg::pixel_format_sbggr8,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::sgbrg8,    { pt::ffmpeg::pixel_format_sgbrg8,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::sgrbg8,    { pt::ffmpeg::pixel_format_sgrbg8,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::srggb8,    { pt::ffmpeg::pixel_format_srggb8,  pt::ffmpeg::codec_id_raw_video } },
+    { video_format_id_t::png,       { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_png     } },
+    { video_format_id_t::jpeg,      { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_jpeg    } },
+    { video_format_id_t::mjpeg,     { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_mjpeg   } },
+    { video_format_id_t::gif,       { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_gif     } },
+    { video_format_id_t::h265,      { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_h265    } },
+    { video_format_id_t::h264,      { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_h264    } },
+    { video_format_id_t::h263,      { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_h263    } },
+    { video_format_id_t::h263p,     { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_h263p   } },
+    { video_format_id_t::h261,      { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_h261    } },
+    { video_format_id_t::vp8,       { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_vp8     } },
+    { video_format_id_t::vp9,       { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_vp9     } },
+    { video_format_id_t::mpeg4,     { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_mpeg4   } },
+    { video_format_id_t::cpia,      { pt::ffmpeg::unknown_pixel_format, pt::ffmpeg::codec_id_cpia    } },
 };
 
 
 static const audio_table_t audio_format_table =
 {
-    { audio_format_id_t::undefined, { ffmpeg::unknown_sample_format,    ffmpeg::codec_id_none } },
-    { audio_format_id_t::pcm8,      { ffmpeg::sample_format_pcm8,       ffmpeg::codec_id_pcm8 } },
-    { audio_format_id_t::pcm16,     { ffmpeg::sample_format_pcm16,      ffmpeg::codec_id_pcm16 } },
-    { audio_format_id_t::pcm32,     { ffmpeg::sample_format_pcm32,      ffmpeg::codec_id_pcm32 } },
-    { audio_format_id_t::float32,   { ffmpeg::sample_format_float32,    ffmpeg::codec_id_float32 } },
-    { audio_format_id_t::float64,   { ffmpeg::sample_format_float64,    ffmpeg::codec_id_float64 } },
-    { audio_format_id_t::pcm8p,     { ffmpeg::sample_format_pcm8p,      ffmpeg::codec_id_pcm8p } },
-    { audio_format_id_t::pcm16p,    { ffmpeg::sample_format_pcm16p,     ffmpeg::codec_id_pcm16p } },
-    { audio_format_id_t::pcm32p,    { ffmpeg::sample_format_pcm32p,     ffmpeg::codec_id_pcm32p } },
-    { audio_format_id_t::float32p,  { ffmpeg::sample_format_float32p,   ffmpeg::codec_id_float32p } },
-    { audio_format_id_t::float64p,  { ffmpeg::sample_format_float64p,   ffmpeg::codec_id_float64p } },
-    { audio_format_id_t::pcma,      { ffmpeg::unknown_sample_format,    ffmpeg::codec_id_pcma    } },
-    { audio_format_id_t::pcmu,      { ffmpeg::unknown_sample_format,    ffmpeg::codec_id_pcmu    } },
-    { audio_format_id_t::opus,      { ffmpeg::unknown_sample_format,    ffmpeg::codec_id_opus    } },
-    { audio_format_id_t::aac,       { ffmpeg::unknown_sample_format,    ffmpeg::codec_id_aac     } },
+    { audio_format_id_t::undefined, { pt::ffmpeg::unknown_sample_format,    pt::ffmpeg::codec_id_none } },
+    { audio_format_id_t::pcm8,      { pt::ffmpeg::sample_format_pcm8,       pt::ffmpeg::codec_id_pcm8 } },
+    { audio_format_id_t::pcm16,     { pt::ffmpeg::sample_format_pcm16,      pt::ffmpeg::codec_id_pcm16 } },
+    { audio_format_id_t::pcm32,     { pt::ffmpeg::sample_format_pcm32,      pt::ffmpeg::codec_id_pcm32 } },
+    { audio_format_id_t::float32,   { pt::ffmpeg::sample_format_float32,    pt::ffmpeg::codec_id_float32 } },
+    { audio_format_id_t::float64,   { pt::ffmpeg::sample_format_float64,    pt::ffmpeg::codec_id_float64 } },
+    { audio_format_id_t::pcm8p,     { pt::ffmpeg::sample_format_pcm8p,      pt::ffmpeg::codec_id_pcm8p } },
+    { audio_format_id_t::pcm16p,    { pt::ffmpeg::sample_format_pcm16p,     pt::ffmpeg::codec_id_pcm16p } },
+    { audio_format_id_t::pcm32p,    { pt::ffmpeg::sample_format_pcm32p,     pt::ffmpeg::codec_id_pcm32p } },
+    { audio_format_id_t::float32p,  { pt::ffmpeg::sample_format_float32p,   pt::ffmpeg::codec_id_float32p } },
+    { audio_format_id_t::float64p,  { pt::ffmpeg::sample_format_float64p,   pt::ffmpeg::codec_id_float64p } },
+    { audio_format_id_t::pcma,      { pt::ffmpeg::unknown_sample_format,    pt::ffmpeg::codec_id_pcma    } },
+    { audio_format_id_t::pcmu,      { pt::ffmpeg::unknown_sample_format,    pt::ffmpeg::codec_id_pcmu    } },
+    { audio_format_id_t::opus,      { pt::ffmpeg::unknown_sample_format,    pt::ffmpeg::codec_id_opus    } },
+    { audio_format_id_t::aac,       { pt::ffmpeg::unknown_sample_format,    pt::ffmpeg::codec_id_aac     } },
 };
 
 template<typename F
-         , typename InMap = std::unordered_map<F, ffmpeg::format_info_t>
-         , typename OutMap = std::unordered_map<ffmpeg::format_id_t, F>>
+         , typename InMap = std::unordered_map<F, pt::ffmpeg::format_info_t>
+         , typename OutMap = std::unordered_map<pt::ffmpeg::format_id_t, F>>
 OutMap create_format_map(const InMap& format_map)
 {
     OutMap out;
@@ -108,7 +108,7 @@ OutMap create_format_map(const InMap& format_map)
     for (const auto& f : format_map)
     {
         // if (out.find(f.second.format_id) == out.end())
-        if (f.second.format_id != ffmpeg::unknown_format_id)
+        if (f.second.format_id != pt::ffmpeg::unknown_format_id)
         {
             out.emplace(f.second.format_id
                         , f.first);
@@ -119,8 +119,8 @@ OutMap create_format_map(const InMap& format_map)
 }
 
 template<typename F
-         , typename InMap = std::unordered_map<F, ffmpeg::format_info_t>
-         , typename OutMap = std::unordered_map<ffmpeg::codec_id_t, F>>
+         , typename InMap = std::unordered_map<F, pt::ffmpeg::format_info_t>
+         , typename OutMap = std::unordered_map<pt::ffmpeg::codec_id_t, F>>
 OutMap create_codec_map(const InMap& format_map)
 {
     OutMap out;
@@ -128,7 +128,7 @@ OutMap create_codec_map(const InMap& format_map)
     for (const auto& f : format_map)
     {
         // if (out.find(f.second.codec_id) == out.end())
-        if (f.second.codec_id > ffmpeg::codec_id_none)
+        if (f.second.codec_id > pt::ffmpeg::codec_id_none)
         {
             out.emplace(f.second.codec_id
                         , f.first);
@@ -139,26 +139,26 @@ OutMap create_codec_map(const InMap& format_map)
 }
 
 template<typename F>
-const std::unordered_map<F, ffmpeg::format_info_t>& get_conversion_map();
+const std::unordered_map<F, pt::ffmpeg::format_info_t>& get_conversion_map();
 
 template<>
-const std::unordered_map<video_format_id_t,ffmpeg::format_info_t>& get_conversion_map()
+const std::unordered_map<video_format_id_t,pt::ffmpeg::format_info_t>& get_conversion_map()
 {
     return video_format_table;
 }
 
 template<>
-const std::unordered_map<audio_format_id_t,ffmpeg::format_info_t>& get_conversion_map()
+const std::unordered_map<audio_format_id_t,pt::ffmpeg::format_info_t>& get_conversion_map()
 {
     return audio_format_table;
 }
 
 template<typename F>
-bool convert(const F& format_id, ffmpeg::format_info_t& format_info)
+bool convert(const F& format_id, pt::ffmpeg::format_info_t& format_info)
 {
     if (format_id == F::undefined)
     {
-        format_info = ffmpeg::format_info_t::undefined();
+        format_info = pt::ffmpeg::format_info_t::undefined();
         return true;
     }
 
@@ -173,7 +173,7 @@ bool convert(const F& format_id, ffmpeg::format_info_t& format_info)
 }
 
 template<typename F>
-bool convert(const ffmpeg::format_info_t& format_info, F& format_id)
+bool convert(const pt::ffmpeg::format_info_t& format_info, F& format_id)
 {
     if (format_info.is_undefined())
     {
@@ -206,7 +206,7 @@ bool convert(const ffmpeg::format_info_t& format_info, F& format_id)
 }
 
 void convert_options(const i_option& option
-                     , ffmpeg::codec_info_t codec_info)
+                     , pt::ffmpeg::codec_info_t codec_info)
 {
 
     option_reader reader(option);
@@ -222,7 +222,7 @@ void convert_options(const i_option& option
 }
 
 void convert_options(const i_option& option
-                     , ffmpeg::stream_info_t& stream_info)
+                     , pt::ffmpeg::stream_info_t& stream_info)
 {
 
     option_reader reader(option);
@@ -233,7 +233,7 @@ void convert_options(const i_option& option
                     , stream_info.codec_info);
 }
 
-void convert_options(const ffmpeg::codec_info_t& codec_info
+void convert_options(const pt::ffmpeg::codec_info_t& codec_info
                      , i_option& option)
 {
     option_writer writer(option);
@@ -264,12 +264,12 @@ void convert_options(const ffmpeg::codec_info_t& codec_info
     }
 }
 
-void convert_options(const ffmpeg::stream_info_t& stream_info
+void convert_options(const pt::ffmpeg::stream_info_t& stream_info
                      , i_option& option)
 {
     option_writer writer(option);
 
-    if (stream_info.stream_id != ffmpeg::no_stream)
+    if (stream_info.stream_id != pt::ffmpeg::no_stream)
     {
         writer.set(opt_fmt_stream_id, stream_info.stream_id);
     }
@@ -290,42 +290,42 @@ namespace mpl::utils
 {
 
 template<>
-bool convert(const media::video_format_id_t& format_id, ffmpeg::format_info_t& format_info)
+bool convert(const media::video_format_id_t& format_id, pt::ffmpeg::format_info_t& format_info)
 {
     return mpl::media::utils::detail::convert<media::video_format_id_t>(format_id
                                                                         , format_info);
 }
 
 template<>
-bool convert(const media::audio_format_id_t& format_id, ffmpeg::format_info_t& format_info)
+bool convert(const media::audio_format_id_t& format_id, pt::ffmpeg::format_info_t& format_info)
 {
     return mpl::media::utils::detail::convert<media::audio_format_id_t>(format_id
                                                                         , format_info);
 }
 
 template<>
-bool convert(const ffmpeg::format_info_t& format_info, media::video_format_id_t& format_id)
+bool convert(const pt::ffmpeg::format_info_t& format_info, media::video_format_id_t& format_id)
 {
     return mpl::media::utils::detail::convert(format_info
                                                 , format_id);
 }
 
 template<>
-bool convert(const ffmpeg::format_info_t& format_info, media::audio_format_id_t& format_id)
+bool convert(const pt::ffmpeg::format_info_t& format_info, media::audio_format_id_t& format_id)
 {
     return mpl::media::utils::detail::convert(format_info
                                                 , format_id);
 }
 
 template<>
-bool convert(const media::i_audio_format& format, ffmpeg::stream_info_t& stream_info)
+bool convert(const media::i_audio_format& format, pt::ffmpeg::stream_info_t& stream_info)
 {
-    ffmpeg::format_info_t format_info;
+    pt::ffmpeg::format_info_t format_info;
     if (convert(format.format_id()
                 , format_info))
     {
         stream_info.codec_info.id = format_info.codec_id;
-        stream_info.media_info.media_type = ffmpeg::media_type_t::audio;
+        stream_info.media_info.media_type = pt::ffmpeg::media_type_t::audio;
         stream_info.media_info.audio_info.sample_format = format_info.format_id;
         stream_info.media_info.audio_info.sample_rate = format.sample_rate();
         stream_info.media_info.audio_info.channels = format.channels();
@@ -339,14 +339,14 @@ bool convert(const media::i_audio_format& format, ffmpeg::stream_info_t& stream_
 }
 
 template<>
-bool convert(const media::i_video_format& format, ffmpeg::stream_info_t& stream_info)
+bool convert(const media::i_video_format& format, pt::ffmpeg::stream_info_t& stream_info)
 {
-    ffmpeg::format_info_t format_info;
+    pt::ffmpeg::format_info_t format_info;
     if (convert(format.format_id()
                 , format_info))
     {
         stream_info.codec_info.id = format_info.codec_id;
-        stream_info.media_info.media_type = ffmpeg::media_type_t::video;
+        stream_info.media_info.media_type = pt::ffmpeg::media_type_t::video;
         stream_info.media_info.video_info.pixel_format = format_info.format_id;
         stream_info.media_info.video_info.size.width = format.width();
         stream_info.media_info.video_info.size.height = format.height();
@@ -361,7 +361,7 @@ bool convert(const media::i_video_format& format, ffmpeg::stream_info_t& stream_
 }
 
 template<>
-bool convert(const media::i_media_format& format, ffmpeg::stream_info_t& stream_info)
+bool convert(const media::i_media_format& format, pt::ffmpeg::stream_info_t& stream_info)
 {
     switch(format.media_type())
     {
@@ -384,10 +384,10 @@ bool convert(const media::i_media_format& format, ffmpeg::stream_info_t& stream_
 }
 
 template<>
-bool convert(const ffmpeg::stream_info_t& stream_info
+bool convert(const pt::ffmpeg::stream_info_t& stream_info
              , media::audio_format_impl& audio_format)
 {
-    if (stream_info.media_info.media_type == ffmpeg::media_type_t::audio)
+    if (stream_info.media_info.media_type == pt::ffmpeg::media_type_t::audio)
     {
         media::audio_format_id_t format_id = media::audio_format_id_t::undefined;
         if (convert(stream_info.format_info()
@@ -408,10 +408,10 @@ bool convert(const ffmpeg::stream_info_t& stream_info
 }
 
 template<>
-bool convert(const ffmpeg::stream_info_t& stream_info
+bool convert(const pt::ffmpeg::stream_info_t& stream_info
              , media::video_format_impl& video_format)
 {
-    if (stream_info.media_info.media_type == ffmpeg::media_type_t::video)
+    if (stream_info.media_info.media_type == pt::ffmpeg::media_type_t::video)
     {
         media::video_format_id_t format_id = media::video_format_id_t::undefined;
         if (convert(stream_info.format_info()

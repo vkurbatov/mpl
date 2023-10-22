@@ -1,6 +1,6 @@
 #include "test.h"
 
-void ffmpeg::test()
+void pt::ffmpeg::test()
 {
 
 }

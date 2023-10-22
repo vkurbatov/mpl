@@ -1,7 +1,7 @@
 #ifndef IO_NET_SOCKET_OPTIONS_H
 #define IO_NET_SOCKET_OPTIONS_H
 
-namespace io
+namespace pt::io
 {
 
 struct socket_options_t
