@@ -64,6 +64,9 @@ ssl_result_t ssl_adapter::set_state(ssl_ptr_t &ssl, ssl_state_t state)
         break;
         case ssl_state_t::accept:
             SSL_set_accept_state(ssl.get());
+            result = get_result(ssl
+                                , SSL_accept(ssl.get())
+                                );
         break;
         case ssl_state_t::handshaking:
             result = get_result(ssl

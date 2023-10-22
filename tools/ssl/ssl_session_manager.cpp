@@ -222,13 +222,16 @@ struct ssl_session_manager::pimpl_t
             {
                 m_listener->on_wait_timeout(timeout);
             }
+            return;
         }
 
-        inline void process_result(ssl_result_t result)
+        inline bool process_result(ssl_result_t result)
         {
             switch(result)
             {
                 case ssl_result_t::ok:
+                case ssl_result_t::want_write:
+                    return true;
                     // nothng ??
                 break;
                 case ssl_result_t::error_syscall:
@@ -243,11 +246,14 @@ struct ssl_session_manager::pimpl_t
                 case ssl_result_t::want_read:
                 {
                     check_timeout();
+                    return true;
                 }
                 break;
                 default:
                     check_shutdown();
             }
+
+            return false;
         }
 
         std::size_t process_outgoing_data()
@@ -298,23 +304,126 @@ struct ssl_session_manager::pimpl_t
 
         inline bool client_handshake()
         {
-            change_state(ssl_handshake_state_t::prepare);
-            m_ssl_adapter.set_state(ssl_state_t::clear);
-            m_ssl_adapter.set_state(ssl_state_t::connect);
-            auto result = m_ssl_adapter.set_state(ssl_state_t::handshaking);
-            process_result(result);
-            // process_outgoing_data();
-            return process_outgoing_data() > 0;
+            enum class fsm_t
+            {
+                prepare,
+                clear,
+                connect,
+                handshake,
+                completed,
+                failed
+            };
+
+            fsm_t fsm = fsm_t::prepare;
+            auto result = ssl_result_t::ok;
+
+            while(fsm < fsm_t::failed)
+            {
+
+                switch(fsm)
+                {
+                    case fsm_t::prepare:
+                    {
+                        change_state(ssl_handshake_state_t::prepare);
+                    }
+                    break;
+                    case fsm_t::clear:
+                    {
+                        result = m_ssl_adapter.set_state(ssl_state_t::clear);
+                    }
+                    break;
+                    case fsm_t::connect:
+                    {
+                        result = m_ssl_adapter.set_state(ssl_state_t::connect);
+                    }
+                    break;
+                    case fsm_t::handshake:
+                    {
+                        result = m_ssl_adapter.set_state(ssl_state_t::handshaking);
+                        process_outgoing_data();
+                    }
+                    break;
+                    case fsm_t::completed:
+                        return true;
+                    break;
+                    default:;
+                }
+
+                if (process_result(result))
+                {
+                    result = ssl_result_t::ok;
+                    fsm = static_cast<fsm_t>(static_cast<std::int32_t>(fsm) + 1);
+                }
+                else
+                {
+                    fsm = fsm_t::failed;
+                }
+
+            }
+
+            return false;
         }
 
         inline bool server_handshake()
         {
+            enum class fsm_t
+            {
+                prepare,
+                clear,
+                accept,
+                completed,
+                failed
+            };
+
+            fsm_t fsm = fsm_t::prepare;
+            auto result = ssl_result_t::ok;
+
+            while(fsm < fsm_t::failed)
+            {
+
+                switch(fsm)
+                {
+                    case fsm_t::prepare:
+                    {
+                        change_state(ssl_handshake_state_t::prepare);
+                    }
+                    break;
+                    case fsm_t::clear:
+                    {
+                        result = m_ssl_adapter.set_state(ssl_state_t::clear);
+                    }
+                    break;
+                    case fsm_t::accept:
+                    {
+                        result = m_ssl_adapter.set_state(ssl_state_t::accept);
+                    }
+                    break;
+                    case fsm_t::completed:
+                        return true;
+                    break;
+                    default:;
+                }
+
+                if (process_result(result))
+                {
+                    result = ssl_result_t::ok;
+                    fsm = static_cast<fsm_t>(static_cast<std::int32_t>(fsm) + 1);
+                }
+                else
+                {
+                    fsm = fsm_t::failed;
+                }
+
+            }
+
+            return false;
+            /*
             m_ssl_adapter.set_state(ssl_state_t::clear);
             change_state(ssl_handshake_state_t::prepare);
             auto result = m_ssl_adapter.set_state(ssl_state_t::accept);
 
             // m_ssl_adapter.set_state(ssl_state_t::handshaking);
-            return result == ssl_result_t::ok;
+            return result == ssl_result_t::ok;*/
         }
 
         void srtp_keys_process()
