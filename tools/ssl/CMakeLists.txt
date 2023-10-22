@@ -34,6 +34,7 @@ set(PUBLIC_HEADERS
     i_ssl_message.h
     i_ssl_message_sink.h
     i_ssl_session.h
+    i_ssl_session_manager.h
     i_ssl_certificate.h
     ssl_pointers.h
     ssl_context.h
