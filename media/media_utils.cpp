@@ -89,11 +89,14 @@ bool convert_format_options(const i_option &options, i_property &property)
     {
         switch(id)
         {
-            case opt_fmt_stream_id:
-                result |= loader.load<std::int32_t>(id, "stream_id");
+            case opt_fmt_track_id:
+                result |= loader.load<std::int32_t>(id, "track_id");
             break;
             case opt_fmt_device_id:
                 result |= loader.load<std::int32_t>(id, "device_id");
+            break;
+            case opt_fmt_layer_id:
+                result |= loader.load<std::int32_t>(id, "layer_id");
             break;
             case opt_codec_extra_data:
             {
@@ -119,8 +122,9 @@ bool convert_format_options(const i_property &property, i_option &options)
     detail::option_saver saver(options
                                , property);
 
-    result |= saver.save<std::int32_t>(opt_fmt_stream_id, "stream_id");
+    result |= saver.save<std::int32_t>(opt_fmt_track_id, "track_id");
     result |= saver.save<std::int32_t>(opt_fmt_device_id, "device_id");
+    result |= saver.save<std::int32_t>(opt_fmt_layer_id, "layer_id");
 
     if (auto e = property_reader(property).get<octet_string_t>("extra_data"))
     {

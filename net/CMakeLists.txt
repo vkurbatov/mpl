@@ -17,6 +17,7 @@ set(SOURCES
     socket/socket_packet_impl.cpp
     socket/udp_transport_factory.cpp
     socket/udp_transport_params.cpp
+    socket/socket_allocator.cpp
 
     stun/stun_mapped_headers.cpp
     stun/stun_attributes.cpp
@@ -100,6 +101,7 @@ set(PRIVATE_HEADERS
     socket/socket_packet_impl.h
     socket/udp_transport_factory.h
     socket/udp_transport_params.h
+    socket/socket_allocator.h
 
     stun/stun_mapped_headers.h
     stun/stun_packet_impl.h

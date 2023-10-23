@@ -7,14 +7,14 @@
 namespace mpl::net
 {
 
+template<transport_id_t Transport>
 struct socket_endpoint_t : public endpoint_t
 {
     using array_t = std::vector<socket_endpoint_t>;
 
     socket_address_t       socket_address;
 
-    socket_endpoint_t(socket_type_t socket_type = socket_type_t::udp
-                      , const socket_address_t& ip_endpoint = {});
+    socket_endpoint_t(const socket_address_t& socket_address = {});
 
     std::size_t hash() const;
 
@@ -24,6 +24,9 @@ public:
     bool operator ==(const endpoint_t &other) const override;
     bool is_valid() const override;
 };
+
+using udp_endpoint_t = socket_endpoint_t<transport_id_t::udp>;
+using tcp_endpoint_t = socket_endpoint_t<transport_id_t::tcp>;
 
 }
 

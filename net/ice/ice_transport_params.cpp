@@ -18,7 +18,7 @@ std::string ice_transport_params_t::make_username(const std::string &lfrag
 }
 
 
-ice_transport_params_t::ice_transport_params_t(const socket_endpoint_t::array_t &sockets
+ice_transport_params_t::ice_transport_params_t(const udp_endpoint_t::array_t &sockets
                                                , ice_component_id_t component_id
                                                , ice_mode_t mode
                                                , const ice_endpoint_t &local_endpoint

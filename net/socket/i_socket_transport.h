@@ -16,10 +16,10 @@ public:
     using w_ptr_t = std::weak_ptr<i_socket_transport>;
     using r_ptr_t = i_socket_transport*;
 
-    virtual bool set_local_endpoint(const socket_endpoint_t& endpoint) = 0;
-    virtual bool set_remote_endpoint(const socket_endpoint_t& endpoint) = 0;
-    virtual socket_endpoint_t local_endpoint() const = 0;
-    virtual socket_endpoint_t remote_endpoint() const = 0;
+    virtual bool set_local_endpoint(const udp_endpoint_t& endpoint) = 0;
+    virtual bool set_remote_endpoint(const udp_endpoint_t& endpoint) = 0;
+    virtual udp_endpoint_t local_endpoint() const = 0;
+    virtual udp_endpoint_t remote_endpoint() const = 0;
 };
 
 }

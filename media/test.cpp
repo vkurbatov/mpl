@@ -880,7 +880,7 @@ void test13()
 
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
     option_writer(video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(video_format.options()).set(opt_fmt_stream_id, 1);
+    option_writer(video_format.options()).set(opt_fmt_track_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
@@ -987,7 +987,7 @@ void test13_2()
 
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
     option_writer(video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(video_format.options()).set(opt_fmt_stream_id, 1);
+    option_writer(video_format.options()).set(opt_fmt_track_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
@@ -1221,8 +1221,8 @@ void test16()
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=30;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
 
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(transcode_video_format.options()).set(opt_fmt_stream_id, 0);
-    option_writer(transcode_audio_format.options()).set(opt_fmt_stream_id, 1);
+    option_writer(transcode_video_format.options()).set(opt_fmt_track_id, 0);
+    option_writer(transcode_audio_format.options()).set(opt_fmt_track_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*transcode_audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*transcode_video_format.get_params("format"));
@@ -1347,7 +1347,7 @@ void test17()
                                    , 30);
 
     option_writer writer(video_format.options());
-    writer.set<std::int32_t>(opt_fmt_stream_id, 1);
+    writer.set<std::int32_t>(opt_fmt_track_id, 1);
     writer.set<std::int32_t>(opt_fmt_device_id, 2);
 
     raw_array_t buffer(640 * 480 * 3);
@@ -1455,7 +1455,7 @@ void test18()
 
             option_writer writer(video_format.options());
             writer.set<std::int32_t>(mpl::media::opt_fmt_device_id, 1);
-            writer.set<std::int32_t>(mpl::media::opt_fmt_stream_id, 2);
+            writer.set<std::int32_t>(mpl::media::opt_fmt_track_id, 2);
 
 
             auto out_device = out_device_factory.create_device(*out_params);
@@ -1651,8 +1651,8 @@ void test19()
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
 
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(transcode_video_format.options()).set(opt_fmt_stream_id, 0);
-    option_writer(transcode_audio_format.options()).set(opt_fmt_stream_id, 1);
+    option_writer(transcode_video_format.options()).set(opt_fmt_track_id, 0);
+    option_writer(transcode_audio_format.options()).set(opt_fmt_track_id, 1);
 
     auto v4l2_transcoder = smart_factory.create_converter(*v4l2_video_format.get_params("format"));
 
@@ -1945,8 +1945,8 @@ void test20()
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
 
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(transcode_video_format.options()).set(opt_fmt_stream_id, 0);
-    option_writer(transcode_audio_format.options()).set(opt_fmt_stream_id, 1);
+    option_writer(transcode_video_format.options()).set(opt_fmt_track_id, 0);
+    option_writer(transcode_audio_format.options()).set(opt_fmt_track_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*transcode_audio_format.get_params("format"));
 

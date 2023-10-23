@@ -1,7 +1,9 @@
 #include "ice_transport_factory.h"
 #include "i_ice_transport.h"
+#include "core/i_message_command.h"
 
 #include "core/event_channel_state.h"
+
 
 #include "utils/property_utils.h"
 #include "utils/property_writer.h"
@@ -20,6 +22,7 @@
 #include "net/net_utils.h"
 
 #include "ice_gathering_state_event.h"
+#include "ice_gathering_command.h"
 #include "ice_transport_params.h"
 #include "ice_controller.h"
 
@@ -129,6 +132,7 @@ class ice_transport_impl : public i_ice_transport
         i_timer::u_ptr_t                m_gathering_timer;
         ice_gathering_state_t           m_gathering_state;
 
+        bool                            m_need_gathering;
         bool                            m_established;
 
         ice_socket_t(ice_transport_impl& owner
@@ -140,6 +144,7 @@ class ice_transport_impl : public i_ice_transport
                                , m_owner.m_timer_manager)
             , m_gathering_timer(m_owner.m_timer_manager.create_timer([&] { on_gathering_completed(); }))
             , m_gathering_state(ice_gathering_state_t::ready)
+            , m_need_gathering(false)
             , m_established(false)
         {
             m_socket->source(0)->add_sink(&m_socket_sink);
@@ -272,7 +277,7 @@ class ice_transport_impl : public i_ice_transport
 
         inline void start_gathering(const ice_server_params_t::array_t& servers)
         {
-            stop_gathering();
+            stop_gathering(false);
 
             if (is_established())
             {
@@ -296,18 +301,26 @@ class ice_transport_impl : public i_ice_transport
                     stop_gathering();
                 }
             }
+            else
+            {
+                m_need_gathering = true;
+            }
         }
 
-        void on_gathering_completed()
+        void on_gathering_completed(bool completed = true)
         {
             m_ice_controller.reset(ice_gathering_id);
-            change_gathering_state(ice_gathering_state_t::completed);
+            if (completed)
+            {
+                change_gathering_state(ice_gathering_state_t::completed);
+            }
         }
 
-        inline void stop_gathering()
+        inline void stop_gathering(bool completed = true)
         {
+            m_need_gathering = false;
             m_gathering_timer->stop();
-            on_gathering_completed();
+            on_gathering_completed(completed);
         }
 
         inline bool control(const channel_control_t& channel_control)
@@ -322,9 +335,8 @@ class ice_transport_impl : public i_ice_transport
             {
                 if (auto sink = m_socket->sink(0))
                 {
-                    socket_packet_impl socket_packet(smart_buffer(&packet)
-                                                     , socket_endpoint_t(socket_type()
-                                                                         , address));
+                    udp_packet_impl socket_packet(smart_buffer(&packet)
+                                                  , address);
 
                     return sink->send_message(socket_packet);
                 }
@@ -420,7 +432,7 @@ class ice_transport_impl : public i_ice_transport
                     case protocol_type_t::stun:
                     {
                         stun_packet_impl stun_packet(smart_buffer(&packet)
-                                                     , socket_packet.endpoint().socket_address);
+                                                     , socket_packet.address());
 
                         return m_ice_controller.push_packet(stun_packet);
                     }
@@ -429,13 +441,13 @@ class ice_transport_impl : public i_ice_transport
                     {
                         if (m_owner.m_ice_params.mode == ice_mode_t::undefined)
                         {
-                            if (auto pair = get_or_append_pair(socket_packet.endpoint().socket_address))
+                            if (auto pair = get_or_append_pair(socket_packet.address()))
                             {
                                 m_owner.set_active_pair(pair);
                                 return pair->on_socket_packet(socket_packet);
                             }
                         }
-                        else if (auto pair = get_pair(socket_packet.endpoint().socket_address))
+                        else if (auto pair = get_pair(socket_packet.address()))
                         {
                             return pair->on_socket_packet(socket_packet);
                         }
@@ -681,7 +693,7 @@ class ice_transport_impl : public i_ice_transport
             return m_owner.m_checking_pair == this;
         }
 
-        bool on_socket_packet(const i_socket_packet& packet)
+        bool on_socket_packet(const i_net_packet& packet)
         {
             return m_owner.on_pair_packet(*this
                                           , packet);
@@ -925,7 +937,7 @@ public:
         }
     }
 
-    inline i_socket_transport::u_ptr_t create_socket(const socket_endpoint_t& socket_endpoint)
+    inline i_socket_transport::u_ptr_t create_socket(const udp_endpoint_t& socket_endpoint)
     {
         if (auto socket_params = utils::property::create_property(property_type_t::object))
         {
@@ -1155,7 +1167,26 @@ public:
         return false;
     }
 
-    bool on_message_packet(const i_message_packet& packet)
+    bool on_send_command(const i_message_command& command)
+    {
+        bool result = false;
+        if (command.subclass() == message_class_net
+                && command.command().command_id == ice_gathering_command_t::id)
+        {
+            for (auto& s : m_sockets)
+            {
+                if (s.is_established())
+                {
+                    result |= true;
+                    s.start_gathering(m_ice_config.ice_servers);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    bool on_send_packet(const i_message_packet& packet)
     {
         if (auto active_pair = m_active_pair)
         {
@@ -1170,9 +1201,13 @@ public:
         shared_lock_t lock(m_safe_mutex);
         switch(message.category())
         {
-            case message_category_t::packet:
-                return on_message_packet(static_cast<const i_message_packet&>(message));
+            case message_category_t::command:
+                return on_send_command(static_cast<const i_message_command&>(message));
             break;
+            case message_category_t::packet:
+                return on_send_packet(static_cast<const i_message_packet&>(message));
+            break;
+            default:;
         }
 
         return false;
@@ -1245,9 +1280,9 @@ public:
         return false;
     }
 
-    inline socket_endpoint_t::array_t get_local_addresses() const
+    inline udp_endpoint_t::array_t get_local_addresses() const
     {
-        socket_endpoint_t::array_t socket_addresses;
+        udp_endpoint_t::array_t socket_addresses;
 
         for (const auto& s : m_sockets)
         {
@@ -1313,7 +1348,11 @@ public:
     {
         if (established)
         {
-            socket.start_gathering(m_ice_config.ice_servers);
+            if (m_ice_config.auto_gathering
+                    || socket.m_need_gathering)
+            {
+                socket.start_gathering(m_ice_config.ice_servers);
+            }
         }
         else
         {
@@ -1476,7 +1515,7 @@ public:
     }
 
     inline bool on_pair_packet(candidate_pair_t& pair
-                                , const i_socket_packet& packet)
+                                , const i_net_packet& packet)
     {
         if (m_active_pair == &pair)
         {

@@ -115,10 +115,10 @@ public:
             pt::io::message_t message(socket_packet.data()
                                   , socket_packet.size());
 
-            if (socket_packet.endpoint().socket_address.is_valid())
+            if (socket_packet.address().is_valid())
             {
                 return m_link.send_to(message
-                                      , socket_packet.endpoint().socket_address);
+                                      , socket_packet.address());
             }
             else
             {
@@ -134,13 +134,12 @@ public:
     {
         if (endpoint.type == pt::io::endpoint_t::type_t::ip)
         {
-            socket_endpoint_t socket_endpoint(socket_type_t::udp
-                                              , static_cast<const socket_address_t&>(endpoint));
+            udp_endpoint_t socket_endpoint(static_cast<const socket_address_t&>(endpoint));
             smart_buffer packet_buffer(message.data()
                                        , message.size());
 
-            socket_packet_impl socket_packet(std::move(packet_buffer)
-                                             , socket_endpoint);
+            udp_packet_impl socket_packet(std::move(packet_buffer)
+                                          , socket_endpoint.socket_address);
 
             m_router.send_message(socket_packet);
         }
@@ -236,7 +235,7 @@ public:
 
     // i_socket_transport interface
 public:
-    bool set_local_endpoint(const socket_endpoint_t &endpoint) override
+    bool set_local_endpoint(const udp_endpoint_t &endpoint) override
     {
         if (!is_open())
         {
@@ -247,18 +246,18 @@ public:
         return false;
     }
 
-    bool set_remote_endpoint(const socket_endpoint_t &endpoint) override
+    bool set_remote_endpoint(const udp_endpoint_t &endpoint) override
     {
         m_udp_params.remote_endpoint = endpoint;
         return true;
     }
 
-    socket_endpoint_t local_endpoint() const override
+    udp_endpoint_t local_endpoint() const override
     {
         return m_udp_params.local_endpoint;
     }
 
-    socket_endpoint_t remote_endpoint() const override
+    udp_endpoint_t remote_endpoint() const override
     {
         return m_udp_params.remote_endpoint;
     }

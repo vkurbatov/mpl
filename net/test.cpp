@@ -110,7 +110,7 @@ void test1()
                                             auto& socket_packet = static_cast<const i_socket_packet&>(message);
                                             std::string_view message_string(static_cast<const char*>(socket_packet.data())
                                                                                                      , socket_packet.size());
-                                            std::cout << "Socket #1: message: " << message_string << ", from: " << socket_packet.endpoint().socket_address.to_string() << std::endl;
+                                            std::cout << "Socket #1: message: " << message_string << ", from: " << socket_packet.address().to_string() << std::endl;
 
                                             return true;
                                         }
@@ -148,10 +148,10 @@ void test1()
                                             auto& socket_packet = static_cast<const i_socket_packet&>(message);
                                             std::string_view message_string(static_cast<const char*>(socket_packet.data())
                                                                                                      , socket_packet.size());
-                                            std::cout << "Socket #2: message: " << message_string << ", from: " << socket_packet.endpoint().socket_address.to_string() << std::endl;
+                                            std::cout << "Socket #2: message: " << message_string << ", from: " << socket_packet.address().to_string() << std::endl;
 
-                                            socket_packet_impl loopback_socket_packet(smart_buffer(&socket_packet)
-                                                                                      , socket_packet.endpoint());
+                                            udp_packet_impl loopback_socket_packet(smart_buffer(&socket_packet)
+                                                                                      , socket_packet.address());
 
                                             return socket_2->sink(0)->send_message(loopback_socket_packet);
                                         }
@@ -178,10 +178,11 @@ void test1()
                         for (auto i = 0; i < 1000; i++)
                         {
                             auto message = std::string(string_test).append(std::to_string(i));
-                            socket_packet_impl packet(smart_buffer(message.data()
+                            socket_address_t addr(std::string("localhost:").append(std::to_string(socket_2->local_endpoint().socket_address.port)));
+
+                            udp_packet_impl packet(smart_buffer(message.data()
                                                                    , message.size())
-                                                      , socket_endpoint_t(socket_type_t::udp
-                                                                          , std::string("localhost:").append(std::to_string(socket_2->local_endpoint().socket_address.port))));
+                                                      , addr);
 
                             socket_1->sink(0)->send_message(packet);
 
@@ -332,9 +333,9 @@ void test4()
 
     const ice_server_params_t::array_t ice_servers =
     {
-        /*{ "stun:stun1.l.google.com:19302" },
+        { "stun:stun1.l.google.com:19302" },
         { "stun:stun2.l.google.com:19302" },
-        { "stun:stun3.l.google.com:19302" },*/
+        { "stun:stun3.l.google.com:19302" },
         { "stun:stun.l.google1.com:19302" }
     };
 
@@ -359,16 +360,15 @@ void test4()
     ice_params_1.mode = ice_mode_t::regular;
     ice_transport_params_t ice_params_2;
     ice_params_2.mode = ice_mode_t::aggressive;
+
     ice_params_1.local_endpoint.auth = ice_auth_params_t::generate();
     ice_params_2.local_endpoint.auth = ice_auth_params_t::generate();
     /*ice_params_1.remote_endpoint.auth = ice_params_2.local_endpoint.auth;
     ice_params_2.remote_endpoint.auth = ice_params_1.local_endpoint.auth;*/
 
-    socket_endpoint_t::array_t sockets;
-    sockets.emplace_back(socket_type_t::udp
-                         , socket_address_t("0.0.0.0:0"));
-    sockets.emplace_back(socket_type_t::udp
-                         , socket_address_t("0.0.0.0:0"));
+    udp_endpoint_t::array_t sockets;
+    sockets.emplace_back(socket_address_t("0.0.0.0:0"));
+    sockets.emplace_back(socket_address_t("0.0.0.0:0"));
 
     ice_params_1.sockets = sockets;
     ice_params_2.sockets = sockets;
@@ -443,6 +443,12 @@ void test4()
     ice_connection_1->control(channel_control_t::open());
     ice_connection_2->control(channel_control_t::open());
 
+
+    message_command_impl<ice_gathering_command_t, message_class_net> ice_gathering_command;
+
+    ice_connection_1->sink(0)->send_message(ice_gathering_command);
+    ice_connection_2->sink(0)->send_message(ice_gathering_command);
+
     utils::time::sleep(durations::seconds(1));
 
 
@@ -479,8 +485,8 @@ void test4()
         for (auto i = 0; i < 10; i++)
         {
             auto test_message = std::string(test_string).append(std::to_string(i));
-            socket_packet_impl test_packet(smart_buffer(test_message.data()
-                                                        , test_message.size()));
+            udp_packet_impl test_packet(smart_buffer(test_message.data()
+                                                     , test_message.size()));
 
             ice_connection_1->sink(0)->send_message(test_packet);
             utils::time::sleep(durations::milliseconds(10));
@@ -656,14 +662,14 @@ void test5()
                         {
                             if (is_tls_1)
                             {
-                                socket_packet_impl udp_packet(smart_buffer(&net_packet)
-                                                              , udp_2->local_endpoint());
+                                udp_packet_impl udp_packet(smart_buffer(&net_packet)
+                                                              , udp_2->local_endpoint().socket_address);
                                 udp_1->sink(0)->send_message(udp_packet);
                             }
                             else if (is_tls_2)
                             {
-                                socket_packet_impl udp_packet(smart_buffer(&net_packet)
-                                                              , udp_1->local_endpoint());
+                                udp_packet_impl udp_packet(smart_buffer(&net_packet)
+                                                              , udp_1->local_endpoint().socket_address);
                                 udp_2->sink(0)->send_message(udp_packet);
                             }
 
@@ -734,8 +740,8 @@ void test5()
         for (auto i = 0; i < 10; i++)
         {
             auto test_message = std::string(test_string).append(std::to_string(i));
-            socket_packet_impl test_packet(smart_buffer(test_message.data()
-                                                        , test_message.size()));
+            udp_packet_impl test_packet(smart_buffer(test_message.data()
+                                                     , test_message.size()));
 
             transport_1->sink(0)->send_message(test_packet);
             utils::time::sleep(durations::milliseconds(10));
@@ -813,7 +819,7 @@ void test6()
 void test()
 {
 
-test5();
+test4();
 
 }
 

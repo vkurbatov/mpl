@@ -16,6 +16,7 @@ set(SOURCES
     audio_format_helper.cpp
     audio_mixer.cpp
     audio_level.cpp
+    sample_info.cpp
     audio_sample.cpp
     video_format_impl.cpp
     video_info.cpp
@@ -38,6 +39,7 @@ set(SOURCES
     ipc_input_device_factory.cpp
     ipc_output_device_factory.cpp
     draw_options.cpp
+    image_info.cpp
     image_frame.cpp
     image_builder.cpp
     audio_composer.cpp
@@ -55,6 +57,7 @@ set(PUBLIC_HEADERS
     device_types.h
     audio_types.h
     audio_info.h
+    sample_info.h
     video_types.h
     video_frame_types.h
     video_info.h
@@ -111,6 +114,7 @@ set(PRIVATE_HEADERS
     ipc_input_device_factory.h
     ipc_output_device_factory.h
     draw_options.h
+    image_info.h
     image_frame.h
     image_builder.h
     audio_composer.h

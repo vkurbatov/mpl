@@ -11,16 +11,16 @@ struct ice_config_t
 {
     static constexpr std::size_t default_retry_count = 3;
     static constexpr timestamp_t default_ice_timeout = durations::milliseconds(300);
-    // static constexpr timestamp_t default_ice_check_interval = durations::milliseconds(1000);
 
     ice_server_params_t::array_t    ice_servers;
     std::size_t                     retry_count;
     timestamp_t                     ice_timeout;
-    // timestamp_t                     ice_check_interval;
+    bool                            auto_gathering;
 
     ice_config_t(const ice_server_params_t::array_t& ice_servers = {}
                 , std::size_t retry_count = default_retry_count
-                , timestamp_t ice_timeout = default_ice_timeout);
+                , timestamp_t ice_timeout = default_ice_timeout
+                , bool auto_gathering = false);
 
     timestamp_t ice_check_interval() const;
 };

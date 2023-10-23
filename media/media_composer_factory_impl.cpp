@@ -78,29 +78,6 @@ audio_sample_t create_sample(const i_audio_frame& frame)
     return sample;
 }
 
-/*
-double animation(double lhs, double rhs, double k, double min_delta)
-{
-    auto delta = rhs - lhs;
-    if (std::abs(delta) < min_delta)
-    {
-        return rhs;
-    }
-
-    return lhs + delta * k;
-}
-
-void animation(relative_frame_rect_t& dst_rect
-               , const relative_frame_rect_t& src_rect
-               , double k
-               , double min_delta)
-{
-    dst_rect.offset.x = animation(dst_rect.offset.x, src_rect.offset.x, k, min_delta);
-    dst_rect.offset.y = animation(dst_rect.offset.y, src_rect.offset.y, k, min_delta);
-    dst_rect.size.width = animation(dst_rect.size.width, src_rect.size.width, k, min_delta);
-    dst_rect.size.height = animation(dst_rect.size.height, src_rect.size.height, k, min_delta);
-}*/
-
 }
 
 

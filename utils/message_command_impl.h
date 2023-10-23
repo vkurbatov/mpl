@@ -19,7 +19,7 @@ public:
     static u_ptr_t create(Command&& command);
 
     message_command_impl(const Command& command);
-    message_command_impl(Command&& command);
+    message_command_impl(Command&& command = {});
 
     // i_message interface
 public:

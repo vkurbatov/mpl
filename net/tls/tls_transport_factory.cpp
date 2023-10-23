@@ -73,12 +73,12 @@ class tls_transport_impl : public i_tls_transport
 
     tls_config_t                        m_tls_config;
     i_timer_manager&                    m_timer_manager;
-    pt::ssl::ssl_session_manager&           m_ssl_manager;
+    pt::ssl::ssl_session_manager&       m_ssl_manager;
     mutable tls_transport_params_t      m_tls_params;
 
-    pt::ssl::i_ssl_session::u_ptr_t         m_ssl_session;
+    pt::ssl::i_ssl_session::u_ptr_t     m_ssl_session;
 
-    socket_endpoint_t                   m_socket_endpoint;
+    socket_address_t                    m_socket_address;
     message_sink_impl                   m_message_sink;
     message_router_impl                 m_router;
     i_timer::u_ptr_t                    m_timer;
@@ -338,7 +338,7 @@ public:
                 break;
                 case transport_id_t::udp:
                 case transport_id_t::tcp:
-                    m_socket_endpoint = static_cast<const i_socket_packet&>(packet).endpoint();
+                    m_socket_address = static_cast<const i_socket_packet&>(packet).address();
                 break;
                 default:;
             }
@@ -518,8 +518,8 @@ public:
         {
             case pt::ssl::ssl_data_type_t::application:
             {
-                m_router.send_message(socket_packet_impl(std::move(buffer)
-                                                         , m_socket_endpoint));
+                m_router.send_message(udp_packet_impl(std::move(buffer)
+                                                      , m_socket_address));
             }
             break;
             case pt::ssl::ssl_data_type_t::encrypted:

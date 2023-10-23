@@ -73,9 +73,9 @@ bool utils::property::deserialize(socket_address_t& value, const i_property &pro
     return false;
 }
 
-// socket_endpoint_t
+// udp_endpoint_t
 template<>
-bool utils::property::serialize(const socket_endpoint_t& value, i_property& property)
+bool utils::property::serialize(const udp_endpoint_t& value, i_property& property)
 {
     property_writer write(property);
     return write.set("transport_id", value.transport_id)
@@ -84,7 +84,30 @@ bool utils::property::serialize(const socket_endpoint_t& value, i_property& prop
 }
 
 template<>
-bool utils::property::deserialize(socket_endpoint_t& value, const i_property &property)
+bool utils::property::deserialize(udp_endpoint_t& value, const i_property &property)
+{
+    property_reader reader(property);
+    if (reader.get("transport_id", transport_id_t::undefined) == value.transport_id)
+    {
+        return reader.get("address", value.socket_address.address)
+                | reader.get("address", value.socket_address.port);
+    }
+
+    return false;
+}
+
+// tcp_endpoint_t
+template<>
+bool utils::property::serialize(const tcp_endpoint_t& value, i_property& property)
+{
+    property_writer write(property);
+    return write.set("transport_id", value.transport_id)
+            && write.set("address", value.socket_address.address)
+            && write.set("port", value.socket_address.port, port_any);
+}
+
+template<>
+bool utils::property::deserialize(tcp_endpoint_t& value, const i_property &property)
 {
     property_reader reader(property);
     if (reader.get("transport_id", transport_id_t::undefined) == value.transport_id)

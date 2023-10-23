@@ -8,12 +8,12 @@ namespace mpl::net
 
 struct udp_transport_params_t
 {
-    socket_endpoint_t       local_endpoint;
-    socket_endpoint_t       remote_endpoint;
+    udp_endpoint_t          local_endpoint;
+    udp_endpoint_t          remote_endpoint;
     socket_options_t        options;
 
-    udp_transport_params_t(const socket_endpoint_t& local_endpoint = {}
-                           , const socket_endpoint_t& remote_endpoint = {}
+    udp_transport_params_t(const udp_endpoint_t& local_endpoint = {}
+                           , const udp_endpoint_t& remote_endpoint = {}
                            , const socket_options_t& options = {});
 
     bool is_valid() const;

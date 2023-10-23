@@ -47,7 +47,7 @@ namespace detail
             option_writer writer(format->options());
 
             std::int32_t stream_id = streams.size();
-            writer.set<stream_id_t>(opt_fmt_stream_id
+            writer.set<stream_id_t>(opt_fmt_track_id
                                      , stream_id);
 
             streams.emplace_back(std::move(format));
@@ -340,7 +340,7 @@ class libav_output_device : public i_device
 
         stream_id_t get_stream_id(const i_media_format& format) const
         {
-            auto found_stream_id = option_reader(format.options()).get(opt_fmt_stream_id
+            auto found_stream_id = option_reader(format.options()).get(opt_fmt_track_id
                                                                        , stream_id_undefined);
             if (found_stream_id == stream_id_undefined)
             {

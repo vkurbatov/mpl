@@ -9,7 +9,7 @@ namespace mpl::net
 
 struct ice_transport_params_t
 {
-    socket_endpoint_t::array_t  sockets;
+    udp_endpoint_t::array_t     sockets;
     ice_component_id_t          component_id;
     ice_mode_t                  mode;
     ice_endpoint_t              local_endpoint;
@@ -19,7 +19,7 @@ struct ice_transport_params_t
                                      , const std::string& rfrag);
 
 
-    ice_transport_params_t(const socket_endpoint_t::array_t& sockets = {}
+    ice_transport_params_t(const udp_endpoint_t::array_t& sockets = {}
                            , ice_component_id_t component_id = 0
                            , ice_mode_t mode = ice_mode_t::undefined
                            , const ice_endpoint_t& local_endpoint = {}

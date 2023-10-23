@@ -9,11 +9,12 @@
 namespace mpl::net
 {
 
+template<transport_id_t Transport>
 class socket_packet_impl : public i_socket_packet
             , public utils::smart_buffer_container
             , public utils::option_container
 {
-    socket_endpoint_t       m_socket_endpoint;
+    socket_address_t        m_socket_address;
 
 public:
 
@@ -21,18 +22,18 @@ public:
     using s_ptr_t = std::shared_ptr<socket_packet_impl>;
 
     static u_ptr_t create(const smart_buffer& packet_buffer
-                          , const socket_endpoint_t& endpoint);
+                          , const socket_address_t& address);
 
     static u_ptr_t create(smart_buffer&& packet_buffer
-                          , const socket_endpoint_t& endpoint);
+                          , const socket_address_t& address);
 
     socket_packet_impl(const smart_buffer& packet_buffer
-                       , const socket_endpoint_t& endpoint);
+                       , const socket_address_t& address);
 
     socket_packet_impl(smart_buffer&& packet_buffer = {}
-                       , const socket_endpoint_t& endpoint = {});
+                       , const socket_address_t& address = {});
 
-    void set_endpoint(const socket_endpoint_t& endpoint);
+    void set_address(const socket_address_t& address);
 
     // i_data_object interface
 public:
@@ -56,8 +57,11 @@ public:
 
     // i_socket_packet interface
 public:
-    const socket_endpoint_t &endpoint() const override;
+    const socket_address_t &address() const override;
 };
+
+using udp_packet_impl = socket_packet_impl<transport_id_t::udp>;
+using tcp_packet_impl = socket_packet_impl<transport_id_t::tcp>;
 
 }
 

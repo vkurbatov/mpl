@@ -2,11 +2,10 @@
 #define MPL_NET_I_SOCKET_PACKET_H
 
 #include "net/i_net_packet.h"
+#include "socket_endpoint.h"
 
 namespace mpl::net
 {
-
-struct socket_endpoint_t;
 
 class i_socket_packet : public i_net_packet
 {
@@ -14,8 +13,9 @@ public:
     using u_ptr_t = std::unique_ptr<i_socket_packet>;
     using s_ptr_t = std::shared_ptr<i_socket_packet>;
 
-    virtual const socket_endpoint_t& endpoint() const = 0;
+    virtual const socket_address_t& address() const = 0;
 };
+
 
 }
 

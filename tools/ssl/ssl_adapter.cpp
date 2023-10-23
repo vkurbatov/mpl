@@ -354,7 +354,7 @@ void ssl_adapter::set_verify_handler(ssl_verify_handler_t verify_handler)
 
 void ssl_adapter::set_ssl(ssl_ptr_t &&ssl_ptr)
 {
-    std::clog << "before change ssl: " << m_ssl.get() << "->" << ssl_ptr.get() << std::endl;
+    // std::clog << "before change ssl: " << m_ssl.get() << "->" << ssl_ptr.get() << std::endl;
     m_ssl = std::move(ssl_ptr);
     if (m_ssl)
     {
@@ -362,7 +362,7 @@ void ssl_adapter::set_ssl(ssl_ptr_t &&ssl_ptr)
                         , 0
                         , static_cast<void*>(this));
     }
-    std::clog << "after change ssl: " << m_ssl.get() << std::endl;
+    // std::clog << "after change ssl: " << m_ssl.get() << std::endl;
 }
 
 void ssl_adapter::set_ssl(const ssl_ctx_ptr_t &ssl_ctx
@@ -371,7 +371,8 @@ void ssl_adapter::set_ssl(const ssl_ctx_ptr_t &ssl_ctx
 {
     set_ssl(create_ssl(ssl_ctx
                        , bio_read
-                       , bio_write));
+                       , bio_write
+                       ));
 }
 
 const ssl_ptr_t &ssl_adapter::native_handle() const

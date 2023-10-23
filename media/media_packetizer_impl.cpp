@@ -38,8 +38,9 @@ bool packetize_media_options(packetizer& p
     if (p.open_object())
     {
         option_reader reader(options);
-        packetize_option_value<opt_fmt_stream_id, std::int32_t>(p , reader);
+        packetize_option_value<opt_fmt_track_id, std::int32_t>(p , reader);
         packetize_option_value<opt_fmt_device_id, std::int32_t>(p , reader);
+        packetize_option_value<opt_fmt_layer_id, std::int32_t>(p , reader);
         packetize_option_value<opt_codec_extra_data, octet_string_t>(p , reader);
         packetize_option_value<opt_codec_params, std::string>(p , reader);
 
@@ -73,11 +74,14 @@ bool depacketize_media_options(depacketizer& d
         {
             switch(option_id)
             {
-                case opt_fmt_stream_id:
-                    depacketize_option_value<opt_fmt_stream_id, std::int32_t>(d, writer);
+                case opt_fmt_track_id:
+                    depacketize_option_value<opt_fmt_track_id, std::int32_t>(d, writer);
                 break;
                 case opt_fmt_device_id:
                     depacketize_option_value<opt_fmt_device_id, std::int32_t>(d, writer);
+                break;
+                case opt_fmt_layer_id:
+                    depacketize_option_value<opt_fmt_layer_id, std::int32_t>(d, writer);
                 break;
                 case opt_codec_extra_data:
                     depacketize_option_value<opt_codec_extra_data, octet_string_t>(d, writer);
