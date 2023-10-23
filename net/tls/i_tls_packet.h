@@ -2,7 +2,7 @@
 #define MPL_NET_I_TLS_PACKET_H
 
 #include "net/i_net_packet.h"
-
+#include "net/socket/socket_types.h"
 
 namespace mpl::net
 {
@@ -24,6 +24,7 @@ public:
 
     virtual std::uint64_t sequension_number() const = 0;
     virtual content_type_t content_type() const = 0;
+    virtual const socket_address_t& address() const = 0;
 };
 
 }

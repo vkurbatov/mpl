@@ -22,6 +22,8 @@ public:
 
     net_engine_impl(std::size_t max_workers = 0);
 
+    pt::io::io_core& io_core();
+
     // i_net_engine interface
 public:
 
@@ -29,8 +31,6 @@ public:
     bool stop() override;
     bool is_started() const;
 
-    i_transport_factory::u_ptr_t create_factory(transport_id_t transport_id
-                                                , const i_property *factory_params) override;
 };
 
 }

@@ -31,9 +31,9 @@ public:
     socket_allocator(i_transport_factory& transport_factory
                      , const config_t& config = {});
 
-    i_socket_transport::u_ptr_t create_socket(const socket_address_t& socket_address = {});
+    i_socket_transport::u_ptr_t create_socket(const socket_address_t& socket_address = socket_address_t::any_v4());
     socket_array_t allocate_sockets(std::uint8_t count = 2
-                                    , const socket_address_t& socket_address = {});
+                                    , const socket_address_t& socket_address = socket_address_t::any_v4());
 
 
 

@@ -17,8 +17,6 @@ public:
     virtual bool start() = 0;
     virtual bool stop() = 0;
     virtual bool is_started() const = 0;
-    virtual i_transport_factory::u_ptr_t create_factory(transport_id_t transport_id
-                                                        , const i_property* factory_params) = 0;
 
 };
 

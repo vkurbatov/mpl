@@ -22,6 +22,11 @@ net_engine_impl::net_engine_impl(std::size_t max_workers)
 
 }
 
+pt::io::io_core &net_engine_impl::io_core()
+{
+    return m_io_core;
+}
+
 bool net_engine_impl::start()
 {
     return m_io_core.run();
@@ -36,20 +41,5 @@ bool net_engine_impl::is_started() const
 {
     return m_io_core.is_running();
 }
-
-i_transport_factory::u_ptr_t net_engine_impl::create_factory(transport_id_t transport_id
-                                                             , const i_property *factory_params)
-{
-    switch(transport_id)
-    {
-        case transport_id_t::udp:
-            return udp_transport_factory::create(m_io_core);
-        break;
-        default:;
-    }
-
-    return nullptr;
-}
-
 
 }

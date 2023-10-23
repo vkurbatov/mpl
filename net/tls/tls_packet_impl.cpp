@@ -8,24 +8,32 @@
 namespace mpl::net
 {
 
-tls_packet_impl::u_ptr_t tls_packet_impl::create(const smart_buffer &buffer)
+tls_packet_impl::u_ptr_t tls_packet_impl::create(const smart_buffer &buffer
+                                                 , const socket_address_t& socket_address)
 {
-    return std::make_unique<tls_packet_impl>(std::move(buffer));
+    return std::make_unique<tls_packet_impl>(std::move(buffer)
+                                             , socket_address);
 }
 
-tls_packet_impl::u_ptr_t tls_packet_impl::create(smart_buffer &&buffer)
+tls_packet_impl::u_ptr_t tls_packet_impl::create(smart_buffer &&buffer
+                                                 , const socket_address_t& socket_address)
 {
-    return std::make_unique<tls_packet_impl>(std::move(buffer));
+    return std::make_unique<tls_packet_impl>(std::move(buffer)
+                                             , socket_address);
 }
 
-tls_packet_impl::tls_packet_impl(const smart_buffer &buffer)
+tls_packet_impl::tls_packet_impl(const smart_buffer &buffer
+                                 , const socket_address_t& socket_address)
     : smart_buffer_container(buffer)
+    , m_socket_address(socket_address)
 {
 
 }
 
-tls_packet_impl::tls_packet_impl(smart_buffer &&buffer)
+tls_packet_impl::tls_packet_impl(smart_buffer &&buffer
+                                 , const socket_address_t& socket_address)
     : smart_buffer_container(std::move(buffer))
+    , m_socket_address(socket_address)
 {
 
 }
@@ -85,6 +93,11 @@ uint64_t tls_packet_impl::sequension_number() const
 i_tls_packet::content_type_t tls_packet_impl::content_type() const
 {
     return static_cast<i_tls_packet::content_type_t>(static_cast<const pt::ssl::mapped_dtls_header_t*>(m_buffer.data())->get_content_type());
+}
+
+const socket_address_t &tls_packet_impl::address() const
+{
+    return m_socket_address;
 }
 
 }

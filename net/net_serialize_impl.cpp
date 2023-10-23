@@ -90,7 +90,7 @@ bool utils::property::deserialize(udp_endpoint_t& value, const i_property &prope
     if (reader.get("transport_id", transport_id_t::undefined) == value.transport_id)
     {
         return reader.get("address", value.socket_address.address)
-                | reader.get("address", value.socket_address.port);
+                | reader.get("port", value.socket_address.port);
     }
 
     return false;
@@ -113,7 +113,7 @@ bool utils::property::deserialize(tcp_endpoint_t& value, const i_property &prope
     if (reader.get("transport_id", transport_id_t::undefined) == value.transport_id)
     {
         return reader.get("address", value.socket_address.address)
-                | reader.get("address", value.socket_address.port);
+                | reader.get("port", value.socket_address.port);
     }
 
     return false;

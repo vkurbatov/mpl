@@ -13,6 +13,9 @@ set(SOURCES
     net_event_message_impl.cpp
     net_command_message_impl.cpp
 
+    net_core_config.cpp
+    net_core.cpp
+
     socket/socket_endpoint.cpp
     socket/socket_packet_impl.cpp
     socket/udp_transport_factory.cpp
@@ -63,6 +66,10 @@ set(PUBLIC_HEADERS
     i_transport_channel.h
     i_transport_factory.h
     i_net_engine.h
+
+    net_core_config.h
+    net_core.h
+
     socket/socket_types.h
     socket/socket_endpoint.h
     socket/i_socket_packet.h
@@ -90,8 +97,6 @@ set(PUBLIC_HEADERS
     tls/tls_keys_event.h
     tls/i_tls_transport.h
     tls/i_tls_packet.h
-
-
     )
 
 set(PRIVATE_HEADERS

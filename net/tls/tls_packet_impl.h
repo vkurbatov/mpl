@@ -4,6 +4,7 @@
 #include "i_tls_packet.h"
 #include "utils/smart_buffer_container.h"
 #include "utils/option_container.h"
+#include "net/socket/socket_types.h"
 
 namespace mpl::net
 {
@@ -12,15 +13,20 @@ class tls_packet_impl : public i_tls_packet
         , public utils::smart_buffer_container
         , public utils::option_container
 {
+    socket_address_t    m_socket_address;
 public:
     using u_ptr_t = std::unique_ptr<tls_packet_impl>;
     using s_ptr_t = std::shared_ptr<tls_packet_impl>;
 
-    static u_ptr_t create(const smart_buffer& buffer);
-    static u_ptr_t create(smart_buffer&& buffer);
+    static u_ptr_t create(const smart_buffer& buffer
+                          , const socket_address_t& socket_address = {});
+    static u_ptr_t create(smart_buffer&& buffer
+                          , const socket_address_t& socket_address = {});
 
-    tls_packet_impl(const smart_buffer& buffer);
-    tls_packet_impl(smart_buffer&& buffer);
+    tls_packet_impl(const smart_buffer& buffer
+                    , const socket_address_t& socket_address = {});
+    tls_packet_impl(smart_buffer&& buffer
+                    , const socket_address_t& socket_address = {});
 
     // i_data_object interface
 public:
@@ -46,6 +52,7 @@ public:
 public:
     uint64_t sequension_number() const override;
     content_type_t content_type() const override;
+    const socket_address_t &address() const override;
 };
 
 }

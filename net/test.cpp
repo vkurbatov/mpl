@@ -17,7 +17,10 @@
 #include "core/i_message_source.h"
 #include "core/i_message_event.h"
 #include "core/event_channel_state.h"
+
+#include "socket/udp_transport_factory.h"
 #include "socket/socket_packet_impl.h"
+#include "socket/socket_allocator.h"
 
 
 #include "ice/i_ice_transport.h"
@@ -67,21 +70,22 @@ void test1()
     socket_param_2.local_endpoint.socket_address = socket_address_t::from_string("localhost:0");
     socket_param_1.options.reuse_address = true;
 
-    if (auto udp_factory = engine.create_factory(transport_id_t::udp
-                                                 , nullptr))
+    udp_transport_factory udp_factory(engine);
+
+    if (true)
     {
         engine.start();
 
         auto socket_property_1 = utils::property::serialize(socket_param_1);
 
-        if (i_udp_transport::u_ptr_t socket_1 = utils::static_pointer_cast<i_udp_transport>(udp_factory->create_transport(*socket_property_1)))
+        if (i_udp_transport::u_ptr_t socket_1 = utils::static_pointer_cast<i_udp_transport>(udp_factory.create_transport(*socket_property_1)))
         {
             if (socket_1->control(channel_control_t::open()))
             {
                 socket_param_2.remote_endpoint = socket_1->local_endpoint();
                 auto socket_property_2 = utils::property::serialize(socket_param_2);
 
-                if (i_udp_transport::u_ptr_t socket_2 = utils::static_pointer_cast<i_udp_transport>(udp_factory->create_transport(*socket_property_2)))
+                if (i_udp_transport::u_ptr_t socket_2 = utils::static_pointer_cast<i_udp_transport>(udp_factory.create_transport(*socket_property_2)))
                 {
                     if (socket_2->control(channel_control_t::open()))
                     {
@@ -346,11 +350,10 @@ void test4()
 
     timers->start();
 
-    auto socket_factory = engine.create_factory(transport_id_t::udp
-                                                , nullptr);
+    udp_transport_factory socket_factory(engine);
 
     ice_transport_factory ice_factory(ice_config_t(ice_servers)
-                                      , *socket_factory
+                                      , socket_factory
                                       , *timers);
 
 
@@ -531,9 +534,7 @@ void test5()
 
     timers->start();
 
-    auto socket_factory = engine.create_factory(transport_id_t::udp
-                                                , nullptr);
-
+    udp_transport_factory socket_factory(engine);
     tls_config_t tls_config;
     tls_config.method = tls_method_t::dtls;
     tls_config.srtp_enable = true;
@@ -567,8 +568,8 @@ void test5()
     auto tls_property_1 = utils::property::serialize(tls_params_1);
     auto tls_property_2 = utils::property::serialize(tls_params_2);
 
-    i_udp_transport::u_ptr_t udp_1 = utils::static_pointer_cast<i_udp_transport>(socket_factory->create_transport(*socket_property_1));
-    i_udp_transport::u_ptr_t udp_2 = utils::static_pointer_cast<i_udp_transport>(socket_factory->create_transport(*socket_property_2));
+    i_udp_transport::u_ptr_t udp_1 = utils::static_pointer_cast<i_udp_transport>(socket_factory.create_transport(*socket_property_1));
+    i_udp_transport::u_ptr_t udp_2 = utils::static_pointer_cast<i_udp_transport>(socket_factory.create_transport(*socket_property_2));
 
 
     i_tls_transport::u_ptr_t tls_1 = utils::static_pointer_cast<i_tls_transport>(tls_factory_1.create_transport(*tls_property_1));
@@ -816,10 +817,34 @@ void test6()
 }
 
 
+void test7()
+{
+    net_engine_impl engine;
+
+    engine.start();
+
+    udp_transport_factory socket_factory(engine);
+
+    socket_allocator allocator(socket_factory
+                               , socket_allocator::config_t({3504, 7623}));
+
+    auto sockets = allocator.allocate_sockets(10);
+
+    for (const auto& s : sockets)
+    {
+        if (s != nullptr)
+        {
+            std::clog << "socket: " << s->local_endpoint().socket_address.to_string() << std::endl;
+        }
+    }
+
+    engine.stop();
+}
+
 void test()
 {
 
-test4();
+test7();
 
 }
 

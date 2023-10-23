@@ -943,7 +943,7 @@ public:
         {
             property_writer writer(*socket_params);
             writer.set("local_endpoint", socket_endpoint);
-            writer.set("options.reuse_address", true);
+            // writer.set("options.reuse_address", true);
 
             if (auto socket = utils::static_pointer_cast<i_socket_transport>(m_socket_factory.create_transport(*socket_params)))
             {

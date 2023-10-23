@@ -30,7 +30,6 @@ i_socket_transport::u_ptr_t socket_allocator::create_socket(const socket_address
     {
         property_writer writer(*socket_params);
         writer.set("local_endpoint", udp_endpoint_t(socket_address));
-        writer.set("options.reuse_address", true);
 
         if (socket_address.is_any_port()
                 && m_config.has_port_range())

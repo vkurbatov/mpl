@@ -16,6 +16,7 @@
 
 #include "net/net_message_types.h"
 #include "net/net_utils.h"
+#include "net/net_engine_impl.h"
 
 #include "tools/io/net/udp_link.h"
 #include "tools/io/net/udp_link_config.h"
@@ -279,13 +280,13 @@ public:
 };
 
 
-udp_transport_factory::u_ptr_t udp_transport_factory::create(pt::io::io_core &io_core)
+udp_transport_factory::u_ptr_t udp_transport_factory::create(net_engine_impl &engine)
 {
-    return std::make_unique<udp_transport_factory>(io_core);
+    return std::make_unique<udp_transport_factory>(engine);
 }
 
-udp_transport_factory::udp_transport_factory(pt::io::io_core &io_core)
-    : m_io_core(io_core)
+udp_transport_factory::udp_transport_factory(net_engine_impl &engine)
+    : m_engine(engine)
 {
 
 }
@@ -293,7 +294,7 @@ udp_transport_factory::udp_transport_factory(pt::io::io_core &io_core)
 i_transport_channel::u_ptr_t udp_transport_factory::create_transport(const i_property &params)
 {
     return udp_transport_impl::create(params
-                                      , m_io_core);
+                                      , m_engine.io_core());
 }
 
 
