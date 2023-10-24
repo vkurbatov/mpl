@@ -2116,7 +2116,7 @@ void test20()
 void test21()
 {
     {
-        auto manager = task_manager_factory::get_instance().create_manager({});
+        auto manager = task_manager_impl::create({});
 
         for (std::size_t i = 0; i < 20; i++)
         {

@@ -28,8 +28,7 @@ namespace detail
 
 i_task_manager& get_single_task_manager()
 {
-
-    return task_manager_factory::single_manager();
+    return task_manager_impl::get_instance();
 }
 
 template<media_type_t MediaType>

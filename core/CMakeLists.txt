@@ -5,6 +5,7 @@ set(TARGET mplcore)
 set(SOURCES
     test.cpp
     type_info.cpp
+    thread_info.cpp
     command.cpp
     channel_control.cpp
     event.cpp
@@ -18,6 +19,7 @@ set(PUBLIC_HEADERS
     property_types.h
     packet_types.h
     time_types.h
+    thread_info.h
     ntp_time.h
     message_types.h
     channel_types.h

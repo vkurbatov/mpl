@@ -1,6 +1,7 @@
 #include "net_engine_impl.h"
 
 #include "socket/udp_transport_factory.h"
+#include "tools/io/io_core.h"
 
 namespace mpl::net
 {
@@ -11,35 +12,37 @@ net_engine_impl &net_engine_impl::get_instance()
     return single_engine;
 }
 
-net_engine_impl::u_ptr_t net_engine_impl::create(std::size_t max_workers)
+net_engine_impl::u_ptr_t net_engine_impl::create(task_manager_impl *task_manager)
 {
-    return std::make_unique<net_engine_impl>(max_workers);
+    return std::make_unique<net_engine_impl>(task_manager);
 }
 
-net_engine_impl::net_engine_impl(std::size_t max_workers)
-    : m_io_core(max_workers)
+net_engine_impl::net_engine_impl(task_manager_impl *task_manager)
+    : m_task_manager(task_manager == nullptr ? &task_manager_impl::get_instance() : task_manager)
 {
 
 }
 
-pt::io::io_core &net_engine_impl::io_core()
-{
-    return m_io_core;
-}
 
 bool net_engine_impl::start()
 {
-    return m_io_core.run();
+    return m_task_manager->start();
 }
 
 bool net_engine_impl::stop()
 {
-    return m_io_core.stop();
+    return m_task_manager->stop();
 }
 
 bool net_engine_impl::is_started() const
 {
-    return m_io_core.is_running();
+    return m_task_manager->is_started();
+}
+
+template<>
+pt::io::io_core &net_engine_impl::get()
+{
+    return m_task_manager->get<pt::io::io_core>();
 }
 
 }

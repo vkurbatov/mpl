@@ -19,6 +19,9 @@ public:
     virtual void reset() = 0;
     virtual std::size_t pending_tasks() const = 0;
     virtual std::size_t active_workers() const = 0;
+    virtual bool start() = 0;
+    virtual bool stop() = 0;
+    virtual bool is_started() const = 0;
 };
 
 }

@@ -39,6 +39,8 @@ public:
     bool is_running() const;
     void post(const executor_handler_t& executor);
     bool is_valid() const;
+    bool poll(bool one = false);
+    std::size_t workers() const;
 
     template<typename T>
     T& get() const;

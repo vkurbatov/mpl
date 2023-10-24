@@ -30,8 +30,8 @@ class udp_transport_impl final: public i_udp_transport
         , public i_message_sink
 {
     udp_transport_params_t          m_udp_params;
-    pt::io::udp_link                    m_link;
-    pt::io::resolver                    m_resolver;
+    pt::io::udp_link                m_link;
+    pt::io::resolver                m_resolver;
 
     message_router_impl             m_router;
 
@@ -294,7 +294,7 @@ udp_transport_factory::udp_transport_factory(net_engine_impl &engine)
 i_transport_channel::u_ptr_t udp_transport_factory::create_transport(const i_property &params)
 {
     return udp_transport_impl::create(params
-                                      , m_engine.io_core());
+                                      , m_engine.get<pt::io::io_core>());
 }
 
 

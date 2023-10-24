@@ -95,6 +95,22 @@ struct io_core::pimpl_t
         }
     }
 
+    bool poll(bool one = false)
+    {
+        if (is_running())
+        {
+            one ? m_io_context.poll_one() : m_io_context.poll();
+            return true;
+        }
+
+        return false;
+    }
+
+    std::size_t workers() const
+    {
+        return m_threads.size();
+    }
+
 };
 
 io_core::config_t::config_t(std::size_t max_workers)
@@ -160,6 +176,16 @@ void io_core::post(const executor_handler_t &executor)
 bool io_core::is_valid() const
 {
     return m_pimpl != nullptr;
+}
+
+bool io_core::poll(bool one)
+{
+    return m_pimpl->poll(one);
+}
+
+std::size_t io_core::workers() const
+{
+    return m_pimpl->workers();
 }
 
 template<>

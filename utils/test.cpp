@@ -266,7 +266,7 @@ std::uint32_t calc_cs(const void* data, std::size_t size)
 
 void test7()
 {
-    if (auto task_manager = task_manager_factory::get_instance().create_manager({}))
+    if (auto task_manager = task_manager_impl::create({}))
     {
         if (auto timers = timer_manager_factory::get_instance().create_timer_manager({}
                                                                                      , *task_manager))
@@ -417,7 +417,7 @@ void ipc_test()
 
 void utils_test()
 {
-    test8();
+    test7();
 }
 
 

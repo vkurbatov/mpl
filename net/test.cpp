@@ -343,9 +343,8 @@ void test4()
         { "stun:stun.l.google1.com:19302" }
     };
 
-    auto tasks = task_manager_factory::get_instance().create_manager({});
     auto timers = timer_manager_factory::get_instance().create_timer_manager({}
-                                                                             , *tasks);
+                                                                             , task_manager_impl::get_instance());
 
 
     timers->start();
@@ -527,9 +526,9 @@ void test5()
 
     engine.start();
 
-    auto tasks = task_manager_factory::get_instance().create_manager({});
+
     auto timers = timer_manager_factory::get_instance().create_timer_manager({}
-                                                                             , *tasks);
+                                                                             , task_manager_impl::get_instance());
 
 
     timers->start();
@@ -844,7 +843,7 @@ void test7()
 void test()
 {
 
-test7();
+test4();
 
 }
 

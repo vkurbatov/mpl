@@ -2,14 +2,16 @@
 #define MPL_NET_ENGINE_IMPL_H
 
 #include "i_net_engine.h"
-#include "tools/io/io_core.h"
+#include "utils/task_manager_impl.h"
 
 namespace mpl::net
 {
 
 class net_engine_impl : public i_net_engine
 {
-    pt::io::io_core     m_io_core;
+    task_manager_impl*      m_task_manager;
+    // pt::io::io_core     m_io_core;
+
 
 public:
 
@@ -18,11 +20,12 @@ public:
 
     static net_engine_impl& get_instance();
 
-    static u_ptr_t create(std::size_t max_workers = 0);
+    static u_ptr_t create(task_manager_impl* task_manager = nullptr);
 
-    net_engine_impl(std::size_t max_workers = 0);
+    net_engine_impl(task_manager_impl* task_manager = nullptr);
 
-    pt::io::io_core& io_core();
+    template<typename T>
+    T& get();
 
     // i_net_engine interface
 public:
