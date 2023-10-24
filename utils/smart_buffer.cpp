@@ -267,7 +267,7 @@ void smart_buffer::reset()
     m_storage_type = storage_type_t::undefined;
 }
 
-void smart_buffer::make_store()
+void smart_buffer::make_unique()
 {
     if (is_valid())
     {
@@ -321,7 +321,7 @@ const void *smart_buffer::data() const
 
 void *smart_buffer::map()
 {
-    make_store();
+    make_unique();
     return static_cast<storage_context_t&>(*m_storage_context).map();
 }
 
@@ -390,19 +390,19 @@ void smart_buffer::make_shared()
 
 bool smart_buffer::append_data(const void *data, std::size_t size)
 {
-    make_store();
+    make_unique();
     return static_cast<storage_context_t&>(*m_storage_context).append(data, size);
 }
 
 void smart_buffer::resize(std::size_t new_size)
 {
-    make_store();
+    make_unique();
     static_cast<storage_context_t&>(*m_storage_context).resize(new_size);
 }
 
 void smart_buffer::clear()
 {
-    make_store();
+    make_unique();
     static_cast<storage_context_t&>(*m_storage_context).clear();
 }
 

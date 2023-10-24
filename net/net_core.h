@@ -22,6 +22,7 @@ class net_core
 {
     net_core();
     ~net_core();
+
 public:
     static net_core& get_instance();
 

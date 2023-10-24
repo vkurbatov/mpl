@@ -45,7 +45,7 @@ bool sq_packet::is_valid() const
 
 sq_packet& sq_packet::detach_refs()
 {
-    m_fragment_data.make_store();
+    m_fragment_data.make_unique();
     return *this;
 }
 

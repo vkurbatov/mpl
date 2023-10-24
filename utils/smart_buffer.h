@@ -76,7 +76,7 @@ public:
     bool is_valid() const;
     void reset();
 
-    void make_store();
+    void make_unique();
     smart_buffer fork() const;
 
     const std::uint8_t& operator[](std::int32_t index) const;
