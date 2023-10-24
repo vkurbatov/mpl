@@ -818,7 +818,7 @@ void test6()
 
 void test7()
 {
-    net_engine_impl engine;
+    net_engine_impl engine(task_manager_impl::get_instance());
 
     engine.start();
 

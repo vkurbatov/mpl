@@ -8,11 +8,11 @@ set(SOURCES
     enum_convert_impl.cpp
     enum_serialize_impl.cpp
     net_serialize_impl.cpp
-    net_engine_impl.cpp
+
     net_utils.cpp
     net_event_message_impl.cpp
     net_command_message_impl.cpp
-
+    net_engine_impl.cpp
     net_core_config.cpp
     net_core.cpp
 
@@ -63,10 +63,10 @@ set(PUBLIC_HEADERS
     net_command_types.h
     endpoint.h
     i_net_packet.h  
+    i_net_engine.h
     i_transport_channel.h
     i_transport_factory.h
-    i_net_engine.h
-
+    net_engine_impl.h
     net_core_config.h
     net_core.h
 
@@ -101,7 +101,6 @@ set(PUBLIC_HEADERS
 
 set(PRIVATE_HEADERS
     test.h
-    net_engine_impl.h
     net_utils.h
     socket/socket_packet_impl.h
     socket/udp_transport_factory.h

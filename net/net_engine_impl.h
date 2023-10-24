@@ -2,17 +2,18 @@
 #define MPL_NET_ENGINE_IMPL_H
 
 #include "i_net_engine.h"
-#include "utils/task_manager_impl.h"
 
-namespace mpl::net
+namespace mpl
+{
+
+class task_manager_impl;
+
+namespace net
 {
 
 class net_engine_impl : public i_net_engine
 {
-    task_manager_impl*      m_task_manager;
-    // pt::io::io_core     m_io_core;
-
-
+    task_manager_impl&      m_task_manager;
 public:
 
     using u_ptr_t = std::unique_ptr<net_engine_impl>;
@@ -20,9 +21,9 @@ public:
 
     static net_engine_impl& get_instance();
 
-    static u_ptr_t create(task_manager_impl* task_manager = nullptr);
+    static u_ptr_t create(task_manager_impl& task_manager);
 
-    net_engine_impl(task_manager_impl* task_manager = nullptr);
+    net_engine_impl(task_manager_impl& task_manager);
 
     template<typename T>
     T& get();
@@ -35,6 +36,8 @@ public:
     bool is_started() const;
 
 };
+
+}
 
 }
 

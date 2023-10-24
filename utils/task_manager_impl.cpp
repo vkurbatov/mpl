@@ -231,25 +231,11 @@ public:
         {
             start();
         }
-        /*
-        auto worker_count = m_config.max_workers;
-        if (worker_count == 0)
-        {
-            worker_count = std::thread::hardware_concurrency();
-        }
-
-        for (std::size_t id = 0; id < worker_count; id++)
-        {
-            m_workers.emplace_back(*this
-                                   , id);
-        }*/
     }
 
     ~pimpl_t()
     {
         stop();
-        // m_workers.clear();
-
     }
 
     inline pt::io::io_core& io_core()

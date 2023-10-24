@@ -6,22 +6,6 @@
 
 namespace mpl
 {
-/*
-class task_manager_factory
-{
-public:
-    struct config_t
-    {
-        std::uint32_t   max_workers = 0; // auto
-        timestamp_t     idle_time = timestamp_infinite;
-        std::uint32_t   max_queued_workers = 0; // infinite
-    };
-
-    static task_manager_factory& get_instance();
-    static i_task_manager& single_manager();
-
-    i_task_manager::u_ptr_t create_manager(const config_t& config);
-};*/
 
 class task_manager_impl : public i_task_manager
 {
@@ -30,8 +14,7 @@ public:
     {
         bool            auto_start = false;
         std::uint32_t   max_workers = 0; // auto
-        timestamp_t     idle_time = timestamp_infinite;
-        std::uint32_t   max_queued_workers = 0; // infinite
+        // std::uint32_t   max_queued_workers = 0; // infinite
     };
 private:
     struct pimpl_t;

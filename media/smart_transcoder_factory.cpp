@@ -25,11 +25,11 @@ namespace mpl::media
 
 namespace detail
 {
-
+/*
 i_task_manager& get_single_task_manager()
 {
     return task_manager_impl::get_instance();
-}
+}*/
 
 template<media_type_t MediaType>
 struct format_types_t;
@@ -284,8 +284,9 @@ class smart_transcoder : public i_media_converter
 
 public:
 
-        async_frame_manager(smart_transcoder& owner)
-            : m_task_manager(detail::get_single_task_manager())
+        async_frame_manager(smart_transcoder& owner
+                            , i_task_manager& task_manager)
+            : m_task_manager(task_manager)
             , m_owner(owner)
             , m_task(nullptr)
             , m_task_handler([&] { on_task_execute(); })
@@ -392,6 +393,7 @@ public:
     using u_ptr_t = std::unique_ptr<smart_transcoder>;
 
     static u_ptr_t create(const i_property &params
+                          , i_task_manager& task_manager
                           , i_media_converter_factory &media_decoders
                           , i_media_converter_factory &media_encoders
                           , i_media_converter_factory &media_converters)
@@ -404,6 +406,7 @@ public:
 
             return std::make_unique<smart_transcoder>(std::move(media_format)
                                                       , std::move(internal_params)
+                                                      , task_manager
                                                       , media_decoders
                                                       , media_encoders
                                                       , media_converters);
@@ -415,6 +418,7 @@ public:
 
     smart_transcoder(format_impl_t&& output_format
                      , params_t&& params
+                     , i_task_manager& task_manager
                      , i_media_converter_factory &media_decoders
                      , i_media_converter_factory &media_encoders
                      , i_media_converter_factory &media_converters)
@@ -431,7 +435,8 @@ public:
         , m_converter_sink([&](const auto& frame)
                         { return on_converter_frame(frame); } )
         , m_output_sink(nullptr)
-        , m_async_manager(*this)
+        , m_async_manager(*this
+                          , task_manager)
         , m_is_init(false)
         , m_is_transit(true)
     {
@@ -669,10 +674,12 @@ public:
     }
 };
 
-smart_transcoder_factory::smart_transcoder_factory(i_media_converter_factory &media_decoders
+smart_transcoder_factory::smart_transcoder_factory(i_task_manager& task_manager
+                                                   , i_media_converter_factory &media_decoders
                                                    , i_media_converter_factory &media_encoders
                                                    , i_media_converter_factory &media_converters)
-    : m_media_decoders(media_decoders)
+    : m_task_manager(task_manager)
+    , m_media_decoders(media_decoders)
     , m_media_encoders(media_encoders)
     , m_media_converters(media_converters)
 {
@@ -687,15 +694,17 @@ i_media_converter::u_ptr_t smart_transcoder_factory::create_converter(const i_pr
     {
         case media_type_t::audio:
             return smart_transcoder<media_type_t::audio>::create(params
-                                                                , m_media_decoders
-                                                                , m_media_encoders
-                                                                , m_media_converters);
+                                                                 , m_task_manager
+                                                                 , m_media_decoders
+                                                                 , m_media_encoders
+                                                                 , m_media_converters);
         break;
         case media_type_t::video:
             return smart_transcoder<media_type_t::video>::create(params
-                                                                , m_media_decoders
-                                                                , m_media_encoders
-                                                                , m_media_converters);
+                                                                 , m_task_manager
+                                                                 , m_media_decoders
+                                                                 , m_media_encoders
+                                                                 , m_media_converters);
         break;
         default:;
     }

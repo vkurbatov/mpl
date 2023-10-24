@@ -1,7 +1,6 @@
-#ifndef MPL_NET_I_NET_ENGINE_H
-#define MPL_NET_I_NET_ENGINE_H
+#ifndef MPL_I_NET_ENGINE_H
+#define MPL_I_NET_ENGINE_H
 
-#include "i_transport_factory.h"
 #include <memory>
 
 namespace mpl::net
@@ -22,4 +21,5 @@ public:
 
 }
 
-#endif // MPL_NET_I_NET_ENGINE_H
+
+#endif // MPL_I_NET_ENGINE_H

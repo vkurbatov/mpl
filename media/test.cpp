@@ -406,7 +406,8 @@ void test8()
     libav_transcoder_factory encoder_factory(true);
 
 
-    smart_transcoder_factory smart_factory(decoder_factory
+    smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+                                           , decoder_factory
                                            , encoder_factory
                                            , media_converter_factory);
 
@@ -865,7 +866,8 @@ void test13()
     libav_transcoder_factory encoder_factory(true);
 
 
-    smart_transcoder_factory smart_factory(decoder_factory
+    smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+                                           , decoder_factory
                                            , encoder_factory
                                            , media_converter_factory);
 
@@ -972,7 +974,8 @@ void test13_2()
     libav_transcoder_factory encoder_factory(true);
 
 
-    smart_transcoder_factory smart_factory(decoder_factory
+    smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+                                           , decoder_factory
                                            , encoder_factory
                                            , media_converter_factory);
 
@@ -1198,7 +1201,8 @@ void test16()
     libav_transcoder_factory encoder_factory(true);
 
 
-    smart_transcoder_factory smart_factory(decoder_factory
+    smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+                                           , decoder_factory
                                            , encoder_factory
                                            , media_converter_factory);
 
@@ -1539,7 +1543,8 @@ void test19()
         //writer.set<std::string>("options", bg_options);
     }
 
-    mpl::media::smart_transcoder_factory smart_factory(mpl::media::libav_transcoder_factory::decoder_factory()
+    mpl::media::smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+                                                       , mpl::media::libav_transcoder_factory::decoder_factory()
                                                         , mpl::media::libav_transcoder_factory::encoder_factory()
                                                         , mpl::media::media_converter_factory_impl::builtin_converter_factory());
 
@@ -1852,7 +1857,8 @@ void test20()
         writer.set<std::uint32_t>("fps", 30);
     }
 
-    mpl::media::smart_transcoder_factory smart_factory(mpl::media::libav_transcoder_factory::decoder_factory()
+    mpl::media::smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+                                                       , mpl::media::libav_transcoder_factory::decoder_factory()
                                                         , mpl::media::libav_transcoder_factory::encoder_factory()
                                                         , mpl::media::media_converter_factory_impl::builtin_converter_factory());
 

@@ -3,7 +3,6 @@
 
 #include "i_transport_factory.h"
 #include "i_net_packet.h"
-#include "i_net_engine.h"
 #include "socket/socket_types.h"
 
 namespace mpl
@@ -15,6 +14,7 @@ class i_task_manager;
 namespace net
 {
 
+struct net_core_config_t;
 struct ice_config_t;
 struct tls_config_t;
 
@@ -26,7 +26,10 @@ class net_core
 public:
     static net_core& get_instance();
 
-    i_net_engine& engine();
+    bool init(i_timer_manager* task_manager = nullptr);
+    bool cleanup();
+    bool is_init() const;
+
     i_timer_manager& timer_manager();
     i_task_manager& task_manager();
 
