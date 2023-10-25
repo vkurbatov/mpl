@@ -406,7 +406,7 @@ void test8()
     libav_transcoder_factory encoder_factory(true);
 
 
-    smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+    smart_transcoder_factory smart_factory(task_manager_factory::single_manager()
                                            , decoder_factory
                                            , encoder_factory
                                            , media_converter_factory);
@@ -866,7 +866,7 @@ void test13()
     libav_transcoder_factory encoder_factory(true);
 
 
-    smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+    smart_transcoder_factory smart_factory(task_manager_factory::single_manager()
                                            , decoder_factory
                                            , encoder_factory
                                            , media_converter_factory);
@@ -974,7 +974,7 @@ void test13_2()
     libav_transcoder_factory encoder_factory(true);
 
 
-    smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+    smart_transcoder_factory smart_factory(task_manager_factory::single_manager()
                                            , decoder_factory
                                            , encoder_factory
                                            , media_converter_factory);
@@ -1201,7 +1201,7 @@ void test16()
     libav_transcoder_factory encoder_factory(true);
 
 
-    smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+    smart_transcoder_factory smart_factory(task_manager_factory::single_manager()
                                            , decoder_factory
                                            , encoder_factory
                                            , media_converter_factory);
@@ -1543,7 +1543,7 @@ void test19()
         //writer.set<std::string>("options", bg_options);
     }
 
-    mpl::media::smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+    mpl::media::smart_transcoder_factory smart_factory(task_manager_factory::single_manager()
                                                        , mpl::media::libav_transcoder_factory::decoder_factory()
                                                         , mpl::media::libav_transcoder_factory::encoder_factory()
                                                         , mpl::media::media_converter_factory_impl::builtin_converter_factory());
@@ -1857,7 +1857,7 @@ void test20()
         writer.set<std::uint32_t>("fps", 30);
     }
 
-    mpl::media::smart_transcoder_factory smart_factory(task_manager_impl::get_instance()
+    mpl::media::smart_transcoder_factory smart_factory(task_manager_factory::single_manager()
                                                        , mpl::media::libav_transcoder_factory::decoder_factory()
                                                         , mpl::media::libav_transcoder_factory::encoder_factory()
                                                         , mpl::media::media_converter_factory_impl::builtin_converter_factory());
@@ -2122,7 +2122,7 @@ void test20()
 void test21()
 {
     {
-        auto manager = task_manager_impl::create({});
+        auto manager = task_manager_factory::get_instance().create_manager({});
 
         for (std::size_t i = 0; i < 20; i++)
         {

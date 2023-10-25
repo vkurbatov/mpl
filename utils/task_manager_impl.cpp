@@ -1,29 +1,24 @@
 #include "task_manager_impl.h"
 
-#include "core/thread_info.h"
-
 #include <condition_variable>
 #include <thread>
 #include <shared_mutex>
 
 #include "tools/utils/sync_base.h"
-#include "tools/io/io_core.h"
-
 #include <list>
-#include <map>
+// #include <map>
 #include <future>
+#include <queue>
 
 #include <iostream>
 
 namespace mpl
 {
 
-class task_manager_impl::pimpl_t
+class task_manager_impl final: public i_task_manager
 {
-    using u_ptr_t = std::unique_ptr<pimpl_t>;
     using mutex_t = pt::utils::shared_spin_lock;
-    using config_t = task_manager_impl::config_t;
-    using task_handler_t = i_task_manager::task_handler_t;
+    using config_t = task_manager_factory::config_t;
 
     struct task_queue_t
     {
@@ -32,7 +27,7 @@ class task_manager_impl::pimpl_t
         struct task_impl : public i_task
         {
             using s_ptr_t = std::shared_ptr<task_impl>;
-            using map_t = std::map<task_id_t, task_impl::s_ptr_t>;
+            using queue_t = std::queue<s_ptr_t>;
             using promise_t = std::promise<void>;
             using future_t = std::future<void>;
 
@@ -43,6 +38,7 @@ class task_manager_impl::pimpl_t
             std::atomic<task_state_t>   m_state;
 
             promise_t                   m_promise;
+            std::atomic_bool            m_completed;
 
             static s_ptr_t create(task_queue_t& owner
                                   , task_id_t task_id
@@ -66,13 +62,14 @@ class task_manager_impl::pimpl_t
                 , m_task_id(task_id)
                 , m_handler(handler)
                 , m_state(task_state_t::ready)
+                , m_completed(false)
             {
 
             }
 
             ~task_impl()
             {
-                while(m_state.load(std::memory_order_acquire) == task_state_t::execute)
+                while (m_state.load(std::memory_order_relaxed) == task_state_t::execute)
                 {
                     std::this_thread::yield();
                 }
@@ -84,34 +81,37 @@ class task_manager_impl::pimpl_t
                 if (m_state.compare_exchange_strong(need_state
                                                     , task_state_t::execute))
                 {
-
-                    /*std::cout << "Exec task #" << m_task_id
-                              << ", from thread " << thread_info_t::current().name
-                              << std::endl;*/
                     m_handler();
-                    completed();
+                    complete(task_state_t::completed);
                 }
             }
 
-            inline void completed(task_state_t state = task_state_t::completed)
+            inline bool complete()
             {
-                m_state.store(state, std::memory_order_release);
-                m_promise.set_value();
-            }
-
-            inline bool is_process() const
-            {
-                switch(m_state.load(std::memory_order_acquire))
+                bool flag = false;
+                if (m_completed.compare_exchange_strong(flag
+                                                        , true))
                 {
-                    case task_state_t::ready:
-                    case task_state_t::execute:
-                        return true;
-                    break;
-                    default:;
+                    m_promise.set_value();
+                    return true;
                 }
 
                 return false;
             }
+
+            inline void complete(task_state_t state)
+            {
+                if (complete())
+                {
+                    m_state.store(state, std::memory_order_release);
+                }
+            }
+
+            inline bool is_processed() const
+            {
+                return !m_completed.load(std::memory_order_acquire);
+            }
+
             // i_task interface
 
         public:
@@ -123,30 +123,29 @@ class task_manager_impl::pimpl_t
             bool wait() override
             {
                 auto future = m_promise.get_future();
-                if (is_process())
-                {
-                    future.wait();
-                    return true;
-                }
-
-                return false;
+                future.wait();
+                return true;
             }
 
             void cancel() override
             {
-                // completed(task_state_t::cancelled);
-                m_owner.remove_task(m_task_id);
+                task_state_t need_state = task_state_t::ready;
+                if (m_state.compare_exchange_strong(need_state
+                                                    , task_state_t::cancelled))
+                {
+                    complete(task_state_t::cancelled);
+                }
             }
 
             task_state_t state() const override
             {
-                return m_state;
+                return m_state.load(std::memory_order_acquire);
             }
         };
 
         task_id_t                   m_task_id;
 
-        task_impl::map_t            m_tasks;
+        task_impl::queue_t          m_tasks;
 
         task_queue_t()
             : m_task_id(0)
@@ -167,18 +166,12 @@ class task_manager_impl::pimpl_t
                                               , task_handler))
             {
 
-                m_tasks[m_task_id] = task;
+                m_tasks.push(task);
                 m_task_id++;
                 return task;
             }
 
             return nullptr;
-        }
-
-        bool remove_task(task_id_t task_id)
-        {
-            std::lock_guard lock(m_safe_mutex);
-            return m_tasks.erase(task_id) > 0;
         }
 
         std::size_t pending() const
@@ -191,10 +184,10 @@ class task_manager_impl::pimpl_t
         {
             std::lock_guard lock(m_safe_mutex);
 
-            if (auto it = m_tasks.begin(); it != m_tasks.end())
+            if (!m_tasks.empty())
             {
-                auto task = std::move(it->second);
-                m_tasks.erase(it);
+                auto task = std::move(m_tasks.front());
+                m_tasks.pop();
                 return task;
             }
             return nullptr;
@@ -203,67 +196,122 @@ class task_manager_impl::pimpl_t
         void reset()
         {
             std::lock_guard lock(m_safe_mutex);
-            m_tasks.clear();
+            while(!m_tasks.empty())
+            {
+                m_tasks.front()->cancel();
+                m_tasks.pop();
+            }
+        }
+    };
+
+    struct worker_t
+    {
+        using list_t = std::list<worker_t>;
+
+        task_manager_impl&      m_manager;
+        std::size_t             m_worker_id;
+
+        std::thread             m_thread;
+
+
+        worker_t(task_manager_impl& manager
+                 , std::size_t worker_id)
+            : m_manager(manager)
+            , m_worker_id(worker_id)
+            , m_thread([&] { worker_proc(); })
+        {
+
+        }
+
+        ~worker_t()
+        {
+            if (m_thread.joinable())
+            {
+                m_thread.join();
+            }
+        }
+
+        void worker_proc()
+        {
+            std::mutex                      wait_mutex;
+            std::unique_lock<std::mutex>    wait_lock(wait_mutex);
+
+            while(m_manager.is_running())
+            {
+                if (auto task = m_manager.m_task_queue.fetch_task())
+                {
+                    task->execute();
+                }
+                else
+                {
+                    m_manager.wait(wait_lock);
+                    // std::clog << "Wakeup #" << m_worker_id << " worker id" << std::endl;
+                }
+            }
         }
     };
 
     // mutable std::mutex                  m_sync_mutex;
 
     config_t                            m_config;
-    pt::io::io_core                     m_io_core;
 
     task_queue_t                        m_task_queue;
-    //worker_t::list_t                    m_workers;
+    worker_t::list_t                    m_workers;
 
+    std::condition_variable             m_signal;
+    std::atomic_bool                    m_running;
 
 public:
 
     static u_ptr_t create(const config_t &config)
     {
-        return std::make_unique<pimpl_t>(config);
+        return std::make_unique<task_manager_impl>(config);
     }
 
-    pimpl_t(const config_t &config)
+    task_manager_impl(const config_t &config)
         : m_config(config)
-        , m_io_core(config.max_workers)
+        , m_running(false)
     {
         if (m_config.auto_start)
         {
-            start();
+            task_manager_impl::start();
         }
     }
 
-    ~pimpl_t()
+    ~task_manager_impl()
     {
-        stop();
+        task_manager_impl::stop();
+
     }
 
-    inline pt::io::io_core& io_core()
+    inline void wait(std::unique_lock<std::mutex>& lock)
     {
-        return m_io_core;
+        auto predicate = [&]
+        {
+            return m_task_queue.pending() > 0 || !is_running();
+        };
+        m_signal.wait(lock, predicate);
+    }
+
+    inline void notify(bool all = false)
+    {
+        all ? m_signal.notify_all() : m_signal.notify_one();
     }
 
     inline bool is_running() const
     {
-        return m_io_core.is_running();
+        return m_running.load(std::memory_order_acquire);
     }
 
     // i_task_manager interface
 public:
-    inline i_task::s_ptr_t add_task(const task_handler_t &task_handler)
+    i_task::s_ptr_t add_task(const task_handler_t &task_handler) override
     {
         if (is_running())
         {
             if (auto task = m_task_queue.add_task(task_handler))
             {
-                auto task_handle = [&]
-                {
-                    if (auto task = m_task_queue.fetch_task())
-                    {
-                        task->execute();
-                    }
-                };
-                m_io_core.post(task_handle);
+                notify();
                 return task;
             }
         }
@@ -272,98 +320,78 @@ public:
     }
 
 
-    inline void reset()
+    void reset() override
     {
         m_task_queue.reset();
     }
 
-    inline std::size_t pending_tasks() const
+    std::size_t pending_tasks() const override
     {
         return m_task_queue.pending();
     }
 
-    inline std::size_t active_workers() const
+    std::size_t active_workers() const override
     {
-        return m_io_core.workers();
+        return m_workers.size();
     }
 
-    inline bool start()
+    bool start() override
     {
-        return m_io_core.run();
+        bool flag = false;
+        if (m_running.compare_exchange_strong(flag, true))
+        {
+            auto worker_count = m_config.max_workers;
+            if (worker_count == 0)
+            {
+                worker_count = std::thread::hardware_concurrency();
+
+            }
+            for (std::size_t id = 0; id < worker_count; id++)
+            {
+                m_workers.emplace_back(*this
+                                       , id);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
-    inline bool stop()
+    bool stop() override
     {
-        return m_io_core.stop();
+        bool flag = true;
+        if (m_running.compare_exchange_strong(flag, false))
+        {
+            m_running.store(false, std::memory_order_release);
+            notify(true);
+            m_workers.clear();
+        }
+
+        return false;
     }
 
-    inline bool is_started() const
+    bool is_started() const override
     {
-        return m_io_core.is_running();
+        return is_running();
     }
 };
 
-task_manager_impl &task_manager_impl::get_instance()
+task_manager_factory &task_manager_factory::get_instance()
 {
-    static task_manager_impl single_task_manager({ true } );
-    return single_task_manager;
+    static task_manager_factory single_factory;
+    return single_factory;
 }
 
-task_manager_impl::u_ptr_t task_manager_impl::create(const config_t &config)
+i_task_manager &task_manager_factory::single_manager()
 {
-    return std::make_unique<task_manager_impl>(config);
+    static task_manager_impl single_manager({true});
+    return single_manager;
 }
 
-task_manager_impl::task_manager_impl(const config_t &config)
-    : m_pimpl(pimpl_t::create(config))
+i_task_manager::u_ptr_t task_manager_factory::create_manager(const config_t &config)
 {
-
-}
-
-task_manager_impl::~task_manager_impl()
-{
-
-}
-
-i_task::s_ptr_t task_manager_impl::add_task(const task_handler_t &task_handler)
-{
-    return m_pimpl->add_task(task_handler);
-}
-
-void task_manager_impl::reset()
-{
-    m_pimpl->reset();
-}
-
-std::size_t task_manager_impl::pending_tasks() const
-{
-    return m_pimpl->pending_tasks();
-}
-
-std::size_t task_manager_impl::active_workers() const
-{
-    return m_pimpl->active_workers();
-}
-
-bool task_manager_impl::start()
-{
-    return m_pimpl->start();
-}
-
-bool task_manager_impl::stop()
-{
-    return m_pimpl->stop();
-}
-
-bool task_manager_impl::is_started() const
-{
-    return m_pimpl->is_started();
-}
-
-template<>
-pt::io::io_core &task_manager_impl::get()
-{
-    return m_pimpl->io_core();
+    return task_manager_impl::create(config);
 }
 
 }

@@ -361,7 +361,7 @@ timer_manager_factory &timer_manager_factory::get_instance()
 i_timer_manager &timer_manager_factory::single_manager()
 {
     static timer_manager_impl single_timer_manager({}
-                                                   , task_manager_impl::get_instance());
+                                                   , task_manager_factory::single_manager());
     return single_timer_manager;
 }
 

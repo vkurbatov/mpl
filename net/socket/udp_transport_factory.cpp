@@ -294,7 +294,7 @@ udp_transport_factory::udp_transport_factory(net_engine_impl &engine)
 i_transport_channel::u_ptr_t udp_transport_factory::create_transport(const i_property &params)
 {
     return udp_transport_impl::create(params
-                                      , m_engine.get<pt::io::io_core>());
+                                      , m_engine.io_core());
 }
 
 

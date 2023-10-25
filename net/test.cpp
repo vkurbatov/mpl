@@ -331,9 +331,20 @@ void test3()
 
 void test4()
 {
+    std::promise<void> test_promise;
+    // test_promise.set_value();
+    std::future<void> f = test_promise.get_future();
+    test_promise.set_value();
+    f.wait();
+
     auto& engine = net_engine_impl::get_instance();
 
     engine.start();
+
+
+    /*utils::time::sleep(durations::seconds(2));
+
+    engine.stop();*/
 
     const ice_server_params_t::array_t ice_servers =
     {
@@ -344,7 +355,7 @@ void test4()
     };
 
     auto timers = timer_manager_factory::get_instance().create_timer_manager({}
-                                                                             , task_manager_impl::get_instance());
+                                                                             , task_manager_factory::single_manager());
 
 
     timers->start();
@@ -528,7 +539,7 @@ void test5()
 
 
     auto timers = timer_manager_factory::get_instance().create_timer_manager({}
-                                                                             , task_manager_impl::get_instance());
+                                                                             , task_manager_factory::single_manager());
 
 
     timers->start();
@@ -818,7 +829,7 @@ void test6()
 
 void test7()
 {
-    net_engine_impl engine(task_manager_impl::get_instance());
+    net_engine_impl engine(task_manager_factory::single_manager());
 
     engine.start();
 

@@ -103,7 +103,7 @@ int main()
         writer.set<std::string>("url", input_video_url);
     }
 
-    mpl::media::smart_transcoder_factory smart_factory(mpl::task_manager_impl::get_instance()
+    mpl::media::smart_transcoder_factory smart_factory(mpl::task_manager_factory::single_manager()
                                                         , mpl::media::libav_transcoder_factory::decoder_factory()
                                                         , mpl::media::libav_transcoder_factory::encoder_factory()
                                                         , mpl::media::media_converter_factory_impl::builtin_converter_factory());
