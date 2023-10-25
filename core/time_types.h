@@ -40,8 +40,6 @@ constexpr timestamp_t to_days(timestamp_t timestamp) { return timestamp / day; }
 
 }
 
-// timestamp_t operator "" _m(timestamp_t minutes) { return durations::to_minutes(minutes); }
-
 }
 
 #endif // MPL_TIME_TYPES_H

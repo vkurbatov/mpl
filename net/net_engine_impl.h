@@ -8,7 +8,6 @@
 namespace mpl
 {
 
-//class task_manager_impl;
 class i_task_manager;
 
 namespace net
@@ -19,7 +18,7 @@ class net_engine_impl : public i_net_engine
 public:
     struct config_t
     {
-        std::size_t     max_workers = 0;
+        std::size_t     max_workers = 1;
     };
 
 private:
@@ -43,9 +42,11 @@ public:
 
     static net_engine_impl& get_instance();
 
-    static u_ptr_t create(i_task_manager& task_manager);
+    static u_ptr_t create(const config_t& config
+                          , i_task_manager& task_manager);
 
-    net_engine_impl(i_task_manager& task_manager);
+    net_engine_impl(const config_t& config
+                    , i_task_manager& task_manager);
 
     pt::io::io_core& io_core();
 

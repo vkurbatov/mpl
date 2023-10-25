@@ -6,14 +6,12 @@
 namespace mpl::net
 {
 
-/*
 struct net_core_config_t
 {
     std::size_t     net_workers;
-    net_core_config_t(std::size_t net_workers);
+    net_core_config_t(std::size_t net_workers = 1);
 };
 
-*/
 
 }
 

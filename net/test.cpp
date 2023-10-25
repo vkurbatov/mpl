@@ -829,7 +829,8 @@ void test6()
 
 void test7()
 {
-    net_engine_impl engine(task_manager_factory::single_manager());
+    net_engine_impl engine({}
+                           , task_manager_factory::single_manager());
 
     engine.start();
 

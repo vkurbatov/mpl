@@ -26,6 +26,7 @@ class task_manager_impl final: public i_task_manager
 
         struct task_impl : public i_task
         {
+            using u_ptr_t = std::unique_ptr<task_impl>;
             using s_ptr_t = std::shared_ptr<task_impl>;
             using queue_t = std::queue<s_ptr_t>;
             using promise_t = std::promise<void>;
@@ -40,13 +41,13 @@ class task_manager_impl final: public i_task_manager
             promise_t                   m_promise;
             std::atomic_bool            m_completed;
 
-            static s_ptr_t create(task_queue_t& owner
+            static u_ptr_t create(task_queue_t& owner
                                   , task_id_t task_id
                                   , const task_handler_t& handler)
             {
                 if (handler != nullptr)
                 {
-                    return std::make_shared<task_impl>(owner
+                    return std::make_unique<task_impl>(owner
                                                        , task_id
                                                        , handler);
                 }
@@ -166,9 +167,9 @@ class task_manager_impl final: public i_task_manager
                                               , task_handler))
             {
 
-                m_tasks.push(task);
+                m_tasks.push(std::move(task));
                 m_task_id++;
-                return task;
+                return m_tasks.back();
             }
 
             return nullptr;

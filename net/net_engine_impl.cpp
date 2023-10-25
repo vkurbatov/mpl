@@ -19,18 +19,22 @@ bool net_engine_impl::worker_factory::execute_worker(const worker_proc_t &worker
 
 net_engine_impl &net_engine_impl::get_instance()
 {
-    static net_engine_impl single_engine(task_manager_factory::single_manager());
+    static net_engine_impl single_engine({}
+                                         , task_manager_factory::single_manager());
     return single_engine;
 }
 
-net_engine_impl::u_ptr_t net_engine_impl::create(i_task_manager& task_manager)
+net_engine_impl::u_ptr_t net_engine_impl::create(const config_t& config
+                                                 , i_task_manager& task_manager)
 {
-    return std::make_unique<net_engine_impl>(task_manager);
+    return std::make_unique<net_engine_impl>(config
+                                             , task_manager);
 }
 
-net_engine_impl::net_engine_impl(i_task_manager& task_manager)
+net_engine_impl::net_engine_impl(const config_t& config
+                                 , i_task_manager& task_manager)
     : m_worker_factory(task_manager)
-    , m_io_core({4}
+    , m_io_core({config.max_workers}
                 , &m_worker_factory)
 {
 
