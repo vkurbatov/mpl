@@ -35,14 +35,17 @@ public:
 
     i_net_engine& engine();
 
-    i_timer_manager& timer_manager();
     i_task_manager& task_manager();
+    i_timer_manager& timer_manager();
+
+    i_transport_factory& socket_factory();
 
     i_transport_factory::u_ptr_t create_udp_factory();
     i_transport_factory::u_ptr_t create_ice_factory(const ice_config_t& ice_config
                                                     , i_transport_factory* socket_factory = nullptr
                                                     , i_timer_manager* timer_manager = nullptr);
-    i_transport_factory::u_ptr_t create_tls_factory(const tls_config_t& tls_config);
+    i_transport_factory::u_ptr_t create_tls_factory(const tls_config_t& tls_config
+                                                    , i_timer_manager* timer_manager = nullptr);
 
 
     i_net_packet::u_ptr_t create_packet(transport_id_t transport_id
