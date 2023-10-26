@@ -1,5 +1,6 @@
 #include "audio_frame_impl.h"
 #include "utils/pointer_utils.h"
+#include "utils/time_utils.h"
 
 namespace mpl::media
 {
@@ -8,6 +9,7 @@ audio_frame_base_impl::audio_frame_base_impl(frame_id_t frame_id
                                            , timestamp_t timestamp)
     : m_frame_id(frame_id)
     , m_timestamp(timestamp)
+    , m_ntp_timestamp(utils::time::now())
 {
 
 }
@@ -20,6 +22,11 @@ void audio_frame_base_impl::set_frame_id(frame_id_t frame_id)
 void audio_frame_base_impl::set_timestamp(timestamp_t timestamp)
 {
     m_timestamp = timestamp;
+}
+
+void audio_frame_base_impl::set_ntp_timestamp(timestamp_t timestamp)
+{
+    m_ntp_timestamp = timestamp;
 }
 
 void audio_frame_base_impl::set_buffers(smart_buffer_collection &&buffers)
@@ -71,6 +78,11 @@ frame_id_t audio_frame_base_impl::frame_id() const
 timestamp_t audio_frame_base_impl::timestamp() const
 {
     return m_timestamp;
+}
+
+timestamp_t audio_frame_base_impl::ntp_timestamp() const
+{
+    return m_ntp_timestamp;
 }
 
 const i_buffer_collection &audio_frame_base_impl::data() const

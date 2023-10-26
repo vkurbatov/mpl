@@ -186,17 +186,19 @@ bool net_core::init(const net_core_config_t &config
                     , i_task_manager *task_manger
                     , i_timer_manager *timer_manager)
 {
-    return false;
+    return net_core_impl::init(config
+                               , task_manger
+                               , timer_manager);
 }
 
 bool net_core::cleanup()
 {
-    return false;
+    return net_core_impl::cleanup();
 }
 
 bool net_core::is_init() const
 {
-    return false;
+    return net_core_impl::is_init();
 }
 
 i_task_manager &net_core::task_manager()

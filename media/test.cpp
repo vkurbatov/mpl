@@ -2600,6 +2600,101 @@ void test25()
     // auto factory.create_device("");
 }
 
+void test26()
+{
+    pt::ffmpeg::libav_register();
+    libav_input_device_factory input_device_factory;
+    libav_output_device_factory output_device_factory;
+
+    //std::string input_url = "https://dagestan.mediacdn.ru/cdn/dagestan/playlist_hdhigh.m3u8";
+
+    std::string input_url = "/home/user/My/sportrecs/basket_streaming_video.mp4";
+    // std::string input_url =  "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov";
+    std::string output_url = "rtmp://127.0.0.1/cam1/stream";
+
+    auto libav_input_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_input_device_params);
+        writer.set<std::string>("url", input_url);
+    }
+
+
+    audio_format_impl audio_format(audio_format_id_t::aac
+                                   , 48000
+                                   , 2);
+    video_format_impl video_format(video_format_id_t::h264
+                                   , 1280
+                                   , 720
+                                   , 25);
+
+    // option_writer(video_format.options()).set(opt_fmt_track_id, 1);
+
+    auto libav_output_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        i_property::s_array_t streams;
+
+        if (auto vp = property_helper::create_object())
+        {
+            if (video_format.get_params(*vp))
+            {
+                streams.emplace_back(std::move(vp));
+            }
+        }
+
+        if (auto ap = property_helper::create_object())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
+        writer.set("streams", streams);
+    }
+
+
+
+    auto input_device = input_device_factory.create_device(*libav_input_device_params);
+    auto output_device = output_device_factory.create_device(*libav_output_device_params);
+
+    auto input_handler = [&](const i_message& message)
+    {
+        switch(message.category())
+        {
+            case message_category_t::data:
+            {
+                // std::cout << std::endl;
+                return output_device->sink(0)->send_message(message);
+            }
+            break;
+            default:;
+        }
+
+        return false;
+    };
+
+    message_sink_impl input_sink(input_handler);
+
+    input_device->source(0)->add_sink(&input_sink);
+
+    output_device->control(channel_control_t::open());
+    input_device->control(channel_control_t::open());
+
+    while(input_device->state() != channel_state_t::connected);
+
+    utils::time::sleep(durations::seconds(150));
+
+    input_device->control(channel_control_t::close());
+    output_device->control(channel_control_t::close());
+
+
+    input_device->source(0)->remove_sink(&input_sink);
+
+    return;
+}
+
 }
 
 void  tests()
@@ -2614,12 +2709,13 @@ void  tests()
     // test18();
     // test15();
     // test19(); // composer
-    test20(); // composer2
+    // test20(); // composer2
     // test21();
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)
     // test24();
     // test25(); // visca
+    test26(); // hls
 
 }
 

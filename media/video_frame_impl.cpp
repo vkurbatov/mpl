@@ -1,5 +1,6 @@
 #include "video_frame_impl.h"
 #include "utils/pointer_utils.h"
+#include "utils/time_utils.h"
 
 namespace mpl::media
 {
@@ -10,6 +11,7 @@ video_frame_base_impl::video_frame_base_impl(frame_id_t frame_id
     : m_frame_id(frame_id)
     , m_timestamp(timestamp)
     , m_frame_type(frame_type)
+    , m_ntp_timestamp(utils::time::now())
 {
 
 }
@@ -22,6 +24,11 @@ void video_frame_base_impl::set_frame_id(frame_id_t frame_id)
 void video_frame_base_impl::set_timestamp(timestamp_t timestamp)
 {
     m_timestamp = timestamp;
+}
+
+void video_frame_base_impl::set_ntp_timestamp(timestamp_t timestamp)
+{
+    m_ntp_timestamp = timestamp;
 }
 
 void video_frame_base_impl::set_buffers(smart_buffer_collection &&buffers)
@@ -79,11 +86,15 @@ timestamp_t video_frame_base_impl::timestamp() const
     return m_timestamp;
 }
 
+timestamp_t video_frame_base_impl::ntp_timestamp() const
+{
+    return m_ntp_timestamp;
+}
+
 const i_buffer_collection &video_frame_base_impl::data() const
 {
     return m_buffers;
 }
-
 
 i_video_frame::frame_type_t video_frame_base_impl::frame_type() const
 {

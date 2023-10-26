@@ -16,6 +16,7 @@ protected:
     smart_buffer_collection m_buffers;
     frame_id_t              m_frame_id;
     timestamp_t             m_timestamp;
+    timestamp_t             m_ntp_timestamp;
     option_impl             m_options;
 
 public:
@@ -28,6 +29,7 @@ public:
 
     void set_frame_id(frame_id_t frame_id);
     void set_timestamp(timestamp_t timestamp);
+    void set_ntp_timestamp(timestamp_t timestamp);
     void set_buffers(smart_buffer_collection&& buffers);
     smart_buffer_collection& smart_buffers();
     const smart_buffer_collection& smart_buffers() const;
@@ -48,6 +50,7 @@ public:
     media_type_t media_type() const override;
     frame_id_t frame_id() const override;
     timestamp_t timestamp() const override;
+    timestamp_t ntp_timestamp() const override;
     const i_buffer_collection& data() const override;
 
     // i_message_media_data interface

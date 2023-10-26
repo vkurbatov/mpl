@@ -377,7 +377,8 @@ stream_info_t& operator << (stream_info_t& stream_info
     switch(stream_info.media_info.media_type)
     {
         case media_type_t::video:
-            stream_info.media_info.video_info.fps = av_q2d(av_stream.time_base) + 0.5;
+            // stream_info.media_info.video_info.fps = av_q2d(av_stream.time_base) + 0.5;
+            stream_info.media_info.video_info.fps = av_q2d(av_stream.avg_frame_rate);
         break;
         default:;
     }

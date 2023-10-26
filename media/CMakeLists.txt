@@ -48,6 +48,7 @@ set(SOURCES
     media_composer_factory_impl.cpp
     command_camera_control.cpp
     media_command_message_impl.cpp
+    media_buffer.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -121,6 +122,7 @@ set(PRIVATE_HEADERS
     video_composer.h
     layout_manager_mosaic_impl.h
     media_composer_factory_impl.h
+    media_buffer.h
 )
 
 

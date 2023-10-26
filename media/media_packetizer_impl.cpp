@@ -290,6 +290,7 @@ bool packetizer::add_value(const i_audio_frame& audio_frame)
         {
             add_value(audio_frame.frame_id());
             add_value(audio_frame.timestamp());
+            add_value(audio_frame.ntp_timestamp());
             add_value(audio_frame.data());
             return close_object();
         }
@@ -305,14 +306,16 @@ bool depacketizer::fetch_value(audio_frame_impl& audio_frame)
     {
         frame_id_t frame_id = 0;
         timestamp_t timestamp = 0;
-
+        timestamp_t ntp_timestamp = 0;
         if (fetch_value(audio_frame.audio_format())
                 && fetch_value(frame_id)
                 && fetch_value(timestamp)
+                && fetch_value(ntp_timestamp)
                 && fetch_value(audio_frame.smart_buffers()))
         {
             audio_frame.set_frame_id(frame_id);
             audio_frame.set_timestamp(timestamp);
+            audio_frame.set_ntp_timestamp(ntp_timestamp);
             return close_object();
         }
     }
@@ -329,6 +332,7 @@ bool packetizer::add_value(const i_video_frame& video_frame)
         if (add_value(video_frame.format())
                 && add_value(video_frame.frame_id())
                 && add_value(video_frame.timestamp())
+                && add_value(video_frame.ntp_timestamp())
                 && add_enum(video_frame.frame_type()))
         {
             add_value(video_frame.data());
@@ -352,16 +356,20 @@ bool depacketizer::fetch_value(video_frame_impl& video_frame)
     {
         frame_id_t frame_id = 0;
         timestamp_t timestamp = 0;
+        timestamp_t ntp_timestamp = 0;
         i_video_frame::frame_type_t frame_type = i_video_frame::frame_type_t::undefined;
 
         if (fetch_value(video_frame.video_format())
                 && fetch_value(frame_id)
                 && fetch_value(timestamp)
+                && fetch_value(ntp_timestamp)
                 && fetch_enum(frame_type)
+
                 && fetch_value(video_frame.smart_buffers()))
         {
             video_frame.set_frame_id(frame_id);
             video_frame.set_timestamp(timestamp);
+            video_frame.set_ntp_timestamp(ntp_timestamp);
             video_frame.set_frame_type(frame_type);
 
             return close_object();

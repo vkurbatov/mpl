@@ -3,8 +3,10 @@
 #include "utils/message_router_impl.h"
 #include "utils/property_writer.h"
 #include "utils/message_event_impl.h"
-#include "core/event_channel_state.h"
 #include "utils/time_utils.h"
+#include "utils/adaptive_delay.h"
+#include "utils/endian_utils.h"
+#include "core/event_channel_state.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
@@ -12,25 +14,78 @@
 #include "tools/utils/sync_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
 #include "tools/ffmpeg/libav_input_format.h"
+#include "tools/ffmpeg/libav_utils.h"
 
 #include <thread>
 #include <shared_mutex>
 #include <atomic>
+#include <iostream>
 
 
 namespace mpl::media
 {
 
+namespace detail
+{
+
+
+bool normalize_fragment_headers(void *data, std::size_t size)
+{
+    auto ptr = static_cast<std::uint8_t*>(data);
+    std::size_t  i = 0;
+
+    while(i < size)
+    {
+        std::uint32_t& seg_header = *reinterpret_cast<std::uint32_t*>(ptr + i);
+        auto seg_size = seg_header;
+        seg_size = utils::endian::big::convert(seg_size);
+        if (i + seg_size > size)
+        {
+            return false;
+        }
+        i += seg_size + 4;
+        seg_header = 0x01000000;
+    }
+
+    return i == size;
+}
+
+smart_buffer create_buffer(const pt::ffmpeg::frame_ref_t& libav_frame
+                           , const pt::ffmpeg::stream_info_t& stream)
+{
+    if (stream.codec_info.id == pt::ffmpeg::codec_id_h264)
+    {
+        /*if (stream.codec_info.codec_params.parse_type == pt::ffmpeg::stream_parse_headers
+                || stream.codec_info.codec_params.parse_type == pt::ffmpeg::stream_parse_none)*/
+        {
+            smart_buffer new_buffer(libav_frame.data,  libav_frame.size, true);
+            normalize_fragment_headers(new_buffer.map(), libav_frame.size);
+            return new_buffer;
+        }
+    }
+
+    return smart_buffer(libav_frame.data
+                        , libav_frame.size);
+}
+
+}
+
 struct stream_t
 {
     using list_t = std::vector<stream_t>;
     pt::ffmpeg::stream_info_t   stream_info;
-    timestamp_t             start_timestamp;
-    frame_id_t              frame_id;
-    timestamp_t             last_timestamp;
-    timestamp_t             real_timestamp;
+    timestamp_t                 start_timestamp;
+    frame_id_t                  frame_id;
+    timestamp_t                 last_timestamp;
+    timestamp_t                 real_timestamp;
+    adaptive_delay              delay;
 
-    static stream_t::list_t create_list(pt::ffmpeg::stream_info_t::list_t&& streams)
+    inline static timestamp_t now()
+    {
+        return utils::time::get_ticks();
+    }
+
+    inline static stream_t::list_t create_list(pt::ffmpeg::stream_info_t::list_t&& streams)
     {
         stream_t::list_t stream_list;
 
@@ -49,10 +104,10 @@ struct stream_t
         , last_timestamp(0)
         , real_timestamp(0)
     {
-
+        // reset();
     }
 
-    void reset()
+    inline void reset()
     {
         start_timestamp = 0;
         frame_id = 0;
@@ -73,27 +128,35 @@ struct stream_t
                 || std::abs(dt) > stream_info.media_info.sample_rate())
         {
             start_timestamp = native_timestamp;
-            real_timestamp = utils::time::get_ticks();
+            real_timestamp = now();
         }
 
         last_timestamp = native_timestamp;
 
-        return native_timestamp - start_timestamp;
+        return native_timestamp;// - start_timestamp;
     }
 
-    void sync(timestamp_t native_timestamp) const
+    void sync(timestamp_t native_timestamp)
     {
-        auto rdt = utils::time::get_ticks() - real_timestamp;
+        auto rdt = now() - real_timestamp;
         auto pdt = native_timestamp - start_timestamp;
 
         pdt = durations::milliseconds(pdt * 1000) / stream_info.media_info.sample_rate();
 
-        if (pdt > rdt)
+        auto dt = pdt - rdt;
+        if (dt > 0)
         {
-            utils::time::sleep(pdt - rdt);
+            utils::time::sleep(dt);
         }
+        /*if (dt > 0)
+        {
+            delay.wait(dt);
+        }
+        else
+        {
+            delay.reset();
+        }*/
     }
-
 };
 
 class libav_input_device : public i_device
@@ -157,6 +220,7 @@ class libav_input_device : public i_device
 
     frame_id_t                      m_frame_counter;
     timestamp_t                     m_frame_timestamp;
+
 
     timestamp_t                     m_start_time;
 
@@ -274,6 +338,8 @@ public:
                     pt::ffmpeg::frame_ref_t libav_frame;
                     if (native_input_device.read(libav_frame))
                     {
+                        // std::cout << "read delay: " << durations::to_milliseconds(utils::time::get_ticks() - tp) << std::endl;
+
                         auto& stream = streams[libav_frame.info.stream_id];
                         error_counter = 0;
                         on_native_frame(stream
@@ -361,8 +427,8 @@ public:
                                                , frame_type);
 
                         frame.smart_buffers().set_buffer(media_buffer_index
-                                                         , smart_buffer(libav_frame.data
-                                                                        , libav_frame.size));
+                                                         , detail::create_buffer(libav_frame
+                                                                                 , stream.stream_info));
 
 
                         return m_router.send_message(frame);

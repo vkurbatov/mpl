@@ -19,6 +19,7 @@ public:
     virtual media_type_t media_type() const = 0;
     virtual frame_id_t frame_id() const = 0;
     virtual timestamp_t timestamp() const = 0;
+    virtual timestamp_t ntp_timestamp() const = 0;
 };
 
 }
