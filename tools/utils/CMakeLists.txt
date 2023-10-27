@@ -22,6 +22,7 @@ set(SOURCES
 
 set(PUBLIC_HEADERS
     system.h
+    check_defs.h
     filesystem.h
     frame_base.h
     option_base.h

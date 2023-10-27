@@ -14,13 +14,13 @@ const timestamp_t timestamp_null = 0;
 namespace durations
 {
 
-const timestamp_t nanosecond = 1;
-const timestamp_t microsecond = nanosecond * 1000;
-const timestamp_t millisecond = microsecond * 1000;
-const timestamp_t second = millisecond * 1000;
-const timestamp_t minute = second * 60;
-const timestamp_t hour = minute * 60;
-const timestamp_t day = hour * 24;
+constexpr timestamp_t nanosecond = 1;
+constexpr timestamp_t microsecond = nanosecond * 1000;
+constexpr timestamp_t millisecond = microsecond * 1000;
+constexpr timestamp_t second = millisecond * 1000;
+constexpr timestamp_t minute = second * 60;
+constexpr timestamp_t hour = minute * 60;
+constexpr timestamp_t day = hour * 24;
 
 constexpr timestamp_t nanoseconds(timestamp_t timestamp) { return timestamp * nanosecond; }
 constexpr timestamp_t microseconds(timestamp_t timestamp) { return timestamp * microsecond; }

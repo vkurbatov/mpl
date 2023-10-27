@@ -6,9 +6,6 @@
 namespace pt::utils
 {
 
-namespace utils
-{
-
 bool get_bit(const void* src_stream
              , std::int32_t src_bit_index);
 
@@ -106,8 +103,6 @@ public:
     void reverse_endian(int32_t byte_index, std::size_t byte_count);
 };
 
-
-}
 
 }
 

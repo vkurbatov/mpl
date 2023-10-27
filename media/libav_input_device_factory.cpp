@@ -15,10 +15,12 @@
 #include "tools/ffmpeg/libav_stream_grabber.h"
 #include "tools/ffmpeg/libav_input_format.h"
 #include "tools/ffmpeg/libav_utils.h"
+#include "tools/codec/h264/h264_utils.h"
 
 #include <thread>
 #include <shared_mutex>
 #include <atomic>
+#include <map>
 #include <iostream>
 
 
@@ -28,39 +30,41 @@ namespace mpl::media
 namespace detail
 {
 
-
-bool normalize_fragment_headers(void *data, std::size_t size)
-{
-    auto ptr = static_cast<std::uint8_t*>(data);
-    std::size_t  i = 0;
-
-    while(i < size)
-    {
-        std::uint32_t& seg_header = *reinterpret_cast<std::uint32_t*>(ptr + i);
-        auto seg_size = seg_header;
-        seg_size = utils::endian::big::convert(seg_size);
-        if (i + seg_size > size)
-        {
-            return false;
-        }
-        i += seg_size + 4;
-        seg_header = 0x01000000;
-    }
-
-    return i == size;
-}
-
 smart_buffer create_buffer(const pt::ffmpeg::frame_ref_t& libav_frame
                            , const pt::ffmpeg::stream_info_t& stream)
 {
     if (stream.codec_info.id == pt::ffmpeg::codec_id_h264)
     {
-        /*if (stream.codec_info.codec_params.parse_type == pt::ffmpeg::stream_parse_headers
-                || stream.codec_info.codec_params.parse_type == pt::ffmpeg::stream_parse_none)*/
+        if (stream.extra_data != nullptr)
         {
-            smart_buffer new_buffer(libav_frame.data,  libav_frame.size, true);
-            normalize_fragment_headers(new_buffer.map(), libav_frame.size);
-            return new_buffer;
+            auto fragmentation_type = pt::codec::get_fragmentation_type(stream.extra_data->data()
+                                                                        , stream.extra_data->size());
+            switch(fragmentation_type)
+            {
+                case pt::codec::h264_fragmentation_type_t::avcc_8:
+                case pt::codec::h264_fragmentation_type_t::avcc_16:
+                case pt::codec::h264_fragmentation_type_t::avcc_24:
+                case pt::codec::h264_fragmentation_type_t::avcc_32:
+                {
+                    auto fragments = pt::codec::split_fragments(fragmentation_type
+                                                                , libav_frame.data
+                                                                , libav_frame.size);
+                    smart_buffer new_buffer;
+                    for (const auto& f : fragments)
+                    {
+                        new_buffer.append_data(&pt::codec::annex_b_start_code, sizeof(pt::codec::annex_b_start_code));
+                        new_buffer.append_data(static_cast<const std::uint8_t*>(libav_frame.data) + f.payload_offset
+                                               , f.payload_length);
+                    }
+
+                    if (!new_buffer.is_empty())
+                    {
+                        return new_buffer;
+                    }
+                }
+                break;
+                default:;
+            }
         }
     }
 
@@ -70,24 +74,28 @@ smart_buffer create_buffer(const pt::ffmpeg::frame_ref_t& libav_frame
 
 }
 
+
 struct stream_t
 {
-    using list_t = std::vector<stream_t>;
+    static constexpr timestamp_t overtime = durations::seconds(2);
+
+    using array_t = std::vector<stream_t>;
+
     pt::ffmpeg::stream_info_t   stream_info;
     timestamp_t                 start_timestamp;
     frame_id_t                  frame_id;
     timestamp_t                 last_timestamp;
     timestamp_t                 real_timestamp;
-    adaptive_delay              delay;
+    timestamp_t                 current_timestamp;
 
     inline static timestamp_t now()
     {
         return utils::time::get_ticks();
     }
 
-    inline static stream_t::list_t create_list(pt::ffmpeg::stream_info_t::list_t&& streams)
+    inline static stream_t::array_t create_list(pt::ffmpeg::stream_info_t::list_t&& streams)
     {
-        stream_t::list_t stream_list;
+        stream_t::array_t stream_list;
 
         for (auto && s : streams)
         {
@@ -102,7 +110,8 @@ struct stream_t
         , start_timestamp(0)
         , frame_id(0)
         , last_timestamp(0)
-        , real_timestamp(0)
+        , real_timestamp(now())
+        , current_timestamp(0)
     {
         // reset();
     }
@@ -112,7 +121,8 @@ struct stream_t
         start_timestamp = 0;
         frame_id = 0;
         last_timestamp = 0;
-        real_timestamp = 0;
+        real_timestamp = now();
+        current_timestamp = 0;
     }
 
     void next()
@@ -125,37 +135,29 @@ struct stream_t
         auto dt = native_timestamp - last_timestamp;
         if (frame_id == 0
                 || native_timestamp < start_timestamp
-                || std::abs(dt) > stream_info.media_info.sample_rate())
+                || dt < 0
+                || dt > stream_info.media_info.sample_rate())
         {
-            start_timestamp = native_timestamp;
-            real_timestamp = now();
+            dt = 0;
         }
 
         last_timestamp = native_timestamp;
 
-        return native_timestamp;// - start_timestamp;
+        current_timestamp += dt;
+
+        return current_timestamp;
     }
 
-    void sync(timestamp_t native_timestamp)
+    void sync() const
     {
         auto rdt = now() - real_timestamp;
-        auto pdt = native_timestamp - start_timestamp;
-
-        pdt = durations::milliseconds(pdt * 1000) / stream_info.media_info.sample_rate();
+        auto pdt = durations::milliseconds(current_timestamp * 1000) / stream_info.media_info.sample_rate();
 
         auto dt = pdt - rdt;
-        if (dt > 0)
+        if (dt > overtime)
         {
-            utils::time::sleep(dt);
+            utils::time::sleep(dt - overtime);
         }
-        /*if (dt > 0)
-        {
-            delay.wait(dt);
-        }
-        else
-        {
-            delay.reset();
-        }*/
     }
 };
 
@@ -347,7 +349,7 @@ public:
 
                         if (libav_frame.info.stream_id == 0)
                         {
-                            stream.sync(libav_frame.info.timestamp());
+                            stream.sync();
                         }
                         stream.next();
                     }

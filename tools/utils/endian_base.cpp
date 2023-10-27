@@ -8,9 +8,6 @@
 namespace pt::utils
 {
 
-namespace utils
-{
-
 namespace detail
 {
 
@@ -65,8 +62,6 @@ void *convert_order(octet_order_t ocetet_order, void *octet_string, std::size_t 
     }
 
     return octet_string;
-}
-
 }
 
 }

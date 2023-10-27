@@ -4,7 +4,10 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace pt::utils
+namespace pt
+{
+
+namespace utils
 {
 
 enum class octet_order_t
@@ -12,9 +15,6 @@ enum class octet_order_t
     big_endian,
     little_endian
 };
-
-namespace utils
-{
 
 octet_order_t this_order();
 void* convert_order(void* octet_string, std::size_t size);

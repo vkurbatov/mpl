@@ -88,6 +88,7 @@ target_link_libraries(${PROJECT_NAME}
     ptwap
     ptio
     ptssl
+    ptcodec
     ptutils
     vncclient
     ${WEBRTC_AUDIO_PROCESSING_LIBRARIES}

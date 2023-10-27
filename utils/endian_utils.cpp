@@ -16,7 +16,7 @@ template<order_t Order>
 void* convert(void *value
               , std::size_t size)
 {
-    return pt::utils::utils::convert_order(Order, value, size);
+    return pt::utils::convert_order(Order, value, size);
 }
 
 template<order_t Order, typename T>

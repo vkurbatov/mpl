@@ -542,7 +542,7 @@ public:
                 libav_frame.media_data = utils::create_raw_array(buffer->data()
                                                                  , buffer->size());
                 libav_frame.info.pts = frame.timestamp();
-                libav_frame.info.dts = frame.timestamp();
+                libav_frame.info.dts = libav_frame.info.pts;
 
                 std::clog << "audio #" << frame.frame_id() << ", ts: " << frame.timestamp() << std::endl;
 
@@ -568,7 +568,7 @@ public:
                 libav_frame.media_data = utils::create_raw_array(buffer->data()
                                                                  , buffer->size());
                 libav_frame.info.pts = frame.timestamp();
-                libav_frame.info.dts = frame.timestamp();
+                libav_frame.info.dts = libav_frame.info.pts;
                 libav_frame.info.key_frame = frame.frame_type() == i_video_frame::frame_type_t::key_frame;
 
                 std::clog << "video #" << frame.frame_id() << ", ts: " << frame.timestamp() << std::endl;

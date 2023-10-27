@@ -7,9 +7,6 @@
 namespace pt::utils
 {
 
-namespace utils
-{
-
 constexpr std::int32_t bit_per_byte = 8;
 
 namespace detail
@@ -374,8 +371,6 @@ void bit_converter::reverse_endian(int32_t byte_index
                                    , std::size_t byte_count)
 {
     reverse_endian(m_bit_stream, byte_index, byte_count);
-}
-
 }
 
 }
