@@ -1,12 +1,12 @@
 #include "libav_format_utils.h"
 
 #include "utils/convert_utils.h"
-#include "media_option_types.h"
 #include "utils/option_helper.h"
 
-#include "audio_format_impl.h"
-#include "video_format_impl.h"
-#include "format_utils.h"
+#include "media/media_option_types.h"
+#include "media/audio_format_impl.h"
+#include "media/video_format_impl.h"
+#include "media/format_utils.h"
 
 #include "tools/ffmpeg/libav_base.h"
 

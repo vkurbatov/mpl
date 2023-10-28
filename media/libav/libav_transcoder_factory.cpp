@@ -11,14 +11,14 @@
 #include "core/event_channel_state.h"
 
 //#include "core/data_splitter.h"
-#include "audio_frame_splitter.h"
+#include "media/audio_frame_splitter.h"
 
-#include "media_option_types.h"
-#include "audio_frame_impl.h"
-#include "video_frame_impl.h"
-#include "video_info.h"
+#include "media/media_option_types.h"
+#include "media/audio_frame_impl.h"
+#include "media/video_frame_impl.h"
+#include "media/video_info.h"
 
-#include "audio_format_helper.h"
+#include "media/audio_format_helper.h"
 
 #include "tools/ffmpeg/libav_transcoder.h"
 

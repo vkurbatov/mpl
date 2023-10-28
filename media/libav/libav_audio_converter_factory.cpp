@@ -5,8 +5,8 @@
 #include "utils/option_helper.h"
 #include "core/i_buffer_collection.h"
 
-#include "audio_format_impl.h"
-#include "audio_frame_impl.h"
+#include "media/audio_format_impl.h"
+#include "media/audio_frame_impl.h"
 
 #include "tools/ffmpeg/libav_resampler.h"
 

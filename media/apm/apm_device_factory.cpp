@@ -6,11 +6,11 @@
 #include "utils/message_sink_impl.h"
 #include "utils/property_writer.h"
 #include "utils/message_event_impl.h"
-#include "core/event_channel_state.h"
 #include "utils/time_utils.h"
 
+#include "core/event_channel_state.h"
 
-#include "audio_frame_impl.h"
+#include "media/audio_frame_impl.h"
 
 #include "tools/wap/wap_processor.h"
 

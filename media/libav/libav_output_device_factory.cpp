@@ -10,10 +10,10 @@
 
 #include "utils/option_helper.h"
 
-
-#include "media_option_types.h"
-#include "audio_frame_impl.h"
-#include "video_frame_impl.h"
+#include "media/media_message_types.h"
+#include "media/media_option_types.h"
+#include "media/audio_frame_impl.h"
+#include "media/video_frame_impl.h"
 
 #include "tools/utils/sync_base.h"
 //#include "tools/ffmpeg/libav_stream_publisher.h"

@@ -2,6 +2,7 @@
 #include "command_camera_control.h"
 
 #include "media_types.h"
+#include "media_message_types.h"
 
 namespace mpl
 {

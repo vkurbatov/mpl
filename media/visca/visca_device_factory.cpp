@@ -1,18 +1,20 @@
 #include "visca_device_factory.h"
 
+#include "core/event_channel_state.h"
+
 #include "utils/enum_converter_defs.h"
 #include "utils/enum_serialize_defs.h"
-
 #include "utils/message_router_impl.h"
 #include "utils/message_sink_impl.h"
 #include "utils/property_writer.h"
 #include "utils/message_event_impl.h"
-#include "core/event_channel_state.h"
 #include "utils/time_utils.h"
-#include "media_types.h"
+
+#include "media/media_types.h"
+#include "media/media_message_types.h"
+#include "media/command_camera_control.h"
 
 #include "utils/message_command_impl.h"
-#include "command_camera_control.h"
 
 #include "tools/io/serial/serial_link.h"
 #include "tools/io/serial/serial_link_config.h"

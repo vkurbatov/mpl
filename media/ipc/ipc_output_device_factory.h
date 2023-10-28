@@ -2,7 +2,7 @@
 #define MPL_MEDIA_IPC_OUTPUT_DEVICE_FACTORY_H
 
 #include "core/i_shared_data_manager.h"
-#include "i_device_factory.h"
+#include "media/i_device_factory.h"
 
 namespace mpl::media
 {

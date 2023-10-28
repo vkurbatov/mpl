@@ -7,20 +7,19 @@
 #include "utils/property_writer.h"
 #include "utils/option_helper.h"
 
-#include "media/libav_audio_converter_factory.h"
-#include "media/libav_video_converter_factory.h"
+#include "media/libav/libav_audio_converter_factory.h"
+#include "media/libav/libav_video_converter_factory.h"
+#include "media/libav/libav_transcoder_factory.h"
+#include "media/libav/libav_output_device_factory.h"
 #include "media/media_converter_factory_impl.h"
-#include "media/libav_transcoder_factory.h"
 #include "media/smart_transcoder_factory.h"
-#include "media/ipc_input_device_factory.h"
+#include "media/ipc/ipc_input_device_factory.h"
 
 #include "media/audio_format_impl.h"
 #include "media/video_format_impl.h"
 #include "media/audio_frame_impl.h"
 #include "media/video_frame_impl.h"
 #include "media/media_option_types.h"
-
-#include "media/libav_output_device_factory.h"
 
 #include "tools/ffmpeg/libav_base.h"
 #include <string>

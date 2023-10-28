@@ -8,8 +8,8 @@
 #include "utils/endian_utils.h"
 #include "core/event_channel_state.h"
 
-#include "audio_frame_impl.h"
-#include "video_frame_impl.h"
+#include "media/audio_frame_impl.h"
+#include "media/video_frame_impl.h"
 
 #include "tools/utils/sync_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
@@ -74,10 +74,9 @@ smart_buffer create_buffer(const pt::ffmpeg::frame_ref_t& libav_frame
 
 }
 
-
 struct stream_t
 {
-    static constexpr timestamp_t overtime = durations::seconds(2);
+    static constexpr timestamp_t overtime = durations::seconds(3);
 
     using array_t = std::vector<stream_t>;
 
@@ -138,6 +137,7 @@ struct stream_t
                 || dt < 0
                 || dt > stream_info.media_info.sample_rate())
         {
+            // real_timestamp = now();
             dt = 0;
         }
 
@@ -158,6 +158,10 @@ struct stream_t
         {
             utils::time::sleep(dt - overtime);
         }
+    }
+    timestamp_t get_ntp_timestamp() const
+    {
+        return real_timestamp + durations::milliseconds(current_timestamp * 1000) / stream_info.media_info.sample_rate();
     }
 };
 
@@ -315,12 +319,13 @@ public:
 
         std::size_t error_counter = 0;
 
+/*
         enum class state_t
         {
             opening,
             reading,
             waiting
-        };
+        };*/
 
         while(is_open())
         {
@@ -400,6 +405,10 @@ public:
                                                , stream.frame_id
                                                , stream.push_timestamp(libav_frame.info.timestamp()));
 
+                        std::cout << "audio frame #" << stream.frame_id << ", ts: " << durations::to_milliseconds(stream.get_ntp_timestamp()) << std::endl;
+
+                        frame.set_ntp_timestamp(stream.get_ntp_timestamp());
+
                         frame.smart_buffers().set_buffer(media_buffer_index
                                                          , smart_buffer(libav_frame.data
                                                                         , libav_frame.size));
@@ -427,6 +436,10 @@ public:
                                                , stream.frame_id
                                                , stream.push_timestamp(libav_frame.info.timestamp())
                                                , frame_type);
+
+                        std::cout << "video frame #" << stream.frame_id << ", ts: " << durations::to_milliseconds(stream.get_ntp_timestamp()) << std::endl;
+
+                        frame.set_ntp_timestamp(stream.get_ntp_timestamp());
 
                         frame.smart_buffers().set_buffer(media_buffer_index
                                                          , detail::create_buffer(libav_frame

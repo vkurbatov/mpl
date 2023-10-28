@@ -1,4 +1,5 @@
 #include "video_frame_impl.h"
+#include "media_message_types.h"
 #include "utils/pointer_utils.h"
 #include "utils/time_utils.h"
 

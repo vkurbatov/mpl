@@ -1,7 +1,7 @@
 #ifndef MPL_MEDIA_V4L2_DEVICE_FACTORY_H
 #define MPL_MEDIA_V4L2_DEVICE_FACTORY_H
 
-#include "i_device_factory.h"
+#include "media/i_device_factory.h"
 
 namespace mpl::media
 {

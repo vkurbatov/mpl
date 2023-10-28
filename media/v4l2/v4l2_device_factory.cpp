@@ -10,15 +10,15 @@
 #include "utils/convert_utils.h"
 #include "utils/enum_utils.h"
 #include "utils/message_sink_impl.h"
-
-#include "video_frame_impl.h"
 #include "utils/message_command_impl.h"
-#include "command_camera_control.h"
+
+#include "media/video_frame_impl.h"
+#include "media/command_camera_control.h"
+#include "media/media_message_types.h"
+#include "media/video_frame_impl.h"
 
 #include "v4l2_utils.h"
 #include "tools/v4l2/v4l2_utils.h"
-
-#include "video_frame_impl.h"
 
 #include "tools/utils/sync_base.h"
 #include "tools/v4l2/v4l2_input_device.h"

@@ -11,10 +11,11 @@
 
 #include "utils/packetizer.h"
 
-#include "net/sq/sq_packet_builder.h"
+#include "media/media_message_types.h"
+#include "media/audio_frame_impl.h"
+#include "media/video_frame_impl.h"
 
-#include "audio_frame_impl.h"
-#include "video_frame_impl.h"
+#include "net/sq/sq_packet_builder.h"
 
 #include "tools/utils/sync_base.h"
 

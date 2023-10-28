@@ -38,9 +38,7 @@ constexpr std::uint32_t video_sample_rate = 90000;
 constexpr std::int64_t media_buffer_index = 0;
 constexpr std::int64_t extension_data_index = 1;
 
-
-
-constexpr message_subclass_t message_class_media = message_class_core + 1;
+// constexpr message_subclass_t message_class_media = message_class_core + 1;
 
 }
 

@@ -13,7 +13,9 @@
 #include "utils/task_manager_impl.h"
 #include "utils/adaptive_delay.h"
 
+#include "media_message_types.h"
 #include "media_types.h"
+
 #include "image_frame.h"
 #include "audio_sample.h"
 #include "draw_options.h"

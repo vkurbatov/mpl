@@ -8,7 +8,6 @@ set(SOURCES
     enum_serialize_impl.cpp
     media_utils.cpp
     format_utils.cpp
-    libav_format_utils.cpp
     audio_frame_splitter.cpp
     audio_format_impl.cpp
     audio_info.cpp
@@ -23,21 +22,22 @@ set(SOURCES
     video_frame_impl.cpp
     media_packetizer_impl.cpp
     timestamp_calculator.cpp
-    libav_video_converter_factory.cpp
-    libav_audio_converter_factory.cpp
-    libav_transcoder_factory.cpp
-    libav_input_device_factory.cpp
-    libav_output_device_factory.cpp
-    vnc_device_factory.cpp
-    apm_device_factory.cpp
-    visca_device_factory.cpp
+    ipc/ipc_input_device_factory.cpp
+    ipc/ipc_output_device_factory.cpp
+    libav/libav_video_converter_factory.cpp
+    libav/libav_audio_converter_factory.cpp
+    libav/libav_transcoder_factory.cpp
+    libav/libav_input_device_factory.cpp
+    libav/libav_output_device_factory.cpp
+    libav/libav_format_utils.cpp
+    vnc/vnc_device_factory.cpp
+    apm/apm_device_factory.cpp
+    visca/visca_device_factory.cpp
+    v4l2/v4l2_device_factory.cpp
+    v4l2/v4l2_utils.cpp
     media_converter_factory_impl.cpp
     media_serialize_impl.cpp
     smart_transcoder_factory.cpp
-    v4l2_device_factory.cpp
-    v4l2_utils.cpp
-    ipc_input_device_factory.cpp
-    ipc_output_device_factory.cpp
     draw_options.cpp
     image_info.cpp
     image_frame.cpp
@@ -55,6 +55,7 @@ set(PUBLIC_HEADERS
     media_types.h
     media_event_types.h
     media_command_types.h
+    media_message_types.h
     device_types.h
     audio_types.h
     audio_info.h
@@ -88,7 +89,6 @@ set(PUBLIC_HEADERS
 set(PRIVATE_HEADERS
     test.h
     media_utils.h
-    libav_format_utils.h
     format_utils.h
     audio_frame_splitter.h
     audio_format_impl.h
@@ -100,20 +100,21 @@ set(PRIVATE_HEADERS
     audio_level.h
     audio_sample.h
     timestamp_calculator.h
-    libav_video_converter_factory.h
-    libav_audio_converter_factory.h
-    libav_transcoder_factory.h
-    libav_input_device_factory.h
-    libav_output_device_factory.h
-    vnc_device_factory.h
-    apm_device_factory.h
-    visca_device_factory.h
+    ipc/ipc_input_device_factory.h
+    ipc/ipc_output_device_factory.h
+    libav/libav_format_utils.h
+    libav/libav_video_converter_factory.h
+    libav/libav_audio_converter_factory.h
+    libav/libav_transcoder_factory.h
+    libav/libav_input_device_factory.h
+    libav/libav_output_device_factory.h
+    vnc/vnc_device_factory.h
+    apm/apm_device_factory.h
+    visca/visca_device_factory.h
+    v4l2/v4l2_device_factory.h
+    v4l2/v4l2_utils.h
     media_converter_factory_impl.h
     smart_transcoder_factory.h
-    v4l2_device_factory.h
-    v4l2_utils.h
-    ipc_input_device_factory.h
-    ipc_output_device_factory.h
     draw_options.h
     image_info.h
     image_frame.h

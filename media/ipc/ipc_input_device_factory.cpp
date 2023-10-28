@@ -15,8 +15,8 @@
 #include "net/sq/sq_parser.h"
 #include "net/sq/sq_stitcher.h"
 
-#include "audio_frame_impl.h"
-#include "video_frame_impl.h"
+#include "media/audio_frame_impl.h"
+#include "media/video_frame_impl.h"
 
 #include <shared_mutex>
 #include <atomic>

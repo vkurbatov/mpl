@@ -1,7 +1,7 @@
 #include "v4l2_utils.h"
-#include "video_info.h"
 
-#include "video_format_impl.h"
+#include "media/video_info.h"
+#include "media/video_format_impl.h"
 
 #include "utils/convert_utils.h"
 

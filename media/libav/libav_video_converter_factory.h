@@ -1,7 +1,7 @@
 #ifndef MPL_MEDIA_LIBAV_VIDEO_CONVERTER_FACTORY_H
 #define MPL_MEDIA_LIBAV_VIDEO_CONVERTER_FACTORY_H
 
-#include "i_media_converter_factory.h"
+#include "media/i_media_converter_factory.h"
 
 namespace mpl::media
 {

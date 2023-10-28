@@ -9,12 +9,13 @@
 #include "utils/task_manager_impl.h"
 #include "core/event_channel_state.h"
 
-#include "media/libav_audio_converter_factory.h"
-#include "media/libav_video_converter_factory.h"
+#include "media/libav/libav_audio_converter_factory.h"
+#include "media/libav/libav_video_converter_factory.h"
+#include "media/libav/libav_transcoder_factory.h"
+#include "media/libav/libav_input_device_factory.h"
 #include "media/media_converter_factory_impl.h"
-#include "media/libav_transcoder_factory.h"
 #include "media/smart_transcoder_factory.h"
-#include "media/ipc_output_device_factory.h"
+#include "media/ipc/ipc_output_device_factory.h"
 #include "media/media_option_types.h"
 #include "media/i_video_frame.h"
 
@@ -23,8 +24,7 @@
 #include "media/audio_frame_impl.h"
 #include "media/video_frame_impl.h"
 
-#include "media/libav_input_device_factory.h"
-#include "media/v4l2_device_factory.h"
+#include "media/v4l2/v4l2_device_factory.h"
 
 #include "tools/ffmpeg/libav_base.h"
 #include <string>

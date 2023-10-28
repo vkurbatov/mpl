@@ -18,14 +18,15 @@
 #include "tools/utils/any_base.h"
 
 #include "media_option_types.h"
+#include "media_buffer.h"
 
 #include "utils/option_helper.h"
 #include "utils/packetizer.h"
 #include "utils/depacketizer.h"
 
-#include "v4l2_device_factory.h"
-#include "libav_input_device_factory.h"
-#include "libav_output_device_factory.h"
+#include "v4l2/v4l2_device_factory.h"
+#include "libav/libav_input_device_factory.h"
+#include "libav/libav_output_device_factory.h"
 #include "utils/message_sink_impl.h"
 #include "core/i_buffer_collection.h"
 #include "i_audio_frame.h"
@@ -33,15 +34,15 @@
 #include "i_video_frame.h"
 #include "i_video_format.h"
 
-#include "libav_audio_converter_factory.h"
-#include "libav_video_converter_factory.h"
+#include "libav/libav_audio_converter_factory.h"
+#include "libav/libav_video_converter_factory.h"
 #include "media_converter_factory_impl.h"
-#include "libav_transcoder_factory.h"
+#include "libav/libav_transcoder_factory.h"
 #include "smart_transcoder_factory.h"
 #include "media_composer_factory_impl.h"
 #include "layout_manager_mosaic_impl.h"
-#include "vnc_device_factory.h"
-#include "apm_device_factory.h"
+#include "vnc/vnc_device_factory.h"
+#include "apm/apm_device_factory.h"
 
 #include "command_camera_control.h"
 #include "utils/message_command_impl.h"
@@ -49,6 +50,7 @@
 #include "video_frame_types.h"
 
 #include "media_option_types.h"
+#include "media_message_types.h"
 
 #include "utils/ipc_manager_impl.h"
 #include "core/i_message_event.h"
@@ -57,12 +59,12 @@
 #include "core/event_channel_state.h"
 #include "utils/json_utils.h"
 
-#include "ipc_input_device_factory.h"
-#include "ipc_output_device_factory.h"
+#include "ipc/ipc_input_device_factory.h"
+#include "ipc/ipc_output_device_factory.h"
 
 #include "tools/wap/wap_processor.h"
 
-#include "visca_device_factory.h"
+#include "visca/visca_device_factory.h"
 
 #include "tools/ffmpeg/libav_base.h"
 #include "tools/ffmpeg/libav_stream_grabber.h"
@@ -2660,14 +2662,17 @@ void test26()
     auto input_device = input_device_factory.create_device(*libav_input_device_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
+    media_buffer    buffer(durations::seconds(3));
+
     auto input_handler = [&](const i_message& message)
     {
         switch(message.category())
         {
             case message_category_t::data:
             {
+                return buffer.send_message(message);
                 // std::cout << std::endl;
-                return output_device->sink(0)->send_message(message);
+                // return output_device->sink(0)->send_message(message);
             }
             break;
             default:;
@@ -2675,6 +2680,8 @@ void test26()
 
         return false;
     };
+
+    buffer.set_sink(output_device->sink(0));
 
     message_sink_impl input_sink(input_handler);
 

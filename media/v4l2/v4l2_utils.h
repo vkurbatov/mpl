@@ -1,7 +1,7 @@
 #ifndef MPL_MEDIA_V4L2_UTILS_H
 #define MPL_MEDIA_V4L2_UTILS_H
 
-#include "video_types.h"
+#include "media/video_types.h"
 #include "tools/v4l2/v4l2_base.h"
 
 namespace mpl::utils
