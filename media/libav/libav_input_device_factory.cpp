@@ -30,6 +30,7 @@ namespace mpl::media
 namespace detail
 {
 
+
 smart_buffer create_buffer(const pt::ffmpeg::frame_ref_t& libav_frame
                            , const pt::ffmpeg::stream_info_t& stream)
 {
@@ -76,7 +77,7 @@ smart_buffer create_buffer(const pt::ffmpeg::frame_ref_t& libav_frame
 
 struct stream_t
 {
-    static constexpr timestamp_t overtime = durations::seconds(3);
+    static constexpr timestamp_t overtime = durations::seconds(1);
 
     using array_t = std::vector<stream_t>;
 
@@ -84,7 +85,7 @@ struct stream_t
     timestamp_t                 start_timestamp;
     frame_id_t                  frame_id;
     timestamp_t                 last_timestamp;
-    timestamp_t                 real_timestamp;
+    timestamp_t                 ntp_timestamp;
     timestamp_t                 current_timestamp;
 
     inline static timestamp_t now()
@@ -109,7 +110,7 @@ struct stream_t
         , start_timestamp(0)
         , frame_id(0)
         , last_timestamp(0)
-        , real_timestamp(now())
+        , ntp_timestamp(now())
         , current_timestamp(0)
     {
         // reset();
@@ -120,7 +121,7 @@ struct stream_t
         start_timestamp = 0;
         frame_id = 0;
         last_timestamp = 0;
-        real_timestamp = now();
+        ntp_timestamp = now();
         current_timestamp = 0;
     }
 
@@ -137,7 +138,6 @@ struct stream_t
                 || dt < 0
                 || dt > stream_info.media_info.sample_rate())
         {
-            // real_timestamp = now();
             dt = 0;
         }
 
@@ -150,18 +150,18 @@ struct stream_t
 
     void sync() const
     {
-        auto rdt = now() - real_timestamp;
+        auto rdt = now() - ntp_timestamp;
         auto pdt = durations::milliseconds(current_timestamp * 1000) / stream_info.media_info.sample_rate();
 
         auto dt = pdt - rdt;
         if (dt > overtime)
         {
-            utils::time::sleep(dt - overtime);
+           utils::time::sleep(dt - overtime);
         }
     }
     timestamp_t get_ntp_timestamp() const
     {
-        return real_timestamp + durations::milliseconds(current_timestamp * 1000) / stream_info.media_info.sample_rate();
+        return ntp_timestamp + durations::milliseconds(current_timestamp * 1000) / stream_info.media_info.sample_rate();
     }
 };
 
@@ -307,7 +307,6 @@ public:
             change_state(channel_state_t::closed);
 
             return true;
-
         }
 
         return false;
@@ -318,14 +317,6 @@ public:
         change_state(channel_state_t::open);
 
         std::size_t error_counter = 0;
-
-/*
-        enum class state_t
-        {
-            opening,
-            reading,
-            waiting
-        };*/
 
         while(is_open())
         {
@@ -345,7 +336,7 @@ public:
                     pt::ffmpeg::frame_ref_t libav_frame;
                     if (native_input_device.read(libav_frame))
                     {
-                        // std::cout << "read delay: " << durations::to_milliseconds(utils::time::get_ticks() - tp) << std::endl;
+
 
                         auto& stream = streams[libav_frame.info.stream_id];
                         error_counter = 0;
@@ -405,8 +396,6 @@ public:
                                                , stream.frame_id
                                                , stream.push_timestamp(libav_frame.info.timestamp()));
 
-                        std::cout << "audio frame #" << stream.frame_id << ", ts: " << durations::to_milliseconds(stream.get_ntp_timestamp()) << std::endl;
-
                         frame.set_ntp_timestamp(stream.get_ntp_timestamp());
 
                         frame.smart_buffers().set_buffer(media_buffer_index
@@ -436,8 +425,6 @@ public:
                                                , stream.frame_id
                                                , stream.push_timestamp(libav_frame.info.timestamp())
                                                , frame_type);
-
-                        std::cout << "video frame #" << stream.frame_id << ", ts: " << durations::to_milliseconds(stream.get_ntp_timestamp()) << std::endl;
 
                         frame.set_ntp_timestamp(stream.get_ntp_timestamp());
 

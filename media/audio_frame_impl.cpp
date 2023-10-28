@@ -181,6 +181,7 @@ i_message::u_ptr_t audio_frame_impl::clone() const
                                   , m_frame_id
                                   , m_timestamp))
     {
+        clone_frame->set_ntp_timestamp(m_ntp_timestamp);
         clone_frame->m_buffers = m_buffers.fork();
         return clone_frame;
     }
@@ -253,6 +254,7 @@ i_message::u_ptr_t audio_frame_ptr_impl::clone() const
                                           , m_frame_id
                                           , m_timestamp))
             {
+                clone_frame->set_ntp_timestamp(m_ntp_timestamp);
                 clone_frame->m_buffers = m_buffers.fork();
                 return clone_frame;
             }
@@ -285,6 +287,7 @@ i_message::u_ptr_t audio_frame_ref_impl::clone() const
                                                            , m_frame_id
                                                            , m_timestamp))
         {
+            clone_frame->set_ntp_timestamp(m_ntp_timestamp);
             clone_frame->set_buffers(m_buffers.fork());
             return clone_frame;
         }

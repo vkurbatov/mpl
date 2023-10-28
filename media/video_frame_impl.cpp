@@ -204,6 +204,7 @@ i_message::u_ptr_t video_frame_impl::clone() const
                                   , m_timestamp
                                   , m_frame_type))
     {
+        clone_frame->set_ntp_timestamp(m_ntp_timestamp);
         clone_frame->m_buffers = m_buffers.fork();
         return clone_frame;
     }
@@ -278,6 +279,7 @@ i_message::u_ptr_t video_frame_ptr_impl::clone() const
                                           , m_timestamp
                                           , m_frame_type))
             {
+                clone_frame->set_ntp_timestamp(m_ntp_timestamp);
                 clone_frame->m_buffers = m_buffers.fork();
                 return clone_frame;
             }
@@ -313,6 +315,7 @@ i_message::u_ptr_t video_frame_ref_impl::clone() const
                                                            , m_timestamp
                                                            , m_frame_type))
         {
+            clone_frame->set_ntp_timestamp(m_ntp_timestamp);
             clone_frame->set_buffers(m_buffers.fork());
             return clone_frame;
         }

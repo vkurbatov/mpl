@@ -2662,7 +2662,7 @@ void test26()
     auto input_device = input_device_factory.create_device(*libav_input_device_params);
     auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
-    media_buffer    buffer(durations::seconds(3));
+    media_buffer    buffer(durations::seconds(2));
 
     auto input_handler = [&](const i_message& message)
     {
@@ -2692,7 +2692,7 @@ void test26()
 
     while(input_device->state() != channel_state_t::connected);
 
-    utils::time::sleep(durations::seconds(150));
+    utils::time::sleep(durations::seconds(1500));
 
     input_device->control(channel_control_t::close());
     output_device->control(channel_control_t::close());
