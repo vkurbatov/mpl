@@ -47,7 +47,7 @@ namespace detail
             option_writer writer(format->options());
 
             std::int32_t stream_id = streams.size();
-            writer.set<stream_id_t>(opt_fmt_track_id
+            writer.set<track_id_t>(opt_fmt_track_id
                                      , stream_id);
 
             streams.emplace_back(std::move(format));
@@ -147,8 +147,8 @@ struct timestamp_manager_t
     {
         using list_t = std::vector<stream_context_t>;
         pt::ffmpeg::stream_info_t       stream;
-        std::size_t                 frame_id;
-        timestamp_t                 first_timestamp;
+        std::size_t                     frame_id;
+        timestamp_t                     first_timestamp;
 
         stream_context_t(const pt::ffmpeg::stream_info_t& stream_info)
             : stream(stream_info)
@@ -312,7 +312,7 @@ class libav_output_device : public i_device
         pt::ffmpeg::stream_info_list_t native_streams() const
         {
             pt::ffmpeg::stream_info_list_t stream_list;
-            stream_id_t stream_id = 0;
+            track_id_t stream_id = 0;
             for (const auto& s : streams)
             {
                 pt::ffmpeg::stream_info_t stream_info;
@@ -329,40 +329,52 @@ class libav_output_device : public i_device
             return stream_list;
         }
 
-        const i_media_format* get_format(stream_id_t stream_id) const
+        const i_media_format* get_format(track_id_t track_id) const
         {
-            if (static_cast<std::size_t>(stream_id) < streams.size())
+            if (static_cast<std::size_t>(track_id) < streams.size())
             {
-                return streams[stream_id].get();
+                return streams[track_id].get();
             }
             return nullptr;
         }
 
-        stream_id_t get_stream_id(const i_media_format& format) const
+        inline track_id_t get_track_id(const i_media_format& format) const
         {
-            auto found_stream_id = option_reader(format.options()).get(opt_fmt_track_id
-                                                                       , stream_id_undefined);
-            if (found_stream_id == stream_id_undefined)
+            track_id_t track_id = 0;
+            for (const auto& s : streams)
             {
-                stream_id_t stream_id = 0;
+                if (s->is_compatible(format))
+                {
+                    return track_id;
+                }
+                track_id++;
+            }
+
+            return track_id_undefined;
+            /*
+            auto found_track_id = option_reader(format.options()).get(opt_fmt_track_id
+                                                                      , track_id_undefined);
+            if (found_track_id == track_id_undefined)
+            {
+                track_id_t track_id = 0;
                 for (const auto& s : streams)
                 {
                     if (s->is_compatible(format))
                     {
-                        return stream_id;
+                        return track_id;
                     }
-                    stream_id++;
+                    track_id++;
                 }
             }
-            else if (auto f = get_format(found_stream_id))
+            else if (auto f = get_format(found_track_id))
             {
                 if (f->is_compatible(format))
                 {
-                    return found_stream_id;
+                    return found_track_id;
                 }
             }
 
-            return stream_id_undefined;
+            return track_id_undefined;*/
         }
 
         pt::ffmpeg::libav_output_format::config_t native_config() const
@@ -531,8 +543,8 @@ public:
 
     bool on_audio_frame(const i_audio_frame& frame)
     {
-        auto stream_id = m_device_params.get_stream_id(frame.format());
-        if (stream_id != stream_id_undefined)
+        auto stream_id = m_device_params.get_track_id(frame.format());
+        if (stream_id != track_id_undefined)
         {
             if (auto buffer = frame.data().get_buffer(media_buffer_index))
             {
@@ -557,8 +569,8 @@ public:
 
     bool on_video_frame(const i_video_frame& frame)
     {
-        auto stream_id = m_device_params.get_stream_id(frame.format());
-        if (stream_id != stream_id_undefined)
+        auto stream_id = m_device_params.get_track_id(frame.format());
+        if (stream_id != track_id_undefined)
         {
             if (auto buffer = frame.data().get_buffer(media_buffer_index))
             {
@@ -634,13 +646,13 @@ public:
             {
                 std::size_t err_count = 0;
                 change_state(channel_state_t::connected);
+
                 while(libav_output_device::is_open())
                 {
                     pt::ffmpeg::frame_t libav_frame;
                     while(m_frame_manager.fetch_frame(libav_frame)
                           && libav_output_device::is_open())
                     {
-
                         if (pts_manager.check_and_rescale_frame(libav_frame))
                         {
                             if (!native_publisher.write(libav_frame.get_frame_ref()))
@@ -658,6 +670,7 @@ public:
                     {
                         break;
                     }
+
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
                 change_state(channel_state_t::disconnecting);

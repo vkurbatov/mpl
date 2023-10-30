@@ -12,8 +12,8 @@ namespace mpl::media
         output
     };
 
-    using stream_id_t = std::int32_t;
-    constexpr stream_id_t stream_id_undefined = 0;
+    using track_id_t = std::int32_t;
+    constexpr track_id_t track_id_undefined = 0;
 }
 
 #endif // MPL_MEDIA_STREAM_TYPES_H

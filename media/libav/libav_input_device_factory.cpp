@@ -173,7 +173,7 @@ class libav_input_device : public i_device
 
     struct device_params_t
     {
-        device_type_t   device_type = device_type_t::libav_in;
+        device_type_t   device_type;
         std::string     url;
         std::string     options;
 

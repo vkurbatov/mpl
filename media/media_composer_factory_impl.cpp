@@ -12,9 +12,11 @@
 #include "utils/property_writer.h"
 #include "utils/task_manager_impl.h"
 #include "utils/adaptive_delay.h"
+#include "utils/option_helper.h"
 
 #include "media_message_types.h"
 #include "media_types.h"
+#include "media_option_types.h"
 
 #include "image_frame.h"
 #include "audio_sample.h"
@@ -130,7 +132,8 @@ class media_composer : public i_media_composer
 
             audio_track(i_media_converter::u_ptr_t&& media_converter
                         , compose_stream_ptr_t&& compose_stream
-                        , const i_audio_format& audio_format)
+                        , const i_audio_format& audio_format
+                        , stream_id_t stream_id)
                 : m_message_sink([&](const auto& message_frame) { return on_converter_message(message_frame); })
                 , m_media_converter(std::move(media_converter))
                 , m_compose_stream(std::move(compose_stream))
@@ -141,6 +144,8 @@ class media_composer : public i_media_composer
                 , m_frame_id(0)
                 , m_timestamp_calculator(audio_format.sample_rate())
             {
+                option_writer(m_audio_frame.options()).set(opt_fmt_stream_id
+                                                           , stream_id);
                 if (m_media_converter)
                 {
                     m_media_converter->set_sink(&m_message_sink);
@@ -190,7 +195,7 @@ class media_composer : public i_media_composer
                 return nullptr;
             }
 
-            void update_params(const stream_params_t& new_params)
+            inline void update_params(const stream_params_t& new_params)
             {
                 m_compose_stream->options().volume = new_params.volume;
                 m_compose_stream->options().enabled = new_params.audio_enabled;
@@ -250,7 +255,6 @@ class media_composer : public i_media_composer
                 {
                     m_audio_frame.smart_buffers().set_buffer(media_buffer_index
                                                              , smart_buffer(&sample->sample_data));
-
                     m_audio_frame.set_timestamp(m_timestamp);
                     m_audio_frame.set_frame_id(m_frame_id);
 
@@ -293,6 +297,7 @@ class media_composer : public i_media_composer
             video_track(i_media_converter::u_ptr_t&& media_converter
                         , compose_stream_ptr_t&& compose_stream
                         , const i_video_format& video_format
+                        , stream_id_t stream_id
                         , image_frame_t&& user_image = {})
                 : m_message_sink([&](const auto& message_frame) { return on_converter_message(message_frame); })
                 , m_media_converter(std::move(media_converter))
@@ -306,6 +311,8 @@ class media_composer : public i_media_composer
                 , m_frame_id(0)
                 , m_timestamp_calculator(video_sample_rate)
             {
+                option_writer(m_video_frame.options()).set(opt_fmt_stream_id
+                                                           , stream_id);
                 if (m_media_converter)
                 {
                     m_media_converter->set_sink(&m_message_sink);
@@ -353,14 +360,14 @@ class media_composer : public i_media_composer
                 m_compose_stream->options().enabled = new_params.video_enabled;
             }
 
-            void clear()
+            inline void clear()
             {
                 lock_t lock(m_safe_mutex);
                 m_frame_queue = {};
                 m_last_frame.reset();
             }
 
-            timestamp_t elapsed_frame_time() const
+            inline timestamp_t elapsed_frame_time() const
             {
                 return utils::time::get_ticks() - m_last_frame_time;
             }
@@ -545,10 +552,10 @@ class media_composer : public i_media_composer
 
         message_router_impl     m_router;
 
+        stream_id_t             m_stream_id;
+
         audio_track             m_audio_track;
         video_track             m_video_track;
-
-        stream_id_t             m_stream_id;
 
     public:
 
@@ -582,15 +589,17 @@ class media_composer : public i_media_composer
                         , const i_property& stream_params)
             : m_params(stream_params)
             , m_manager(manager)
+            , m_stream_id(manager.next_stream_id())
             , m_audio_track(manager.create_audio_converter()
                             , manager.create_audio_compose_stream(m_params)
-                            , manager.composer_params().audio_params.format)
+                            , manager.composer_params().audio_params.format
+                            , m_stream_id)
             , m_video_track(manager.create_video_converter()
                             , manager.create_video_compose_stream(m_params)
                             , manager.composer_params().video_params.format
+                            , m_stream_id
                             , load_image(m_params.user_image_path
                                          , manager.composer_params().video_params.format.format_id()))
-            , m_stream_id(manager.next_stream_id())
         {
 
         }
@@ -619,7 +628,7 @@ class media_composer : public i_media_composer
         }
 
 
-        bool push_frame(const i_media_frame& media_frame)
+        inline bool push_frame(const i_media_frame& media_frame)
         {
             switch(media_frame.media_type())
             {
@@ -668,7 +677,7 @@ class media_composer : public i_media_composer
                     || m_params.video_enabled;
         }
 
-        void prepare_audio()
+        inline void prepare_audio()
         {
             m_audio_track.prepare_inputs();
         }
@@ -678,7 +687,7 @@ class media_composer : public i_media_composer
             m_video_track.prepare_inputs();
         }
 
-        bool feedback_audio()
+        inline bool feedback_audio()
         {
             if (auto frame = m_audio_track.compose_frame())
             {
@@ -688,7 +697,7 @@ class media_composer : public i_media_composer
             return false;
         }
 
-        bool feedback_video()
+        inline bool feedback_video()
         {
             if (auto frame = m_video_track.compose_frame())
             {
@@ -706,7 +715,6 @@ class media_composer : public i_media_composer
             {
                 m_audio_track.update_params(m_params);
                 m_video_track.update_params(m_params);
-                // m_audio_track.set_volume(m_params.volume);
                 return true;
             }
 

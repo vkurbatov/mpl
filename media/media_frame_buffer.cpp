@@ -1,4 +1,4 @@
-#include "media_buffer.h"
+#include "media_frame_buffer.h"
 #include "utils/pointer_utils.h"
 #include "utils/enum_utils.h"
 #include "media_types.h"
@@ -10,18 +10,18 @@
 namespace mpl::media
 {
 
-media_buffer::config_t::config_t(timestamp_t sync_duration)
+media_frame_buffer::config_t::config_t(timestamp_t sync_duration)
     : sync_duration(sync_duration)
 {
 
 }
 
-bool media_buffer::config_t::is_transit() const
+bool media_frame_buffer::config_t::is_transit() const
 {
     return sync_duration <= timestamp_null;
 }
 
-media_buffer::media_buffer(const config_t &config
+media_frame_buffer::media_frame_buffer(const config_t &config
                            , i_message_sink *output_sink)
     : m_config(config)
     , m_output_sink(output_sink)
@@ -29,17 +29,17 @@ media_buffer::media_buffer(const config_t &config
 
 }
 
-void media_buffer::set_sink(i_message_sink *output_sink)
+void media_frame_buffer::set_sink(i_message_sink *output_sink)
 {
     m_output_sink = output_sink;
 }
 
-std::size_t media_buffer::pending_frames() const
+std::size_t media_frame_buffer::pending_frames() const
 {
     return m_frames.size();
 }
 
-timestamp_t media_buffer::delay() const
+timestamp_t media_frame_buffer::delay() const
 {
     if (!m_frames.empty())
     {
@@ -49,7 +49,7 @@ timestamp_t media_buffer::delay() const
     return timestamp_null;
 }
 
-std::size_t media_buffer::process()
+std::size_t media_frame_buffer::process()
 {
     std::size_t result = 0;
 
@@ -62,12 +62,12 @@ std::size_t media_buffer::process()
     return result;
 }
 
-void media_buffer::reset()
+void media_frame_buffer::reset()
 {
     m_frames.clear();
 }
 
-bool media_buffer::send_message(const i_message &message)
+bool media_frame_buffer::send_message(const i_message &message)
 {
     if (message.subclass() == message_class_media)
     {
@@ -94,7 +94,7 @@ bool media_buffer::send_message(const i_message &message)
     return false;
 }
 
-bool media_buffer::push_frame(timestamp_t timestamp
+bool media_frame_buffer::push_frame(timestamp_t timestamp
                               , i_media_frame::u_ptr_t &&frame)
 {
     m_frames.emplace(timestamp
@@ -103,13 +103,13 @@ bool media_buffer::push_frame(timestamp_t timestamp
     return true;
 }
 
-bool media_buffer::send_frame(const i_media_frame &frame)
+bool media_frame_buffer::send_frame(const i_media_frame &frame)
 {
     return m_output_sink != nullptr
             && m_output_sink->send_message(frame);
 }
 
-i_media_frame::u_ptr_t media_buffer::fetch_frame()
+i_media_frame::u_ptr_t media_frame_buffer::fetch_frame()
 {
     if (delay() >= m_config.sync_duration)
     {

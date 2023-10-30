@@ -18,7 +18,7 @@
 #include "tools/utils/any_base.h"
 
 #include "media_option_types.h"
-#include "media_buffer.h"
+#include "media_frame_buffer.h"
 
 #include "utils/option_helper.h"
 #include "utils/packetizer.h"
@@ -51,6 +51,7 @@
 
 #include "media_option_types.h"
 #include "media_message_types.h"
+#include "media_frame_selector.h"
 
 #include "utils/ipc_manager_impl.h"
 #include "core/i_message_event.h"
@@ -1354,7 +1355,7 @@ void test17()
 
     option_writer writer(video_format.options());
     writer.set<std::int32_t>(opt_fmt_track_id, 1);
-    writer.set<std::int32_t>(opt_fmt_device_id, 2);
+    writer.set<std::int32_t>(opt_fmt_stream_id, 2);
 
     raw_array_t buffer(640 * 480 * 3);
     std::int8_t i = 0;
@@ -1460,7 +1461,7 @@ void test18()
             timestamp_t timestamp = 0;
 
             option_writer writer(video_format.options());
-            writer.set<std::int32_t>(mpl::media::opt_fmt_device_id, 1);
+            writer.set<std::int32_t>(mpl::media::opt_fmt_stream_id, 1);
             writer.set<std::int32_t>(mpl::media::opt_fmt_track_id, 2);
 
 
@@ -2608,7 +2609,8 @@ void test26()
     libav_input_device_factory input_device_factory;
     libav_output_device_factory output_device_factory;
 
-    std::string input_url = "https://dagestan.mediacdn.ru/cdn/dagestan/playlist_hdhigh.m3u8";
+    // std::string input_url = "https://dagestan.mediacdn.ru/cdn/dagestan/playlist_hdhigh.m3u8";
+    std::string input_url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
     // std::string input_url = "/home/user/My/sportrecs/basket_streaming_video.mp4";
     // std::string input_url =  "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov";
@@ -2620,17 +2622,18 @@ void test26()
         writer.set<std::string>("url", input_url);
     }
 
-
+/*
     audio_format_impl audio_format(audio_format_id_t::aac
-                                   , 48000
+                                   , 44100 //48000
                                    , 2);
     video_format_impl video_format(video_format_id_t::h264
                                    , 1920
                                    , 1080
-                                   , 25);
+                                   , 25);*/
 
     // option_writer(video_format.options()).set(opt_fmt_track_id, 1);
 
+    /*
     auto libav_output_device_params = property_helper::create_object();
     {
         property_writer writer(*libav_output_device_params);
@@ -2655,14 +2658,14 @@ void test26()
         }
 
         writer.set("streams", streams);
-    }
+    }*/
 
 
 
     auto input_device = input_device_factory.create_device(*libav_input_device_params);
-    auto output_device = output_device_factory.create_device(*libav_output_device_params);
 
-    media_buffer    buffer(durations::seconds(2));
+    media_frame_buffer    buffer(durations::seconds(2));
+    media_frame_selector  selector({});
 
     auto input_handler = [&](const i_message& message)
     {
@@ -2681,16 +2684,42 @@ void test26()
         return false;
     };
 
-    buffer.set_sink(output_device->sink(0));
+
+    buffer.set_sink(&selector);
+
 
     message_sink_impl input_sink(input_handler);
-
     input_device->source(0)->add_sink(&input_sink);
+    input_device->control(channel_control_t::open());
+    while(input_device->state() != channel_state_t::connected);
+    utils::time::sleep(durations::seconds(3));
+
+    auto libav_output_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        i_property::s_array_t streams;
+
+
+        if (auto vp = utils::property::serialize(*selector.video_format()))
+        {
+            streams.emplace_back(std::move(vp));
+        }
+
+        if (auto ap = utils::property::serialize(*selector.audio_format()))
+        {
+            streams.emplace_back(std::move(ap));
+        }
+
+        writer.set("streams", streams);
+    }
+
+
+    auto output_device = output_device_factory.create_device(*libav_output_device_params);
+    selector.set_sink(output_device->sink(0));
 
     output_device->control(channel_control_t::open());
-    input_device->control(channel_control_t::open());
-
-    while(input_device->state() != channel_state_t::connected);
+    // input_device->control(channel_control_t::open());
 
     utils::time::sleep(durations::seconds(1500));
 

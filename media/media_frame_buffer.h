@@ -1,5 +1,5 @@
-#ifndef MPL_MEDIA_BUFFER_H
-#define MPL_MEDIA_BUFFER_H
+#ifndef MPL_MEDIA_FRAME_BUFFER_H
+#define MPL_MEDIA_FRAME_BUFFER_H
 
 #include "core/i_message_sink.h"
 #include "i_media_frame.h"
@@ -8,7 +8,7 @@
 namespace mpl::media
 {
 
-class media_buffer : public i_message_sink
+class media_frame_buffer : public i_message_sink
 {
 public:
     struct config_t
@@ -29,7 +29,7 @@ private:
     frame_map_t             m_frames;
 
 public:
-    media_buffer(const config_t& config
+    media_frame_buffer(const config_t& config
                  , i_message_sink* output_sink = {});
 
     void set_sink(i_message_sink* output_sink);
@@ -52,4 +52,4 @@ private:
 
 }
 
-#endif // MPL_MEDIA_BUFFER_H
+#endif // MPL_MEDIA_FRAME_BUFFER_H

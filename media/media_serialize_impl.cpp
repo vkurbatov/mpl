@@ -15,6 +15,24 @@ namespace mpl
 
 using namespace media;
 
+// i_audio_format
+template<>
+bool utils::property::serialize(const i_audio_format& value, i_property& property)
+{
+    property_writer writer(property);
+
+    if (writer.set("media_type", media_type_t::audio)
+            && writer.set("format", value.format_id())
+            && writer.set("sample_rate", value.sample_rate())
+            && writer.set("channels", value.channels()))
+    {
+        utils::convert_format_options(value.options(), property);
+        return true;
+    }
+
+    return false;
+}
+
 // audio_format_impl
 template<>
 bool utils::property::serialize(const audio_format_impl& value, i_property& property)
@@ -29,6 +47,25 @@ bool utils::property::deserialize(audio_format_impl& value
     return value.set_params(property);
 }
 
+
+// i_video_format
+template<>
+bool utils::property::serialize(const i_video_format& value, i_property& property)
+{
+    property_writer writer(property);
+
+    if (writer.set("media_type", media_type_t::video)
+            && writer.set("format", value.format_id())
+            && writer.set("width", value.width())
+            && writer.set("height", value.height())
+            && writer.set("frame_rate", value.frame_rate()))
+    {
+        utils::convert_format_options(value.options(), property);
+        return true;
+    }
+
+    return false;
+}
 
 // video_format_impl
 template<>
