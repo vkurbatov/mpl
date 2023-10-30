@@ -16,7 +16,7 @@
 #include "media/media_option_types.h"
 #include "media/audio_frame_impl.h"
 #include "media/video_frame_impl.h"
-#include "media/video_info.h"
+#include "media/video_format_info.h"
 
 #include "media/audio_format_helper.h"
 

@@ -39,7 +39,7 @@ void animation(relative_frame_rect_t& dst_rect
 
 }
 
-video_composer::config_t::config_t(const image_info_t &frame_info)
+video_composer::config_t::config_t(const video_info_t &frame_info)
     : frame_info(frame_info)
 {
 

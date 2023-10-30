@@ -140,7 +140,7 @@ audio_level::audio_level(const config_t& config)
     reset();
 }
 
-bool audio_level::push_frame(const sample_info_t& sample_info
+bool audio_level::push_frame(const audio_info_t& sample_info
                              , const void *data
                              , std::size_t samples)
 {

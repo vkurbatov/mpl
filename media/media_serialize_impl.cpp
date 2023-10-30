@@ -7,13 +7,38 @@
 #include "video_format_impl.h"
 #include "video_frame_types.h"
 
+#include "track_info.h"
+
 #include "image_frame.h"
 #include "audio_sample.h"
+
+#include "audio_info.h"
+#include "video_info.h"
 
 namespace mpl
 {
 
 using namespace media;
+
+// audio_info_t
+template<>
+bool utils::property::serialize(const audio_info_t& value, i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("format_id", value.format_id)
+            && writer.set("sample_rate", value.sample_rate)
+            && writer.set("channels", value.channels);
+}
+
+template<>
+bool utils::property::deserialize(audio_info_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("format_id", value.format_id)
+            | reader.get("sample_rate", value.sample_rate)
+            | reader.get("channels", value.channels);
+}
 
 // i_audio_format
 template<>
@@ -47,6 +72,27 @@ bool utils::property::deserialize(audio_format_impl& value
     return value.set_params(property);
 }
 
+// video_info_t
+template<>
+bool utils::property::serialize(const video_info_t& value, i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("format_id", value.format_id)
+            && writer.set("width", value.size.width)
+            && writer.set("height", value.size.height)
+            && writer.set("frame_rate", value.frame_rate);
+}
+
+template<>
+bool utils::property::deserialize(video_info_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("format_id", value.format_id)
+            | reader.get("width", value.size.width)
+            | reader.get("height", value.size.height)
+            | reader.get("frame_rate", value.frame_rate);
+}
 
 // i_video_format
 template<>
@@ -203,48 +249,24 @@ bool utils::property::deserialize(relative_frame_rect_t& value
             | reader.get("size", value.size);
 }
 
-// image_info_t
+// track_info_t
 template<>
-bool utils::property::serialize(const image_info_t& value
-                                , i_property& property)
+bool utils::property::serialize(const track_info_t& value, i_property& property)
 {
     property_writer writer(property);
-    return writer.set("format_id", value.format_id)
-            && writer.set("width", value.size.width)
-            && writer.set("height", value.size.height);
-
+    return writer.set("stream_id", value.stream_id)
+            && writer.set("track_id", value.track_id)
+            && writer.set("layer_id", value.layer_id);
 }
 
 template<>
-bool utils::property::deserialize(image_info_t& value
+bool utils::property::deserialize(track_info_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
-    return reader.get("format_id", value.format_id)
-            | reader.get("width", value.size.width)
-            | reader.get("height", value.size.height);
-}
-
-// sample_info_t
-template<>
-bool utils::property::serialize(const sample_info_t& value
-                                , i_property& property)
-{
-    property_writer writer(property);
-    return writer.set("format_id", value.format_id)
-            && writer.set("sample_rate", value.sample_rate)
-            && writer.set("channels", value.channels);
-
-}
-
-template<>
-bool utils::property::deserialize(sample_info_t& value
-                                  , const i_property& property)
-{
-    property_reader reader(property);
-    return reader.get("format_id", value.format_id)
-            | reader.get("sample_rate", value.sample_rate)
-            | reader.get("channels", value.channels);
+    return reader.get("stream_id", value.stream_id)
+            | reader.get("track_id", value.track_id)
+            | reader.get("layer_id", value.layer_id);
 }
 
 /*

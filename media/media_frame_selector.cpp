@@ -95,11 +95,11 @@ bool select_frame(const i_video_frame& frame
 
 }
 
-media_frame_selector::config_t::config_t()
+media_frame_selector::config_t::config_t(timestamp_t active_timeout)
+    : active_timeout(active_timeout)
 {
 
 }
-
 
 media_frame_selector::media_frame_selector(const config_t &config
                                            , i_message_sink *output_sink)

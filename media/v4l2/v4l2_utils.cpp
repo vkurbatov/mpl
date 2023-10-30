@@ -1,6 +1,6 @@
 #include "v4l2_utils.h"
 
-#include "media/video_info.h"
+#include "media/video_format_info.h"
 #include "media/video_format_impl.h"
 
 #include "utils/convert_utils.h"

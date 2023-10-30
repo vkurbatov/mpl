@@ -189,7 +189,7 @@ std::size_t audio_mixer::process_samples(audio_format_id_t sample_format
     return 0;
 }
 
-audio_mixer::audio_mixer(const sample_info_t& sample_info
+audio_mixer::audio_mixer(const audio_info_t& sample_info
                            , std::size_t buffer_size)
     : m_sample_info(sample_info)
     , m_audio_data(m_sample_info.size_from_samples(buffer_size + 1))
@@ -201,7 +201,7 @@ audio_mixer::audio_mixer(const sample_info_t& sample_info
 
 }
 
-void audio_mixer::setup(const sample_info_t& sample_info
+void audio_mixer::setup(const audio_info_t& sample_info
                              , std::size_t buffer_size)
 {
     auto data_size = sample_info.size_from_samples(buffer_size + 1);
@@ -215,7 +215,7 @@ void audio_mixer::setup(const sample_info_t& sample_info
     }
 }
 
-const sample_info_t& audio_mixer::sample_info() const
+const audio_info_t& audio_mixer::sample_info() const
 {
     return m_sample_info;
 }

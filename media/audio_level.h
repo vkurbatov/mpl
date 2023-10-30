@@ -6,7 +6,7 @@
 namespace mpl::media
 {
 
-struct sample_info_t;
+struct audio_info_t;
 
 class audio_level
 {
@@ -32,7 +32,7 @@ private:
 public:
     audio_level(const config_t& config = {});
 
-    bool push_frame(const sample_info_t& sample_info
+    bool push_frame(const audio_info_t& sample_info
                     , const void* data
                     , std::size_t samples);
     void reset(bool only_level = false);

@@ -15,8 +15,8 @@ public:
 
     struct config_t
     {
-        image_info_t    frame_info;
-        config_t(const image_info_t& frame_info);
+        video_info_t    frame_info;
+        config_t(const video_info_t& frame_info);
     };
 
     struct compose_options_t

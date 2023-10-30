@@ -10,18 +10,20 @@ set(SOURCES
     format_utils.cpp
     audio_frame_splitter.cpp
     audio_format_impl.cpp
-    audio_info.cpp
+    audio_format_info.cpp
     audio_frame_impl.cpp
     audio_format_helper.cpp
     audio_mixer.cpp
     audio_level.cpp
-    sample_info.cpp
+    audio_info.cpp
     audio_sample.cpp
     video_format_impl.cpp
-    video_info.cpp
+    video_format_info.cpp
     video_frame_impl.cpp
+    video_info.cpp
     media_packetizer_impl.cpp
     timestamp_calculator.cpp
+    track_info.cpp
     ipc/ipc_input_device_factory.cpp
     ipc/ipc_output_device_factory.cpp
     libav/libav_video_converter_factory.cpp
@@ -39,7 +41,6 @@ set(SOURCES
     media_serialize_impl.cpp
     smart_transcoder_factory.cpp
     draw_options.cpp
-    image_info.cpp
     image_frame.cpp
     image_builder.cpp
     audio_composer.cpp
@@ -59,14 +60,16 @@ set(PUBLIC_HEADERS
     media_message_types.h
     device_types.h
     audio_types.h
+    audio_format_info.h
     audio_info.h
-    sample_info.h
     video_types.h
     video_frame_types.h
+    video_format_info.h
     video_info.h
     stream_types.h
     media_option_types.h
     command_camera_control.h
+    track_info.h
     i_media_stream.h
     i_media_format.h
     i_message_media_data.h
@@ -117,7 +120,6 @@ set(PRIVATE_HEADERS
     media_converter_factory_impl.h
     smart_transcoder_factory.h
     draw_options.h
-    image_info.h
     image_frame.h
     image_builder.h
     audio_composer.h

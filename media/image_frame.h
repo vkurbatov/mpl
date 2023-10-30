@@ -3,7 +3,7 @@
 
 #include "video_types.h"
 #include "video_frame_types.h"
-#include "image_info.h"
+#include "video_info.h"
 
 #include "utils/smart_buffer.h"
 
@@ -14,13 +14,13 @@ namespace mpl::media
 
 struct image_frame_t
 {
-    image_info_t            image_info;
+    video_info_t            image_info;
     smart_buffer            image_data;
 
-    image_frame_t(const image_info_t& image_info = {}
+    image_frame_t(const video_info_t& image_info = {}
                  , smart_buffer&& image_data = {});
 
-    image_frame_t(const image_info_t& image_info
+    image_frame_t(const video_info_t& image_info
                  , const smart_buffer& image_data);
 
     bool operator == (const image_frame_t& other) const;

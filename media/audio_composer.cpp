@@ -7,7 +7,7 @@
 namespace mpl::media
 {
 
-audio_composer::config_t::config_t(const sample_info_t &sample_info
+audio_composer::config_t::config_t(const audio_info_t &sample_info
                                    , std::size_t samples)
     : sample_info(sample_info)
     , samples(samples)

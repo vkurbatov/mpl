@@ -16,7 +16,8 @@ class media_frame_selector : public i_message_sink
 public:
     struct config_t
     {
-        config_t();
+        timestamp_t     active_timeout;
+        config_t(timestamp_t active_timeout = timestamp_null);
     };
     using selection_handler_t = std::function<bool(const i_media_frame&, const i_media_format*)>;
 private:

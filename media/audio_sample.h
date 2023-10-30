@@ -2,21 +2,21 @@
 #define MPL_AUDIO_SAMPLE_H
 
 #include "utils/smart_buffer.h"
-#include "sample_info.h"
 #include "audio_types.h"
+#include "audio_info.h"
 
 namespace mpl::media
 {
 
 struct audio_sample_t
 {
-    sample_info_t       sample_info;
+    audio_info_t        sample_info;
     smart_buffer        sample_data;
 
-    audio_sample_t(const sample_info_t& sample_info = {}
+    audio_sample_t(const audio_info_t& sample_info = {}
                  , smart_buffer&& sample_data = {});
 
-    audio_sample_t(const sample_info_t& sample_info
+    audio_sample_t(const audio_info_t& sample_info
                    , const smart_buffer& sample_data);
 
     bool operator == (const audio_sample_t& other) const;

@@ -796,9 +796,9 @@ class media_composer : public i_media_composer
             : m_owner(owner)
             , m_converter_factory(converter_factory)
             , m_layout_manager(layout_manager)
-            , m_audio_composer({ sample_info_t(m_owner.m_composer_params.audio_params.format)
+            , m_audio_composer({ audio_info_t(m_owner.m_composer_params.audio_params.format)
                                , m_owner.m_composer_params.audio_params.frame_size() })
-            , m_video_composer(image_info_t(m_owner.m_composer_params.video_params.format))
+            , m_video_composer(video_info_t(m_owner.m_composer_params.video_params.format))
             , m_stream_ids(0)
         {
 

@@ -1,29 +1,35 @@
-#ifndef MPL_VIDEO_INFO_H
-#define MPL_VIDEO_INFO_H
+#ifndef MPL_MEDIA_VIDEO_INFO_H
+#define MPL_MEDIA_VIDEO_INFO_H
 
 #include "video_types.h"
-#include <cstdint>
+#include "video_frame_types.h"
 
 namespace mpl::media
 {
 
-struct video_format_info_t
+class i_video_format;
+
+struct video_info_t
 {
-    static const video_format_info_t& get_info(video_format_id_t format_id);
-    static video_format_id_t format_from_fourcc(std::uint32_t fourcc);
+    video_format_id_t   format_id;
+    frame_size_t        size;
+    double              frame_rate;
 
+    video_info_t(video_format_id_t format_id = video_format_id_t::undefined
+                 , const frame_size_t& size = {}
+                 , double frame_rate = 0.0);
 
-    std::int32_t    bpp;
-    bool            encoded;
-    bool            planar;
-    bool            convertable;
-    bool            motion;
-    std::uint32_t   channels;
-    std::int32_t    align_widht;
-    std::int32_t    align_height;
-    std::uint32_t   fourcc;
+    video_info_t(const i_video_format& video_format);
+
+    bool operator == (const video_info_t& other) const;
+    bool operator != (const video_info_t& other) const;
+
+    std::size_t bpp() const;
+    std::size_t frame_size() const;
+
+    bool is_valid() const;
 };
 
 }
 
-#endif // MPL_VIDEO_INFO_H
+#endif // MPL_MEDIA_VIDEO_INFO_H

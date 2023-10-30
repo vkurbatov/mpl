@@ -2610,9 +2610,9 @@ void test26()
     libav_output_device_factory output_device_factory;
 
     // std::string input_url = "https://dagestan.mediacdn.ru/cdn/dagestan/playlist_hdhigh.m3u8";
-    std::string input_url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+    // std::string input_url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
-    // std::string input_url = "/home/user/My/sportrecs/basket_streaming_video.mp4";
+    std::string input_url = "/home/user/My/sportrecs/basket_streaming_video.mp4";
     // std::string input_url =  "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov";
     std::string output_url = "rtmp://127.0.0.1/cam1/stream";
 
@@ -2721,7 +2721,7 @@ void test26()
     output_device->control(channel_control_t::open());
     // input_device->control(channel_control_t::open());
 
-    utils::time::sleep(durations::seconds(1500));
+    utils::time::sleep(durations::seconds(20));
 
     input_device->control(channel_control_t::close());
     output_device->control(channel_control_t::close());

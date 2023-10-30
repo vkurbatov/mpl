@@ -4,6 +4,7 @@
 #include "i_video_format.h"
 #include "utils/option_impl.h"
 #include "core/i_parametrizable.h"
+#include "video_info.h"
 #include <string>
 
 namespace mpl::media
@@ -12,10 +13,7 @@ namespace mpl::media
 class video_format_impl : public i_video_format
         , public i_parametrizable
 {
-    video_format_id_t       m_format_id;
-    std::int32_t            m_width;
-    std::int32_t            m_height;
-    double                  m_frame_rate;
+    video_info_t            m_video_info;
     option_impl             m_options;
 
 public:
@@ -29,6 +27,8 @@ public:
                           , std::int32_t height = 0
                           , double frame_rate = 0.0);
 
+    static u_ptr_t create(const video_info_t& video_info);
+
 
     static u_ptr_t create(const i_video_format& other);
     static u_ptr_t create(const i_property& params);
@@ -38,8 +38,12 @@ public:
                       , std::int32_t height = 0
                       , double frame_rate = 0.0);
 
+    video_format_impl(const video_info_t& video_info);
+
     video_format_impl(const i_video_format& other);
     video_format_impl(const i_property& params);
+
+    const video_info_t& video_info() const;
 
     video_format_impl& set_format_id(const video_format_id_t& format_id);
     video_format_impl& set_width(std::int32_t width);
@@ -47,6 +51,7 @@ public:
     video_format_impl& set_frame_rate(double frame_rate);
     video_format_impl& set_options(option_impl&& options);
     video_format_impl& set_options(const i_option& options);
+    video_format_impl& set_video_info(const video_info_t& info);
     video_format_impl& assign(const i_video_format& other);
 
     bool set_params(const i_property& params) override;

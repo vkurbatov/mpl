@@ -1,5 +1,5 @@
 #include "image_frame.h"
-#include "video_info.h"
+#include "video_format_info.h"
 
 #include "i_video_format.h"
 
@@ -35,7 +35,7 @@ inline pt::ocv::frame_format_t get_ocv_format(video_format_id_t format_id)
 
 }
 
-image_frame_t::image_frame_t(const image_info_t& image_info
+image_frame_t::image_frame_t(const video_info_t& image_info
                              , smart_buffer &&image_data)
     : image_info(image_info)
     , image_data(std::move(image_data))
@@ -43,7 +43,7 @@ image_frame_t::image_frame_t(const image_info_t& image_info
 
 }
 
-image_frame_t::image_frame_t(const image_info_t& image_info
+image_frame_t::image_frame_t(const video_info_t& image_info
                              , const smart_buffer &image_data)
     : image_info(image_info)
     , image_data(image_data)

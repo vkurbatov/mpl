@@ -7,7 +7,7 @@
 namespace mpl::media
 {
 
-audio_sample_t::audio_sample_t(const sample_info_t& sample_info
+audio_sample_t::audio_sample_t(const audio_info_t& sample_info
                                , smart_buffer &&sample_data)
     : sample_info(sample_info)
     , sample_data(std::move(sample_data))
@@ -15,7 +15,7 @@ audio_sample_t::audio_sample_t(const sample_info_t& sample_info
 
 }
 
-audio_sample_t::audio_sample_t(const sample_info_t& sample_info
+audio_sample_t::audio_sample_t(const audio_info_t& sample_info
                                , const smart_buffer &sample_data)
     : sample_info(sample_info)
     , sample_data(sample_data)

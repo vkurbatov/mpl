@@ -16,7 +16,7 @@ constexpr double default_font_size = 0.1;
 namespace detail
 {
 
-pt::ocv::frame_info_t create_frame_info(const image_info_t& image_info)
+pt::ocv::frame_info_t create_frame_info(const video_info_t& image_info)
 {
     pt::ocv::frame_info_t frame_info;
 
