@@ -110,6 +110,9 @@ public:
                                                            , audio_frame.frame_id()
                                                            , audio_frame.timestamp());
 
+                    converted_audio_frame.set_ntp_timestamp(audio_frame.ntp_timestamp());
+                    converted_audio_frame.set_options(audio_frame.options());
+
                     converted_audio_frame.smart_buffers().set_buffer(media_buffer_index
                                                                     , smart_buffer(std::move(output_samples)));
 

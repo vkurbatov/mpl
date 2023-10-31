@@ -39,6 +39,12 @@ constexpr stream_id_t stream_id_undefined = -1;
 constexpr track_id_t track_id_undefined = -1;
 constexpr layer_id_t layer_id_undefined = -1;
 
+constexpr stream_id_t default_stream_id = 0;
+constexpr track_id_t default_audio_track_id = 0;
+constexpr track_id_t default_video_track_id = 1;
+constexpr track_id_t default_data_track_id = 2;
+constexpr layer_id_t default_layer_id = 0;
+
 constexpr std::uint32_t video_sample_rate = 90000;
 constexpr std::int64_t media_buffer_index = 0;
 constexpr std::int64_t extension_data_index = 1;

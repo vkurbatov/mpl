@@ -349,6 +349,9 @@ public:
                                , m_frame_id++
                                , timestamp);
 
+            frame.set_ntp_timestamp(input_frame.ntp_timestamp());
+            frame.set_options(input_frame.options());
+
             detail::set_key_frame(frame
                                   , libav_frame.info.key_frame);
 

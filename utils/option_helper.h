@@ -117,6 +117,16 @@ public:
         return m_options.set(id
                              , option_value_impl<VT>::create(value));
     }
+
+    template<typename T, typename VT = std::decay_t<T>>
+    bool set(const i_option::option_id_t& id, const T& value, const T& default_value)
+    {
+        return value == default_value
+                ? remove(id)
+                : set(id
+                      , value);
+    }
+
     template<typename T, typename VT = std::decay_t<T>>
     bool set(const i_option::option_id_t& id, T&& value)
     {

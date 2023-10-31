@@ -121,6 +121,9 @@ public:
                                                            , video_frame.timestamp()
                                                            , video_frame.frame_type());
 
+                    converted_video_frame.set_ntp_timestamp(video_frame.ntp_timestamp());
+                    converted_video_frame.set_options(video_frame.options());
+
                     converted_video_frame.smart_buffers().set_buffer(media_buffer_index
                                                                      , smart_buffer(m_output_buffer.data()
                                                                      , m_output_buffer.size()));

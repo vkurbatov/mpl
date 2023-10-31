@@ -551,6 +551,7 @@ struct stream_info_t
 {
     using list_t = std::vector<stream_info_t>;
 
+    stream_id_t                 program_id;
     stream_id_t                 stream_id;
     codec_info_t                codec_info;
     media_info_t                media_info;
@@ -560,7 +561,8 @@ struct stream_info_t
                                           , std::size_t extra_data_size
                                           , bool need_padding = false);
 
-    stream_info_t(stream_id_t stream_id = 0
+    stream_info_t(stream_id_t program_id = 0
+                  , stream_id_t stream_id = 0
                   , const codec_info_t& codec_info = codec_info_t()
                   , const media_info_t& media_info = media_info_t()
                   , const void* extra_data = nullptr

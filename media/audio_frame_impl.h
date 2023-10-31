@@ -3,21 +3,22 @@
 
 #include "i_audio_frame.h"
 #include "audio_format_impl.h"
+#include "track_info.h"
 #include "utils/smart_buffer_collection.h"
-#include "utils/option_impl.h"
+#include "frame_option_container.h"
 #include <unordered_map>
 
 namespace mpl::media
 {
 
 class audio_frame_base_impl : public i_audio_frame
+        , public frame_option_container
 {
 protected:
     smart_buffer_collection m_buffers;
     frame_id_t              m_frame_id;
     timestamp_t             m_timestamp;
     timestamp_t             m_ntp_timestamp;
-    option_impl             m_options;
 
 public:
     using u_ptr_t = std::unique_ptr<audio_frame_base_impl>;
@@ -34,8 +35,6 @@ public:
     smart_buffer_collection& smart_buffers();
     const smart_buffer_collection& smart_buffers() const;
 
-    option_impl& options();
-
     // i_message interface
 public:
     message_category_t category() const override;
@@ -43,7 +42,7 @@ public:
     // i_message_data interface
 public:
     message_subclass_t subclass() const override;
-    const i_option *options() const override;
+    const i_option& options() const override;
 
     // i_media_frame interface
 public:

@@ -11,6 +11,7 @@ set(SOURCES
     event.cpp
     event_channel_state.cpp
     ntp_time.cpp
+    flow_stats.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -30,6 +31,7 @@ set(PUBLIC_HEADERS
     event_channel_state.h
     command_types.h
     command.h
+    flow_stats.h
     i_task.h
     i_task_manager.h
     i_timer.h

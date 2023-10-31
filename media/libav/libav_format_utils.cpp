@@ -227,7 +227,7 @@ void convert_options(const i_option& option
 
     option_reader reader(option);
 
-    reader.get(opt_fmt_track_id, stream_info.stream_id);
+    //reader.get(opt_frm_track_id, stream_info.stream_id);
     reader.get(opt_codec_extra_data, stream_info.extra_data);
     convert_options(option
                     , stream_info.codec_info);
@@ -271,7 +271,7 @@ void convert_options(const pt::ffmpeg::stream_info_t& stream_info
 
     if (stream_info.stream_id != pt::ffmpeg::no_stream)
     {
-        writer.set(opt_fmt_track_id, stream_info.stream_id);
+        // writer.set(opt_frm_track_id, stream_info.stream_id);
     }
 
     if (stream_info.extra_data)

@@ -22,10 +22,11 @@ using namespace media;
 
 // audio_info_t
 template<>
-bool utils::property::serialize(const audio_info_t& value, i_property& property)
+bool utils::property::serialize(const audio_info_t& value
+                                , i_property& property)
 {
     property_writer writer(property);
-    return writer.set("format_id", value.format_id)
+    return writer.set("format", value.format_id)
             && writer.set("sample_rate", value.sample_rate)
             && writer.set("channels", value.channels);
 }
@@ -35,7 +36,7 @@ bool utils::property::deserialize(audio_info_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
-    return reader.get("format_id", value.format_id)
+    return reader.get("format", value.format_id)
             | reader.get("sample_rate", value.sample_rate)
             | reader.get("channels", value.channels);
 }
@@ -77,7 +78,7 @@ template<>
 bool utils::property::serialize(const video_info_t& value, i_property& property)
 {
     property_writer writer(property);
-    return writer.set("format_id", value.format_id)
+    return writer.set("format", value.format_id)
             && writer.set("width", value.size.width)
             && writer.set("height", value.size.height)
             && writer.set("frame_rate", value.frame_rate);
@@ -88,7 +89,7 @@ bool utils::property::deserialize(video_info_t& value
                                   , const i_property& property)
 {
     property_reader reader(property);
-    return reader.get("format_id", value.format_id)
+    return reader.get("format", value.format_id)
             | reader.get("width", value.size.width)
             | reader.get("height", value.size.height)
             | reader.get("frame_rate", value.frame_rate);
@@ -128,6 +129,28 @@ bool utils::property::deserialize(video_format_impl& value
 {
     return value.set_params(property);
 }
+
+// i_media_format
+template<>
+bool utils::property::serialize(const i_media_format& value
+                                , i_property& property)
+{
+    switch(value.media_type())
+    {
+        case media_type_t::audio:
+            return serialize(static_cast<const i_audio_format&>(value)
+                             , property);
+        break;
+        case media_type_t::video:
+            return serialize(static_cast<const i_video_format&>(value)
+                             , property);
+        break;
+        default:;
+    }
+
+    return false;
+}
+
 
 // frame_point_t
 template<>

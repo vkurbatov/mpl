@@ -2,6 +2,9 @@
 #include "video_format_info.h"
 #include "i_video_format.h"
 
+#include "utils/common_utils.h"
+#include "utils/enum_utils.h"
+
 namespace mpl::media
 {
 
@@ -48,6 +51,20 @@ std::size_t video_info_t::frame_size() const
 bool video_info_t::is_valid() const
 {
     return frame_size() > 0;
+}
+
+bool video_info_t::is_compatible(const video_info_t &other) const
+{
+    return format_id == other.format_id
+            && size == other.size;
+}
+
+std::string video_info_t::to_string() const
+{
+    return utils::to_upper(utils::enum_to_string(format_id))
+                .append(":").append(std::to_string(size.width))
+                .append("x").append(std::to_string(size.height))
+                .append("@").append(std::to_string(frame_rate));
 }
 
 }

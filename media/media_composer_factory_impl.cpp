@@ -144,8 +144,9 @@ class media_composer : public i_media_composer
                 , m_frame_id(0)
                 , m_timestamp_calculator(audio_format.sample_rate())
             {
-                option_writer(m_audio_frame.options()).set(opt_fmt_stream_id
-                                                           , stream_id);
+                m_audio_frame.set_stream_id(stream_id);
+                m_audio_frame.set_track_id(0);
+
                 if (m_media_converter)
                 {
                     m_media_converter->set_sink(&m_message_sink);
@@ -311,8 +312,9 @@ class media_composer : public i_media_composer
                 , m_frame_id(0)
                 , m_timestamp_calculator(video_sample_rate)
             {
-                option_writer(m_video_frame.options()).set(opt_fmt_stream_id
-                                                           , stream_id);
+                m_video_frame.set_stream_id(stream_id);
+                m_video_frame.set_track_id(1);
+
                 if (m_media_converter)
                 {
                     m_media_converter->set_sink(&m_message_sink);

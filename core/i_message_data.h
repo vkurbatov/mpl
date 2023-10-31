@@ -18,7 +18,7 @@ public:
     using u_ptr_t = std::unique_ptr<i_message_data>;
     using s_ptr_t = std::shared_ptr<i_message_data>;
     virtual const i_buffer_collection& data() const = 0;
-    virtual const i_option* options() const = 0;
+    virtual const i_option& options() const = 0;
 
 };
 

@@ -79,8 +79,8 @@ int main()
                                                , 720
                                                , 30);
 
-    mpl::option_writer(audio_format.options()).set(mpl::media::opt_fmt_track_id, 0);
-    mpl::option_writer(video_format.options()).set(mpl::media::opt_fmt_track_id, 1);
+    mpl::option_writer(audio_format.options()).set(mpl::media::opt_frm_track_id, 0);
+    mpl::option_writer(video_format.options()).set(mpl::media::opt_frm_track_id, 1);
 
     auto libav_params = mpl::property_helper::create_object();
     if (libav_params)

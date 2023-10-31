@@ -77,7 +77,8 @@ smart_buffer create_buffer(const pt::ffmpeg::frame_ref_t& libav_frame
 
 struct stream_t
 {
-    static constexpr timestamp_t overtime = durations::seconds(1);
+    static constexpr timestamp_t min_overtime = durations::seconds(1);
+    static constexpr timestamp_t max_overtime = durations::seconds(3);
 
     using array_t = std::vector<stream_t>;
 
@@ -87,6 +88,7 @@ struct stream_t
     timestamp_t                 last_timestamp;
     timestamp_t                 ntp_timestamp;
     timestamp_t                 current_timestamp;
+    timestamp_t                 overtime;
 
     inline static timestamp_t now()
     {
@@ -112,6 +114,7 @@ struct stream_t
         , last_timestamp(0)
         , ntp_timestamp(now())
         , current_timestamp(0)
+        , overtime(max_overtime)
     {
         // reset();
     }
@@ -123,6 +126,7 @@ struct stream_t
         last_timestamp = 0;
         ntp_timestamp = now();
         current_timestamp = 0;
+        overtime = min_overtime;
     }
 
     void next()
@@ -156,7 +160,7 @@ struct stream_t
         auto dt = pdt - rdt;
         if (dt > overtime)
         {
-           utils::time::sleep(dt - overtime);
+            utils::time::sleep(dt - overtime);
         }
     }
     timestamp_t get_ntp_timestamp() const
@@ -397,6 +401,8 @@ public:
                                                , stream.push_timestamp(libav_frame.info.timestamp()));
 
                         frame.set_ntp_timestamp(stream.get_ntp_timestamp());
+                        frame.set_stream_id(stream.stream_info.program_id);
+                        frame.set_track_id(stream.stream_info.stream_id);
 
                         frame.smart_buffers().set_buffer(media_buffer_index
                                                          , smart_buffer(libav_frame.data
@@ -426,6 +432,8 @@ public:
                                                , stream.push_timestamp(libav_frame.info.timestamp())
                                                , frame_type);
 
+                        frame.set_stream_id(stream.stream_info.program_id);
+                        frame.set_track_id(stream.stream_info.stream_id);
                         frame.set_ntp_timestamp(stream.get_ntp_timestamp());
 
                         frame.smart_buffers().set_buffer(media_buffer_index

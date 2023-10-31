@@ -82,8 +82,8 @@ bool option_impl::set(const option_id_t &id
 {
     if (value)
     {
-        return m_options.emplace(id
-                                 , std::move(value)).second;
+        m_options[id] = std::move(value);
+        return true;
     }
     else
     {

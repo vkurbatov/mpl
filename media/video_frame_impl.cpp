@@ -2,6 +2,7 @@
 #include "media_message_types.h"
 #include "utils/pointer_utils.h"
 #include "utils/time_utils.h"
+#include "track_info.h"
 
 namespace mpl::media
 {
@@ -14,7 +15,7 @@ video_frame_base_impl::video_frame_base_impl(frame_id_t frame_id
     , m_frame_type(frame_type)
     , m_ntp_timestamp(utils::time::now())
 {
-
+    track_info_t::default_video_track().store(m_options);
 }
 
 void video_frame_base_impl::set_frame_id(frame_id_t frame_id)
@@ -42,10 +43,6 @@ void video_frame_base_impl::set_frame_type(frame_type_t frame_type)
     m_frame_type = frame_type;
 }
 
-option_impl &video_frame_base_impl::options()
-{
-    return m_options;
-}
 
 smart_buffer_collection &video_frame_base_impl::smart_buffers()
 {
@@ -67,9 +64,9 @@ message_subclass_t video_frame_base_impl::subclass() const
     return message_class_media;
 }
 
-const i_option *video_frame_base_impl::options() const
+const i_option& video_frame_base_impl::options() const
 {
-    return &m_options;
+    return m_options;
 }
 
 media_type_t video_frame_base_impl::media_type() const
@@ -165,6 +162,7 @@ video_frame_impl::video_frame_impl(const i_video_frame &other)
                        , other.timestamp()
                        , other.frame_type())
 {
+    set_ntp_timestamp(other.ntp_timestamp());
     m_buffers.assign(other.data());
 }
 
@@ -205,6 +203,7 @@ i_message::u_ptr_t video_frame_impl::clone() const
                                   , m_frame_type))
     {
         clone_frame->set_ntp_timestamp(m_ntp_timestamp);
+        clone_frame->m_options = m_options;
         clone_frame->m_buffers = m_buffers.fork();
         return clone_frame;
     }
@@ -280,6 +279,7 @@ i_message::u_ptr_t video_frame_ptr_impl::clone() const
                                           , m_frame_type))
             {
                 clone_frame->set_ntp_timestamp(m_ntp_timestamp);
+                clone_frame->m_options = m_options;
                 clone_frame->m_buffers = m_buffers.fork();
                 return clone_frame;
             }
@@ -316,6 +316,7 @@ i_message::u_ptr_t video_frame_ref_impl::clone() const
                                                            , m_frame_type))
         {
             clone_frame->set_ntp_timestamp(m_ntp_timestamp);
+            clone_frame->set_options(m_options);
             clone_frame->set_buffers(m_buffers.fork());
             return clone_frame;
         }

@@ -828,13 +828,15 @@ extra_data_t stream_info_t::create_extra_data(const void *extra_data
     return nullptr;
 }
 
-stream_info_t::stream_info_t(stream_id_t stream_id
+stream_info_t::stream_info_t(stream_id_t program_id
+                             , stream_id_t stream_id
                              , const codec_info_t &codec_info
                              , const media_info_t &media_info
                              , const void *extra_data
                              , std::size_t extra_data_size
                              , bool need_extra_padding)
-    : stream_id(stream_id)
+    : program_id(program_id)
+    , stream_id(stream_id)
     , codec_info(codec_info)
     , media_info(media_info)
     , extra_data(std::move(create_extra_data(extra_data

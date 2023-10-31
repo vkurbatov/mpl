@@ -3,6 +3,7 @@
 
 #include "core/time_types.h"
 #include "audio_types.h"
+#include <string>
 
 namespace mpl::media
 {
@@ -37,6 +38,9 @@ struct audio_info_t
     timestamp_t duration_from_samples(std::size_t samples) const;
 
     bool is_valid() const;
+    bool is_compatible(const audio_info_t& other) const;
+
+    std::string to_string() const;
 };
 
 }

@@ -14,8 +14,10 @@ class message_sink_impl : public i_message_sink
 {
 public:
     using message_handler_t = std::function<bool(const i_message& message)>;
-private:
+
+protected:
     message_handler_t       m_message_handler;
+
 public:
     using u_ptr_t = std::unique_ptr<message_sink_impl>;
     using s_ptr_t = std::shared_ptr<message_sink_impl>;

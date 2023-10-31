@@ -52,6 +52,7 @@
 #include "media_option_types.h"
 #include "media_message_types.h"
 #include "media_frame_selector.h"
+#include "track_metrics.h"
 
 #include "utils/ipc_manager_impl.h"
 #include "core/i_message_event.h"
@@ -885,7 +886,7 @@ void test13()
 
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
     option_writer(video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(video_format.options()).set(opt_fmt_track_id, 1);
+    option_writer(video_format.options()).set(opt_frm_track_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
@@ -993,7 +994,7 @@ void test13_2()
 
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
     option_writer(video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(video_format.options()).set(opt_fmt_track_id, 1);
+    option_writer(video_format.options()).set(opt_frm_track_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*video_format.get_params("format"));
@@ -1228,8 +1229,8 @@ void test16()
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=30;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
 
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(transcode_video_format.options()).set(opt_fmt_track_id, 0);
-    option_writer(transcode_audio_format.options()).set(opt_fmt_track_id, 1);
+    option_writer(transcode_video_format.options()).set(opt_frm_track_id, 0);
+    option_writer(transcode_audio_format.options()).set(opt_frm_track_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*transcode_audio_format.get_params("format"));
     auto video_transcoder = smart_factory.create_converter(*transcode_video_format.get_params("format"));
@@ -1354,8 +1355,8 @@ void test17()
                                    , 30);
 
     option_writer writer(video_format.options());
-    writer.set<std::int32_t>(opt_fmt_track_id, 1);
-    writer.set<std::int32_t>(opt_fmt_stream_id, 2);
+    writer.set<std::int32_t>(opt_frm_track_id, 1);
+    writer.set<std::int32_t>(opt_frm_stream_id, 2);
 
     raw_array_t buffer(640 * 480 * 3);
     std::int8_t i = 0;
@@ -1461,8 +1462,8 @@ void test18()
             timestamp_t timestamp = 0;
 
             option_writer writer(video_format.options());
-            writer.set<std::int32_t>(mpl::media::opt_fmt_stream_id, 1);
-            writer.set<std::int32_t>(mpl::media::opt_fmt_track_id, 2);
+            writer.set<std::int32_t>(mpl::media::opt_frm_stream_id, 1);
+            writer.set<std::int32_t>(mpl::media::opt_frm_track_id, 2);
 
 
             auto out_device = out_device_factory.create_device(*out_params);
@@ -1659,8 +1660,8 @@ void test19()
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
 
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(transcode_video_format.options()).set(opt_fmt_track_id, 0);
-    option_writer(transcode_audio_format.options()).set(opt_fmt_track_id, 1);
+    option_writer(transcode_video_format.options()).set(opt_frm_track_id, 0);
+    option_writer(transcode_audio_format.options()).set(opt_frm_track_id, 1);
 
     auto v4l2_transcoder = smart_factory.create_converter(*v4l2_video_format.get_params("format"));
 
@@ -1954,8 +1955,8 @@ void test20()
     std::string encoder_options = "profile=baseline;preset=ultrafast;tune=zerolatency;cfr=22;g=60;keyint_min=30;max_delay=0;bf=0;threads=4";
 
     option_writer(transcode_video_format.options()).set(opt_codec_params, encoder_options);
-    option_writer(transcode_video_format.options()).set(opt_fmt_track_id, 0);
-    option_writer(transcode_audio_format.options()).set(opt_fmt_track_id, 1);
+    option_writer(transcode_video_format.options()).set(opt_frm_track_id, 0);
+    option_writer(transcode_audio_format.options()).set(opt_frm_track_id, 1);
 
     auto audio_transcoder = smart_factory.create_converter(*transcode_audio_format.get_params("format"));
 
@@ -2605,14 +2606,18 @@ void test25()
 
 void test26()
 {
+
+
+
+
     pt::ffmpeg::libav_register();
     libav_input_device_factory input_device_factory;
     libav_output_device_factory output_device_factory;
 
     // std::string input_url = "https://dagestan.mediacdn.ru/cdn/dagestan/playlist_hdhigh.m3u8";
-    // std::string input_url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+    std::string input_url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
-    std::string input_url = "/home/user/My/sportrecs/basket_streaming_video.mp4";
+    // std::string input_url = "/home/user/My/sportrecs/basket_streaming_video.mp4";
     // std::string input_url =  "/home/user/My/sportrecs/top-gun-maverick-trailer-3_h1080p.mov";
     std::string output_url = "rtmp://127.0.0.1/cam1/stream";
 
@@ -2622,49 +2627,9 @@ void test26()
         writer.set<std::string>("url", input_url);
     }
 
-/*
-    audio_format_impl audio_format(audio_format_id_t::aac
-                                   , 44100 //48000
-                                   , 2);
-    video_format_impl video_format(video_format_id_t::h264
-                                   , 1920
-                                   , 1080
-                                   , 25);*/
-
-    // option_writer(video_format.options()).set(opt_fmt_track_id, 1);
-
-    /*
-    auto libav_output_device_params = property_helper::create_object();
-    {
-        property_writer writer(*libav_output_device_params);
-        writer.set<std::string>("url", output_url);
-        i_property::s_array_t streams;
-
-
-        if (auto vp = property_helper::create_object())
-        {
-            if (video_format.get_params(*vp))
-            {
-                streams.emplace_back(std::move(vp));
-            }
-        }
-
-        if (auto ap = property_helper::create_object())
-        {
-            if (audio_format.get_params(*ap))
-            {
-                streams.emplace_back(std::move(ap));
-            }
-        }
-
-        writer.set("streams", streams);
-    }*/
-
-
-
     auto input_device = input_device_factory.create_device(*libav_input_device_params);
 
-    media_frame_buffer    buffer(durations::seconds(2));
+    media_frame_buffer    buffer(durations::seconds(3));
     media_frame_selector  selector({});
 
     auto input_handler = [&](const i_message& message)
@@ -2701,12 +2666,12 @@ void test26()
         i_property::s_array_t streams;
 
 
-        if (auto vp = utils::property::serialize(*selector.video_format()))
+        if (auto vp = utils::property::serialize(*selector.video_track().media_format))
         {
             streams.emplace_back(std::move(vp));
         }
 
-        if (auto ap = utils::property::serialize(*selector.audio_format()))
+        if (auto ap = utils::property::serialize(*selector.audio_track().media_format))
         {
             streams.emplace_back(std::move(ap));
         }
@@ -2721,7 +2686,7 @@ void test26()
     output_device->control(channel_control_t::open());
     // input_device->control(channel_control_t::open());
 
-    utils::time::sleep(durations::seconds(20));
+    utils::time::sleep(durations::seconds(2000));
 
     input_device->control(channel_control_t::close());
     output_device->control(channel_control_t::close());

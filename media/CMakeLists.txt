@@ -21,9 +21,12 @@ set(SOURCES
     video_format_info.cpp
     video_frame_impl.cpp
     video_info.cpp
+    media_info.cpp
     media_packetizer_impl.cpp
     timestamp_calculator.cpp
     track_info.cpp
+    track_metrics.cpp
+    track_metrics_manager.cpp
     ipc/ipc_input_device_factory.cpp
     ipc/ipc_output_device_factory.cpp
     libav/libav_video_converter_factory.cpp
@@ -37,6 +40,7 @@ set(SOURCES
     visca/visca_device_factory.cpp
     v4l2/v4l2_device_factory.cpp
     v4l2/v4l2_utils.cpp
+    frame_option_container.cpp
     media_converter_factory_impl.cpp
     media_serialize_impl.cpp
     smart_transcoder_factory.cpp
@@ -51,6 +55,7 @@ set(SOURCES
     media_command_message_impl.cpp
     media_frame_buffer.cpp
     media_frame_selector.cpp
+    media_sink_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -66,10 +71,12 @@ set(PUBLIC_HEADERS
     video_frame_types.h
     video_format_info.h
     video_info.h
+    media_info.h
     stream_types.h
     media_option_types.h
     command_camera_control.h
     track_info.h
+    track_metrics.h
     i_media_stream.h
     i_media_format.h
     i_message_media_data.h
@@ -104,6 +111,7 @@ set(PRIVATE_HEADERS
     audio_level.h
     audio_sample.h
     timestamp_calculator.h
+    track_metrics_manager.h
     ipc/ipc_input_device_factory.h
     ipc/ipc_output_device_factory.h
     libav/libav_format_utils.h
@@ -117,6 +125,7 @@ set(PRIVATE_HEADERS
     visca/visca_device_factory.h
     v4l2/v4l2_device_factory.h
     v4l2/v4l2_utils.h
+    frame_option_container.h
     media_converter_factory_impl.h
     smart_transcoder_factory.h
     draw_options.h
@@ -128,6 +137,7 @@ set(PRIVATE_HEADERS
     media_composer_factory_impl.h
     media_frame_buffer.h
     media_frame_selector.h
+    media_sink_impl.h
 )
 
 

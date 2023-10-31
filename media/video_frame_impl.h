@@ -4,13 +4,13 @@
 #include "i_video_frame.h"
 #include "video_format_impl.h"
 #include "utils/smart_buffer_collection.h"
-
-#include <unordered_map>
+#include "frame_option_container.h"
 
 namespace mpl::media
 {
 
 class video_frame_base_impl : public i_video_frame
+        , public frame_option_container
 {
 protected:
     smart_buffer_collection         m_buffers;
@@ -18,7 +18,6 @@ protected:
     timestamp_t                     m_timestamp;
     i_video_frame::frame_type_t     m_frame_type;
     timestamp_t                     m_ntp_timestamp;
-    option_impl                     m_options;
 
 
 public:
@@ -35,7 +34,6 @@ public:
     void set_ntp_timestamp(timestamp_t timestamp);
     void set_buffers(smart_buffer_collection&& buffers);
     void set_frame_type(i_video_frame::frame_type_t frame_type);
-    option_impl& options();
 
     smart_buffer_collection& smart_buffers();
     const smart_buffer_collection& smart_buffers() const;
@@ -47,7 +45,7 @@ public:
     // i_message_data interface
 public:
     message_subclass_t subclass() const override;
-    const i_option *options() const override;
+    const i_option& options() const override;
 
     // i_media_frame interface
 public:

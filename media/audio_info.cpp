@@ -1,6 +1,8 @@
 #include "audio_info.h"
 #include "audio_format_info.h"
 #include "i_audio_format.h"
+#include "utils/common_utils.h"
+#include "utils/enum_utils.h"
 
 namespace mpl::media
 {
@@ -97,6 +99,18 @@ bool audio_info_t::is_valid() const
     return audio_format_info_t::get_info(format_id).convertable
             && sample_rate > 0
             && channels > 0;
+}
+
+bool audio_info_t::is_compatible(const audio_info_t &other) const
+{
+    return *this == other;
+}
+
+std::string audio_info_t::to_string() const
+{
+    return utils::to_upper(utils::enum_to_string(format_id))
+            .append("/").append(std::to_string(sample_rate))
+            .append("/").append(std::to_string(channels));
 }
 
 }

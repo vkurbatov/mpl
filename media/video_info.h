@@ -4,6 +4,8 @@
 #include "video_types.h"
 #include "video_frame_types.h"
 
+#include <string>
+
 namespace mpl::media
 {
 
@@ -28,6 +30,9 @@ struct video_info_t
     std::size_t frame_size() const;
 
     bool is_valid() const;
+    bool is_compatible(const video_info_t& other) const;
+
+    std::string to_string() const;
 };
 
 }

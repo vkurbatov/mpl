@@ -357,6 +357,7 @@ AVStream& operator << (AVStream& av_stream
                        , const stream_info_t& stream_info)
 {
     (*av_stream.codecpar) << stream_info.media_info;
+    av_stream.id = stream_info.program_id;
     av_stream.index = stream_info.stream_id;
     av_stream.codecpar->codec_id = static_cast<AVCodecID>(stream_info.codec_info.id);
 
@@ -372,6 +373,7 @@ stream_info_t& operator << (stream_info_t& stream_info
                             , const AVStream& av_stream)
 {
     stream_info.media_info << *av_stream.codecpar;
+    stream_info.program_id = av_stream.id;
     stream_info.stream_id = av_stream.index;
 
     switch(stream_info.media_info.media_type)

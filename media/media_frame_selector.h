@@ -5,6 +5,7 @@
 #include "i_media_frame.h"
 #include "i_audio_format.h"
 #include "i_video_format.h"
+#include "track_info.h"
 #include <functional>
 #include <map>
 
@@ -19,7 +20,22 @@ public:
         timestamp_t     active_timeout;
         config_t(timestamp_t active_timeout = timestamp_null);
     };
-    using selection_handler_t = std::function<bool(const i_media_frame&, const i_media_format*)>;
+
+    struct frame_info_t
+    {
+        i_media_format::u_ptr_t     media_format;
+        track_info_t                track_info;
+
+        frame_info_t() = default;
+        frame_info_t(const i_media_frame& media_frame);
+
+        void update(const i_media_frame& media_frame);
+        void reset();
+        bool is_defined() const;
+        bool is_compatible(const frame_info_t& other);
+    };
+
+    using selection_handler_t = std::function<bool(const i_media_frame&, const frame_info_t& frame_info)>;
 private:
 
     using format_map_t = std::map<track_id_t, i_media_frame::u_ptr_t>;
@@ -27,8 +43,8 @@ private:
     config_t                    m_config;
     i_message_sink*             m_output_sink;
 
-    i_audio_format::u_ptr_t     m_audio_format;
-    i_video_format::u_ptr_t     m_video_format;
+    frame_info_t                m_audio_track_info;
+    frame_info_t                m_video_track_info;
 
     selection_handler_t         m_selection_handler;
 
@@ -39,8 +55,8 @@ public:
     void set_sink(i_message_sink* output_sink);
     void reset();
 
-    const i_audio_format* audio_format() const;
-    const i_video_format* video_format() const;
+    const frame_info_t& audio_track() const;
+    const frame_info_t& video_track() const;
 
     void set_handler(const selection_handler_t& handler);
 

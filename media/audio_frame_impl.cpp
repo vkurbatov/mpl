@@ -2,6 +2,7 @@
 #include "media_message_types.h"
 #include "utils/pointer_utils.h"
 #include "utils/time_utils.h"
+#include "track_info.h"
 
 namespace mpl::media
 {
@@ -12,7 +13,7 @@ audio_frame_base_impl::audio_frame_base_impl(frame_id_t frame_id
     , m_timestamp(timestamp)
     , m_ntp_timestamp(utils::time::now())
 {
-
+    track_info_t::default_audio_track().store(m_options);
 }
 
 void audio_frame_base_impl::set_frame_id(frame_id_t frame_id)
@@ -45,11 +46,6 @@ const smart_buffer_collection &audio_frame_base_impl::smart_buffers() const
     return m_buffers;
 }
 
-option_impl &audio_frame_base_impl::options()
-{
-    return m_options;
-}
-
 message_category_t audio_frame_base_impl::category() const
 {
     return message_category_t::data;
@@ -60,9 +56,9 @@ message_subclass_t audio_frame_base_impl::subclass() const
     return message_class_media;
 }
 
-const i_option *audio_frame_base_impl::options() const
+const i_option& audio_frame_base_impl::options() const
 {
-    return &m_options;
+    return m_options;
 }
 
 media_type_t audio_frame_base_impl::media_type() const
@@ -144,6 +140,7 @@ audio_frame_impl::audio_frame_impl(const i_audio_frame &other)
                        , other.frame_id()
                        , other.timestamp())
 {
+    set_ntp_timestamp(other.ntp_timestamp());
     m_buffers.assign(other.data());
 }
 
@@ -183,6 +180,7 @@ i_message::u_ptr_t audio_frame_impl::clone() const
     {
         clone_frame->set_ntp_timestamp(m_ntp_timestamp);
         clone_frame->m_buffers = m_buffers.fork();
+        clone_frame->m_options = m_options;
         return clone_frame;
     }
 
@@ -255,6 +253,7 @@ i_message::u_ptr_t audio_frame_ptr_impl::clone() const
                                           , m_timestamp))
             {
                 clone_frame->set_ntp_timestamp(m_ntp_timestamp);
+                clone_frame->m_options = m_options;
                 clone_frame->m_buffers = m_buffers.fork();
                 return clone_frame;
             }
@@ -288,6 +287,7 @@ i_message::u_ptr_t audio_frame_ref_impl::clone() const
                                                            , m_timestamp))
         {
             clone_frame->set_ntp_timestamp(m_ntp_timestamp);
+            clone_frame->set_options(m_options);
             clone_frame->set_buffers(m_buffers.fork());
             return clone_frame;
         }

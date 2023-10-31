@@ -44,12 +44,6 @@ namespace detail
         if (format != nullptr
                 && format->is_valid())
         {
-            option_writer writer(format->options());
-
-            std::int32_t stream_id = streams.size();
-            writer.set<track_id_t>(opt_fmt_track_id
-                                     , stream_id);
-
             streams.emplace_back(std::move(format));
             return true;
         }
