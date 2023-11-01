@@ -1,6 +1,6 @@
 #include "audio_composer.h"
-#include "audio_mixer.h"
-#include "audio_level.h"
+#include "media/audio_mixer.h"
+#include "media/audio_level.h"
 
 #include <set>
 

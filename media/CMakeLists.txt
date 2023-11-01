@@ -27,6 +27,7 @@ set(SOURCES
     track_info.cpp
     track_metrics.cpp
     track_metrics_manager.cpp
+    track_params.cpp
     ipc/ipc_input_device_factory.cpp
     ipc/ipc_output_device_factory.cpp
     libav/libav_video_converter_factory.cpp
@@ -40,6 +41,13 @@ set(SOURCES
     visca/visca_device_factory.cpp
     v4l2/v4l2_device_factory.cpp
     v4l2/v4l2_utils.cpp
+    mcu/compose_audio_track_params.cpp
+    mcu/compose_video_track_params.cpp
+    mcu/compose_stream_params.cpp
+    mcu/audio_composer.cpp
+    mcu/video_composer.cpp
+    mcu/layout_manager_mosaic_impl.cpp
+    mcu/media_composer_factory_impl.cpp
     frame_option_container.cpp
     media_converter_factory_impl.cpp
     media_serialize_impl.cpp
@@ -47,10 +55,6 @@ set(SOURCES
     draw_options.cpp
     image_frame.cpp
     image_builder.cpp
-    audio_composer.cpp
-    video_composer.cpp
-    layout_manager_mosaic_impl.cpp
-    media_composer_factory_impl.cpp
     command_camera_control.cpp
     media_command_message_impl.cpp
     media_frame_buffer.cpp
@@ -77,6 +81,7 @@ set(PUBLIC_HEADERS
     command_camera_control.h
     track_info.h
     track_metrics.h
+    track_params.h
     i_media_stream.h
     i_media_track.h
     i_media_format.h
@@ -126,16 +131,19 @@ set(PRIVATE_HEADERS
     visca/visca_device_factory.h
     v4l2/v4l2_device_factory.h
     v4l2/v4l2_utils.h
+    mcu/compose_audio_track_params.h
+    mcu/compose_video_track_params.h
+    mcu/compose_stream_params.h
+    mcu/audio_composer.h
+    mcu/video_composer.h
+    mcu/layout_manager_mosaic_impl.h
+    mcu/media_composer_factory_impl.h
     frame_option_container.h
     media_converter_factory_impl.h
     smart_transcoder_factory.h
     draw_options.h
     image_frame.h
     image_builder.h
-    audio_composer.h
-    video_composer.h
-    layout_manager_mosaic_impl.h
-    media_composer_factory_impl.h
     media_frame_buffer.h
     media_frame_selector.h
     media_sink_impl.h

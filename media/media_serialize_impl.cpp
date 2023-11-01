@@ -15,6 +15,11 @@
 #include "audio_info.h"
 #include "video_info.h"
 
+#include "track_params.h"
+#include "mcu/compose_audio_track_params.h"
+#include "mcu/compose_video_track_params.h"
+#include "mcu/compose_stream_params.h"
+
 namespace mpl
 {
 
@@ -290,6 +295,120 @@ bool utils::property::deserialize(track_info_t& value
     return reader.get("stream_id", value.stream_id)
             | reader.get("track_id", value.track_id)
             | reader.get("layer_id", value.layer_id);
+}
+
+// track_params_t
+template<>
+bool utils::property::serialize(const track_params_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("name", value.name)
+            && writer.set("enabled", value.enabled);
+}
+
+template<>
+bool utils::property::deserialize(track_params_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("name", value.name)
+            | reader.get("enabled", value.enabled);
+}
+
+// draw_options_t
+template<>
+bool utils::property::serialize(const draw_options_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("rect", value.target_rect)
+            && writer.set("opacity", value.opacity)
+            && writer.set("border", value.border)
+            && writer.set("margin", value.margin)
+            && writer.set("label", value.label)
+            && writer.set("elliptic", value.elliptic);
+}
+
+template<>
+bool utils::property::deserialize(draw_options_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("rect", value.target_rect)
+            | reader.get("opacity", value.opacity)
+            | reader.get("border", value.border)
+            | reader.get("margin", value.margin)
+            | reader.get("label", value.label)
+            | reader.get("elliptic", value.elliptic);
+}
+
+
+// compose_audio_track_params_t
+template<>
+bool utils::property::serialize(const compose_audio_track_params_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set<track_params_t>({}, value)
+            && writer.set("volume", value.volume);
+}
+
+template<>
+bool utils::property::deserialize(compose_audio_track_params_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get<track_params_t>({}, value)
+            | reader.get("volume", value.volume);
+}
+
+// compose_video_track_params_t
+template<>
+bool utils::property::serialize(const compose_video_track_params_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set<track_params_t>({}, value)
+            && writer.set("draw_options", value.draw_options)
+            && writer.set("animation", value.animation)
+            && writer.set("user_img", value.user_image_path)
+            && writer.set("timeout", value.timeout);
+}
+
+template<>
+bool utils::property::deserialize(compose_video_track_params_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get<track_params_t>({}, value)
+            | reader.get("draw_options", value.draw_options)
+            | reader.get("animation", value.animation)
+            | reader.get("user_img", value.user_image_path)
+            | reader.get("timeout", value.timeout);
+}
+
+// compose_stream_params_t
+template<>
+bool utils::property::serialize(const compose_stream_params_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("order", value.order)
+            && writer.set("name", value.name)
+            && writer.set("audio_track", value.audio_track)
+            && writer.set("video_track", value.video_track);
+}
+
+template<>
+bool utils::property::deserialize(compose_stream_params_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    return reader.get("order", value.order)
+            | reader.get("name", value.name)
+            | reader.get("audio_track", value.audio_track)
+            | reader.get("video_track", value.video_track);
 }
 
 /*

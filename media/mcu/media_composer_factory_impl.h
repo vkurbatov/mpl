@@ -1,7 +1,7 @@
 #ifndef MPL_MEDIA_COMPOSER_FACTORY_IMPL_H
 #define MPL_MEDIA_COMPOSER_FACTORY_IMPL_H
 
-#include "i_media_composer_factory.h"
+#include "media/i_media_composer_factory.h"
 
 namespace mpl::media
 {

@@ -1,7 +1,7 @@
 #ifndef MPL_MEDIA_LAYOUT_MANAGER_MOSAIC_IMPL_H
 #define MPL_MEDIA_LAYOUT_MANAGER_MOSAIC_IMPL_H
 
-#include "i_layout_manager.h"
+#include "media/i_layout_manager.h"
 
 namespace mpl::media
 {

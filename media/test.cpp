@@ -39,8 +39,8 @@
 #include "media_converter_factory_impl.h"
 #include "libav/libav_transcoder_factory.h"
 #include "smart_transcoder_factory.h"
-#include "media_composer_factory_impl.h"
-#include "layout_manager_mosaic_impl.h"
+#include "mcu/media_composer_factory_impl.h"
+#include "mcu/layout_manager_mosaic_impl.h"
 #include "vnc/vnc_device_factory.h"
 #include "apm/apm_device_factory.h"
 
@@ -1616,7 +1616,7 @@ void test19()
 
         if (auto stream = media_composer->add_stream(*stream_params))
         {
-            streams.emplace_back(stream);
+            streams.emplace_back(std::move(stream));
         }
     }
 
@@ -1904,19 +1904,23 @@ void test20()
     for (std::size_t i = 0; i < stream_count; i++)
     {
         property_writer writer(*stream_params);
+        writer.set("audio_track.enabled", true);
+        writer.set("video_track.enabled", true);
+        writer.set("audio_track.volume", 1.0);
         writer.set("order", 1);
-        writer.set("opacity", opacity);
-        // writer.set("animation", 0.1);
+        writer.set("video_track.draw_options.opacity", opacity);
+        // writer.set("video_track.draw_options.opacity", opacity);
+        writer.set("animation", 0.1);
 
         std::string label = "stream #";
         label.append(std::to_string(i));
 
-        writer.set("label", label);
-        writer.set<std::string>("user_img", "/home/user/test.jpg");
+        writer.set("video_track.label", label);
+        writer.set<std::string>("video_track.user_img", "/home/user/test.jpg");
 
         if (auto stream = media_composer->add_stream(*stream_params))
         {
-            streams.emplace_back(stream);
+            streams.emplace_back(std::move(stream));
         }
     }
 
@@ -1924,14 +1928,14 @@ void test20()
     {
         relative_frame_rect_t frame_rect = { 0.0, 0.0, 1.0, 1.0};
         property_writer writer(*stream_params);
-        writer.set("rect", frame_rect);
         writer.set("order", 0);
-        writer.set<double>("opacity", 1.0);
-        writer.remove("label");
-        writer.remove("elliptic");
-        writer.remove("border");
-        writer.remove("user_img");
-        writer.remove("animation");
+        writer.set("video_track.draw_options.rect", frame_rect);
+        writer.set<double>("video_track.draw_options.opacity", 1.0);
+        writer.remove("video_track.draw_options.label");
+        writer.remove("video_track.draw_options.elliptic");
+        writer.remove("video_track.draw_options.border");
+        writer.remove("video_track.user_img");
+        writer.remove("video_track.animation");
 
     }
 

@@ -17,6 +17,7 @@ public:
     using s_ptr_t = std::shared_ptr<i_media_stream>;
     using w_ptr_t = std::shared_ptr<i_media_stream>;
     using s_array_t = std::vector<s_ptr_t>;
+    using u_array_t = std::vector<u_ptr_t>;
 
     virtual ~i_media_stream() = default;
 

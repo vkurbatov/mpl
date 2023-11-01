@@ -1,7 +1,7 @@
 #ifndef MPL_AUDIO_COMPOSER_H
 #define MPL_AUDIO_COMPOSER_H
 
-#include "audio_sample.h"
+#include "media/audio_sample.h"
 
 namespace mpl::media
 {

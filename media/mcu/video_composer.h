@@ -1,8 +1,8 @@
 #ifndef MPL_VIDEO_COMPOSER_H
 #define MPL_VIDEO_COMPOSER_H
 
-#include "draw_options.h"
-#include "image_frame.h"
+#include "media/draw_options.h"
+#include "media/image_frame.h"
 #include <memory>
 
 

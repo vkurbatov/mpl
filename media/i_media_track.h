@@ -19,6 +19,8 @@ public:
     virtual const i_media_stream& media_stream() const = 0;
     virtual track_id_t track_id() const = 0;
     virtual std::string name() const = 0;
+    virtual bool is_enabled() const = 0;
+    virtual bool set_enabled(bool enabled) = 0;
 
     virtual const i_media_format& format() const = 0;
 };

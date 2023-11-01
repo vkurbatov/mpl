@@ -1,5 +1,5 @@
 #include "video_composer.h"
-#include "image_builder.h"
+#include "media/image_builder.h"
 
 #include <algorithm>
 #include <set>

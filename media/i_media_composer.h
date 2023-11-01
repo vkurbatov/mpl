@@ -15,8 +15,7 @@ public:
 
     virtual ~i_media_composer() = default;
 
-    virtual i_media_stream::s_ptr_t add_stream(const i_property& stream_property) = 0;
-    virtual i_media_stream::s_ptr_t get_stream(stream_id_t stream_id) const = 0;
+    virtual i_media_stream::u_ptr_t add_stream(const i_property& stream_property) = 0;
 
     virtual bool start() = 0;
     virtual bool stop() = 0;

@@ -1,10 +1,10 @@
 #include "media_composer_factory_impl.h"
-#include "i_media_converter_factory.h"
-#include "i_layout_manager.h"
-#include "i_media_track.h"
+#include "media/i_media_converter_factory.h"
+#include "media/i_layout_manager.h"
+#include "media/i_media_track.h"
 
-#include "audio_frame_impl.h"
-#include "video_frame_impl.h"
+#include "media/audio_frame_impl.h"
+#include "media/video_frame_impl.h"
 
 #include "core/i_buffer_collection.h"
 #include "utils/message_router_impl.h"
@@ -15,22 +15,24 @@
 #include "utils/adaptive_delay.h"
 #include "utils/option_helper.h"
 
-#include "media_message_types.h"
-#include "media_types.h"
-#include "media_option_types.h"
+#include "media/media_message_types.h"
+#include "media/media_types.h"
+#include "media/media_option_types.h"
 
-#include "image_frame.h"
-#include "audio_sample.h"
-#include "draw_options.h"
-#include "image_builder.h"
-#include "timestamp_calculator.h"
+#include "media/image_frame.h"
+#include "media/audio_sample.h"
+#include "media/draw_options.h"
+#include "media/image_builder.h"
+#include "media/timestamp_calculator.h"
+
+#include "compose_stream_params.h"
+
+#include "media/audio_mixer.h"
+#include "media/audio_level.h"
+#include "media/audio_format_helper.h"
 
 #include "audio_composer.h"
 #include "video_composer.h"
-
-#include "audio_mixer.h"
-#include "audio_level.h"
-#include "audio_format_helper.h"
 
 #include "tools/utils/sync_base.h"
 
@@ -102,11 +104,7 @@ class media_composer : public i_media_composer
 
     class composer_stream : public i_media_stream
             , i_message_sink
-            , std::enable_shared_from_this<composer_stream>
     {
-    public:
-        struct stream_params_t;
-
     private:
 
         class media_track : public i_media_track
@@ -126,6 +124,8 @@ class media_composer : public i_media_composer
             timestamp_t                 m_timestamp;
             frame_id_t                  m_frame_id;
 
+            bool                        m_enabled;
+
         public:
             media_track(composer_stream& owner
                         , i_media_converter::u_ptr_t&& media_converter
@@ -136,6 +136,7 @@ class media_composer : public i_media_composer
                 , m_max_queue_size(max_queue_size)
                 , m_timestamp(0)
                 , m_frame_id(0)
+                , m_enabled(false)
             {
 
             }
@@ -146,6 +147,16 @@ class media_composer : public i_media_composer
                 {
                     m_media_converter->set_sink(nullptr);
                 }
+            }
+
+            mutex_t& safe_mutex() const
+            {
+                return m_owner.safe_mutex();
+            }
+
+            inline compose_stream_params_t& stream_params() const
+            {
+                return m_owner.m_params;
             }
 
             bool push_frame(const i_media_frame& media_frame)
@@ -193,28 +204,11 @@ class media_composer : public i_media_composer
                 return false;
             }
 
-            // i_parametrizable interface
-        public:
-            bool set_params(const i_property &params) override
-            {
-                return false;
-            }
-
-            bool get_params(i_property &params) const override
-            {
-                return false;
-            }
-
             // i_media_track interface
         public:
             const i_media_stream &media_stream() const override
             {
                 return m_owner;
-            }
-
-            std::string name() const override
-            {
-                return {};
             }
         };
 
@@ -228,6 +222,7 @@ class media_composer : public i_media_composer
             timestamp_calculator        m_timestamp_calculator;
 
         public:
+
             audio_track(composer_stream& owner
                         , i_media_converter::u_ptr_t&& media_converter
                         , compose_stream_ptr_t&& compose_stream
@@ -270,10 +265,15 @@ class media_composer : public i_media_composer
                 return nullptr;
             }
 
-            inline void update_params(const stream_params_t& new_params)
+            const compose_audio_track_params_t& track_params() const
             {
-                m_compose_stream->options().volume = new_params.volume;
-                m_compose_stream->options().enabled = new_params.audio_enabled;
+                return stream_params().audio_track;
+            }
+
+            inline void update_params()
+            {
+                m_compose_stream->options().volume = track_params().volume;
+                m_compose_stream->options().enabled = track_params().enabled;
             }
 
             void prepare_inputs()
@@ -318,6 +318,49 @@ class media_composer : public i_media_composer
             const i_media_format &format() const override
             {
                 return m_audio_frame.format();
+            }
+
+            // i_media_track interface
+        public:
+            bool is_enabled() const override
+            {
+                return m_compose_stream->options().enabled;
+            }
+
+            bool set_enabled(bool enabled) override
+            {
+                m_owner.m_params.audio_track.enabled = enabled;
+                m_compose_stream->options().enabled = m_owner.m_params.audio_track.enabled;
+                return true;
+            }
+
+            // i_parametrizable interface
+        public:
+            bool set_params(const i_property &params) override
+            {
+                lock_t lock(safe_mutex());
+                if (utils::property::deserialize(m_owner.m_params.audio_track
+                                                    , params))
+                {
+                    update_params();
+                    return true;
+                }
+
+                return false;
+            }
+
+            bool get_params(i_property &params) const override
+            {
+                shared_lock_t lock(safe_mutex());
+                return utils::property::serialize(m_owner.m_params.audio_track
+                                                    , params);
+            }
+
+            // i_media_track interface
+        public:
+            std::string name() const override
+            {
+                return m_owner.m_params.audio_track.name;
             }
         };
 
@@ -376,12 +419,17 @@ class media_composer : public i_media_composer
                 return m_last_frame;
             }
 
-            void update_params(const stream_params_t& new_params)
+            const compose_video_track_params_t& track_params() const
             {
-                m_compose_stream->options().draw_options.target_rect = new_params.draw_options.target_rect;
-                m_compose_stream->options().order = new_params.order;
-                m_compose_stream->options().animation = new_params.animation;
-                m_compose_stream->options().enabled = new_params.video_enabled;
+                return stream_params().video_track;
+            }
+
+            void update_params()
+            {
+                m_compose_stream->options().draw_options.target_rect = track_params().draw_options.target_rect;
+                m_compose_stream->options().order = stream_params().order;
+                m_compose_stream->options().animation = track_params().animation;
+                m_compose_stream->options().enabled = track_params().enabled;
             }
 
             inline void clear()
@@ -468,88 +516,51 @@ class media_composer : public i_media_composer
             {
                 return m_video_frame.format();
             }
-        };
-    public:
-        struct stream_params_t
-        {
-            std::int32_t            order;
-            draw_options_t          draw_options;
-            double                  animation;
-            timestamp_t             timeout;
-            std::string             user_image_path;
-            bool                    audio_enabled;
-            bool                    video_enabled;
-            double                  volume;
-            std::string             name;
 
-            stream_params_t(std::int32_t order = 0
-                            , const draw_options_t& draw_options = {}
-                            , double animation = 0.0
-                            , timestamp_t timeout = 0
-                            , const std::string& user_image_path = {}
-                            , bool audio_enabled = true
-                            , bool video_enabled = true
-                            , double volume = 1.0
-                            , const std::string_view& name = {})
-                : order(order)
-                , draw_options(draw_options)
-                , animation(animation)
-                , timeout(timeout)
-                , user_image_path(user_image_path)
-                , audio_enabled(audio_enabled)
-                , video_enabled(video_enabled)
-                , volume(volume)
-                , name(name)
+            // i_media_track interface
+        public:
+            bool is_enabled() const override
             {
-
+                return m_compose_stream->options().enabled;
             }
 
-            stream_params_t(const i_property& params)
-                : stream_params_t()
+            bool set_enabled(bool enabled) override
             {
-                load(params);
+                m_owner.m_params.video_track.enabled = enabled;
+                m_compose_stream->options().enabled = m_owner.m_params.video_track.enabled;
+                return true;
             }
 
-            bool load(const i_property& params)
+            // i_parametrizable interface
+        public:
+            bool set_params(const i_property &params) override
             {
-                property_reader reader(params);
-                return reader.get("order", order)
-                        | reader.get("rect", draw_options.target_rect)
-                        | reader.get("border.weight", draw_options.border)
-                        | reader.get("opacity", draw_options.opacity)
-                        | reader.get("label", draw_options.label)
-                        | reader.get("elliptic", draw_options.elliptic)
-                        | reader.get("animation", animation)
-                        | reader.get("timeout", timeout)
-                        | reader.get("user_img", user_image_path)
-                        | reader.get("audio_enabled", audio_enabled)
-                        | reader.get("video_enabled", video_enabled)
-                        | reader.get("volume", volume)
-                        | reader.get("name", name);
+                lock_t lock(safe_mutex());
+                if (utils::property::deserialize(m_owner.m_params.video_track
+                                                    , params))
+                {
+                    update_params();
+                    return true;
+                }
+
+                return false;
             }
 
-            bool save(i_property& params) const
+            bool get_params(i_property &params) const override
             {
-                property_writer writer(params);
-                return writer.set("order", order)
-                        && writer.set("rect", draw_options.target_rect)
-                        && writer.set("border.weight", draw_options.border)
-                        && writer.set("opacity", draw_options.opacity)
-                        && writer.set("label", draw_options.label)
-                        && writer.set("elliptic", draw_options.elliptic)
-                        && writer.set("animation", animation)
-                        && writer.set("timeout", timeout)
-                        && writer.set("user_img", user_image_path, {})
-                        && writer.set("audio_enabled", audio_enabled)
-                        && writer.set("video_enabled", video_enabled)
-                        && writer.set("volume", volume)
-                        && writer.set("name", name);
+                shared_lock_t lock(safe_mutex());
+                return utils::property::serialize(m_owner.m_params.video_track
+                                                   , params);
+            }
+
+            std::string name() const override
+            {
+                return m_owner.m_params.video_track.name;
             }
         };
-
     private:
 
-        stream_params_t         m_params;
+        compose_stream_params_t m_params;
         stream_manager&         m_manager;
 
         message_router_impl     m_router;
@@ -561,10 +572,12 @@ class media_composer : public i_media_composer
 
     public:
 
+        using u_ptr_t = std::unique_ptr<composer_stream>;
         using s_ptr_t = std::shared_ptr<composer_stream>;
         using w_ptr_t = std::weak_ptr<composer_stream>;
         using s_array_t = std::vector<s_ptr_t>;
-        using map_t = std::unordered_map<stream_id_t, w_ptr_t>;
+        using r_array_t = std::vector<composer_stream*>;
+        using map_t = std::unordered_map<stream_id_t, composer_stream*>;
 
         static image_frame_t load_image(const std::string& user_image_path
                                         , video_format_id_t format_id)
@@ -579,17 +592,25 @@ class media_composer : public i_media_composer
             return {};
         }
 
-        static s_ptr_t create(stream_manager& manager
-                              , const i_property& stream_params)
+        static u_ptr_t create(stream_manager& manager
+                              , const i_property& stream_property)
         {
-            return std::make_shared<composer_stream>(manager
-                                                     , stream_params);
+            compose_stream_params_t stream_params;
+            if (utils::property::deserialize(stream_params
+                                             , stream_property))
+            {
+                return std::make_unique<composer_stream>(manager
+                                                         , std::move(stream_params)
+                                                         );
+            }
+
+            return nullptr;
 
         }
 
         composer_stream(stream_manager& manager
-                        , const i_property& stream_params)
-            : m_params(stream_params)
+                        , compose_stream_params_t&& stream_params)
+            : m_params(std::move(stream_params))
             , m_manager(manager)
             , m_stream_id(manager.next_stream_id())
             , m_audio_track(*this
@@ -600,8 +621,8 @@ class media_composer : public i_media_composer
                             , manager.create_video_converter()
                             , manager.create_video_compose_stream(m_params)
                             , manager.composer_params().video_params.format
-                            , load_image(m_params.user_image_path
-                             , manager.composer_params().video_params.format.format_id()))
+                            , load_image(m_params.video_track.user_image_path
+                            , manager.composer_params().video_params.format.format_id()))
         {
 
         }
@@ -611,13 +632,18 @@ class media_composer : public i_media_composer
             m_manager.on_remove_stream(this);
         }
 
+        mutex_t& safe_mutex() const
+        {
+            return m_manager.m_safe_mutex;
+        }
+
         void update_draw_options(const relative_frame_rect_t& target_rect = {})
         {
             auto is_layout = !target_rect.is_null();
             const auto& rect = is_layout ? target_rect
-                                         : m_params.draw_options.target_rect;
+                                         : m_params.video_track.draw_options.target_rect;
 
-            auto border = m_params.draw_options.border;
+            auto border = m_params.video_track.draw_options.border;
             if (is_layout
                     && border == 0
                     && m_audio_track.level() > 0.1)
@@ -653,7 +679,7 @@ class media_composer : public i_media_composer
 
         inline bool is_custom() const
         {
-            return !m_params.draw_options.target_rect.is_null();
+            return !m_params.video_track.draw_options.target_rect.is_null();
         }
 
         inline bool compare(const composer_stream& other) const
@@ -665,18 +691,18 @@ class media_composer : public i_media_composer
 
         inline bool is_audio_enabled() const
         {
-            return m_params.audio_enabled;
+            return m_params.audio_track.enabled;
         }
 
         inline bool is_video_enabled() const
         {
-            return m_params.video_enabled;
+            return m_params.video_track.enabled;
         }
 
         inline bool is_enabled() const
         {
-            return m_params.audio_enabled
-                    || m_params.video_enabled;
+            return m_params.audio_track.enabled
+                    || m_params.video_track.enabled;
         }
 
         inline void prepare_audio()
@@ -713,10 +739,12 @@ class media_composer : public i_media_composer
     public:
         bool set_params(const i_property &params) override
         {
-            if (m_params.load(params))
+            lock_t lock(safe_mutex());
+            if (utils::property::deserialize(m_params
+                                             , params))
             {
-                m_audio_track.update_params(m_params);
-                m_video_track.update_params(m_params);
+                m_audio_track.update_params();
+                m_video_track.update_params();
                 return true;
             }
 
@@ -725,7 +753,9 @@ class media_composer : public i_media_composer
 
         bool get_params(i_property &params) const override
         {
-            return m_params.save(params);
+            shared_lock_t lock(safe_mutex());
+            return utils::property::serialize(m_params
+                                              , params);
         }
 
         // i_media_stream interface
@@ -816,7 +846,7 @@ class media_composer : public i_media_composer
             return m_owner.m_composer_params;
         }
 
-        inline const i_layout* get_layout(const composer_stream::s_array_t& streams)
+        inline const i_layout* get_layout(const composer_stream::r_array_t& streams)
         {
             std::size_t result = 0;
             for (const auto& s: streams)
@@ -856,20 +886,20 @@ class media_composer : public i_media_composer
             return nullptr;
         }
 
-        audio_composer::i_compose_stream::u_ptr_t create_audio_compose_stream(const composer_stream::stream_params_t& stream_params)
+        audio_composer::i_compose_stream::u_ptr_t create_audio_compose_stream(const compose_stream_params_t& stream_params)
         {
-            audio_composer::compose_options_t options(stream_params.audio_enabled
-                                                      , stream_params.volume);
+            audio_composer::compose_options_t options(stream_params.audio_track.enabled
+                                                      , stream_params.audio_track.volume);
 
             return m_audio_composer.add_stream(options);
         }
 
-        video_composer::i_compose_stream::u_ptr_t create_video_compose_stream(const composer_stream::stream_params_t& stream_params)
+        video_composer::i_compose_stream::u_ptr_t create_video_compose_stream(const compose_stream_params_t& stream_params)
         {
-            video_composer::compose_options_t options(stream_params.draw_options
+            video_composer::compose_options_t options(stream_params.video_track.draw_options
                                                       , stream_params.order
-                                                      , stream_params.animation
-                                                      , stream_params.video_enabled);
+                                                      , stream_params.video_track.animation
+                                                      , stream_params.video_track.enabled);
 
             return m_video_composer.add_stream(options);
         }
@@ -879,37 +909,36 @@ class media_composer : public i_media_composer
             return m_stream_ids++;
         }
 
-        composer_stream::s_ptr_t add_stream(const i_property& stream_params)
+        composer_stream::u_ptr_t add_stream(const i_property& stream_params)
         {
             if (auto stream = composer_stream::create(*this
                                                       , stream_params))
             {
                 lock_t lock(m_safe_mutex);
-                m_streams[stream->stream_id()] = stream;
+                m_streams[stream->stream_id()] = stream.get();
                 return stream;
             }
 
             return nullptr;
         }
 
-        composer_stream::s_ptr_t get_stream(stream_id_t stream_id) const
+        composer_stream* get_stream(stream_id_t stream_id) const
         {
-            shared_lock_t lock(m_safe_mutex);
             if (auto it = m_streams.find(stream_id); it != m_streams.end())
             {
-                return it->second.lock();
+                return it->second;
             }
             return nullptr;
         }
 
-        composer_stream::s_array_t active_streams() const
+        composer_stream::r_array_t active_streams() const
         {
-            composer_stream::s_array_t array;
+            composer_stream::r_array_t array;
             {
                 // shared_lock_t lock(m_safe_mutex);
                 for (const auto& s : m_streams)
                 {
-                    if (auto stream = s.second.lock())
+                    if (auto stream = s.second)
                     {
                         if (stream->is_enabled())
                         {
@@ -1195,14 +1224,9 @@ public:
 
     // i_media_composer interface
 public:
-    i_media_stream::s_ptr_t add_stream(const i_property &stream_property) override
+    i_media_stream::u_ptr_t add_stream(const i_property &stream_property) override
     {
         return m_stream_manager.add_stream(stream_property);
-    }
-
-    i_media_stream::s_ptr_t get_stream(stream_id_t stream_id) const override
-    {
-        return m_stream_manager.get_stream(stream_id);
     }
 
     bool start() override
