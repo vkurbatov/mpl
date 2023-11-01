@@ -35,7 +35,7 @@ const audio_format_info_t audio_format_info_table[] =
 
 const audio_format_info_t &audio_format_info_t::get_info(audio_format_id_t format_id)
 {
-    return detail::audio_format_info_table[static_cast<std::int32_t>(format_id) + 1];
+    return detail::audio_format_info_table[static_cast<std::int32_t>(format_id)];
 }
 
 }

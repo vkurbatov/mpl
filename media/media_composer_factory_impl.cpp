@@ -1,6 +1,7 @@
 #include "media_composer_factory_impl.h"
 #include "i_media_converter_factory.h"
 #include "i_layout_manager.h"
+#include "i_media_track.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
@@ -48,13 +49,14 @@ namespace mpl::media
 {
 
 
-constexpr std::size_t default_max_frame_queue = 2;
+constexpr std::size_t default_max_video_frame_queue = 2;
+constexpr std::size_t default_max_audio_frame_queue = 50;
 constexpr timestamp_t default_audio_duration = durations::milliseconds(500);
 
 namespace detail
 {
 
-image_frame_t create_image(const i_video_frame& frame)
+image_frame_t create_image(const i_video_frame& frame, bool copy = false)
 {
     image_frame_t image(frame.format());
 
@@ -62,7 +64,7 @@ image_frame_t create_image(const i_video_frame& frame)
     {
         image.image_data.assign(buffer->data()
                                 , buffer->size()
-                                , false);
+                                , copy);
     }
 
     return image;
@@ -107,53 +109,38 @@ class media_composer : public i_media_composer
 
     private:
 
-        class audio_track
+        class media_track : public i_media_track
         {
+        protected:
             using frame_queue_t = std::queue<i_message::s_ptr_t>;
-            using compose_stream_ptr_t = audio_composer::i_compose_stream::s_ptr_t;
 
             mutable mutex_t             m_safe_mutex;
-
+            composer_stream&            m_owner;
 
             message_sink_impl           m_message_sink;
             i_media_converter::u_ptr_t  m_media_converter;
-            compose_stream_ptr_t        m_compose_stream;
-
 
             frame_queue_t               m_frame_queue;
-            audio_frame_impl            m_audio_frame;
+            std::size_t                 m_max_queue_size;
 
             timestamp_t                 m_timestamp;
             frame_id_t                  m_frame_id;
 
-            timestamp_calculator        m_timestamp_calculator;
-
         public:
-
-            audio_track(i_media_converter::u_ptr_t&& media_converter
-                        , compose_stream_ptr_t&& compose_stream
-                        , const i_audio_format& audio_format
-                        , stream_id_t stream_id)
-                : m_message_sink([&](const auto& message_frame) { return on_converter_message(message_frame); })
+            media_track(composer_stream& owner
+                        , i_media_converter::u_ptr_t&& media_converter
+                        , std::size_t max_queue_size)
+                : m_owner(owner)
+                , m_message_sink([&](const auto& message_frame) { return on_converter_message(message_frame); })
                 , m_media_converter(std::move(media_converter))
-                , m_compose_stream(std::move(compose_stream))
-                , m_audio_frame(audio_format
-                                , 0
-                                , 0)
+                , m_max_queue_size(max_queue_size)
                 , m_timestamp(0)
                 , m_frame_id(0)
-                , m_timestamp_calculator(audio_format.sample_rate())
             {
-                m_audio_frame.set_stream_id(stream_id);
-                m_audio_frame.set_track_id(0);
 
-                if (m_media_converter)
-                {
-                    m_media_converter->set_sink(&m_message_sink);
-                }
             }
 
-            ~audio_track()
+            ~media_track()
             {
                 if (m_media_converter)
                 {
@@ -161,24 +148,111 @@ class media_composer : public i_media_composer
                 }
             }
 
-            inline double level() const
-            {
-                return m_compose_stream->level();
-            }
-            
             bool push_frame(const i_media_frame& media_frame)
             {
-                if (media_frame.media_type() == media_type_t::audio)
+                if (m_media_converter)
                 {
-                    if (m_media_converter != nullptr)
+                    return m_media_converter->send_message(media_frame);
+                }
+
+                return on_converter_frame(media_frame);
+            }
+
+
+            bool on_converter_frame(const i_media_frame& media_frame)
+            {
+                if (auto clone_frame = media_frame.clone())
+                {
+                    lock_t lock(m_safe_mutex);
+                    m_frame_queue.emplace(std::move(clone_frame));
+
+                    while (m_frame_queue.size() > m_max_queue_size)
                     {
-                        return m_media_converter->send_message(media_frame);
+                        m_frame_queue.pop();
                     }
 
-                    return on_converter_message(media_frame);
+                    return true;
+                }
+                return false;
+            }
+
+            bool on_converter_message(const i_message& message)
+            {
+                switch(message.category())
+                {
+                    case message_category_t::data:
+                        if (static_cast<const i_message_data&>(message).subclass() == message_class_media
+                                && static_cast<const i_message_media_data&>(message).data_type() == media_data_type_t::frame)
+                        {
+                            return on_converter_frame(static_cast<const i_media_frame&>(message));
+                        }
+                    break;
+                    default:;
                 }
 
                 return false;
+            }
+
+            // i_parametrizable interface
+        public:
+            bool set_params(const i_property &params) override
+            {
+                return false;
+            }
+
+            bool get_params(i_property &params) const override
+            {
+                return false;
+            }
+
+            // i_media_track interface
+        public:
+            const i_media_stream &media_stream() const override
+            {
+                return m_owner;
+            }
+
+            std::string name() const override
+            {
+                return {};
+            }
+        };
+
+        class audio_track : public media_track
+        {
+            using compose_stream_ptr_t = audio_composer::i_compose_stream::s_ptr_t;
+
+            compose_stream_ptr_t        m_compose_stream;
+            audio_frame_impl            m_audio_frame;
+
+            timestamp_calculator        m_timestamp_calculator;
+
+        public:
+            audio_track(composer_stream& owner
+                        , i_media_converter::u_ptr_t&& media_converter
+                        , compose_stream_ptr_t&& compose_stream
+                        , const i_audio_format& audio_format)
+                : media_track(owner
+                              , std::move(media_converter)
+                              , default_max_audio_frame_queue)
+                , m_compose_stream(std::move(compose_stream))
+                , m_audio_frame(audio_format
+                                , 0
+                                , 0)
+                , m_timestamp_calculator(audio_format.sample_rate())
+            {
+                m_audio_frame.set_stream_id(owner.m_stream_id);
+                m_audio_frame.set_track_id(default_audio_track_id);
+
+                if (m_media_converter)
+                {
+                    m_media_converter->set_sink(&m_message_sink);
+                }
+            }
+
+            inline double level() const
+            {
+                return m_compose_stream->level();
             }
 
             i_media_frame::s_ptr_t pop_frame()
@@ -214,48 +288,13 @@ class media_composer : public i_media_composer
                 }
             }
 
-
-            bool on_converter_frame(const i_media_frame& media_frame)
-            {
-                if (auto clone_frame = media_frame.clone())
-                {
-                    lock_t lock(m_safe_mutex);
-                    m_frame_queue.emplace(std::move(clone_frame));
-
-                    while (m_frame_queue.size() > 50)
-                    {
-                        m_frame_queue.pop();
-                    }
-
-                    return true;
-                }
-                return false;
-            }
-
-
-            bool on_converter_message(const i_message& message)
-            {
-                switch(message.category())
-                {
-                    case message_category_t::data:
-                        if (static_cast<const i_message_data&>(message).subclass() == message_class_media
-                                && static_cast<const i_message_media_data&>(message).data_type() == media_data_type_t::frame)
-                        {
-                            return on_converter_frame(static_cast<const i_media_frame&>(message));
-                        }
-                    break;
-                    default:;
-                }
-
-                return false;
-            }
-
             const i_audio_frame* compose_frame()
             {
                 if (auto sample = m_compose_stream->compose_sample())
                 {
                     m_audio_frame.smart_buffers().set_buffer(media_buffer_index
                                                              , smart_buffer(&sample->sample_data));
+                    m_audio_frame.set_ntp_timestamp(utils::time::now());
                     m_audio_frame.set_timestamp(m_timestamp);
                     m_audio_frame.set_frame_id(m_frame_id);
 
@@ -269,74 +308,59 @@ class media_composer : public i_media_composer
             }
 
 
+
+            // i_media_track interface
+        public:
+            track_id_t track_id() const override
+            {
+                return m_audio_frame.track_id();
+            }
+
+            const i_media_format &format() const override
+            {
+                return m_audio_frame.format();
+            }
         };
 
-        class video_track
+        class video_track : public media_track
         {
-            using frame_queue_t = std::queue<i_message::s_ptr_t>;
             using compose_stream_ptr_t = video_composer::i_compose_stream::s_ptr_t;
-            mutable mutex_t             m_safe_mutex;
 
-            message_sink_impl           m_message_sink;
-            i_media_converter::u_ptr_t  m_media_converter;
             compose_stream_ptr_t        m_compose_stream;
-
             image_frame_t               m_user_image;
 
-            frame_queue_t               m_frame_queue;
             i_media_frame::s_ptr_t      m_last_frame;
             timestamp_t                 m_last_frame_time;
 
             video_frame_impl            m_video_frame;
-
-            timestamp_t                 m_timestamp;
-            frame_id_t                  m_frame_id;
             timestamp_calculator        m_timestamp_calculator;
 
         public:
 
-            video_track(i_media_converter::u_ptr_t&& media_converter
+            video_track(composer_stream& owner
+                        , i_media_converter::u_ptr_t&& media_converter
                         , compose_stream_ptr_t&& compose_stream
                         , const i_video_format& video_format
-                        , stream_id_t stream_id
                         , image_frame_t&& user_image = {})
-                : m_message_sink([&](const auto& message_frame) { return on_converter_message(message_frame); })
-                , m_media_converter(std::move(media_converter))
+                : media_track(owner
+                              , std::move(media_converter)
+                              , default_max_video_frame_queue)
                 , m_compose_stream(std::move(compose_stream))
                 , m_user_image(std::move(user_image))
+                , m_last_frame(nullptr)
                 , m_last_frame_time(0)
                 , m_video_frame(video_format
                                 , 0
                                 , 0)
-                , m_timestamp(0)
-                , m_frame_id(0)
                 , m_timestamp_calculator(video_sample_rate)
             {
-                m_video_frame.set_stream_id(stream_id);
-                m_video_frame.set_track_id(1);
+                m_video_frame.set_stream_id(m_owner.m_stream_id);
+                m_video_frame.set_track_id(default_video_track_id);
 
                 if (m_media_converter)
                 {
                     m_media_converter->set_sink(&m_message_sink);
                 }
-            }
-
-            ~video_track()
-            {
-                if (m_media_converter)
-                {
-                    m_media_converter->set_sink(nullptr);
-                }
-            }
-
-            bool push_frame(const i_media_frame& media_frame)
-            {
-                if (m_media_converter)
-                {
-                    return m_media_converter->send_message(media_frame);
-                }
-
-                return on_converter_frame(media_frame);
             }
 
             i_media_frame::s_ptr_t pop_frame()
@@ -424,6 +448,7 @@ class media_composer : public i_media_composer
 
                     m_timestamp = m_timestamp_calculator.calc_timestamp(frame_time());
 
+                    m_video_frame.set_ntp_timestamp(utils::time::now());
                     m_video_frame.set_timestamp(m_timestamp);
                     m_video_frame.set_frame_id(m_frame_id);
 
@@ -435,44 +460,17 @@ class media_composer : public i_media_composer
                 return nullptr;
             }
 
-        private:
-
-            bool on_converter_frame(const i_media_frame& media_frame)
+            // i_media_track interface
+        public:
+            track_id_t track_id() const override
             {
-                if (auto clone_frame = media_frame.clone())
-                {
-                    lock_t lock(m_safe_mutex);
-                    m_frame_queue.emplace(std::move(clone_frame));
-
-                    while (m_frame_queue.size() > default_max_frame_queue)
-                    {
-                        m_frame_queue.pop();
-                    }
-
-                    return true;
-                }
-                return false;
+                return m_video_frame.track_id();
             }
 
-
-            bool on_converter_message(const i_message& message)
+            const i_media_format &format() const override
             {
-                switch(message.category())
-                {
-                    case message_category_t::data:
-                        if (static_cast<const i_message_data&>(message).subclass() == message_class_media
-                                && static_cast<const i_message_media_data&>(message).data_type() == media_data_type_t::frame)
-                        {
-                            return on_converter_frame(static_cast<const i_media_frame&>(message));
-                        }
-                    break;
-                    default:;
-                }
-
-                return false;
+                return m_video_frame.format();
             }
-
-
         };
     public:
         struct stream_params_t
@@ -485,6 +483,7 @@ class media_composer : public i_media_composer
             bool                    audio_enabled;
             bool                    video_enabled;
             double                  volume;
+            std::string             name;
 
             stream_params_t(std::int32_t order = 0
                             , const draw_options_t& draw_options = {}
@@ -493,7 +492,8 @@ class media_composer : public i_media_composer
                             , const std::string& user_image_path = {}
                             , bool audio_enabled = true
                             , bool video_enabled = true
-                            , double volume = 1.0)
+                            , double volume = 1.0
+                            , const std::string_view& name = {})
                 : order(order)
                 , draw_options(draw_options)
                 , animation(animation)
@@ -502,6 +502,7 @@ class media_composer : public i_media_composer
                 , audio_enabled(audio_enabled)
                 , video_enabled(video_enabled)
                 , volume(volume)
+                , name(name)
             {
 
             }
@@ -526,7 +527,8 @@ class media_composer : public i_media_composer
                         | reader.get("user_img", user_image_path)
                         | reader.get("audio_enabled", audio_enabled)
                         | reader.get("video_enabled", video_enabled)
-                        | reader.get("volume", volume);
+                        | reader.get("volume", volume)
+                        | reader.get("name", name);
             }
 
             bool save(i_property& params) const
@@ -543,7 +545,8 @@ class media_composer : public i_media_composer
                         && writer.set("user_img", user_image_path, {})
                         && writer.set("audio_enabled", audio_enabled)
                         && writer.set("video_enabled", video_enabled)
-                        && writer.set("volume", volume);
+                        && writer.set("volume", volume)
+                        && writer.set("name", name);
             }
         };
 
@@ -592,16 +595,16 @@ class media_composer : public i_media_composer
             : m_params(stream_params)
             , m_manager(manager)
             , m_stream_id(manager.next_stream_id())
-            , m_audio_track(manager.create_audio_converter()
+            , m_audio_track(*this
+                            , manager.create_audio_converter()
                             , manager.create_audio_compose_stream(m_params)
-                            , manager.composer_params().audio_params.format
-                            , m_stream_id)
-            , m_video_track(manager.create_video_converter()
+                            , manager.composer_params().audio_params.format)
+            , m_video_track(*this
+                            , manager.create_video_converter()
                             , manager.create_video_compose_stream(m_params)
                             , manager.composer_params().video_params.format
-                            , m_stream_id
                             , load_image(m_params.user_image_path
-                                         , manager.composer_params().video_params.format.format_id()))
+                            , manager.composer_params().video_params.format.format_id()))
         {
 
         }
@@ -684,7 +687,7 @@ class media_composer : public i_media_composer
             m_audio_track.prepare_inputs();
         }
 
-        void prepare_video()
+        inline void prepare_video()
         {
             m_video_track.prepare_inputs();
         }
@@ -733,6 +736,11 @@ class media_composer : public i_media_composer
         stream_id_t stream_id() const override
         {
             return m_stream_id;
+        }
+
+        std::string name() const override
+        {
+            return m_params.name;
         }
 
         i_message_sink *sink(std::size_t index) override

@@ -59,8 +59,8 @@ struct image_builder::context_t
     using config_t = image_builder::config_t;
     using u_ptr_t = image_builder::context_ptr_t;
 
-    image_builder::config_t   m_config;
-    image_frame_t*                  m_output_frame;
+    image_builder::config_t             m_config;
+    image_frame_t*                      m_output_frame;
     pt::ocv::draw_processor             m_draw_processor;
 
 

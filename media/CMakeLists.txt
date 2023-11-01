@@ -78,6 +78,7 @@ set(PUBLIC_HEADERS
     track_info.h
     track_metrics.h
     i_media_stream.h
+    i_media_track.h
     i_media_format.h
     i_message_media_data.h
     i_media_frame.h

@@ -21,8 +21,6 @@
 namespace mpl::media
 {
 
-
-
 namespace detail
 {
 /*

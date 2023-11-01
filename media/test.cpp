@@ -1273,7 +1273,8 @@ void test16()
         {
             case message_category_t::data:
             {
-                return video_transcoder->send_message(message);
+                return false;
+                // return video_transcoder->send_message(message);
             }
             break;
             case message_category_t::command:
@@ -1905,7 +1906,7 @@ void test20()
         property_writer writer(*stream_params);
         writer.set("order", 1);
         writer.set("opacity", opacity);
-        writer.set("animation", 0.1);
+        // writer.set("animation", 0.1);
 
         std::string label = "stream #";
         label.append(std::to_string(i));
@@ -2041,7 +2042,7 @@ void test20()
     output_device->control(channel_control_t::open());
     input_audio_device->control(channel_control_t::open());
     input_video_device->control(channel_control_t::open());
-    vnc_device->control(channel_control_t::open());
+    // vnc_device->control(channel_control_t::open());
     bg_video_device->control(channel_control_t::open());
 
     for (auto& d : devices)
@@ -2606,10 +2607,6 @@ void test25()
 
 void test26()
 {
-
-
-
-
     pt::ffmpeg::libav_register();
     libav_input_device_factory input_device_factory;
     libav_output_device_factory output_device_factory;
@@ -2657,7 +2654,7 @@ void test26()
     input_device->source(0)->add_sink(&input_sink);
     input_device->control(channel_control_t::open());
     while(input_device->state() != channel_state_t::connected);
-    utils::time::sleep(durations::seconds(3));
+    utils::time::sleep(durations::seconds(5));
 
     auto libav_output_device_params = property_helper::create_object();
     {
@@ -2711,13 +2708,13 @@ void  tests()
     // test18();
     // test15();
     // test19(); // composer
-    // test20(); // composer2
+    test20(); // composer2
     // test21();
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)
     // test24();
     // test25(); // visca
-    test26(); // hls
+    // test26(); // hls
 
 }
 

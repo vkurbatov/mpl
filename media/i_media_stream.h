@@ -4,7 +4,8 @@
 #include "core/i_message_sink.h"
 #include "core/i_message_source.h"
 #include "core/i_parametrizable.h"
-#include "i_media_format.h"
+#include "media_types.h"
+#include <vector>
 
 namespace mpl::media
 {
@@ -20,11 +21,10 @@ public:
     virtual ~i_media_stream() = default;
 
     virtual stream_id_t stream_id() const = 0;
+    virtual std::string name() const = 0;
 
     virtual i_message_sink* sink(std::size_t index) = 0;
     virtual i_message_source* source(std::size_t index) = 0;
-
-
 };
 
 }

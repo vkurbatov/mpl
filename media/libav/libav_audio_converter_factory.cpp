@@ -35,9 +35,9 @@ bool audio_info_from_format(const i_audio_format& format
 class libav_audio_converter : public i_media_converter
 {
     pt::ffmpeg::libav_resampler     m_native_resampler;
-    audio_format_impl           m_input_format;
-    audio_format_impl           m_output_format;
-    i_message_sink*             m_output_sink;
+    audio_format_impl               m_input_format;
+    audio_format_impl               m_output_format;
+    i_message_sink*                 m_output_sink;
 
     pt::ffmpeg::audio_info_t        m_input_audio_info;
     pt::ffmpeg::audio_info_t        m_output_audio_info;
