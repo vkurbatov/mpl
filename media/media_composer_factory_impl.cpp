@@ -56,7 +56,7 @@ constexpr timestamp_t default_audio_duration = durations::milliseconds(500);
 namespace detail
 {
 
-image_frame_t create_image(const i_video_frame& frame, bool copy = false)
+image_frame_t create_image(const i_video_frame& frame)
 {
     image_frame_t image(frame.format());
 
@@ -64,7 +64,7 @@ image_frame_t create_image(const i_video_frame& frame, bool copy = false)
     {
         image.image_data.assign(buffer->data()
                                 , buffer->size()
-                                , copy);
+                                , false);
     }
 
     return image;
@@ -220,7 +220,7 @@ class media_composer : public i_media_composer
 
         class audio_track : public media_track
         {
-            using compose_stream_ptr_t = audio_composer::i_compose_stream::s_ptr_t;
+            using compose_stream_ptr_t = audio_composer::i_compose_stream::u_ptr_t;
 
             compose_stream_ptr_t        m_compose_stream;
             audio_frame_impl            m_audio_frame;
@@ -294,7 +294,6 @@ class media_composer : public i_media_composer
                 {
                     m_audio_frame.smart_buffers().set_buffer(media_buffer_index
                                                              , smart_buffer(&sample->sample_data));
-                    m_audio_frame.set_ntp_timestamp(utils::time::now());
                     m_audio_frame.set_timestamp(m_timestamp);
                     m_audio_frame.set_frame_id(m_frame_id);
 
@@ -324,7 +323,7 @@ class media_composer : public i_media_composer
 
         class video_track : public media_track
         {
-            using compose_stream_ptr_t = video_composer::i_compose_stream::s_ptr_t;
+            using compose_stream_ptr_t = video_composer::i_compose_stream::u_ptr_t;
 
             compose_stream_ptr_t        m_compose_stream;
             image_frame_t               m_user_image;
@@ -347,7 +346,6 @@ class media_composer : public i_media_composer
                               , default_max_video_frame_queue)
                 , m_compose_stream(std::move(compose_stream))
                 , m_user_image(std::move(user_image))
-                , m_last_frame(nullptr)
                 , m_last_frame_time(0)
                 , m_video_frame(video_format
                                 , 0
@@ -448,7 +446,6 @@ class media_composer : public i_media_composer
 
                     m_timestamp = m_timestamp_calculator.calc_timestamp(frame_time());
 
-                    m_video_frame.set_ntp_timestamp(utils::time::now());
                     m_video_frame.set_timestamp(m_timestamp);
                     m_video_frame.set_frame_id(m_frame_id);
 
@@ -604,7 +601,7 @@ class media_composer : public i_media_composer
                             , manager.create_video_compose_stream(m_params)
                             , manager.composer_params().video_params.format
                             , load_image(m_params.user_image_path
-                            , manager.composer_params().video_params.format.format_id()))
+                             , manager.composer_params().video_params.format.format_id()))
         {
 
         }
@@ -687,7 +684,7 @@ class media_composer : public i_media_composer
             m_audio_track.prepare_inputs();
         }
 
-        inline void prepare_video()
+        void prepare_video()
         {
             m_video_track.prepare_inputs();
         }
@@ -859,7 +856,7 @@ class media_composer : public i_media_composer
             return nullptr;
         }
 
-        audio_composer::i_compose_stream::s_ptr_t create_audio_compose_stream(const composer_stream::stream_params_t& stream_params)
+        audio_composer::i_compose_stream::u_ptr_t create_audio_compose_stream(const composer_stream::stream_params_t& stream_params)
         {
             audio_composer::compose_options_t options(stream_params.audio_enabled
                                                       , stream_params.volume);
@@ -867,7 +864,7 @@ class media_composer : public i_media_composer
             return m_audio_composer.add_stream(options);
         }
 
-        video_composer::i_compose_stream::s_ptr_t create_video_compose_stream(const composer_stream::stream_params_t& stream_params)
+        video_composer::i_compose_stream::u_ptr_t create_video_compose_stream(const composer_stream::stream_params_t& stream_params)
         {
             video_composer::compose_options_t options(stream_params.draw_options
                                                       , stream_params.order

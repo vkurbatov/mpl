@@ -64,7 +64,7 @@ public:
 
     const image_frame_t* compose();
 
-    i_compose_stream::s_ptr_t add_stream(const compose_options_t& options);
+    i_compose_stream::u_ptr_t add_stream(const compose_options_t& options);
 
 };
 

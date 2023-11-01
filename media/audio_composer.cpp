@@ -48,10 +48,10 @@ struct audio_composer::pimpl_t
     public:
         using set_t = std::set<compose_stream_impl*>;
 
-        static s_ptr_t create(pimpl_t& owner
+        static u_ptr_t create(pimpl_t& owner
                               , const compose_options_t& compose_options)
         {
-            return std::make_shared<compose_stream_impl>(owner
+            return std::make_unique<compose_stream_impl>(owner
                                                          , compose_options);
         }
 
@@ -205,7 +205,7 @@ struct audio_composer::pimpl_t
         return nullptr;
     }
 
-    audio_composer::i_compose_stream::s_ptr_t add_stream(const audio_composer::compose_options_t &options)
+    audio_composer::i_compose_stream::u_ptr_t add_stream(const audio_composer::compose_options_t &options)
     {
         if (auto stream = compose_stream_impl::create(*this
                                                       , options))
@@ -239,7 +239,7 @@ const audio_sample_t* audio_composer::compose()
     return m_pimpl->compose();
 }
 
-audio_composer::i_compose_stream::s_ptr_t audio_composer::add_stream(const compose_options_t &options)
+audio_composer::i_compose_stream::u_ptr_t audio_composer::add_stream(const compose_options_t &options)
 {
     return m_pimpl->add_stream(options);
 }

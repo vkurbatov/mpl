@@ -99,11 +99,11 @@ struct video_composer::pimpl_t
 
         using set_t = std::set<compose_stream_impl*>;
 
-        static s_ptr_t create(pimpl_t& owner
+        static u_ptr_t create(pimpl_t& owner
                               , const compose_options_t& compose_options
                               , std::size_t id)
         {
-            return std::make_shared<compose_stream_impl>(owner
+            return std::make_unique<compose_stream_impl>(owner
                                                          , compose_options
                                                          , id);
         }
@@ -252,7 +252,7 @@ struct video_composer::pimpl_t
         return streams;
     }
 
-    video_composer::i_compose_stream::s_ptr_t add_stream(const video_composer::compose_options_t &options)
+    video_composer::i_compose_stream::u_ptr_t add_stream(const video_composer::compose_options_t &options)
     {
         if (auto stream = compose_stream_impl::create(*this
                                                       , options
@@ -288,7 +288,7 @@ const image_frame_t *video_composer::compose()
     return m_pimpl->compose();
 }
 
-video_composer::i_compose_stream::s_ptr_t video_composer::add_stream(const compose_options_t &options)
+video_composer::i_compose_stream::u_ptr_t video_composer::add_stream(const compose_options_t &options)
 {
     return m_pimpl->add_stream(options);
 }

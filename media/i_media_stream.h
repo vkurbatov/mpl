@@ -1,8 +1,7 @@
 #ifndef MPL_I_MEDIA_STREAM_H
 #define MPL_I_MEDIA_STREAM_H
 
-#include "core/i_message_sink.h"
-#include "core/i_message_source.h"
+#include "core/i_message_transceiver.h"
 #include "core/i_parametrizable.h"
 #include "media_types.h"
 #include <vector>
@@ -11,6 +10,7 @@ namespace mpl::media
 {
 
 class i_media_stream : public i_parametrizable
+        , public i_message_transceiver
 {
 public:
     using u_ptr_t = std::unique_ptr<i_media_stream>;
@@ -22,9 +22,6 @@ public:
 
     virtual stream_id_t stream_id() const = 0;
     virtual std::string name() const = 0;
-
-    virtual i_message_sink* sink(std::size_t index) = 0;
-    virtual i_message_source* source(std::size_t index) = 0;
 };
 
 }

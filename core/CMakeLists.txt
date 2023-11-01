@@ -57,6 +57,7 @@ set(PUBLIC_HEADERS
     i_message.h
     i_message_sink.h
     i_message_source.h
+    i_message_transceiver.h
     i_message_data.h
     i_message_event.h
     i_message_command.h
