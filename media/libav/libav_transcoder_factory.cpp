@@ -395,7 +395,7 @@ public:
                 }
 
 
-                if (m_frame_splitter.duration() > 0
+                if (m_frame_splitter.frame_size() > 0
                         && media_frame.media_type() == media_type_t::audio)
                 {
                     auto samples = m_frame_splitter.buffered_samples();

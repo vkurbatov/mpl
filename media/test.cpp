@@ -1874,6 +1874,8 @@ void test20()
                                             , 48000
                                             , 2);
 
+    compose_audio_format.set_frame_size(480);
+
 
     video_format_impl compose_video_format(video_format_id_t::rgb24
                                             , 1280

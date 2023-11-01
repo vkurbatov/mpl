@@ -6,6 +6,7 @@
 #include "utils/property_writer.h"
 #include "utils/option_helper.h"
 #include "core/option_types.h"
+#include "media/media_option_types.h"
 
 namespace mpl::media
 {
@@ -64,9 +65,28 @@ audio_format_impl::audio_format_impl(const i_property &params)
     set_params(params);
 }
 
+std::size_t audio_format_impl::frame_size() const
+{
+    return option_reader(m_options).get<std::int32_t>(opt_codec_frame_size, 0);
+}
+
 const audio_info_t &audio_format_impl::audio_info() const
 {
     return m_audio_info;
+}
+
+audio_format_impl &audio_format_impl::set_frame_size(std::size_t frame_size)
+{
+    option_writer writer(m_options);
+    if (frame_size == 0)
+    {
+        writer.remove(opt_codec_frame_size);
+    }
+    else
+    {
+        writer.set<std::int32_t>(opt_codec_frame_size, frame_size);
+    }
+    return *this;
 }
 
 audio_format_impl &audio_format_impl::set_format_id(const audio_format_id_t &format_id)

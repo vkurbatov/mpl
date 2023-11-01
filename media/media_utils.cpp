@@ -106,6 +106,11 @@ bool convert_format_options(const i_option &options, i_property &property)
                 }
             }
             break;
+            case opt_codec_frame_size:
+            {
+                result |= loader.load<std::int32_t>(id, "frame_size");
+            }
+            break;
             case opt_codec_params:
                 result |= loader.load<std::string>(id, "codec_params");
             break;
@@ -125,6 +130,7 @@ bool convert_format_options(const i_property &property, i_option &options)
     result |= saver.save<std::int32_t>(opt_frm_track_id, "track_id");
     result |= saver.save<std::int32_t>(opt_frm_stream_id, "device_id");
     result |= saver.save<std::int32_t>(opt_frm_layer_id, "layer_id");
+    result |= saver.save<std::int32_t>(opt_codec_frame_size, "frame_size");
 
     if (auto e = property_reader(property).get<octet_string_t>("extra_data"))
     {

@@ -808,6 +808,24 @@ class media_composer : public i_media_composer
 
             return false;
         }
+
+        // i_media_stream interface
+    public:
+        i_media_track *get_track(track_id_t track_id) override
+        {
+            switch(track_id)
+            {
+                case default_audio_track_id:
+                    return &m_audio_track;
+                break;
+                case default_video_track_id:
+                    return &m_video_track;
+                break;
+                default:;
+            }
+
+            return nullptr;
+        }
     };
 
     class stream_manager
@@ -924,6 +942,7 @@ class media_composer : public i_media_composer
 
         composer_stream* get_stream(stream_id_t stream_id) const
         {
+            shared_lock_t lock(m_safe_mutex);
             if (auto it = m_streams.find(stream_id); it != m_streams.end())
             {
                 return it->second;
@@ -1227,6 +1246,11 @@ public:
     i_media_stream::u_ptr_t add_stream(const i_property &stream_property) override
     {
         return m_stream_manager.add_stream(stream_property);
+    }
+
+    i_media_stream* get_stream(stream_id_t stream_id) override
+    {
+        return m_stream_manager.get_stream(stream_id);
     }
 
     bool start() override

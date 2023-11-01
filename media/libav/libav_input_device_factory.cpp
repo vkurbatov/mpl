@@ -340,8 +340,6 @@ public:
                     pt::ffmpeg::frame_ref_t libav_frame;
                     if (native_input_device.read(libav_frame))
                     {
-
-
                         auto& stream = streams[libav_frame.info.stream_id];
                         error_counter = 0;
                         on_native_frame(stream

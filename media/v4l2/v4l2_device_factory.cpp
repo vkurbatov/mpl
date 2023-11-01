@@ -147,7 +147,7 @@ class v4l2_device : public i_device
 
         device_params_t(device_type_t device_type = device_type_t::v4l2_in
                 , const std::string_view& url = {}
-                , std::size_t buffers = 10)
+                , std::size_t buffers = 4)
             : device_type(device_type)
             , url(url)
             , buffers(buffers)
@@ -191,7 +191,7 @@ class v4l2_device : public i_device
         {
             return { url
                     , buffers
-                    , 50 };
+                    , 100 };
         }
     };
 
@@ -200,7 +200,6 @@ class v4l2_device : public i_device
         mutable mutex_t                         m_safe_mutex;
 
         v4l2::v4l2_input_device                 m_native_device;
-        v4l2::frame_info_t                      m_frame_info;
         mutable v4l2::frame_info_t::array_t     m_cached_formats;
         mutable v4l2::control_info_t::map_t     m_cached_controls;
 
@@ -223,6 +222,11 @@ class v4l2_device : public i_device
                 return true;
             }
             return false;
+        }
+
+        inline v4l2::frame_info_t get_format_info() const
+        {
+            return m_native_device.get_format();
         }
 
         inline bool close()
@@ -792,9 +796,11 @@ public:
 
         while(is_running())
         {
-            change_state(channel_state_t::connecting);
+            change_state(channel_state_t::connecting);          
             if (m_wrapped_device.open())
             {
+                frame_time = 100;
+
                 change_state(channel_state_t::connected);
 
                 error_counter = 0;
@@ -827,6 +833,7 @@ public:
                         {
                             frame_time = 1000 / v4l2_frame.frame_info.fps;
                         }
+                        continue;
                     }
                     else
                     {

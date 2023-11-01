@@ -38,8 +38,10 @@ public:
     audio_format_impl(const i_audio_format& other);
     audio_format_impl(const i_property& params);
 
+    std::size_t frame_size() const;
     const audio_info_t& audio_info() const;
 
+    audio_format_impl& set_frame_size(std::size_t frame_size);
     audio_format_impl& set_format_id(const audio_format_id_t& format_id);
     audio_format_impl& set_sample_rate(std::int32_t sample_rate);
     audio_format_impl& set_channels(std::int32_t channels);

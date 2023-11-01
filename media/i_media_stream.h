@@ -9,6 +9,8 @@
 namespace mpl::media
 {
 
+class i_media_track;
+
 class i_media_stream : public i_parametrizable
         , public i_message_transceiver
 {
@@ -23,6 +25,7 @@ public:
 
     virtual stream_id_t stream_id() const = 0;
     virtual std::string name() const = 0;
+    virtual i_media_track* get_track(track_id_t track_id) = 0;
 };
 
 }
