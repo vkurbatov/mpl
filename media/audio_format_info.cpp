@@ -27,7 +27,7 @@ const audio_format_info_t audio_format_info_table[] =
     { 64,   0,      false,  true,   true,   utils::to_fourcc({})  },    // float64p
     { 8,    20,     true,   false,  false,  utils::to_fourcc({})  },    // pcma
     { 8,    20,     true,   false,  false,  utils::to_fourcc({})  },    // pcmu
-    { 16,   20,     true,   false,  false,  utils::to_fourcc({})  },    // opus
+    { 16,   10,     true,   false,  false,  utils::to_fourcc({})  },    // opus
     { 32,   1024,   true,   false,  false,  utils::to_fourcc({})  }     // aac
 };
 

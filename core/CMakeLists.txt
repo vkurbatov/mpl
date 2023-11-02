@@ -63,6 +63,7 @@ set(PUBLIC_HEADERS
     i_message_command.h
     i_message_packet.h
     i_message_channel.h
+    i_engine.h
     )
 
 set(PRIVATE_HEADERS

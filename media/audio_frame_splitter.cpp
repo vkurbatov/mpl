@@ -74,6 +74,7 @@ data_fragment_queue_t audio_frame_splitter::push_frame(const void *data
                                                        , std::size_t size)
 {
     data_fragment_queue_t result;
+
     if (!m_splitters.empty())
     {
         if (m_splitters.size() == 1)
@@ -113,9 +114,9 @@ data_fragment_queue_t audio_frame_splitter::push_frame(const void *data
             data_ptr += part_size;
         }
 
-        for (auto& f : fragments)
+        for (auto&& f : fragments)
         {
-            result.push(std::move(f));
+            result.emplace(std::move(f));
         }
     }
 

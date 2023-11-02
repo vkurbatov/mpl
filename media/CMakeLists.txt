@@ -60,6 +60,7 @@ set(SOURCES
     media_frame_buffer.cpp
     media_frame_selector.cpp
     media_sink_impl.cpp
+    media_engine_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -101,6 +102,7 @@ set(PUBLIC_HEADERS
     i_device.h
     i_device_factory.h
     i_frame_buffer.h
+    i_media_engine.h
     )
 
 set(PRIVATE_HEADERS
@@ -147,6 +149,7 @@ set(PRIVATE_HEADERS
     media_frame_buffer.h
     media_frame_selector.h
     media_sink_impl.h
+    media_engine_impl.h
 )
 
 

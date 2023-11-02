@@ -22,12 +22,6 @@ v4l2::pixel_format_t format_to_v4l2(video_format_id_t video_format)
     return video_format_info_t::get_info(video_format).fourcc;
 }
 
-}
-
-namespace mpl::utils
-{
-
-
 template<>
 bool convert(const v4l2::frame_info_t& frame_info
              , media::video_format_impl& video_format)

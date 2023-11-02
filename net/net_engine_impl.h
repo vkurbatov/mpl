@@ -2,8 +2,14 @@
 #define MPL_NET_ENGINE_IMPL_H
 
 #include "i_net_engine.h"
-#include "tools/io/io_core.h"
 #include "tools/io/i_io_worker_factory.h"
+
+namespace pt::io
+{
+
+class io_core;
+
+}
 
 namespace mpl
 {
@@ -22,18 +28,12 @@ public:
     };
 
 private:
-    class worker_factory final : public pt::io::i_io_worker_factory
-    {
-        i_task_manager&     m_task_manager;
-    public:
-        worker_factory(i_task_manager& task_manager);
-        // i_io_worker_factory interface
-    public:
-        bool execute_worker(const worker_proc_t &worker_proc) override;
-    };
 
-    worker_factory      m_worker_factory;
-    pt::io::io_core     m_io_core;
+    struct pimpl_t;
+    using pimpl_ptr_t = std::unique_ptr<pimpl_t>;
+
+    pimpl_ptr_t         m_pimpl;
+
 public:
 
 
@@ -47,6 +47,7 @@ public:
 
     net_engine_impl(const config_t& config
                     , i_task_manager& task_manager);
+    ~net_engine_impl();
 
     pt::io::io_core& io_core();
 

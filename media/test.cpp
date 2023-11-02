@@ -2700,6 +2700,87 @@ void test26()
     return;
 }
 
+void test27()
+{
+    pt::ffmpeg::libav_register();
+    libav_input_device_factory input_device_factory;
+    libav_output_device_factory output_device_factory;
+/*
+    mpl::media::smart_transcoder_factory smart_factory(task_manager_factory::single_manager()
+                                                       , mpl::media::libav_transcoder_factory::decoder_factory()
+                                                        , mpl::media::libav_transcoder_factory::encoder_factory()
+                                                        , mpl::media::media_converter_factory_impl::builtin_converter_factory());
+*/
+
+    std::string input_url = "pulse://alsa_input.pci-0000_00_05.0.analog-stereo";
+    std::string input_options = "buffer_size=480;sample_rate=48000;channels=2";
+
+    std::string output_url = "pulse://alsa_output.pci-0000_00_05.0.analog-stereo";
+    std::string output_options = "buffer_size=480";
+
+
+    auto libav_input_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_input_device_params);
+        writer.set<std::string>("url", input_url);
+        writer.set<std::string>("options", input_options);
+    }
+
+    audio_format_impl audio_format(audio_format_id_t::pcm16
+                                   , 48000
+                                   , 1);
+
+    auto libav_output_device_params = property_helper::create_object();
+    {
+        property_writer writer(*libav_output_device_params);
+        writer.set<std::string>("url", output_url);
+        writer.set<std::string>("options", output_options);
+
+
+        i_property::s_array_t streams;
+        if (auto ap = property_helper::create_object())
+        {
+            if (audio_format.get_params(*ap))
+            {
+                streams.emplace_back(std::move(ap));
+            }
+        }
+
+
+        writer.set("streams", streams);
+    }
+
+    audio_format.set_frame_size(480);
+
+    auto audio_converter = mpl::media::libav_audio_converter_factory::get_instance().create_converter(*audio_format.get_params("format"));
+
+    auto input_device = input_device_factory.create_device(*libav_input_device_params);
+    auto output_device = output_device_factory.create_device(*libav_output_device_params);
+
+    input_device->source(0)->add_sink(audio_converter.get());
+    // input_device->source(0)->add_sink(output_device->sink(0));
+
+    audio_converter->set_sink(output_device->sink(0));
+
+    output_device->control(channel_control_t::open());
+    input_device->control(channel_control_t::open());
+
+    utils::time::sleep(durations::seconds(2000));
+
+    input_device->control(channel_control_t::close());
+    output_device->control(channel_control_t::close());
+
+
+    input_device->source(0)->remove_sink(output_device->sink(0));
+
+    return;
+}
+
+void test28()
+{
+
+}
+
 }
 
 void  tests()
@@ -2707,6 +2788,7 @@ void  tests()
     //test1();
     //test6();
     // test9();
+    // test10(); //alsa
     // test13();
     // test13_2(); // vnc
     // test16(); // smart_transcoder
@@ -2714,13 +2796,15 @@ void  tests()
     // test18();
     // test15();
     // test19(); // composer
-    test20(); // composer2
+    // test20(); // composer2
     // test21();
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)
     // test24();
     // test25(); // visca
     // test26(); // hls
+    // test27(); // audio-loop with frame splitter
+    test28();
 
 }
 

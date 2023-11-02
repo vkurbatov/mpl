@@ -550,7 +550,10 @@ public:
                 libav_frame.info.pts = frame.timestamp();
                 libav_frame.info.dts = libav_frame.info.pts;
 
-                std::clog << "audio #" << frame.frame_id() << ", ts: " << frame.timestamp() << std::endl;
+                std::clog << "audio #" << frame.frame_id()
+                          << ", ts: " << frame.timestamp()
+                          << ", sz: " << buffer->size()
+                          << std::endl;
 
                 m_frame_manager.push_frame(std::move(libav_frame));
 

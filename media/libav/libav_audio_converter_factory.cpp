@@ -48,7 +48,6 @@ inline bool is_compatible(const i_audio_frame& frame
         {
             return true;
         }
-
     }
 
     return false;
