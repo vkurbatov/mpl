@@ -13,8 +13,6 @@
 #include "utils/timer_manager_impl.h"
 #include "utils/message_command_impl.h"
 
-#include "net_message_types.h"
-#include "net_engine_config.h"
 
 #include "core/i_message_source.h"
 #include "core/i_message_event.h"
@@ -44,6 +42,10 @@
 #include "sq/sq_parser.h"
 #include "sq/sq_stitcher.h"
 
+#include "net_message_types.h"
+#include "net_engine_config.h"
+#include "net_core.h"
+
 #include "utils/endian_utils.h"
 
 #include "tools/io/net/net_utils.h"
@@ -63,7 +65,9 @@ namespace mpl::net
 void test1()
 {
 
-    auto& engine = net_engine_impl::get_instance();
+    net_engine_impl engine({}
+                           , task_manager_factory::single_manager()
+                           , timer_manager_factory::single_manager());
 
     udp_transport_params_t socket_param_1;
     udp_transport_params_t socket_param_2;
@@ -340,7 +344,9 @@ void test4()
     test_promise.set_value();
     f.wait();
 
-    auto& engine = net_engine_impl::get_instance();
+    net_engine_impl engine({}
+                           , task_manager_factory::single_manager()
+                           , timer_manager_factory::single_manager());
 
     engine.start();
 
@@ -536,7 +542,9 @@ void test4()
 
 void test5()
 {
-    auto& engine = net_engine_impl::get_instance();
+    net_engine_impl engine({}
+                           , task_manager_factory::single_manager()
+                           , timer_manager_factory::single_manager());
 
     engine.start();
 

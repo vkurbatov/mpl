@@ -36,11 +36,6 @@ public:
     using u_ptr_t = std::unique_ptr<net_engine_impl>;
     using s_ptr_t = std::shared_ptr<net_engine_impl>;
 
-    static void set_default_config(const net_engine_config_t& config);
-    static const net_engine_config_t& default_config();
-
-    static net_engine_impl& get_instance();
-
     static u_ptr_t create(const net_engine_config_t& config
                           , i_task_manager& task_manager
                           , i_timer_manager& timer_manager);

@@ -141,24 +141,6 @@ struct net_engine_config_storage_t
     static net_engine_config_t  net_engine_config;
 };
 
-void net_engine_impl::set_default_config(const net_engine_config_t &config)
-{
-    net_engine_config_storage_t::net_engine_config = config;
-}
-
-const net_engine_config_t &net_engine_impl::default_config()
-{
-    return net_engine_config_storage_t::net_engine_config;
-}
-
-net_engine_impl &net_engine_impl::get_instance()
-{
-    static net_engine_impl single_engine(net_engine_config_storage_t::net_engine_config
-                                         , task_manager_factory::single_manager()
-                                         , timer_manager_factory::single_manager());
-    return single_engine;
-}
-
 net_engine_impl::u_ptr_t net_engine_impl::create(const net_engine_config_t& config
                                                  , i_task_manager& task_manager
                                                  , i_timer_manager& timer_manager)

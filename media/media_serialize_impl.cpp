@@ -6,6 +6,7 @@
 #include "audio_format_impl.h"
 #include "video_format_impl.h"
 #include "video_frame_types.h"
+#include "device_types.h"
 
 #include "track_info.h"
 
@@ -19,6 +20,10 @@
 #include "mcu/compose_audio_track_params.h"
 #include "mcu/compose_video_track_params.h"
 #include "mcu/compose_stream_params.h"
+
+#include "apm/apm_device_params.h"
+#include "ipc/ipc_input_device_params.h"
+#include "ipc/ipc_output_device_params.h"
 
 namespace mpl
 {
@@ -409,6 +414,94 @@ bool utils::property::deserialize(compose_stream_params_t& value
             | reader.get("name", value.name)
             | reader.get("audio_track", value.audio_track)
             | reader.get("video_track", value.video_track);
+}
+
+// apm_device_params_t
+template<>
+bool utils::property::serialize(const apm_device_params_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("device_type", device_type_t::apm)
+            && writer.set("format.channels", value.wap_config.format.channels)
+            && writer.set("delay_offset_ms", value.wap_config.processing_config.ap_delay_offset_ms)
+            && writer.set("delay_stream_ms", value.wap_config.processing_config.ap_delay_stream_ms)
+            && writer.set("aec.mode", value.wap_config.processing_config.aec_mode)
+            && writer.set("aec.drift_ms", value.wap_config.processing_config.aec_drift_ms)
+            && writer.set("aec.auto_delay_frames", value.wap_config.processing_config.aec_auto_delay_period)
+            && writer.set("gc.mode", value.wap_config.processing_config.gc_mode)
+            && writer.set("ns.mode", value.wap_config.processing_config.ns_mode)
+            && writer.set("vad.mode", value.wap_config.processing_config.vad_mode);
+}
+
+template<>
+bool utils::property::deserialize(apm_device_params_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    if (reader.get("device_type", device_type_t::apm) == device_type_t::apm)
+    {
+        return reader.get("format.sample_rate", value.wap_config.format.sample_rate)
+                | reader.get("format.channels", value.wap_config.format.channels)
+                | reader.get("delay_offset_ms", value.wap_config.processing_config.ap_delay_offset_ms)
+                | reader.get("delay_stream_ms", value.wap_config.processing_config.ap_delay_stream_ms)
+                | reader.get("aec.mode", value.wap_config.processing_config.aec_mode)
+                | reader.get("aec.drift_ms", value.wap_config.processing_config.aec_drift_ms)
+                | reader.get("aec.auto_delay_frames", value.wap_config.processing_config.aec_auto_delay_period)
+                | reader.get("gc.mode", value.wap_config.processing_config.gc_mode)
+                | reader.get("ns.mode", value.wap_config.processing_config.ns_mode)
+                | reader.get("vad.mode", value.wap_config.processing_config.vad_mode);
+    }
+
+    return false;
+}
+
+// ipc_input_device_params_t
+template<>
+bool utils::property::serialize(const ipc_input_device_params_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("device_type", device_type_t::ipc_in)
+            && writer.set("channel_name", value.channel_name);
+}
+
+template<>
+bool utils::property::deserialize(ipc_input_device_params_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    if (reader.get("device_type", device_type_t::ipc_in) == device_type_t::ipc_in)
+    {
+        return reader.get("channel_name", value.channel_name);
+    }
+
+    return false;
+}
+
+// ipc_output_device_params_t
+template<>
+bool utils::property::serialize(const ipc_output_device_params_t& value
+                                , i_property& property)
+{
+    property_writer writer(property);
+    return writer.set("device_type", device_type_t::ipc_out)
+            && writer.set("channel_name", value.channel_name)
+            && writer.set("buffer_size", value.buffer_size);
+}
+
+template<>
+bool utils::property::deserialize(ipc_output_device_params_t& value
+                                  , const i_property& property)
+{
+    property_reader reader(property);
+    if (reader.get("device_type", device_type_t::ipc_out) == device_type_t::ipc_out)
+    {
+        return reader.get("channel_name", value.channel_name)
+                && reader.get("buffer_size", value.buffer_size);
+    }
+
+    return false;
 }
 
 /*

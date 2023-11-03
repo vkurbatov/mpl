@@ -1,4 +1,5 @@
 #include "ipc_output_device_factory.h"
+#include "ipc_output_device_params.h"
 
 #include "utils/message_router_impl.h"
 #include "utils/property_writer.h"
@@ -116,55 +117,7 @@ class ipc_output_device : public i_device
 {
     using u_ptr_t = std::unique_ptr<ipc_output_device>;
 
-    struct device_params_t
-    {
-        device_type_t       device_type = device_type_t::ipc_out;
-        std::string         channel_name;
-        std::size_t         buffer_size;
-
-        device_params_t(device_type_t device_type = device_type_t::ipc_out
-                        , const std::string& channel_name = {}
-                        , std::size_t buffer_size = 0)
-            : device_type(device_type)
-            , channel_name(channel_name)
-        {
-
-        }
-
-        device_params_t(const i_property& params)
-            : device_params_t()
-        {
-            load(params);
-        }
-
-        bool load(const i_property& params)
-        {
-            property_reader reader(params);
-            if (reader.get("device_type", device_type_t::ipc_out) == device_type_t::ipc_out)
-            {
-                return reader.get("channel_name", channel_name)
-                        && reader.get("size", buffer_size);
-            }
-            return false;
-        }
-
-        bool save(i_property& params) const
-        {
-            property_writer writer(params);
-            return writer.set("device_type", device_type_t::ipc_out)
-                    && writer.set("channel_name", channel_name)
-                    && writer.set("size", buffer_size);
-        }
-
-        bool is_valid() const
-        {
-            return device_type == device_type_t::ipc_out
-                    && !channel_name.empty()
-                    && buffer_size > 0;
-        }
-    };
-
-    device_params_t             m_device_params;
+    ipc_output_device_params_t  m_device_params;
     message_router_impl         m_router;
     wrapped_out_device          m_wrapped_device;
 
@@ -176,8 +129,10 @@ public:
     static u_ptr_t create(i_shared_data_manager& shared_data_manager
                           , const i_property& params)
     {
-        device_params_t device_params(params);
-        if (device_params.is_valid())
+        ipc_output_device_params_t device_params;
+        if (utils::property::deserialize(device_params
+                                         , params)
+                && device_params.is_valid())
         {
             if (auto shared_data = shared_data_manager.query_data(device_params.channel_name
                                                                   , device_params.buffer_size))
@@ -190,7 +145,7 @@ public:
         return nullptr;
     }
 
-    ipc_output_device(device_params_t&& device_params
+    ipc_output_device(ipc_output_device_params_t&& device_params
                       , i_sync_shared_data::s_ptr_t&& shared_data)
         : m_device_params(std::move(device_params))
         , m_wrapped_device(std::move(shared_data))
@@ -316,7 +271,8 @@ public:
         if (!m_open)
         {
             auto device_params = m_device_params;
-            if (device_params.load(input_params)
+            if (utils::property::deserialize(device_params
+                                             , input_params)
                     && device_params.is_valid())
             {
                 m_device_params = device_params;
@@ -329,7 +285,8 @@ public:
 
     bool get_params(i_property& output_params) const override
     {
-        return m_device_params.save(output_params);
+        return utils::property::serialize(m_device_params
+                                          , output_params);
     }
 };
 

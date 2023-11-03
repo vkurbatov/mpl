@@ -38,15 +38,4 @@ i_net_engine& net_core::get_engine(const net_engine_config_t &engine_config)
     return core_context.engine;
 }
 
-i_net_engine& net_core::get_engine(const net_engine_config_t &engine_config
-                                   , i_task_manager &task_manager
-                                   , i_timer_manager &timer_manager)
-{
-    static net_core_context_t core_context(engine_config
-                                           , task_manager
-                                           , timer_manager);
-    return core_context.engine;
-}
-
-
 }

@@ -1,6 +1,5 @@
 #include "apm_device_factory.h"
-#include "utils/enum_converter_defs.h"
-#include "utils/enum_serialize_defs.h"
+#include "apm_device_params.h"
 
 #include "utils/message_router_impl.h"
 #include "utils/message_sink_impl.h"
@@ -14,51 +13,6 @@
 
 #include "tools/wap/wap_processor.h"
 
-namespace mpl::utils
-{
-
-__declare_enum_converter_begin(pt::wap::echo_cancellation_mode_t)
-    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, none),
-    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, low),
-    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, moderation),
-    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, high)
-__declare_enum_converter_end(pt::wap::echo_cancellation_mode_t)
-
-__declare_enum_converter_begin(pt::wap::gain_control_mode_t)
-    __declare_enum_pair(pt::wap::gain_control_mode_t, none),
-    __declare_enum_pair(pt::wap::gain_control_mode_t, adaptive_analog),
-    __declare_enum_pair(pt::wap::gain_control_mode_t, adaptive_digital),
-    __declare_enum_pair(pt::wap::gain_control_mode_t, fixed_digital)
-__declare_enum_converter_end(pt::wap::gain_control_mode_t)
-
-__declare_enum_converter_begin(pt::wap::noise_suppression_mode_t)
-    __declare_enum_pair(pt::wap::noise_suppression_mode_t, none),
-    __declare_enum_pair(pt::wap::noise_suppression_mode_t, low),
-    __declare_enum_pair(pt::wap::noise_suppression_mode_t, moderate),
-    __declare_enum_pair(pt::wap::noise_suppression_mode_t, high),
-    __declare_enum_pair(pt::wap::noise_suppression_mode_t, very_high)
-__declare_enum_converter_end(pt::wap::noise_suppression_mode_t)
-
-__declare_enum_converter_begin(pt::wap::voice_detection_mode_t)
-    __declare_enum_pair(pt::wap::voice_detection_mode_t, none),
-    __declare_enum_pair(pt::wap::voice_detection_mode_t, very_low),
-    __declare_enum_pair(pt::wap::voice_detection_mode_t, low),
-    __declare_enum_pair(pt::wap::voice_detection_mode_t, moderate),
-    __declare_enum_pair(pt::wap::voice_detection_mode_t, high)
-__declare_enum_converter_end(pt::wap::voice_detection_mode_t)
-
-}
-
-namespace mpl
-{
-
-__declare_enum_serializer(pt::wap::echo_cancellation_mode_t)
-__declare_enum_serializer(pt::wap::gain_control_mode_t)
-__declare_enum_serializer(pt::wap::noise_suppression_mode_t)
-__declare_enum_serializer(pt::wap::voice_detection_mode_t)
-
-}
-
 namespace mpl::media
 {
 
@@ -66,79 +20,13 @@ class apm_device : public i_device
 {
     using u_ptr_t = std::unique_ptr<apm_device>;
 
-    struct device_params_t
-    {
-        device_type_t                   device_type;
-        pt::wap::wap_processor::config_t    wap_config;
 
-        device_params_t(device_type_t device_type = device_type_t::apm
-                        , const pt::wap::wap_processor::config_t& wap_config = {})
-            : device_type(device_type)
-            , wap_config(wap_config)
-        {
 
-        }
-
-        device_params_t(const i_property& params)
-            : device_params_t()
-        {
-            load(params);
-        }
-
-        bool load(const i_property& params)
-        {
-            property_reader reader(params);
-            if (reader.get("device_type", device_type_t::apm) == device_type_t::apm)
-            {
-                return reader.get("format.sample_rate", wap_config.format.sample_rate)
-                        | reader.get("format.channels", wap_config.format.channels)
-                        | reader.get("delay_offset_ms", wap_config.processing_config.ap_delay_offset_ms)
-                        | reader.get("delay_stream_ms", wap_config.processing_config.ap_delay_stream_ms)
-                        | reader.get("aec.mode", wap_config.processing_config.aec_mode)
-                        | reader.get("aec.drift_ms", wap_config.processing_config.aec_drift_ms)
-                        | reader.get("aec.auto_delay_frames", wap_config.processing_config.aec_auto_delay_period)
-                        | reader.get("gc.mode", wap_config.processing_config.gc_mode)
-                        | reader.get("ns.mode", wap_config.processing_config.ns_mode)
-                        | reader.get("vad.mode", wap_config.processing_config.vad_mode);
-            }
-
-            return false;
-        }
-
-        bool save(i_property& params) const
-        {
-            property_writer writer(params);
-            return writer.set("device_type", device_type_t::apm)
-                    && writer.set("format.channels", wap_config.format.channels)
-                    && writer.set("delay_offset_ms", wap_config.processing_config.ap_delay_offset_ms)
-                    && writer.set("delay_stream_ms", wap_config.processing_config.ap_delay_stream_ms)
-                    && writer.set("aec.mode", wap_config.processing_config.aec_mode)
-                    && writer.set("aec.drift_ms", wap_config.processing_config.aec_drift_ms)
-                    && writer.set("aec.auto_delay_frames", wap_config.processing_config.aec_auto_delay_period)
-                    && writer.set("gc.mode", wap_config.processing_config.gc_mode)
-                    && writer.set("ns.mode", wap_config.processing_config.ns_mode)
-                    && writer.set("vad.mode", wap_config.processing_config.vad_mode);
-        }
-
-        inline bool is_valid() const
-        {
-            return device_type == device_type_t::apm
-                    && wap_config.is_valid();
-        }
-
-        inline bool is_compatible_format(const i_audio_format& audio_format) const
-        {
-            return audio_format.format_id() == audio_format_id_t::pcm16
-                    && audio_format.channels() == wap_config.format.channels
-                    && audio_format.sample_rate() == wap_config.format.sample_rate;
-        }
-    };
-
-    device_params_t             m_device_params;
+    apm_device_params_t         m_device_params;
     message_router_impl         m_router;
     message_sink_impl           m_capture_sink;
     message_sink_impl           m_playback_sink;
-    pt::wap::wap_processor          m_native_device;
+    pt::wap::wap_processor      m_native_device;
 
     frame_id_t                  m_frame_counter;
     timestamp_t                 m_frame_timestamp;
@@ -149,8 +37,10 @@ public:
 
     static u_ptr_t create(const i_property &params)
     {
-        device_params_t apm_params(params);
-        if (apm_params.is_valid())
+        apm_device_params_t apm_params;
+        if (utils::property::deserialize(apm_params
+                                         , params)
+                && apm_params.is_valid())
         {
             return std::make_unique<apm_device>(std::move(apm_params));
         }
@@ -158,7 +48,7 @@ public:
         return nullptr;
     }
 
-    apm_device(device_params_t&& device_params)
+    apm_device(apm_device_params_t&& device_params)
         : m_device_params(std::move(device_params))
         , m_capture_sink([&](const auto& message) { return on_sink_message(message, true); })
         , m_playback_sink([&](const auto& message) { return on_sink_message(message, false); })
@@ -185,6 +75,14 @@ public:
         }
     }
 
+
+    inline bool is_compatible_format(const i_audio_format& audio_format) const
+    {
+        return audio_format.format_id() == audio_format_id_t::pcm16
+                && audio_format.channels() == m_device_params.wap_config.format.channels
+                && audio_format.sample_rate() == m_device_params.wap_config.format.sample_rate;
+    }
+
     inline bool on_sink_message(const i_message& message, bool capture)
     {
         if (m_native_device.is_open())
@@ -204,7 +102,7 @@ public:
 
     bool on_sink_frame(const i_audio_frame& audio_frame, bool capture)
     {
-        if (m_device_params.is_compatible_format(audio_frame.format()))
+        if (is_compatible_format(audio_frame.format()))
         {
             if (auto buffer = audio_frame.data().get_buffer(media_buffer_index))
             {
@@ -349,8 +247,9 @@ public:
 
         auto device_params = m_device_params;
 
-        if (device_params.load(params)
-                && device_params.is_valid())
+        if (utils::property::deserialize(device_params
+                                         , params)
+                        && device_params.is_valid())
         {
             if (!m_native_device.is_open())
             {
@@ -365,7 +264,8 @@ public:
 
     bool get_params(i_property &params) const override
     {
-        return m_device_params.save(params);
+        return utils::property::serialize(m_device_params
+                                          , params);
     }
 };
 

@@ -5,6 +5,8 @@
 #include "audio_types.h"
 #include "video_types.h"
 
+#include "tools/wap/wap_base.h"
+
 namespace mpl::utils
 {
 
@@ -101,5 +103,35 @@ __declare_enum_converter_begin(video_format_id_t)
     __declare_enum_pair(video_format_id_t, mpeg4),
     __declare_enum_pair(video_format_id_t, cpia)
 __declare_enum_converter_end(video_format_id_t)
+
+__declare_enum_converter_begin(pt::wap::echo_cancellation_mode_t)
+    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, none),
+    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, low),
+    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, moderation),
+    __declare_enum_pair(pt::wap::echo_cancellation_mode_t, high)
+__declare_enum_converter_end(pt::wap::echo_cancellation_mode_t)
+
+__declare_enum_converter_begin(pt::wap::gain_control_mode_t)
+    __declare_enum_pair(pt::wap::gain_control_mode_t, none),
+    __declare_enum_pair(pt::wap::gain_control_mode_t, adaptive_analog),
+    __declare_enum_pair(pt::wap::gain_control_mode_t, adaptive_digital),
+    __declare_enum_pair(pt::wap::gain_control_mode_t, fixed_digital)
+__declare_enum_converter_end(pt::wap::gain_control_mode_t)
+
+__declare_enum_converter_begin(pt::wap::noise_suppression_mode_t)
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, none),
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, low),
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, moderate),
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, high),
+    __declare_enum_pair(pt::wap::noise_suppression_mode_t, very_high)
+__declare_enum_converter_end(pt::wap::noise_suppression_mode_t)
+
+__declare_enum_converter_begin(pt::wap::voice_detection_mode_t)
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, none),
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, very_low),
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, low),
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, moderate),
+    __declare_enum_pair(pt::wap::voice_detection_mode_t, high)
+__declare_enum_converter_end(pt::wap::voice_detection_mode_t)
 
 }

@@ -30,6 +30,8 @@ set(SOURCES
     track_params.cpp
     ipc/ipc_input_device_factory.cpp
     ipc/ipc_output_device_factory.cpp
+    ipc/ipc_input_device_params.cpp
+    ipc/ipc_output_device_params.cpp
     libav/libav_video_converter_factory.cpp
     libav/libav_audio_converter_factory.cpp
     libav/libav_transcoder_factory.cpp
@@ -38,6 +40,7 @@ set(SOURCES
     libav/libav_format_utils.cpp
     vnc/vnc_device_factory.cpp
     apm/apm_device_factory.cpp
+    apm/apm_device_params.cpp
     visca/visca_device_factory.cpp
     v4l2/v4l2_device_factory.cpp
     v4l2/v4l2_utils.cpp
@@ -61,6 +64,7 @@ set(SOURCES
     media_frame_selector.cpp
     media_sink_impl.cpp
     media_engine_impl.cpp
+    media_format_factory_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -103,6 +107,8 @@ set(PUBLIC_HEADERS
     i_device_factory.h
     i_frame_buffer.h
     i_media_engine.h
+    i_media_format_factory.h
+    i_media_frame_builder.h
     )
 
 set(PRIVATE_HEADERS
@@ -122,6 +128,8 @@ set(PRIVATE_HEADERS
     track_metrics_manager.h
     ipc/ipc_input_device_factory.h
     ipc/ipc_output_device_factory.h
+    ipc/ipc_input_device_params.h
+    ipc/ipc_output_device_params.h
     libav/libav_format_utils.h
     libav/libav_video_converter_factory.h
     libav/libav_audio_converter_factory.h
@@ -130,6 +138,7 @@ set(PRIVATE_HEADERS
     libav/libav_output_device_factory.h
     vnc/vnc_device_factory.h
     apm/apm_device_factory.h
+    apm/apm_device_params.h
     visca/visca_device_factory.h
     v4l2/v4l2_device_factory.h
     v4l2/v4l2_utils.h
@@ -150,6 +159,7 @@ set(PRIVATE_HEADERS
     media_frame_selector.h
     media_sink_impl.h
     media_engine_impl.h
+    media_format_factory_impl.h
 )
 
 
