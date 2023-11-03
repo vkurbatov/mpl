@@ -2,7 +2,6 @@
 #define MPL_NET_ENGINE_IMPL_H
 
 #include "i_net_engine.h"
-#include "tools/io/i_io_worker_factory.h"
 
 namespace pt::io
 {
@@ -19,13 +18,10 @@ class i_task_manager;
 namespace net
 {
 
+struct net_engine_config_t;
+
 class net_engine_impl : public i_net_engine
 {
-public:
-    struct config_t
-    {
-        std::size_t     max_workers = 1;
-    };
 
 private:
 
@@ -40,14 +36,22 @@ public:
     using u_ptr_t = std::unique_ptr<net_engine_impl>;
     using s_ptr_t = std::shared_ptr<net_engine_impl>;
 
+    static void set_default_config(const net_engine_config_t& config);
+    static const net_engine_config_t& default_config();
+
     static net_engine_impl& get_instance();
 
-    static u_ptr_t create(const config_t& config
-                          , i_task_manager& task_manager);
+    static u_ptr_t create(const net_engine_config_t& config
+                          , i_task_manager& task_manager
+                          , i_timer_manager& timer_manager);
 
-    net_engine_impl(const config_t& config
-                    , i_task_manager& task_manager);
+    net_engine_impl(const net_engine_config_t& config
+                    , i_task_manager& task_manager
+                    , i_timer_manager& timer_manager);
+
     ~net_engine_impl();
+
+
 
     pt::io::io_core& io_core();
 
@@ -58,6 +62,13 @@ public:
     bool stop() override;
     bool is_started() const;
 
+
+    // i_net_engine interface
+public:
+    i_task_manager &task_manager() override;
+    i_timer_manager &timer_manager() override;
+    i_transport_factory *transport_factory(transport_id_t transport_id) override;
+    i_net_packet_builder::u_ptr_t create_packet_builder(transport_id_t transport_id) override;
 };
 
 }

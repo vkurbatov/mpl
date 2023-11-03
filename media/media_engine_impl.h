@@ -39,9 +39,14 @@ public:
     // i_engine interface
 public:
 
+    // i_media_engine interface
+public:
+    i_task_manager &task_manager() override;
+
     bool start() override;
     bool stop() override;
     bool is_started() const override;
+
 };
 
 }

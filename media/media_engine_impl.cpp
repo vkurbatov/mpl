@@ -95,6 +95,11 @@ media_engine_impl::media_engine_impl(const config_t& config
 
 }
 
+i_task_manager &media_engine_impl::task_manager()
+{
+    return m_pimpl->m_task_manager;
+}
+
 bool media_engine_impl::start()
 {
     return m_pimpl->start();

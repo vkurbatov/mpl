@@ -12,8 +12,9 @@ set(SOURCES
     net_utils.cpp
     net_event_message_impl.cpp
     net_command_message_impl.cpp
+    net_packet_builder_impl.cpp
     net_engine_impl.cpp
-    net_core_config.cpp
+    net_engine_config.cpp
     net_core.cpp
 
     socket/socket_endpoint.cpp
@@ -66,13 +67,15 @@ set(PUBLIC_HEADERS
     i_net_engine.h
     i_transport_channel.h
     i_transport_factory.h
-    net_engine_impl.h
-    net_core_config.h
+    i_net_packet.h
+    i_net_packet_builder.h
+    net_engine_config.h
     net_core.h
 
     socket/socket_types.h
     socket/socket_endpoint.h
     socket/i_socket_packet.h
+    socket/i_socket_packet_builder.h
     socket/i_socket_transport.h
     socket/i_udp_transport.h
 
@@ -102,6 +105,9 @@ set(PUBLIC_HEADERS
 set(PRIVATE_HEADERS
     test.h
     net_utils.h
+    net_packet_builder_impl.h
+    net_engine_impl.h
+
     socket/socket_packet_impl.h
     socket/udp_transport_factory.h
     socket/udp_transport_params.h

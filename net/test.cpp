@@ -14,6 +14,8 @@
 #include "utils/message_command_impl.h"
 
 #include "net_message_types.h"
+#include "net_engine_config.h"
+
 #include "core/i_message_source.h"
 #include "core/i_message_event.h"
 #include "core/event_channel_state.h"
@@ -53,6 +55,7 @@
 #include <cstring>
 #include <set>
 #include <list>
+#include <future>
 
 namespace mpl::net
 {
@@ -70,7 +73,7 @@ void test1()
     socket_param_2.local_endpoint.socket_address = socket_address_t::from_string("localhost:0");
     socket_param_1.options.reuse_address = true;
 
-    udp_transport_factory udp_factory(engine);
+    udp_transport_factory udp_factory(engine.io_core());
 
     if (true)
     {
@@ -360,7 +363,7 @@ void test4()
 
     timers->start();
 
-    udp_transport_factory socket_factory(engine);
+    udp_transport_factory socket_factory(engine.io_core());
 
     ice_transport_factory ice_factory(ice_config_t(ice_servers)
                                       , socket_factory
@@ -544,7 +547,7 @@ void test5()
 
     timers->start();
 
-    udp_transport_factory socket_factory(engine);
+    udp_transport_factory socket_factory(engine.io_core());
     tls_config_t tls_config;
     tls_config.method = tls_method_t::dtls;
     tls_config.srtp_enable = true;
@@ -829,12 +832,15 @@ void test6()
 
 void test7()
 {
-    net_engine_impl engine({}
-                           , task_manager_factory::single_manager());
+    net_engine_config_t net_config = {};
+
+    net_engine_impl engine(net_config
+                           , task_manager_factory::single_manager()
+                           , timer_manager_factory::single_manager());
 
     engine.start();
 
-    udp_transport_factory socket_factory(engine);
+    udp_transport_factory socket_factory(engine.io_core());
 
     socket_allocator allocator(socket_factory
                                , socket_allocator::config_t({3504, 7623}));
