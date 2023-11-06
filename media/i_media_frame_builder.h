@@ -17,6 +17,8 @@ public:
 
     virtual ~i_media_frame_builder() = default;
 
+    virtual void assign(const i_media_frame& media_frame) = 0;
+
     virtual void set_frame_id(frame_id_t frame_id) = 0;
     virtual frame_id_t frame_id() const = 0;
 
@@ -26,14 +28,17 @@ public:
     virtual void set_ntp_timestamp(timestamp_t ntp_timestamp) = 0;
     virtual timestamp_t ntp_timestamp() const = 0;
 
-    virtual void set_frame_buffer(std::size_t buffer_index
+    virtual void set_frame_buffer(std::int32_t buffer_index
                                     , const void* frame_data
                                     , std::size_t frame_size) = 0;
+    virtual const i_buffer* frame_buffer(std::int32_t buffer_index) = 0;
 
-    virtual const i_buffer* frame_buffer(std::size_t buffer_index) = 0;
+    virtual void set_frame_type(video_frame_type_t frame_type) = 0;
+    virtual video_frame_type_t frame_type() const = 0;
+
 
     virtual void set_frame_option(const i_option& frame_options) = 0;
-    virtual const i_option& frame_options() const = 0;
+    virtual i_option& frame_options() = 0;
 
     virtual void set_format(const i_media_format& media_format) = 0;
     virtual const i_media_format* media_format() const = 0;

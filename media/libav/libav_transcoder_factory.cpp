@@ -93,7 +93,7 @@ bool is_key_frame(const i_media_frame& frame)
     if (frame.media_type() == media_type_t::video)
     {
         auto frame_type = static_cast<const i_video_frame&>(frame).frame_type();
-        return frame_type == i_video_frame::frame_type_t::key_frame
+        return frame_type == video_frame_type_t::key_frame
                 && video_format_info_t::get_info(static_cast<const i_video_frame&>(frame).format().format_id()).motion;
     }
     return false;
@@ -109,8 +109,8 @@ template<>
 void set_key_frame(video_frame_impl& frame_impl, bool key_frame)
 {
     frame_impl.set_frame_type(key_frame
-                              ? i_video_frame::frame_type_t::key_frame
-                              : i_video_frame::frame_type_t::delta_frame);
+                              ? video_frame_type_t::key_frame
+                              : video_frame_type_t::delta_frame);
 }
 
 template<typename FormatImpl>

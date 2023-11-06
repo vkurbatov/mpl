@@ -3,7 +3,7 @@
 
 #include "i_audio_frame.h"
 #include "audio_format_impl.h"
-#include "track_info.h"
+#include "media_frame_info.h"
 #include "utils/smart_buffer_collection.h"
 #include "frame_option_container.h"
 #include <unordered_map>
@@ -15,10 +15,8 @@ class audio_frame_base_impl : public i_audio_frame
         , public frame_option_container
 {
 protected:
-    smart_buffer_collection m_buffers;
-    frame_id_t              m_frame_id;
-    timestamp_t             m_timestamp;
-    timestamp_t             m_ntp_timestamp;
+    smart_buffer_collection     m_buffers;
+    media_frame_info_t          m_frame_info;
 
 public:
     using u_ptr_t = std::unique_ptr<audio_frame_base_impl>;
@@ -28,12 +26,17 @@ public:
     audio_frame_base_impl(frame_id_t frame_id = frame_id_undefined
                          , timestamp_t timestamp = timestamp_infinite);
 
+    audio_frame_base_impl(const media_frame_info_t& frame_info);
+
+    void set_frame_info(const media_frame_info_t& frame_info);
     void set_frame_id(frame_id_t frame_id);
     void set_timestamp(timestamp_t timestamp);
-    void set_ntp_timestamp(timestamp_t timestamp);
+    void set_ntp_timestamp(timestamp_t ntp_timestamp);
     void set_buffers(smart_buffer_collection&& buffers);
     smart_buffer_collection& smart_buffers();
     const smart_buffer_collection& smart_buffers() const;
+
+    const media_frame_info_t& frame_info() const;
 
     // i_message interface
 public:

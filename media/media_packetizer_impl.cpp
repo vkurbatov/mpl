@@ -357,7 +357,7 @@ bool depacketizer::fetch_value(video_frame_impl& video_frame)
         frame_id_t frame_id = 0;
         timestamp_t timestamp = 0;
         timestamp_t ntp_timestamp = 0;
-        i_video_frame::frame_type_t frame_type = i_video_frame::frame_type_t::undefined;
+        video_frame_type_t frame_type = video_frame_type_t::undefined;
 
         if (fetch_value(video_frame.video_format())
                 && fetch_value(frame_id)

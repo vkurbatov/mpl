@@ -435,7 +435,7 @@ void test8()
                                   << "x" << video_frame.format().height()
                                   << "@" << video_frame.format().frame_rate()
                                   << ", ts: " << video_frame.timestamp()
-                                  << ", kf: " << (video_frame.frame_type() == i_video_frame::frame_type_t::key_frame);
+                                  << ", kf: " << (video_frame.frame_type() == video_frame_type_t::key_frame);
 
                         if (auto buffer = video_frame.data().get_buffer(0))
                         {
@@ -779,7 +779,7 @@ void test12()
                                   << "x" << video_frame.format().height()
                                   << "@" << video_frame.format().frame_rate()
                                   << ", ts: " << video_frame.timestamp()
-                                  << ", kf: " << (video_frame.frame_type() == i_video_frame::frame_type_t::key_frame);
+                                  << ", kf: " << (video_frame.frame_type() == video_frame_type_t::key_frame);
 
                         if (auto buffer = video_frame.data().get_buffer(0))
                         {
@@ -1369,7 +1369,7 @@ void test17()
     video_frame_impl video_frame(video_format
                                  , 4
                                  , 12345678
-                                 , video_frame_impl::frame_type_t::key_frame);
+                                 , video_frame_type_t::key_frame);
 
     video_frame.smart_buffers().set_buffer(123, smart_buffer(std::move(buffer)));
 
@@ -1493,7 +1493,7 @@ void test18()
                             video_frame_impl video_frame(video_format
                                                          , frame_id++
                                                          , timestamp += (90000 / video_format.frame_rate())
-                                                         , video_frame_impl::frame_type_t::key_frame);
+                                                         , video_frame_type_t::key_frame);
 
 
 
@@ -2521,8 +2521,8 @@ void test24()
 
 void test25()
 {
-
-    visca_device_factory factory;
+    pt::io::io_core io_core;
+    visca_device_factory factory(io_core);
 
     auto visca_params = property_helper::create_object();
     if (visca_params)

@@ -71,7 +71,7 @@ bool select_frame(const i_video_frame& frame
     }
     else if (!frame_info.is_defined())
     {
-        if (frame.frame_type() != i_video_frame::frame_type_t::delta_frame)
+        if (frame.frame_type() != video_frame_type_t::delta_frame)
         {
             return true;
         }

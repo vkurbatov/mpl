@@ -22,6 +22,7 @@ set(SOURCES
     video_frame_impl.cpp
     video_info.cpp
     media_info.cpp
+    media_frame_info.cpp
     media_packetizer_impl.cpp
     timestamp_calculator.cpp
     track_info.cpp
@@ -63,8 +64,10 @@ set(SOURCES
     media_frame_buffer.cpp
     media_frame_selector.cpp
     media_sink_impl.cpp
+    media_engine_config.cpp
     media_engine_impl.cpp
     media_format_factory_impl.cpp
+    media_frame_builder_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -83,6 +86,7 @@ set(PUBLIC_HEADERS
     media_info.h
     stream_types.h
     media_option_types.h
+    media_frame_info.h
     command_camera_control.h
     track_info.h
     track_metrics.h
@@ -158,8 +162,10 @@ set(PRIVATE_HEADERS
     media_frame_buffer.h
     media_frame_selector.h
     media_sink_impl.h
+    media_engine_config.h
     media_engine_impl.h
     media_format_factory_impl.h
+    media_frame_builder_impl.h
 )
 
 

@@ -148,9 +148,9 @@ class visca_device : public i_device
 
     class visca_channel : public pt::visca::i_visca_channel
     {
-        mutable std::mutex      m_sync_mutex;
-        cond_t                  m_cond;
-        visca_device&           m_owner;
+        mutable std::mutex          m_sync_mutex;
+        cond_t                      m_cond;
+        visca_device&               m_owner;
         pt::io::serial_link         m_serial_link;
         pt::visca::packet_data_t    m_recv_data;
         pt::visca::visca_control    m_visca_control;
@@ -448,31 +448,24 @@ public:
 
     using u_ptr_t = std::unique_ptr<visca_device>;
 
-    static pt::io::io_core& get_core()
-    {
-        auto& core = pt::io::io_core::get_instance();
-        if (!core.is_running())
-        {
-            core.run();
-        }
 
-        return core;
-    }
-
-    static u_ptr_t create(const i_property& device_params)
+    static u_ptr_t create(pt::io::io_core& io_core
+                          , const i_property& device_params)
     {
         device_params_t visca_params(device_params);
         if (visca_params.is_valid())
         {
-            return std::make_unique<visca_device>(std::move(visca_params));
+            return std::make_unique<visca_device>(io_core
+                                                  , std::move(visca_params));
         }
         return nullptr;
     }
 
-    visca_device(device_params_t&& device_params)
+    visca_device(pt::io::io_core& io_core
+                 , device_params_t&& device_params)
         : m_device_params(std::move(device_params))
         , m_visca_channel(*this
-                          , get_core()
+                          , io_core
                           , m_device_params)
         , m_sink([&](auto&& ...args) { return on_message(args...); })
         , m_state(channel_state_t::ready)
@@ -719,19 +712,21 @@ public:
     }
 };
 
-visca_device_factory::u_ptr_t visca_device_factory::create()
+visca_device_factory::u_ptr_t visca_device_factory::create(pt::io::io_core& io_core)
 {
-    return std::make_unique<visca_device_factory>();
+    return std::make_unique<visca_device_factory>(io_core);
 }
 
-visca_device_factory::visca_device_factory()
+visca_device_factory::visca_device_factory(pt::io::io_core& io_core)
+    : m_io_core(io_core)
 {
 
 }
 
 i_device::u_ptr_t visca_device_factory::create_device(const i_property &device_params)
 {
-    return visca_device::create(device_params);
+    return visca_device::create(m_io_core
+                                , device_params);
 }
 
 

@@ -4,19 +4,20 @@
 #include "core/i_task_manager.h"
 #include "i_media_engine.h"
 
+namespace pt::io
+{
+
+class io_core;
+
+}
+
 namespace mpl::media
 {
 
+struct media_engine_config_t;
+
 class media_engine_impl : public i_media_engine
 {
-public:
-    struct config_t
-    {
-
-    };
-
-private:
-
     struct pimpl_t;
     using pimpl_ptr_t = std::unique_ptr<pimpl_t>;
 
@@ -29,11 +30,13 @@ public:
 
     static media_engine_impl& get_instance();
 
-    static u_ptr_t create(const config_t& config
-                          , i_task_manager& task_manager);
+    static u_ptr_t create(const media_engine_config_t& config
+                          , i_task_manager& task_manager
+                          , pt::io::io_core& io_core);
 
-    media_engine_impl(const config_t& config
-                    , i_task_manager& task_manager);
+    media_engine_impl(const media_engine_config_t& config
+                      , i_task_manager& task_manager
+                      , pt::io::io_core& io_core);
     ~media_engine_impl();
 
     // i_engine interface
@@ -47,6 +50,15 @@ public:
     bool stop() override;
     bool is_started() const override;
 
+
+    // i_media_engine interface
+public:
+    i_device_factory* device_factory(device_type_t device_type) override;
+    i_media_format_factory* format_factory(media_type_t media_type) override;
+    i_media_frame_builder::u_ptr_t create_frame_builder() override;
+    i_layout_manager &layout_manager() override;
+    i_media_converter_factory* converter_factory(media_converter_type_t type) override;
+    i_media_composer_factory::u_ptr_t create_composer_factory(i_layout_manager &layout_manager) override;
 };
 
 }

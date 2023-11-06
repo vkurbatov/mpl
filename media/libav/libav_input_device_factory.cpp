@@ -416,13 +416,13 @@ public:
                     if (utils::convert(stream.stream_info
                                        , format))
                     {
-                        i_video_frame::frame_type_t frame_type = format.is_convertable()
-                                ? i_video_frame::frame_type_t::undefined
-                                : i_video_frame::frame_type_t::delta_frame;
+                        video_frame_type_t frame_type = format.is_convertable()
+                                ? video_frame_type_t::undefined
+                                : video_frame_type_t::delta_frame;
 
                         if (libav_frame.info.key_frame)
                         {
-                            frame_type = i_video_frame::frame_type_t::key_frame;
+                            frame_type = video_frame_type_t::key_frame;
                         }
 
                         video_frame_impl frame(format

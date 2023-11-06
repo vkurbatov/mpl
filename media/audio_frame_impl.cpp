@@ -9,26 +9,36 @@ namespace mpl::media
 
 audio_frame_base_impl::audio_frame_base_impl(frame_id_t frame_id
                                            , timestamp_t timestamp)
-    : m_frame_id(frame_id)
-    , m_timestamp(timestamp)
-    , m_ntp_timestamp(utils::time::now())
+    : m_frame_info(frame_id
+                   , timestamp)
 {
     track_info_t::default_audio_track().store(m_options);
 }
 
+audio_frame_base_impl::audio_frame_base_impl(const media_frame_info_t &frame_info)
+    : m_frame_info(frame_info)
+{
+
+}
+
+void audio_frame_base_impl::set_frame_info(const media_frame_info_t &frame_info)
+{
+    m_frame_info = frame_info;
+}
+
 void audio_frame_base_impl::set_frame_id(frame_id_t frame_id)
 {
-    m_frame_id = frame_id;
+    m_frame_info.frame_id = frame_id;
 }
 
 void audio_frame_base_impl::set_timestamp(timestamp_t timestamp)
 {
-    m_timestamp = timestamp;
+    m_frame_info.timestamp = timestamp;
 }
 
-void audio_frame_base_impl::set_ntp_timestamp(timestamp_t timestamp)
+void audio_frame_base_impl::set_ntp_timestamp(timestamp_t ntp_timestamp)
 {
-    m_ntp_timestamp = timestamp;
+    m_frame_info.ntp_timestamp = ntp_timestamp;
 }
 
 void audio_frame_base_impl::set_buffers(smart_buffer_collection &&buffers)
@@ -44,6 +54,11 @@ smart_buffer_collection &audio_frame_base_impl::smart_buffers()
 const smart_buffer_collection &audio_frame_base_impl::smart_buffers() const
 {
     return m_buffers;
+}
+
+const media_frame_info_t &audio_frame_base_impl::frame_info() const
+{
+    return m_frame_info;
 }
 
 message_category_t audio_frame_base_impl::category() const
@@ -69,17 +84,17 @@ media_type_t audio_frame_base_impl::media_type() const
 
 frame_id_t audio_frame_base_impl::frame_id() const
 {
-    return m_frame_id;
+    return m_frame_info.frame_id;
 }
 
 timestamp_t audio_frame_base_impl::timestamp() const
 {
-    return m_timestamp;
+    return m_frame_info.timestamp;
 }
 
 timestamp_t audio_frame_base_impl::ntp_timestamp() const
 {
-    return m_ntp_timestamp;
+    return m_frame_info.ntp_timestamp;
 }
 
 const i_buffer_collection &audio_frame_base_impl::data() const
@@ -167,18 +182,19 @@ void audio_frame_impl::set_format(const i_audio_format &audio_format)
 void audio_frame_impl::assign(const i_audio_frame &other)
 {
     m_audio_format.assign(other.format());
-    m_frame_id = other.frame_id();
-    m_timestamp = other.timestamp();
+    m_frame_info.frame_id = other.frame_id();
+    m_frame_info.timestamp = other.timestamp();
+    m_frame_info.ntp_timestamp = other.ntp_timestamp();
     m_buffers.assign(other.data());
 }
 
 i_message::u_ptr_t audio_frame_impl::clone() const
 {
     if (auto clone_frame = create(m_audio_format
-                                  , m_frame_id
-                                  , m_timestamp))
+                                  , m_frame_info.frame_id
+                                  , m_frame_info.timestamp))
     {
-        clone_frame->set_ntp_timestamp(m_ntp_timestamp);
+        clone_frame->set_ntp_timestamp(m_frame_info.ntp_timestamp);
         clone_frame->m_buffers = m_buffers.fork();
         clone_frame->m_options = m_options;
         return clone_frame;
@@ -237,8 +253,9 @@ void audio_frame_ptr_impl::set_format(const i_audio_format &audio_format)
 void audio_frame_ptr_impl::assign(const i_audio_frame &other)
 {
     m_audio_format_ptr = utils::static_pointer_cast<i_audio_format>(other.format().clone());
-    m_frame_id = other.frame_id();
-    m_timestamp = other.timestamp();
+    m_frame_info.frame_id = other.frame_id();
+    m_frame_info.timestamp = other.timestamp();
+    m_frame_info.ntp_timestamp = other.ntp_timestamp();
     m_buffers.assign(other.data());
 }
 
@@ -248,11 +265,9 @@ i_message::u_ptr_t audio_frame_ptr_impl::clone() const
     {
         if (auto clone_format = utils::static_pointer_cast<i_audio_format>(m_audio_format_ptr->clone()))
         {
-            if (auto clone_frame = create(std::move(clone_format)
-                                          , m_frame_id
-                                          , m_timestamp))
+            if (auto clone_frame = create(std::move(clone_format)))
             {
-                clone_frame->set_ntp_timestamp(m_ntp_timestamp);
+                clone_frame->set_frame_info(m_frame_info);
                 clone_frame->m_options = m_options;
                 clone_frame->m_buffers = m_buffers.fork();
                 return clone_frame;
@@ -282,11 +297,9 @@ i_message::u_ptr_t audio_frame_ref_impl::clone() const
 {
     if (auto clone_format = utils::static_pointer_cast<i_audio_format>(format().clone()))
     {
-        if (auto clone_frame = audio_frame_ptr_impl::create(std::move(clone_format)
-                                                           , m_frame_id
-                                                           , m_timestamp))
+        if (auto clone_frame = audio_frame_ptr_impl::create(std::move(clone_format)))
         {
-            clone_frame->set_ntp_timestamp(m_ntp_timestamp);
+            clone_frame->set_frame_info(m_frame_info);
             clone_frame->set_options(m_options);
             clone_frame->set_buffers(m_buffers.fork());
             return clone_frame;

@@ -12,6 +12,7 @@ set(SOURCES
     event_channel_state.cpp
     ntp_time.cpp
     flow_stats.cpp
+    core_engine_config.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -32,6 +33,7 @@ set(PUBLIC_HEADERS
     command_types.h
     command.h
     flow_stats.h
+    core_engine_config.h
     i_task.h
     i_task_manager.h
     i_timer.h
@@ -46,6 +48,7 @@ set(PUBLIC_HEADERS
     i_buffer.h
     i_mapped_buffer.h
     i_dynamic_buffer.h
+    i_buffer_factory.h
     i_buffer_collection.h
     i_fifo_buffer.h
     i_fifo_buffer_reader.h
@@ -64,6 +67,7 @@ set(PUBLIC_HEADERS
     i_message_packet.h
     i_message_channel.h
     i_engine.h
+    i_core_engine.h
     )
 
 set(PRIVATE_HEADERS

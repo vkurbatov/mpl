@@ -86,9 +86,11 @@ public:
     const void *data() const override;
     void *map() override;
     std::size_t size() const override;
+
     i_buffer::u_ptr_t clone() const override;
     std::size_t refs() const override;
     void make_shared() override;
+    type_t type() const override;
     // i_dynamic_buffer interface
 public:
     bool append_data(const void *data, std::size_t size) override;

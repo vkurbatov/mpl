@@ -388,6 +388,11 @@ void smart_buffer::make_shared()
     }
 }
 
+i_buffer::type_t smart_buffer::type() const
+{
+    return type_t::dynamic_buffer;
+}
+
 bool smart_buffer::append_data(const void *data, std::size_t size)
 {
     make_unique();

@@ -46,8 +46,6 @@ public:
 
     ~net_engine_impl();
 
-
-
     pt::io::io_core& io_core();
 
     // i_net_engine interface

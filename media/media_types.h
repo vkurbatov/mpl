@@ -29,6 +29,14 @@ enum class media_data_type_t
     frame
 };
 
+
+enum class video_frame_type_t
+{
+    undefined = 0,
+    delta_frame,
+    key_frame
+};
+
 using frame_id_t = std::int32_t;
 using stream_id_t = std::int32_t;
 using track_id_t = std::int32_t;

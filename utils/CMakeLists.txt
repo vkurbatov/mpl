@@ -52,6 +52,8 @@ set(SOURCES
     random_utils_impl.cpp
     json_utils.cpp
     enum_convert_impl.cpp
+    buffer_factory_impl.cpp
+    core_engine_impl.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -100,6 +102,8 @@ set(PUBLIC_HEADERS
     json_utils.h
     enum_converter_defs.h
     enum_serialize_defs.h
+    buffer_factory_impl.h
+    core_engine_impl.h
     )
 
 set(PRIVATE_HEADERS
