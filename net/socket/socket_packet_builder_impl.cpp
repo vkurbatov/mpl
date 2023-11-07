@@ -1,12 +1,12 @@
-#include "net_packet_builder_impl.h"
-#include "socket/socket_packet_impl.h"
-#include "tls/tls_packet_impl.h"
-#include "stun/stun_packet_impl.h"
+#include "socket_packet_builder_impl.h"
+#include "socket_packet_impl.h"
+#include "net/tls/tls_packet_impl.h"
+#include "net/stun/stun_packet_impl.h"
 
 namespace mpl::net
 {
 
-net_packet_builder_impl::u_ptr_t net_packet_builder_impl::create(transport_id_t transport_id
+socket_packet_builder_impl::u_ptr_t socket_packet_builder_impl::create(transport_id_t transport_id
                                                                        , const socket_address_t &socket_address
                                                                        , const void *packet_data
                                                                        , std::size_t packet_size)
@@ -17,7 +17,7 @@ net_packet_builder_impl::u_ptr_t net_packet_builder_impl::create(transport_id_t 
         case transport_id_t::tcp:
         case transport_id_t::ice:
         case transport_id_t::tls:
-            return std::make_unique<net_packet_builder_impl>(transport_id
+            return std::make_unique<socket_packet_builder_impl>(transport_id
                                                              , socket_address
                                                              , packet_data
                                                              , packet_size);
@@ -28,7 +28,7 @@ net_packet_builder_impl::u_ptr_t net_packet_builder_impl::create(transport_id_t 
     return nullptr;
 }
 
-net_packet_builder_impl::net_packet_builder_impl(transport_id_t transport_id
+socket_packet_builder_impl::socket_packet_builder_impl(transport_id_t transport_id
                                                        , const socket_address_t &socket_address
                                                        , const void *packet_data
                                                        , std::size_t packet_size)
@@ -42,12 +42,12 @@ net_packet_builder_impl::net_packet_builder_impl(transport_id_t transport_id
 
 }
 
-transport_id_t net_packet_builder_impl::transport_id() const
+transport_id_t socket_packet_builder_impl::transport_id() const
 {
     return m_transport_id;
 }
 
-void net_packet_builder_impl::set_packet_data(const void *packet_data
+void socket_packet_builder_impl::set_packet_data(const void *packet_data
                                                  , std::size_t packet_size)
 {
     m_packet_buffer.assign(packet_data
@@ -55,7 +55,7 @@ void net_packet_builder_impl::set_packet_data(const void *packet_data
                            , true);
 }
 
-i_net_packet::u_ptr_t net_packet_builder_impl::build_packet()
+i_net_packet::u_ptr_t socket_packet_builder_impl::build_packet()
 {
     switch(m_transport_id)
     {
@@ -80,12 +80,12 @@ i_net_packet::u_ptr_t net_packet_builder_impl::build_packet()
     return nullptr;
 }
 
-void net_packet_builder_impl::set_address(const socket_address_t &socket_address)
+void socket_packet_builder_impl::set_address(const socket_address_t &socket_address)
 {
     m_socket_address = socket_address;
 }
 
-const socket_address_t &net_packet_builder_impl::address() const
+const socket_address_t &socket_packet_builder_impl::address() const
 {
     return m_socket_address;
 }

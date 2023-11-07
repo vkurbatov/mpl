@@ -1,28 +1,28 @@
 #ifndef MPL_NET_SOCKET_PACKET_BUILDER_IMPL_H
 #define MPL_NET_SOCKET_PACKET_BUILDER_IMPL_H
 
-#include "socket/i_socket_packet_builder.h"
+#include "i_socket_packet_builder.h"
 #include "utils/smart_buffer.h"
 
 namespace mpl::net
 {
 
-class net_packet_builder_impl : public i_socket_packet_builder
+class socket_packet_builder_impl : public i_socket_packet_builder
 {
     transport_id_t      m_transport_id;
     socket_address_t    m_socket_address;
     smart_buffer        m_packet_buffer;
 
 public:
-    using u_ptr_t = std::unique_ptr<net_packet_builder_impl>;
-    using s_ptr_t = std::shared_ptr<net_packet_builder_impl>;
+    using u_ptr_t = std::unique_ptr<socket_packet_builder_impl>;
+    using s_ptr_t = std::shared_ptr<socket_packet_builder_impl>;
 
     static u_ptr_t create(transport_id_t transport_id
                           , const socket_address_t& socket_address = {}
                           , const void* packet_data = nullptr
                           , std::size_t packet_size = 0);
 
-    net_packet_builder_impl(transport_id_t transport_id
+    socket_packet_builder_impl(transport_id_t transport_id
                             , const socket_address_t& socket_address = {}
                             , const void* packet_data = nullptr
                             , std::size_t packet_size = 0);

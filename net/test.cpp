@@ -49,6 +49,7 @@
 #include "utils/endian_utils.h"
 
 #include "tools/io/net/net_utils.h"
+#include "tools/io/io_core.h"
 
 #include <shared_mutex>
 #include <mutex>
@@ -64,10 +65,12 @@ namespace mpl::net
 
 void test1()
 {
-
+/*
     net_engine_impl engine({}
                            , task_manager_factory::single_manager()
-                           , timer_manager_factory::single_manager());
+                           , timer_manager_factory::single_manager());*/
+
+    auto& io_core = pt::io::io_core::get_instance();
 
     udp_transport_params_t socket_param_1;
     udp_transport_params_t socket_param_2;
@@ -77,11 +80,11 @@ void test1()
     socket_param_2.local_endpoint.socket_address = socket_address_t::from_string("localhost:0");
     socket_param_1.options.reuse_address = true;
 
-    udp_transport_factory udp_factory(engine.io_core());
+    udp_transport_factory udp_factory(io_core);
 
     if (true)
     {
-        engine.start();
+        io_core.run();
 
         auto socket_property_1 = utils::property::serialize(socket_param_1);
 
@@ -214,7 +217,7 @@ void test1()
         }
 
 
-        engine.stop();
+        io_core.stop();
     }
 }
 
@@ -344,11 +347,11 @@ void test4()
     test_promise.set_value();
     f.wait();
 
-    net_engine_impl engine({}
-                           , task_manager_factory::single_manager()
-                           , timer_manager_factory::single_manager());
 
-    engine.start();
+    auto& io_core = pt::io::io_core::get_instance();
+
+
+    io_core.run();
 
 
     /*utils::time::sleep(durations::seconds(2));
@@ -369,7 +372,7 @@ void test4()
 
     timers->start();
 
-    udp_transport_factory socket_factory(engine.io_core());
+    udp_transport_factory socket_factory(io_core);
 
     ice_transport_factory ice_factory(ice_config_t(ice_servers)
                                       , socket_factory
@@ -535,18 +538,16 @@ void test4()
     }
     utils::time::sleep(durations::seconds(100));
 
-    engine.stop();
+    io_core.stop();
 
     return;
 }
 
 void test5()
 {
-    net_engine_impl engine({}
-                           , task_manager_factory::single_manager()
-                           , timer_manager_factory::single_manager());
+    auto& io_core = pt::io::io_core::get_instance();
 
-    engine.start();
+    io_core.run();
 
 
     auto timers = timer_manager_factory::get_instance().create_timer_manager({}
@@ -555,7 +556,7 @@ void test5()
 
     timers->start();
 
-    udp_transport_factory socket_factory(engine.io_core());
+    udp_transport_factory socket_factory(io_core);
     tls_config_t tls_config;
     tls_config.method = tls_method_t::dtls;
     tls_config.srtp_enable = true;
@@ -784,7 +785,7 @@ void test5()
     }
     utils::time::sleep(durations::seconds(100));
 
-    engine.stop();
+    io_core.stop();
 
     return;
 }
@@ -842,13 +843,11 @@ void test7()
 {
     net_engine_config_t net_config = {};
 
-    net_engine_impl engine(net_config
-                           , task_manager_factory::single_manager()
-                           , timer_manager_factory::single_manager());
+    auto& io_core = pt::io::io_core::get_instance();
 
-    engine.start();
+    io_core.run();
 
-    udp_transport_factory socket_factory(engine.io_core());
+    udp_transport_factory socket_factory(io_core);
 
     socket_allocator allocator(socket_factory
                                , socket_allocator::config_t({3504, 7623}));
@@ -863,7 +862,7 @@ void test7()
         }
     }
 
-    engine.stop();
+    io_core.stop();
 }
 
 void test()

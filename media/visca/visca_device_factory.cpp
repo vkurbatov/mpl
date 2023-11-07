@@ -9,6 +9,7 @@
 #include "utils/property_writer.h"
 #include "utils/message_event_impl.h"
 #include "utils/time_utils.h"
+#include "utils/pointer_utils.h"
 
 #include "media/media_types.h"
 #include "media/media_message_types.h"
@@ -16,10 +17,19 @@
 
 #include "utils/message_command_impl.h"
 
+/*
 #include "tools/io/serial/serial_link.h"
 #include "tools/io/serial/serial_link_config.h"
 #include "tools/io/serial/serial_endpoint.h"
-#include "tools/io/io_core.h"
+#include "tools/io/io_core.h"*/
+
+#include "net/i_transport_factory.h"
+#include "net/serial/i_serial_transport.h"
+#include "net/serial/serial_packet_impl.h"
+#include "net/serial/serial_transport_params.h"
+#include "net/net_message_types.h"
+
+
 #include "tools/visca/i_visca_channel.h"
 #include "tools/visca/visca_control.h"
 
@@ -27,39 +37,6 @@
 #include <shared_mutex>
 #include <condition_variable>
 #include <atomic>
-
-namespace mpl::utils
-{
-
-__declare_enum_converter_begin(pt::io::serial_parity_t)
-    __declare_enum_pair(pt::io::serial_parity_t, none),
-    __declare_enum_pair(pt::io::serial_parity_t, odd),
-    __declare_enum_pair(pt::io::serial_parity_t, even)
-__declare_enum_converter_end(pt::io::serial_parity_t)
-
-__declare_enum_converter_begin(pt::io::serial_stop_bits_t)
-    __declare_enum_pair(pt::io::serial_stop_bits_t, one),
-    __declare_enum_pair(pt::io::serial_stop_bits_t, onepointfive),
-    __declare_enum_pair(pt::io::serial_stop_bits_t, two)
-__declare_enum_converter_end(pt::io::serial_stop_bits_t)
-
-__declare_enum_converter_begin(pt::io::serial_flow_control_t)
-    __declare_enum_pair(pt::io::serial_flow_control_t, none),
-    __declare_enum_pair(pt::io::serial_flow_control_t, software),
-    __declare_enum_pair(pt::io::serial_flow_control_t, hardware)
-__declare_enum_converter_end(pt::io::serial_flow_control_t)
-
-}
-
-namespace mpl
-{
-
-__declare_enum_serializer(pt::io::serial_parity_t)
-__declare_enum_serializer(pt::io::serial_stop_bits_t)
-__declare_enum_serializer(pt::io::serial_flow_control_t)
-
-}
-
 
 namespace mpl::media
 {
@@ -136,7 +113,7 @@ static const control_info_t::array_t visca_control_table =
 
 }
 
-class visca_device : public i_device
+class visca_device_impl : public i_device
 {
     struct device_params_t;
 
@@ -148,51 +125,63 @@ class visca_device : public i_device
 
     class visca_channel : public pt::visca::i_visca_channel
     {
-        mutable std::mutex          m_sync_mutex;
-        cond_t                      m_cond;
-        visca_device&               m_owner;
-        pt::io::serial_link         m_serial_link;
-        pt::visca::packet_data_t    m_recv_data;
-        pt::visca::visca_control    m_visca_control;
+        mutable std::mutex                  m_sync_mutex;
+        cond_t                              m_cond;
+        visca_device_impl&                  m_owner;
+        message_sink_impl                   m_serial_sink;
+        net::i_serial_transport::u_ptr_t    m_serial_transport;
+        pt::visca::packet_data_t            m_recv_data;
+        pt::visca::visca_control            m_visca_control;
 
     public:
-        visca_channel(visca_device& owner
-                      , pt::io::io_core& io_core
+
+        visca_channel(visca_device_impl& owner
+                      , net::i_serial_transport::u_ptr_t serial_transport
                       , const device_params_t& device_params)
             : m_owner(owner)
-            , m_serial_link(io_core
-                            , device_params.serial_config)
+            , m_serial_sink([&](auto&& ...args) { return on_message(args...); })
+            , m_serial_transport(std::move(serial_transport))
             , m_visca_control(device_params.visca_config
                               , this)
         {
-            m_serial_link.set_endpoint(device_params.serial_endpoint);
-            m_serial_link.set_state_handler([&](auto&& ...args) { on_link_state(args...); });
-            m_serial_link.set_message_handler([&](auto&& ...args) { on_message(args...); });
+            m_serial_transport->source(0)->add_sink(&m_serial_sink);
         }
 
         ~visca_channel()
         {
-            m_serial_link.control(pt::io::link_control_id_t::close);
+            m_serial_transport->control(channel_control_t::close());
+            m_serial_transport->source(0)->remove_sink(&m_serial_sink);
         }
 
-        void on_link_state(pt::io::link_state_t new_state
-                           , const std::string_view& reason)
-        {
-            m_owner.on_link_state(new_state
-                                  , reason);
-        }
 
-        void on_message(const pt::io::message_t& message
-                        , const pt::io::endpoint_t& endpoint)
+        bool on_serial_packet(const net::i_serial_packet& serial_packet)
         {
             std::lock_guard lock(m_sync_mutex);
-            if (auto data = static_cast<const std::uint8_t*>(message.data()))
+            if (auto data = static_cast<const std::uint8_t*>(serial_packet.data()))
             {
                 m_recv_data.insert(m_recv_data.end()
                                    , data
-                                   , data + message.size());
+                                   , data + serial_packet.size());
                 m_cond.notify_all();
+                return true;
             }
+
+            return false;
+        }
+
+        bool on_message(const i_message& message)
+        {
+            if (message.category() == message_category_t::packet
+                    && message.subclass() == net::message_class_net)
+            {
+                auto& net_packet = static_cast<const net::i_net_packet&>(message);
+                if (net_packet.transport_id() == net::transport_id_t::serial)
+                {
+                    return on_serial_packet(static_cast<const net::i_serial_packet&>(net_packet));
+                }
+            }
+
+            return true;
         }
 
         bool execute_command(detail::control_info_t& control
@@ -315,22 +304,26 @@ class visca_device : public i_device
     public:
         bool open() override
         {
-            return m_serial_link.control(pt::io::link_control_id_t::open)
-                    && m_serial_link.control(pt::io::link_control_id_t::start);
+            return m_serial_transport->control(channel_control_t::open())
+                    && m_serial_transport->control(channel_control_t::connect());
         }
 
         bool close() override
         {
-            return m_serial_link.control(pt::io::link_control_id_t::close);
+            return m_serial_transport->control(channel_control_t::close());
         }
 
         std::size_t write(const void *data, std::size_t size) override
         {
-            pt::io::message_t message(data
-                                  , size);
-            if (m_serial_link.send(message))
+            net::serial_packet_impl serial_packet(smart_buffer(data
+                                                               , size)
+                                                  , m_owner.m_device_params.serial_params.serial_endpoint.port_name);
+            if (auto sink = m_serial_transport->sink(0))
             {
-                return size;
+                if (sink->send_message(serial_packet))
+                {
+                    return size;
+                }
             }
 
             return 0;
@@ -362,19 +355,17 @@ class visca_device : public i_device
 
         bool is_open() const override
         {
-            return m_serial_link.is_open();
+            return m_serial_transport->is_open();
         }
     };
 
     struct device_params_t
     {
         pt::visca::visca_config_t       visca_config;
-        pt::io::serial_link_config_t    serial_config;
-        pt::io::serial_endpoint_t       serial_endpoint;
+        net::serial_transport_params_t  serial_params;
 
         device_params_t(const pt::visca::visca_config_t& visca_config = {}
-                        , const pt::io::serial_link_config_t& serial_config = {}
-                        , const pt::io::serial_endpoint_t& serial_endpoint = {})
+                        , const net::serial_transport_params_t& serial_params = {})
         {
 
         }
@@ -392,12 +383,7 @@ class visca_device : public i_device
                 return reader.get("visca.reply_timeout_ms", visca_config.reply_timeout)
                         | reader.get("visca.pan_speed",visca_config.pan_speed)
                         | reader.get("visca.tilt_speed",visca_config.tilt_speed)
-                        | reader.get("serial.baud_rate", serial_config.baud_rate)
-                        | reader.get("serial.char_size", serial_config.char_size)
-                        | reader.get("serial.parity", serial_config.parity)
-                        | reader.get("serial.stop_bits", serial_config.stop_bits)
-                        | reader.get("serial.flow_control", serial_config.flow_control)
-                        | reader.get("serial.port_name", serial_endpoint.port_name);
+                        | reader.get("serial", serial_params);
             }
 
             return false;
@@ -410,18 +396,12 @@ class visca_device : public i_device
                         && writer.set("visca.reply_timeout_ms", visca_config.reply_timeout)
                         && writer.set("visca.pan_speed",visca_config.pan_speed)
                         && writer.set("visca.tilt_speed",visca_config.tilt_speed)
-                        && writer.set("serial.baud_rate", serial_config.baud_rate)
-                        && writer.set("serial.char_size", serial_config.char_size)
-                        && writer.set("serial.parity", serial_config.parity)
-                        && writer.set("serial.stop_bits", serial_config.stop_bits)
-                        && writer.set("serial.flow_control", serial_config.flow_control)
-                        && writer.set("serial.port_name", serial_endpoint.port_name);
+                        && writer.set("serial", serial_params);
         }
 
         inline bool is_valid() const
         {
-            return serial_config.is_valid()
-                    && serial_endpoint.is_valid();
+            return serial_params.is_valid();
         }
     };
 
@@ -446,26 +426,40 @@ class visca_device : public i_device
 
 public:
 
-    using u_ptr_t = std::unique_ptr<visca_device>;
+    using u_ptr_t = std::unique_ptr<visca_device_impl>;
 
+    static net::i_serial_transport::u_ptr_t create_serial_transport(net::i_transport_factory& serial_factory
+                                                                    , const net::serial_transport_params_t& serial_params)
+    {
+        if (auto serial_property = utils::property::serialize(serial_params))
+        {
+            return utils::static_pointer_cast<net::i_serial_transport>(serial_factory.create_transport(*serial_property));
+        }
 
-    static u_ptr_t create(pt::io::io_core& io_core
+        return nullptr;
+    }
+
+    static u_ptr_t create(net::i_transport_factory& serial_factory
                           , const i_property& device_params)
     {
         device_params_t visca_params(device_params);
         if (visca_params.is_valid())
         {
-            return std::make_unique<visca_device>(io_core
-                                                  , std::move(visca_params));
+            if (auto serial_transport = create_serial_transport(serial_factory
+                                                                     , visca_params.serial_params))
+            {
+                return std::make_unique<visca_device_impl>(std::move(serial_transport)
+                                                           , std::move(visca_params));
+            }
         }
         return nullptr;
     }
 
-    visca_device(pt::io::io_core& io_core
-                 , device_params_t&& device_params)
+    visca_device_impl(net::i_serial_transport::u_ptr_t&& serial_transport
+                    , device_params_t&& device_params)
         : m_device_params(std::move(device_params))
         , m_visca_channel(*this
-                          , io_core
+                          , std::move(serial_transport)
                           , m_device_params)
         , m_sink([&](auto&& ...args) { return on_message(args...); })
         , m_state(channel_state_t::ready)
@@ -475,7 +469,7 @@ public:
 
     }
 
-    ~visca_device()
+    ~visca_device_impl()
     {
         close();
     }
@@ -712,20 +706,20 @@ public:
     }
 };
 
-visca_device_factory::u_ptr_t visca_device_factory::create(pt::io::io_core& io_core)
+visca_device_factory::u_ptr_t visca_device_factory::create(net::i_transport_factory& transport_factory)
 {
-    return std::make_unique<visca_device_factory>(io_core);
+    return std::make_unique<visca_device_factory>(transport_factory);
 }
 
-visca_device_factory::visca_device_factory(pt::io::io_core& io_core)
-    : m_io_core(io_core)
+visca_device_factory::visca_device_factory(net::i_transport_factory& transport_factory)
+    : m_serial_factory(transport_factory)
 {
 
 }
 
 i_device::u_ptr_t visca_device_factory::create_device(const i_property &device_params)
 {
-    return visca_device::create(m_io_core
+    return visca_device_impl::create(m_serial_factory
                                 , device_params);
 }
 

@@ -12,6 +12,7 @@ enum class transport_id_t
     ice,
     tls,
     ws,
+    serial,
     application
 };
 

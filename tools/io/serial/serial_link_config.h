@@ -21,6 +21,9 @@ struct serial_link_config_t : public link_config_t
                         , serial_parity_t parity = serial_parity_t::none
                         , serial_flow_control_t flow_control = serial_flow_control_t::none);
 
+    bool operator == (const serial_link_config_t& other) const;
+    bool operator != (const serial_link_config_t& other) const;
+
     bool is_valid() const final override;
 };
 

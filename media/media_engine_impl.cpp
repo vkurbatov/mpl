@@ -63,7 +63,7 @@ struct media_engine_impl::pimpl_t
     libav_output_device_factory         m_libav_output_device_factory;
     v4l2_device_factory                 m_v4l2_input_device_factory;
     vnc_device_factory                  m_vnc_device_factory;
-    visca_device_factory                m_visca_factory;
+    // visca_device_factory                m_visca_factory;
 
     layout_manager_mosaic_impl          m_layout_manager;
 
@@ -101,7 +101,7 @@ struct media_engine_impl::pimpl_t
         , m_ipc_output_device_factory(m_ipc_manager != nullptr
                                      ? ipc_output_device_factory::create(*m_ipc_manager)
                                      : nullptr)
-        , m_visca_factory(io_core)
+        // , m_visca_factory(io_core)
         , m_media_converter_factory(m_audio_converter_factory
                                     , m_video_converter_factory)
         , m_decoder_factory(false)
@@ -174,7 +174,7 @@ struct media_engine_impl::pimpl_t
                 return &m_vnc_device_factory;
             break;
             case device_type_t::visca:
-                return &m_visca_factory;
+               // return &m_visca_factory;
             break;
             default:;
         }

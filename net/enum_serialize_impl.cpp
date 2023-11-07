@@ -4,6 +4,7 @@
 #include "socket/socket_types.h"
 #include "ice/ice_types.h"
 #include "tls/tls_types.h"
+#include "serial/serial_types.h"
 
 namespace mpl
 {
@@ -21,5 +22,9 @@ __declare_enum_serializer(ice_gathering_state_t)
 __declare_enum_serializer(ice_mode_t)
 
 __declare_enum_serializer(tls_hash_method_t)
+
+__declare_enum_serializer(serial_parity_t)
+__declare_enum_serializer(serial_stop_bits_t)
+__declare_enum_serializer(serial_flow_control_t)
 
 }

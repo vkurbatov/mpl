@@ -19,6 +19,20 @@ serial_link_config_t::serial_link_config_t(baud_rate_t baud_rate
 
 }
 
+bool serial_link_config_t::operator ==(const serial_link_config_t &other) const
+{
+    return baud_rate == other.baud_rate
+            && char_size == other.char_size
+            && stop_bits == other.stop_bits
+            && parity == other.parity
+            && flow_control == other.flow_control;
+}
+
+bool serial_link_config_t::operator !=(const serial_link_config_t &other) const
+{
+    return ! operator == (other);
+}
+
 bool serial_link_config_t::is_valid() const
 {
     return type == link_type_t::serial

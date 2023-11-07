@@ -44,6 +44,8 @@
 #include "vnc/vnc_device_factory.h"
 #include "apm/apm_device_factory.h"
 
+#include "net/serial/serial_transport_factory.h"
+
 #include "command_camera_control.h"
 #include "utils/message_command_impl.h"
 
@@ -2522,7 +2524,8 @@ void test24()
 void test25()
 {
     pt::io::io_core io_core;
-    visca_device_factory factory(io_core);
+    net::serial_transport_factory serial_factory(io_core);
+    visca_device_factory factory(serial_factory);
 
     auto visca_params = property_helper::create_object();
     if (visca_params)

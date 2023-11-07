@@ -24,8 +24,8 @@ public:
     static u_ptr_t create(const smart_buffer& packet_buffer
                           , const socket_address_t& address);
 
-    static u_ptr_t create(smart_buffer&& packet_buffer
-                          , const socket_address_t& address);
+    static u_ptr_t create(smart_buffer&& packet_buffer = {}
+                          , const socket_address_t& address = {});
 
     socket_packet_impl(const smart_buffer& packet_buffer
                        , const socket_address_t& address);

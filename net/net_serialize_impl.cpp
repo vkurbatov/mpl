@@ -15,6 +15,8 @@
 #include "tls/tls_endpoint.h"
 #include "tls/tls_transport_params.h"
 
+#include "serial/serial_transport_params.h"
+
 namespace mpl
 {
 
@@ -332,6 +334,54 @@ bool utils::property::deserialize(tls_transport_params_t& value, const i_propert
     return reader.get("role", value.role)
             | reader.get("local_endpoint", value.local_endpoint)
             | reader.get("remote_endpoint", value.remote_endpoint);
+}
+
+// serial_endpoint_t
+template<>
+bool utils::property::serialize(const serial_endpoint_t& value, i_property& property)
+{
+
+    property_writer write(property);
+    return write.set("transport_id", value.transport_id)
+            && write.set("port_name", value.port_name);
+}
+
+template<>
+bool utils::property::deserialize(serial_endpoint_t& value, const i_property &property)
+{
+    property_reader reader(property);
+    if (reader.get("transport_id", transport_id_t::serial) == value.transport_id)
+    {
+        reader.get("port_name", value.port_name);
+        return true;
+    }
+    return false;
+}
+
+// serial_transport_params_t
+template<>
+bool utils::property::serialize(const serial_transport_params_t& value, i_property& property)
+{
+
+    property_writer write(property);
+    return write.set("baud_rate", value.serial_params.baud_rate)
+            && write.set("char_size", value.serial_params.char_size)
+            && write.set("stop_bits", value.serial_params.stop_bits)
+            && write.set("parity", value.serial_params.parity)
+            && write.set("flow_control", value.serial_params.flow_control)
+            && write.set("endpoint", value.serial_endpoint);
+}
+
+template<>
+bool utils::property::deserialize(serial_transport_params_t& value, const i_property &property)
+{
+    property_reader reader(property);
+    return reader.get("baud_rate", value.serial_params.baud_rate)
+            | reader.get("char_size", value.serial_params.char_size)
+            | reader.get("stop_bits", value.serial_params.stop_bits)
+            | reader.get("parity", value.serial_params.parity)
+            | reader.get("flow_control", value.serial_params.flow_control)
+            | reader.get("endpoint", value.serial_endpoint);
 }
 
 }

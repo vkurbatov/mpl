@@ -12,7 +12,6 @@ set(SOURCES
     net_utils.cpp
     net_event_message_impl.cpp
     net_command_message_impl.cpp
-    net_packet_builder_impl.cpp
     net_engine_impl.cpp
     net_engine_config.cpp
     net_core.cpp
@@ -22,6 +21,7 @@ set(SOURCES
     socket/udp_transport_factory.cpp
     socket/udp_transport_params.cpp
     socket/socket_allocator.cpp
+    socket/socket_packet_builder_impl.cpp
 
     stun/stun_mapped_headers.cpp
     stun/stun_attributes.cpp
@@ -55,6 +55,12 @@ set(SOURCES
     sq/sq_packet.cpp
     sq/sq_parser.cpp
     sq/sq_stitcher.cpp
+
+    serial/serial_endpoint.cpp
+    serial/serial_packet_impl.cpp
+    serial/serial_packet_builder_impl.cpp
+    serial/serial_transport_factory.cpp
+    serial/serial_transport_params.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -100,18 +106,24 @@ set(PUBLIC_HEADERS
     tls/tls_keys_event.h
     tls/i_tls_transport.h
     tls/i_tls_packet.h
+
+    serial/serial_types.h
+    serial/serial_endpoint.h
+    serial/i_serial_packet.h
+    serial/i_serial_packet_builder.h
+    serial/i_serial_transport.h
     )
 
 set(PRIVATE_HEADERS
     test.h
     net_utils.h
-    net_packet_builder_impl.h
     net_engine_impl.h
 
     socket/socket_packet_impl.h
     socket/udp_transport_factory.h
     socket/udp_transport_params.h
     socket/socket_allocator.h
+    socket/socket_packet_builder_impl.h
 
     stun/stun_mapped_headers.h
     stun/stun_packet_impl.h
@@ -136,6 +148,10 @@ set(PRIVATE_HEADERS
     sq/sq_stitcher.h
     sq/mapped_sq_header.h
 
+    serial/serial_packet_impl.h
+    serial/serial_packet_builder_impl.h
+    serial/serial_transport_factory.h
+    serial/serial_transport_params.h
 )
 
 

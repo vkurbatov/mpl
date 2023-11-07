@@ -3,6 +3,7 @@
 #include "socket/socket_types.h"
 #include "ice/ice_types.h"
 #include "tls/tls_types.h"
+#include "serial/serial_types.h"
 
 namespace mpl::utils
 {
@@ -16,6 +17,7 @@ __declare_enum_converter_begin(transport_id_t)
     __declare_enum_pair(transport_id_t, ice),
     __declare_enum_pair(transport_id_t, tls),
     __declare_enum_pair(transport_id_t, ws),
+    __declare_enum_pair(transport_id_t, serial),
     __declare_enum_pair(transport_id_t, application)
 __declare_enum_converter_end(transport_id_t)
 
@@ -84,5 +86,23 @@ __declare_enum_converter_begin(tls_method_t)
     __declare_enum_pair(tls_method_t, dtls),
     __declare_enum_pair(tls_method_t, tls)
 __declare_enum_converter_end(tls_method_t)
+
+__declare_enum_converter_begin(serial_parity_t)
+    __declare_enum_pair(serial_parity_t, none),
+    __declare_enum_pair(serial_parity_t, odd),
+    __declare_enum_pair(serial_parity_t, even)
+__declare_enum_converter_end(serial_parity_t)
+
+__declare_enum_converter_begin(serial_stop_bits_t)
+    __declare_enum_pair(serial_stop_bits_t, one),
+    __declare_enum_pair(serial_stop_bits_t, onepointfive),
+    __declare_enum_pair(serial_stop_bits_t, two)
+__declare_enum_converter_end(serial_stop_bits_t)
+
+__declare_enum_converter_begin(serial_flow_control_t)
+    __declare_enum_pair(serial_flow_control_t, none),
+    __declare_enum_pair(serial_flow_control_t, software),
+    __declare_enum_pair(serial_flow_control_t, hardware)
+__declare_enum_converter_end(serial_flow_control_t)
 
 }
