@@ -43,13 +43,13 @@ class task_manager_impl final: public i_task_manager
 
             static u_ptr_t create(task_queue_t& owner
                                   , task_id_t task_id
-                                  , const task_handler_t& handler)
+                                  , task_handler_t&& handler)
             {
                 if (handler != nullptr)
                 {
                     return std::make_unique<task_impl>(owner
                                                        , task_id
-                                                       , handler);
+                                                       , std::move(handler));
                 }
 
                 return nullptr;
@@ -58,10 +58,10 @@ class task_manager_impl final: public i_task_manager
 
             task_impl(task_queue_t& owner
                       , task_id_t task_id
-                      , const task_handler_t& handler)
+                      , task_handler_t&& handler)
                 : m_owner(owner)
                 , m_task_id(task_id)
-                , m_handler(handler)
+                , m_handler(std::move(handler))
                 , m_state(task_state_t::ready)
                 , m_completed(false)
             {
@@ -159,12 +159,12 @@ class task_manager_impl final: public i_task_manager
             reset();
         }
 
-        task_impl::s_ptr_t add_task(const task_handler_t& task_handler)
+        task_impl::s_ptr_t add_task(task_handler_t&& task_handler)
         {
             std::lock_guard lock(m_safe_mutex);
             if (auto task = task_impl::create(*this
                                               , m_task_id
-                                              , task_handler))
+                                              , std::move(task_handler)))
             {
 
                 m_tasks.push(std::move(task));
@@ -306,11 +306,11 @@ public:
 
     // i_task_manager interface
 public:
-    i_task::s_ptr_t add_task(const task_handler_t &task_handler) override
+    i_task::s_ptr_t add_task(task_handler_t&& task_handler) override
     {
         if (is_running())
         {
-            if (auto task = m_task_queue.add_task(task_handler))
+            if (auto task = m_task_queue.add_task(std::move(task_handler)))
             {
                 notify();
                 return task;

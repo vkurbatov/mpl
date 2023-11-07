@@ -341,23 +341,6 @@ void test3()
 
 void test4()
 {
-    std::promise<void> test_promise;
-    // test_promise.set_value();
-    std::future<void> f = test_promise.get_future();
-    test_promise.set_value();
-    f.wait();
-
-
-    auto& io_core = pt::io::io_core::get_instance();
-
-
-    io_core.run();
-
-
-    /*utils::time::sleep(durations::seconds(2));
-
-    engine.stop();*/
-
     const ice_server_params_t::array_t ice_servers =
     {
         { "stun:stun1.l.google.com:19302" },
@@ -366,17 +349,28 @@ void test4()
         { "stun:stun.l.google1.com:19302" }
     };
 
-    auto timers = timer_manager_factory::get_instance().create_timer_manager({}
-                                                                             , task_manager_factory::single_manager());
+    net_engine_config_t net_engine_config;
+    net_engine_config.ice_config.ice_servers = ice_servers;
+
+    auto net_engine = net_engine_factory::get_instance().create_engine(net_engine_config
+                                                                       , task_manager_factory::single_manager()
+                                                                       , timer_manager_factory::single_manager());
 
 
-    timers->start();
+    net_engine->start();
 
+    /*utils::time::sleep(durations::seconds(2));
+
+    engine.stop();*/
+
+    // auto socket_factory = net_engine->transport_factory(transport_id_t::udp);
+    auto ice_factory = net_engine->transport_factory(transport_id_t::ice);
+/*
     udp_transport_factory socket_factory(io_core);
 
     ice_transport_factory ice_factory(ice_config_t(ice_servers)
                                       , socket_factory
-                                      , *timers);
+                                      , *timers);*/
 
 
 
@@ -403,8 +397,8 @@ void test4()
     auto ice_property_1 = utils::property::serialize(ice_params_1);
     auto ice_property_2 = utils::property::serialize(ice_params_2);
 
-    i_ice_transport::u_ptr_t ice_connection_1 = utils::static_pointer_cast<i_ice_transport>(ice_factory.create_transport(*ice_property_1));
-    i_ice_transport::u_ptr_t ice_connection_2 = utils::static_pointer_cast<i_ice_transport>(ice_factory.create_transport(*ice_property_2));
+    i_ice_transport::u_ptr_t ice_connection_1 = utils::static_pointer_cast<i_ice_transport>(ice_factory->create_transport(*ice_property_1));
+    i_ice_transport::u_ptr_t ice_connection_2 = utils::static_pointer_cast<i_ice_transport>(ice_factory->create_transport(*ice_property_2));
 
 
     auto message_handler = [&](const std::string_view& name, const i_message& message)
@@ -538,7 +532,7 @@ void test4()
     }
     utils::time::sleep(durations::seconds(100));
 
-    io_core.stop();
+    net_engine->stop();
 
     return;
 }
@@ -863,6 +857,11 @@ void test7()
     }
 
     io_core.stop();
+}
+
+void test8()
+{
+
 }
 
 void test()

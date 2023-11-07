@@ -2523,9 +2523,14 @@ void test24()
 
 void test25()
 {
+
+    // socat -d -d pty,raw,echo=0 pty,raw,echo=0
+
     pt::io::io_core io_core;
     net::serial_transport_factory serial_factory(io_core);
     visca_device_factory factory(serial_factory);
+
+    io_core.run();
 
     auto visca_params = property_helper::create_object();
     if (visca_params)
@@ -2610,6 +2615,8 @@ void test25()
 
         visca_device->control(channel_control_t::close());
     }
+
+    io_core.stop();
 
     // auto factory.create_device("");
 }
@@ -2804,10 +2811,10 @@ void  tests()
     // test22(); // audio-processing
     // test23(); // audio-processing (apm_device_factory)
     // test24();
-    // test25(); // visca
+    test25(); // visca
     // test26(); // hls
     // test27(); // audio-loop with frame splitter
-    test28();
+    // test28();
 
 }
 

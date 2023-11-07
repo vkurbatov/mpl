@@ -15,11 +15,12 @@ extern "C"
 #include <thread>
 #include <map>
 #include <set>
+#include <atomic>
 
 namespace pt::ffmpeg
 {
 
-static bool libav_register_flag = false;
+static std::atomic_bool libav_register_flag = false;
 
 const std::int32_t padding_size = AV_INPUT_BUFFER_PADDING_SIZE;
 
@@ -1249,9 +1250,9 @@ bool is_registered()
 
 bool libav_register()
 {
-    if (!libav_register_flag)
+    bool flag = false;
+    if (libav_register_flag.compare_exchange_strong(flag, true))
     {
-        libav_register_flag = true;
         avcodec_register_all();
         avdevice_register_all();
         avformat_network_init();

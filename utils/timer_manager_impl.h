@@ -13,7 +13,7 @@ class timer_manager_factory
 public:
     struct config_t
     {
-
+        bool auto_start = false;
     };
 
     static timer_manager_factory& get_instance();

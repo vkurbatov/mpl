@@ -14,7 +14,7 @@ public:
     using u_ptr_t = std::unique_ptr<i_task_manager>;
     using s_ptr_t = std::shared_ptr<i_task_manager>;
 
-    virtual i_task::s_ptr_t add_task(const task_handler_t& task_handler) = 0;
+    virtual i_task::s_ptr_t add_task(task_handler_t&& task_handler) = 0;
     virtual void reset() = 0;
     virtual std::size_t pending_tasks() const = 0;
     virtual std::size_t active_workers() const = 0;

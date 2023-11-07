@@ -174,7 +174,10 @@ public:
         , m_timer_ids(0)
         , m_started(false)
     {
-
+        if (m_config.auto_start)
+        {
+            internal_start();
+        }
     }
 
     ~timer_manager_impl()
@@ -360,7 +363,7 @@ timer_manager_factory &timer_manager_factory::get_instance()
 
 i_timer_manager &timer_manager_factory::single_manager()
 {
-    static timer_manager_impl single_timer_manager({}
+    static timer_manager_impl single_timer_manager({ true }
                                                    , task_manager_factory::single_manager());
     return single_timer_manager;
 }

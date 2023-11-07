@@ -9,10 +9,9 @@ io_worker_factory &io_worker_factory::get_instance()
     return single_factory;
 }
 
-bool io_worker_factory::execute_worker(const worker_proc_t &worker_proc)
+i_io_worker_factory::future_t io_worker_factory::execute_worker(worker_proc_t&& worker_proc)
 {
-    std::async(std::launch::async, worker_proc);
-    return true;
+    return std::async(std::launch::async, worker_proc);
 }
 
 }

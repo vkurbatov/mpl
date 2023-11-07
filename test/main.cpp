@@ -10,8 +10,8 @@
 
 int main()
 {
-    mpl::media::tests();
+    // mpl::media::tests();
     // mpl::utils_test();
-    // mpl::net::test();
+    mpl::net::test();
 }
 

@@ -16,8 +16,9 @@ struct io_core::pimpl_t
     using u_ptr_t = io_core::pimpl_ptr_t;
     using config_t = io_core::config_t;
     using io_context_t = boost::asio::io_context;
+    using future_t = std::future<void>;
     using thread_array_t = std::vector<std::thread>;
-    using future_array_t = std::vector<std::future<void>>;
+    using future_array_t = std::vector<future_t>;
     using promise_array_t = std::list<std::promise<void>>;
 
     config_t                m_config;
@@ -25,8 +26,7 @@ struct io_core::pimpl_t
     i_io_worker_factory*    m_worker_factory;
 
 
-    promise_array_t         m_promises;
-    //future_array_t          m_futures;
+    future_array_t          m_futures;
     std::atomic_bool        m_running;
 
 
@@ -65,10 +65,8 @@ struct io_core::pimpl_t
             for (std::size_t i = 0; i < m_config.total_workers(); i++)
             {
                 // m_futures.emplace_back(execute_work([&, i]{ worker_proc(i); }));
-                m_promises.emplace_back();
-                execute_work(i, m_promises.back());
 
-                //m_futures.emplace_back(execute_work(i));
+                m_futures.emplace_back(execute_work(i));
             }
             return true;
         }
@@ -76,7 +74,7 @@ struct io_core::pimpl_t
         return false;
     }
 
-    void worker_proc(std::size_t worker_id, std::promise<void>& promise)
+    void worker_proc(std::size_t worker_id)
     {
         boost::asio::executor_work_guard work(m_io_context.get_executor());
         while(is_running())
@@ -84,7 +82,6 @@ struct io_core::pimpl_t
             m_io_context.run_one();
             // std::cout << worker_id << ": after run" << std::endl;
         }
-        promise.set_value();
     }
 
     bool stop()
@@ -93,11 +90,11 @@ struct io_core::pimpl_t
         if (m_running.compare_exchange_strong(flag, false))
         {
             m_io_context.stop();
-            for (auto& p : m_promises)
+            for (auto& f : m_futures)
             {
-                p.get_future().wait();
+                f.wait();
             }
-            m_promises.clear();
+            m_futures.clear();
 
             return true;
         }
@@ -120,14 +117,14 @@ struct io_core::pimpl_t
 
     std::size_t workers() const
     {
-        return m_promises.size();
+        return m_futures.size();
     }
 
-    bool execute_work(std::size_t worker_id, std::promise<void>& promise)
+    future_t execute_work(std::size_t worker_id)
     {
-        auto executor = [worker_id, &promise, this]
+        auto executor = [worker_id, this]
         {
-            worker_proc(worker_id, promise);
+            worker_proc(worker_id);
         };
 
         return m_worker_factory->execute_worker(std::move(executor));

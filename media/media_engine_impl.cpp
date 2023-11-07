@@ -24,6 +24,7 @@
 #include "media_converter_factory_impl.h"
 #include "smart_transcoder_factory.h"
 
+#include "net/i_net_engine.h"
 
 #include <atomic>
 
@@ -50,6 +51,7 @@ struct media_engine_impl::pimpl_t
 
     media_engine_config_t               m_config;
     i_task_manager&                     m_task_manager;
+    net::i_net_engine&                  m_net_engine;
 
     media_format_factory_impl           m_audio_format_factory;
     media_format_factory_impl           m_video_format_factory;
@@ -63,7 +65,7 @@ struct media_engine_impl::pimpl_t
     libav_output_device_factory         m_libav_output_device_factory;
     v4l2_device_factory                 m_v4l2_input_device_factory;
     vnc_device_factory                  m_vnc_device_factory;
-    // visca_device_factory                m_visca_factory;
+    visca_device_factory::u_ptr_t       m_visca_factory;
 
     layout_manager_mosaic_impl          m_layout_manager;
 
@@ -78,30 +80,41 @@ struct media_engine_impl::pimpl_t
 
     static u_ptr_t create(const media_engine_config_t& config
                           , i_task_manager& task_manager
-                          , pt::io::io_core& io_core)
+                          , net::i_net_engine& net_engine)
     {
         detail::check_and_init_libav();
         return std::make_unique<pimpl_t>(config
                                          , task_manager
-                                         , io_core);
+                                         , net_engine);
+    }
+
+    static visca_device_factory::u_ptr_t create_visca_device(net::i_net_engine& net_engine)
+    {
+        if (auto serial_factory = net_engine.transport_factory(net::transport_id_t::serial))
+        {
+            return visca_device_factory::create(*serial_factory);
+        }
+
+        return nullptr;
     }
 
     pimpl_t(const media_engine_config_t& config
             , i_task_manager& task_manager
-            , pt::io::io_core& io_core)
+            , net::i_net_engine& net_engine)
         : m_config(config)
         , m_task_manager(task_manager)
+        , m_net_engine(net_engine)
         , m_audio_format_factory(media_type_t::audio)
         , m_video_format_factory(media_type_t::video)
-        , m_ipc_manager(ipc_manager_factory::get_instance().create_shared_data_manager(""
-                                                                                       , 0))
+        , m_ipc_manager(ipc_manager_factory::get_instance().create_shared_data_manager(m_config.ipc_name
+                                                                                       , m_config.ipc_size))
         , m_ipc_input_device_factory(m_ipc_manager != nullptr
                                      ? ipc_input_device_factory::create(*m_ipc_manager)
                                      : nullptr)
         , m_ipc_output_device_factory(m_ipc_manager != nullptr
                                      ? ipc_output_device_factory::create(*m_ipc_manager)
                                      : nullptr)
-        // , m_visca_factory(io_core)
+        , m_visca_factory(create_visca_device(m_net_engine))
         , m_media_converter_factory(m_audio_converter_factory
                                     , m_video_converter_factory)
         , m_decoder_factory(false)
@@ -174,7 +187,7 @@ struct media_engine_impl::pimpl_t
                 return &m_vnc_device_factory;
             break;
             case device_type_t::visca:
-               // return &m_visca_factory;
+               return m_visca_factory.get();
             break;
             default:;
         }
@@ -240,19 +253,19 @@ struct media_engine_impl::pimpl_t
 
 media_engine_impl::u_ptr_t media_engine_impl::create(const media_engine_config_t &config
                                                      , i_task_manager &task_manager
-                                                     , pt::io::io_core& io_core)
+                                                     , net::i_net_engine& net_engine)
 {
     return std::make_unique<media_engine_impl>(config
                                                , task_manager
-                                               , io_core);
+                                               , net_engine);
 }
 
 media_engine_impl::media_engine_impl(const media_engine_config_t& config
                                      , i_task_manager &task_manager
-                                     , pt::io::io_core& io_core)
+                                     , net::i_net_engine& net_engine)
     : m_pimpl(pimpl_t::create(config
                               , task_manager
-                              , io_core))
+                              , net_engine))
 {
 
 }

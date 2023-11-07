@@ -36,6 +36,11 @@ void serial_packet_builder_impl::set_packet_data(const void *packet_data, std::s
                            , true);
 }
 
+const i_data_object &serial_packet_builder_impl::packet_data() const
+{
+    return m_packet_buffer;
+}
+
 i_net_packet::u_ptr_t serial_packet_builder_impl::build_packet()
 {
     return serial_packet_impl::create(m_packet_buffer.fork()

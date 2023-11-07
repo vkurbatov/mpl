@@ -15,7 +15,7 @@ public:
     using worker_proc_t = std::function<void()>;
     virtual ~i_io_worker_factory() = default;
 
-    virtual bool execute_worker(const worker_proc_t& worker_proc) = 0;
+    virtual future_t execute_worker(worker_proc_t&& worker_proc) = 0;
 
 };
 

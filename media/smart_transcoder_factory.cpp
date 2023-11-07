@@ -305,14 +305,15 @@ public:
             {
                 std::lock_guard lock(m_safe_mutex);
 
+                /*
                 std::size_t refs = 0;
                 if (auto buffer = frame.data().get_buffer(0))
                 {
                     refs = buffer->refs();
                 }
 
-                // std::clog << "push frame #: " << frame.frame_id() << ", refs: " << refs << std::endl;
-
+                std::clog << "push frame #: " << frame.frame_id() << ", refs: " << refs << std::endl;
+                */
                 m_frame_queue.emplace(std::move(clone_frame));
 
                 while (m_frame_queue.size() > 10)
@@ -323,7 +324,8 @@ public:
                 bool flag = false;
                 if (m_processed.compare_exchange_strong(flag, true))
                 {
-                    m_task = m_task_manager.add_task(m_task_handler);
+                    auto task_handler = m_task_handler;
+                    m_task = m_task_manager.add_task(std::move(task_handler));
                 }
 
                 return true;

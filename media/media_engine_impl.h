@@ -4,10 +4,10 @@
 #include "core/i_task_manager.h"
 #include "i_media_engine.h"
 
-namespace pt::io
+namespace mpl::net
 {
 
-class io_core;
+class i_net_engine;
 
 }
 
@@ -32,11 +32,11 @@ public:
 
     static u_ptr_t create(const media_engine_config_t& config
                           , i_task_manager& task_manager
-                          , pt::io::io_core& io_core);
+                          , net::i_net_engine& net_engine);
 
     media_engine_impl(const media_engine_config_t& config
                       , i_task_manager& task_manager
-                      , pt::io::io_core& io_core);
+                      , net::i_net_engine& net_engine);
     ~media_engine_impl();
 
     // i_engine interface
@@ -49,7 +49,6 @@ public:
     bool start() override;
     bool stop() override;
     bool is_started() const override;
-
 
     // i_media_engine interface
 public:

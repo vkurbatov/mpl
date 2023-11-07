@@ -13,7 +13,7 @@ public:
 
     static io_worker_factory& get_instance();
 
-    virtual bool execute_worker(const worker_proc_t& worker_proc);
+    virtual future_t execute_worker(worker_proc_t&& worker_proc);
 
 };
 

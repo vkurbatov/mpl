@@ -20,7 +20,7 @@ public:
     virtual void set_packet_data(const void* packet_data
                                  , std::size_t packet_size) = 0;
 
-    virtual const i_data_object& packet_data() const;
+    virtual const i_data_object& packet_data() const = 0;
 
     virtual i_net_packet::u_ptr_t build_packet() = 0;
 

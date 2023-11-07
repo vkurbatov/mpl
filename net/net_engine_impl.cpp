@@ -15,8 +15,9 @@
 #include "ice/ice_transport_factory.h"
 #include "tls/tls_transport_factory.h"
 
-
+#include <list>
 #include <atomic>
+#include <thread>
 
 namespace mpl::net
 {
@@ -25,11 +26,13 @@ struct net_engine_impl final : public pt::io::i_io_worker_factory
         , public i_net_engine
 {
     using u_ptr_t = std::unique_ptr<net_engine_impl>;
+    using promise_list_t = std::list<std::promise<void>>;
 
     net_engine_config_t     m_config;
     i_task_manager&         m_task_manager;
     i_timer_manager&        m_timer_manager;
     pt::io::io_core         m_io_core;
+    promise_list_t          m_promises;
 
     udp_transport_factory   m_udp_factory;
     ice_transport_factory   m_ice_factory;
@@ -65,6 +68,17 @@ struct net_engine_impl final : public pt::io::i_io_worker_factory
 
     }
 
+    void execute(worker_proc_t&& worker_proc
+                 , std::promise<void>& promise)
+    {
+        auto executor = [worker_proc, &promise]
+        {
+            worker_proc();
+            promise.set_value();
+        };
+        m_task_manager.add_task(executor);
+    }
+
     ~net_engine_impl() override
     {
         net_engine_impl::stop();
@@ -87,7 +101,8 @@ public:
         bool flag  = false;
         if (m_start.compare_exchange_strong(flag, true))
         {
-            if (m_task_manager.is_started())
+            if (m_task_manager.is_started()
+                    && m_timer_manager.is_started())
             {
                 if (m_io_core.run())
                 {
@@ -106,8 +121,13 @@ public:
         bool flag = true;
         if (m_start.compare_exchange_strong(flag, false))
         {
-            return m_io_core.stop();
+            if (m_io_core.stop())
+            {
+                m_promises.clear();
+                return true;
+            }
         }
+
 
         return false;
     }
@@ -160,9 +180,13 @@ public:
 
     // i_io_worker_factory interface
 public:
-    bool execute_worker(const worker_proc_t &worker_proc) override
+    future_t execute_worker(worker_proc_t&& worker_proc) override
     {
-        return m_task_manager.add_task(worker_proc) != nullptr;
+        m_promises.emplace_back();
+        auto future = m_promises.back().get_future();
+        execute(std::move(worker_proc)
+                , m_promises.back());
+        return future;
     }
 
 };

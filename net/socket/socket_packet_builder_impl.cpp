@@ -55,6 +55,11 @@ void socket_packet_builder_impl::set_packet_data(const void *packet_data
                            , true);
 }
 
+const i_data_object &socket_packet_builder_impl::packet_data() const
+{
+    return m_packet_buffer;
+}
+
 i_net_packet::u_ptr_t socket_packet_builder_impl::build_packet()
 {
     switch(m_transport_id)

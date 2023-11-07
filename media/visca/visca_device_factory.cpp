@@ -474,12 +474,6 @@ public:
         close();
     }
 
-    void on_link_state(pt::io::link_state_t new_state
-                       , const std::string_view& reason)
-    {
-
-    }
-
     inline void change_state(channel_state_t new_state
                       , const std::string_view& reason = {})
     {

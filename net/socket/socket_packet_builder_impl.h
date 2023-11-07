@@ -32,6 +32,7 @@ public:
     transport_id_t transport_id() const override;
     void set_packet_data(const void* packet_data
                          , std::size_t packet_size) override;
+    const i_data_object &packet_data() const override;
 
     i_net_packet::u_ptr_t build_packet() override;
 
@@ -39,6 +40,7 @@ public:
 public:
     void set_address(const socket_address_t &address) override;
     const socket_address_t &address() const override;
+
 };
 
 }
