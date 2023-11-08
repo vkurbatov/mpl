@@ -109,6 +109,7 @@ set(PUBLIC_HEADERS
     i_video_frame.h
     i_device.h
     i_device_factory.h
+    i_device_factory_collection.h
     i_frame_buffer.h
     i_media_engine.h
     i_media_format_factory.h

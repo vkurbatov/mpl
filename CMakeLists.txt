@@ -75,6 +75,7 @@ add_library(${PROJECT_NAME}
 message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
 
 target_link_libraries(${PROJECT_NAME}
+    mplapp
     mplmedia
     mplnet
     mplutils
@@ -144,6 +145,7 @@ add_subdirectory(core)
 add_subdirectory(utils)
 add_subdirectory(media)
 add_subdirectory(net)
+add_subdirectory(app)
 add_subdirectory(tools)
 
 

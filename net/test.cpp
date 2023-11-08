@@ -44,6 +44,7 @@
 
 #include "net_message_types.h"
 #include "net_engine_config.h"
+#include "i_transport_collection.h"
 #include "net_core.h"
 
 #include "utils/endian_utils.h"
@@ -364,8 +365,11 @@ void test4()
     engine.stop();*/
 
     // auto socket_factory = net_engine->transport_factory(transport_id_t::udp);
-    auto ice_factory = net_engine->transport_factory(transport_id_t::ice);
-/*
+    auto& a = net_engine->transport_collection();
+    a.get_transport_factory(transport_id_t::serial);
+    auto ice_factory = net_engine->transport_collection().get_transport_factory(transport_id_t::ice);
+
+    /*
     udp_transport_factory socket_factory(io_core);
 
     ice_transport_factory ice_factory(ice_config_t(ice_servers)

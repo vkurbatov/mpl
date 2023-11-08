@@ -9,6 +9,7 @@
 #include "socket/socket_packet_builder_impl.h"
 #include "serial/serial_packet_builder_impl.h"
 
+#include "i_transport_collection.h"
 #include "net_engine_config.h"
 
 #include "socket/udp_transport_factory.h"
@@ -22,8 +23,9 @@
 namespace mpl::net
 {
 
-struct net_engine_impl final : public pt::io::i_io_worker_factory
-        , public i_net_engine
+struct net_engine_impl final : public i_net_engine
+        , i_transport_collection
+        , pt::io::i_io_worker_factory
 {
     using u_ptr_t = std::unique_ptr<net_engine_impl>;
     using promise_list_t = std::list<std::promise<void>>;
@@ -84,18 +86,6 @@ struct net_engine_impl final : public pt::io::i_io_worker_factory
         net_engine_impl::stop();
     }
 
-    // i_net_engine interface
-public:
-    i_task_manager &task_manager() override
-    {
-        return m_task_manager;
-    }
-
-    i_timer_manager &timer_manager() override
-    {
-        return m_timer_manager;
-    }
-
     bool start() override
     {
         bool flag  = false;
@@ -138,7 +128,32 @@ public:
                 && m_task_manager.is_started();
     }
 
-    i_transport_factory* transport_factory(transport_id_t transport_id) override
+    i_transport_collection& transport_collection() override
+    {
+        return *this;
+    }
+
+    i_net_packet_builder::u_ptr_t create_packet_builder(transport_id_t transport_id) override
+    {
+        switch(transport_id)
+        {
+            case transport_id_t::udp:
+            case transport_id_t::tcp:
+            case transport_id_t::ice:
+            case transport_id_t::tls:
+                return socket_packet_builder_impl::create(transport_id);
+            break;
+            case transport_id_t::serial:
+                return serial_packet_builder_impl::create();
+            break;
+            default:;
+        }
+        return nullptr;
+    }
+
+    // i_transport_collection interface
+public:
+    i_transport_factory *get_transport_factory(transport_id_t transport_id) override
     {
         switch(transport_id)
         {
@@ -160,24 +175,6 @@ public:
         return nullptr;
     }
 
-    i_net_packet_builder::u_ptr_t create_packet_builder(transport_id_t transport_id) override
-    {
-        switch(transport_id)
-        {
-            case transport_id_t::udp:
-            case transport_id_t::tcp:
-            case transport_id_t::ice:
-            case transport_id_t::tls:
-                return socket_packet_builder_impl::create(transport_id);
-            break;
-            case transport_id_t::serial:
-                return serial_packet_builder_impl::create();
-            break;
-            default:;
-        }
-        return nullptr;
-    }
-
     // i_io_worker_factory interface
 public:
     future_t execute_worker(worker_proc_t&& worker_proc) override
@@ -188,6 +185,7 @@ public:
                 , m_promises.back());
         return future;
     }
+
 
 };
 

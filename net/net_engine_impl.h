@@ -3,15 +3,11 @@
 
 #include "i_net_engine.h"
 
-namespace pt::io
-{
-
-class io_core;
-
-}
-
 namespace mpl
 {
+
+class i_task_manager;
+class i_timer_manager;
 
 namespace net
 {

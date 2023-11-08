@@ -19,6 +19,7 @@ namespace media
 {
 
 class i_media_format_factory;
+class i_device_factory_collection;
 
 class i_media_engine : public i_engine
 {
@@ -36,9 +37,8 @@ public:
     using u_ptr_t = std::unique_ptr<i_media_engine>;
     using s_ptr_t = std::shared_ptr<i_media_engine>;
 
-    virtual i_task_manager& task_manager() = 0;
     virtual i_layout_manager& layout_manager() = 0;
-    virtual i_device_factory* device_factory(device_type_t device_type) = 0;
+    virtual i_device_factory_collection& device_collection() = 0;
     virtual i_media_format_factory* format_factory(media_type_t media_type) = 0;
     virtual i_media_frame_builder::u_ptr_t create_frame_builder() = 0;
     virtual i_media_converter_factory* converter_factory(media_converter_type_t type) = 0;

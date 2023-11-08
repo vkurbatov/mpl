@@ -73,6 +73,7 @@ set(PUBLIC_HEADERS
     i_net_engine.h
     i_transport_channel.h
     i_transport_factory.h
+    i_transport_collection.h
     i_net_packet.h
     i_net_packet_builder.h
     net_engine_config.h

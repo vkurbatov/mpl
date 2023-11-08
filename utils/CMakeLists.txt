@@ -53,7 +53,6 @@ set(SOURCES
     json_utils.cpp
     enum_convert_impl.cpp
     buffer_factory_impl.cpp
-    core_event_factory.cpp
     core_engine_impl.cpp
 )
 
@@ -104,7 +103,6 @@ set(PUBLIC_HEADERS
     enum_converter_defs.h
     enum_serialize_defs.h
     buffer_factory_impl.h
-    core_event_factory.h
     core_engine_impl.h
     )
 
