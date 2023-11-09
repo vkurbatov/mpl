@@ -14,7 +14,6 @@ set(SOURCES
     net_command_message_impl.cpp
     net_engine_impl.cpp
     net_engine_config.cpp
-    net_core.cpp
 
     socket/socket_endpoint.cpp
     socket/socket_packet_impl.cpp
@@ -65,11 +64,12 @@ set(SOURCES
 
 set(PUBLIC_HEADERS
     net_types.h
-    net_message_types.h
+    net_module_types.h
     net_event_types.h
     net_command_types.h
     endpoint.h
-    i_net_packet.h  
+    i_net_packet.h
+    i_net_module.h
     i_net_engine.h
     i_transport_channel.h
     i_transport_factory.h
@@ -77,7 +77,6 @@ set(PUBLIC_HEADERS
     i_net_packet.h
     i_net_packet_builder.h
     net_engine_config.h
-    net_core.h
 
     socket/socket_types.h
     socket/socket_endpoint.h

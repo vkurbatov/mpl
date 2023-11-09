@@ -35,7 +35,7 @@ public:
     // i_rtc_message interface
 public:
     message_category_t category() const override;
-    message_subclass_t subclass() const override;
+    module_id_t module_id() const override;
     i_message::u_ptr_t clone() const override;
 
     // i_validable interface

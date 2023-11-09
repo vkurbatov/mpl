@@ -17,6 +17,7 @@ set(SOURCES
 
 set(PUBLIC_HEADERS
     common_types.h
+    module_types.h
     type_info.h
     property_types.h
     packet_types.h
@@ -66,7 +67,9 @@ set(PUBLIC_HEADERS
     i_message_command.h
     i_message_packet.h
     i_message_channel.h
+    i_module.h
     i_engine.h
+    i_core_module.h
     i_core_engine.h
     i_event_factory.h
     i_command_factory.h

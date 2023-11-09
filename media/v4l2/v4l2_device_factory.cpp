@@ -14,7 +14,7 @@
 
 #include "media/video_frame_impl.h"
 #include "media/command_camera_control.h"
-#include "media/media_message_types.h"
+#include "media/media_module_types.h"
 #include "media/video_frame_impl.h"
 
 #include "v4l2_utils.h"
@@ -820,7 +820,7 @@ public:
                         {
                             camera_control.state = command_camera_control_t::state_t::failed;
                         }
-                        m_router.send_message(message_command_impl<command_camera_control_t, message_class_media>(camera_control));
+                        m_router.send_message(message_command_impl<command_camera_control_t, media_module_id>(camera_control));
                         continue;
                     }
 

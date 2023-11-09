@@ -4,16 +4,23 @@ set(TARGET mplapp)
 
 set(SOURCES
     app_config.cpp
+    event_message_factory_impl.cpp
+    command_message_factory_impl.cpp
+    app_engine_impl.cpp
     test.cpp
 )
 
 set(PUBLIC_HEADERS
     app_config.h
+    app_module_types.h
+    i_app_module.h
     i_app_engine.h
-    i_core_module.h
     )
 
 set(PRIVATE_HEADERS
+    event_message_factory_impl.h
+    command_message_factory_impl.h
+    app_engine_impl.h
     test.h
 )
 

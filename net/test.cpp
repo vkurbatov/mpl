@@ -42,10 +42,10 @@
 #include "sq/sq_parser.h"
 #include "sq/sq_stitcher.h"
 
-#include "net_message_types.h"
+#include "net_module_types.h"
 #include "net_engine_config.h"
 #include "i_transport_collection.h"
-#include "net_core.h"
+#include "i_net_module.h"
 
 #include "utils/endian_utils.h"
 
@@ -117,7 +117,7 @@ void test1()
                                 break;
                                 case message_category_t::packet:
                                 {
-                                    if (message.subclass() == message_class_net)
+                                    if (message.module_id() == net_module_id)
                                     {
                                         auto& net_packet = static_cast<const i_net_packet&>(message);
                                         if (net_packet.transport_id() == transport_id_t::udp)
@@ -155,7 +155,7 @@ void test1()
                                 break;
                                 case message_category_t::packet:
                                 {
-                                    if (message.subclass() == message_class_net)
+                                    if (message.module_id() == net_module_id)
                                     {
                                         auto& net_packet = static_cast<const i_net_packet&>(message);
                                         if (net_packet.transport_id() == transport_id_t::udp)
@@ -353,9 +353,10 @@ void test4()
     net_engine_config_t net_engine_config;
     net_engine_config.ice_config.ice_servers = ice_servers;
 
-    auto net_engine = net_engine_factory::get_instance().create_engine(net_engine_config
-                                                                       , task_manager_factory::single_manager()
-                                                                       , timer_manager_factory::single_manager());
+    net_engine_factory net_factory(task_manager_factory::single_manager()
+                                   , timer_manager_factory::single_manager());
+
+    auto net_engine = net_factory.create_engine(net_engine_config);
 
 
     net_engine->start();
@@ -365,9 +366,7 @@ void test4()
     engine.stop();*/
 
     // auto socket_factory = net_engine->transport_factory(transport_id_t::udp);
-    auto& a = net_engine->transport_collection();
-    a.get_transport_factory(transport_id_t::serial);
-    auto ice_factory = net_engine->transport_collection().get_transport_factory(transport_id_t::ice);
+    auto ice_factory = net_engine->net().transports().get_factory(transport_id_t::ice);
 
     /*
     udp_transport_factory socket_factory(io_core);
@@ -438,7 +437,7 @@ void test4()
             break;
             case message_category_t::packet:
             {
-                if (message.subclass() == message_class_net)
+                if (message.module_id() == net_module_id)
                 {
                     auto& net_packet = static_cast<const i_net_packet&>(message);
                     std::string_view text_message(static_cast<const char*>(net_packet.data())
@@ -467,7 +466,7 @@ void test4()
     ice_connection_2->control(channel_control_t::open());
 
 
-    message_command_impl<ice_gathering_command_t, message_class_net> ice_gathering_command;
+    message_command_impl<ice_gathering_command_t, net_module_id> ice_gathering_command;
 
     ice_connection_1->sink(0)->send_message(ice_gathering_command);
     ice_connection_2->sink(0)->send_message(ice_gathering_command);
@@ -640,7 +639,7 @@ void test5()
             break;
             case message_category_t::packet:
             {
-                if (message.subclass() == message_class_net)
+                if (message.module_id() == net_module_id)
                 {
                     auto& net_packet = static_cast<const i_net_packet&>(message);
 

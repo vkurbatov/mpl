@@ -14,7 +14,7 @@ public:
 
     virtual ~i_transport_collection() = default;
 
-    virtual i_transport_factory* get_transport_factory(transport_id_t transport_id) = 0;
+    virtual i_transport_factory* get_factory(transport_id_t transport_id) = 0;
 };
 
 }

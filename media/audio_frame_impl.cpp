@@ -1,5 +1,5 @@
 #include "audio_frame_impl.h"
-#include "media_message_types.h"
+#include "media_module_types.h"
 #include "utils/pointer_utils.h"
 #include "utils/time_utils.h"
 #include "track_info.h"
@@ -66,9 +66,9 @@ message_category_t audio_frame_base_impl::category() const
     return message_category_t::data;
 }
 
-message_subclass_t audio_frame_base_impl::subclass() const
+module_id_t audio_frame_base_impl::module_id() const
 {
-    return message_class_media;
+    return media_module_id;
 }
 
 const i_option& audio_frame_base_impl::options() const

@@ -2,11 +2,14 @@
 #include "media_engine_config.h"
 #include "media_frame_builder_impl.h"
 #include "media_format_factory_impl.h"
+#include "media_module_types.h"
+#include "i_media_converter_collection.h"
 
 #include "tools/ffmpeg/libav_base.h"
 
 #include "utils/ipc_manager_impl.h"
 #include "i_device_factory_collection.h"
+#include "i_media_format_collection.h"
 
 #include "apm/apm_device_factory.h"
 #include "ipc/ipc_input_device_factory.h"
@@ -47,7 +50,10 @@ inline void check_and_init_libav()
 
 
 struct media_engine_impl final : public i_media_engine
-        , i_device_factory_collection
+        , i_media_module
+        , i_device_collection
+        , i_media_converter_collection
+        , i_media_format_collection
 {
     using u_ptr_t = std::unique_ptr<media_engine_impl>;
 
@@ -69,8 +75,6 @@ struct media_engine_impl final : public i_media_engine
     vnc_device_factory                  m_vnc_device_factory;
     visca_device_factory::u_ptr_t       m_visca_factory;
 
-    layout_manager_mosaic_impl          m_layout_manager;
-
     libav_audio_converter_factory       m_audio_converter_factory;
     libav_video_converter_factory       m_video_converter_factory;
     media_converter_factory_impl        m_media_converter_factory;
@@ -82,7 +86,7 @@ struct media_engine_impl final : public i_media_engine
 
     static visca_device_factory::u_ptr_t create_visca_device(net::i_transport_collection& transports)
     {
-        if (auto serial_factory = transports.get_transport_factory(net::transport_id_t::serial))
+        if (auto serial_factory = transports.get_factory(net::transport_id_t::serial))
         {
             return visca_device_factory::create(*serial_factory);
         }
@@ -163,57 +167,24 @@ struct media_engine_impl final : public i_media_engine
                 && m_task_manager.is_started();
     }
 
-    i_device_factory_collection& device_collection() override
+    i_device_collection& devices() override
     {
         return *this;
     }
 
-    inline i_media_format_factory *format_factory(media_type_t media_type)
+    i_media_converter_collection& converters() override
     {
-        switch(media_type)
-        {
-            case media_type_t::audio:
-                return &m_audio_format_factory;
-            break;
-            case media_type_t::video:
-                return &m_video_format_factory;
-            break;
-            default:;
-        }
+        return *this;
+    }
 
-        return nullptr;
+    i_media_format_collection& formats() override
+    {
+        return *this;
     }
 
     i_media_frame_builder::u_ptr_t create_frame_builder() override
     {
         return media_frame_builder_impl::create();
-    }
-
-    i_layout_manager &layout_manager() override
-    {
-        return m_layout_manager;
-    }
-
-    i_media_converter_factory* converter_factory(i_media_engine::media_converter_type_t type) override
-    {
-        switch(type)
-        {
-            case i_media_engine::media_converter_type_t::converter:
-                return &m_media_converter_factory;
-            break;
-            case i_media_engine::media_converter_type_t::decoder:
-                return &m_decoder_factory;
-            break;
-            case i_media_engine::media_converter_type_t::encoder:
-                return &m_encoder_factory;
-            break;
-            case i_media_engine::media_converter_type_t::smart:
-                return &m_smart_transcoder_factory;
-            break;
-            default:;
-        }
-
-        return nullptr;
     }
 
     i_media_composer_factory::u_ptr_t create_composer_factory(i_layout_manager &layout_manager) override
@@ -223,7 +194,7 @@ struct media_engine_impl final : public i_media_engine
 
     }
 
-    i_device_factory* get_device_factory(device_type_t device_type) override
+    i_device_factory* get_factory(device_type_t device_type) override
     {
         switch(device_type)
         {
@@ -256,21 +227,76 @@ struct media_engine_impl final : public i_media_engine
 
         return nullptr;
     }
+
+    i_media_converter_factory* get_factory(media_converter_type_t type) override
+    {
+        switch(type)
+        {
+            case media_converter_type_t::converter:
+                return &m_media_converter_factory;
+            break;
+            case media_converter_type_t::decoder:
+                return &m_decoder_factory;
+            break;
+            case media_converter_type_t::encoder:
+                return &m_encoder_factory;
+            break;
+            case media_converter_type_t::smart:
+                return &m_smart_transcoder_factory;
+            break;
+            default:;
+        }
+
+        return nullptr;
+    }
+
+    // i_media_format_collection interface
+public:
+    i_media_format_factory *get_factory(media_type_t media_type) override
+    {
+        switch(media_type)
+        {
+            case media_type_t::audio:
+                return &m_audio_format_factory;
+            break;
+            case media_type_t::video:
+                return &m_video_format_factory;
+            break;
+            default:;
+        }
+
+        return nullptr;
+    }
+
+    // i_module interface
+public:
+    module_id_t module_id() const override
+    {
+        return media_module_id;
+    }
+
+    // i_media_engine interface
+public:
+    i_media_module &media() override
+    {
+        return *this;
+    }
 };
 
-media_engine_factory &media_engine_factory::get_instance()
+
+media_engine_factory::media_engine_factory(i_task_manager &task_manager
+                                           , net::i_transport_collection &transports)
+    : m_task_manager(task_manager)
+    , m_transports(transports)
 {
-    static media_engine_factory single_factory;
-    return single_factory;
+
 }
 
-i_media_engine::u_ptr_t media_engine_factory::create_engine(const media_engine_config_t &config
-                                                            , i_task_manager &task_manager
-                                                            , net::i_transport_collection &transports)
+i_media_engine::u_ptr_t media_engine_factory::create_engine(const media_engine_config_t &config)
 {
     return media_engine_impl::create(config
-                                     , task_manager
-                                     , transports);
+                                     , m_task_manager
+                                     , m_transports);
 }
 
 

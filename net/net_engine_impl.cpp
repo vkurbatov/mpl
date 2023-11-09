@@ -11,6 +11,7 @@
 
 #include "i_transport_collection.h"
 #include "net_engine_config.h"
+#include "net_module_types.h"
 
 #include "socket/udp_transport_factory.h"
 #include "ice/ice_transport_factory.h"
@@ -24,6 +25,7 @@ namespace mpl::net
 {
 
 struct net_engine_impl final : public i_net_engine
+        , i_net_module
         , i_transport_collection
         , pt::io::i_io_worker_factory
 {
@@ -128,7 +130,7 @@ struct net_engine_impl final : public i_net_engine
                 && m_task_manager.is_started();
     }
 
-    i_transport_collection& transport_collection() override
+    i_transport_collection& transports() override
     {
         return *this;
     }
@@ -153,7 +155,7 @@ struct net_engine_impl final : public i_net_engine
 
     // i_transport_collection interface
 public:
-    i_transport_factory *get_transport_factory(transport_id_t transport_id) override
+    i_transport_factory *get_factory(transport_id_t transport_id) override
     {
         switch(transport_id)
         {
@@ -175,6 +177,20 @@ public:
         return nullptr;
     }
 
+    // i_module interface
+public:
+    module_id_t module_id() const override
+    {
+       return net_module_id;
+    }
+
+    // i_net_engine interface
+public:
+    i_net_module &net() override
+    {
+        return *this;
+    }
+
     // i_io_worker_factory interface
 public:
     future_t execute_worker(worker_proc_t&& worker_proc) override
@@ -185,23 +201,21 @@ public:
                 , m_promises.back());
         return future;
     }
-
-
 };
 
-net_engine_factory &net_engine_factory::get_instance()
+net_engine_factory::net_engine_factory(i_task_manager &task_manager
+                                       , i_timer_manager &timer_manager)
+    : m_task_manager(task_manager)
+    , m_timer_manager(timer_manager)
 {
-    static net_engine_factory single_factory;
-    return single_factory;
+
 }
 
-i_net_engine::u_ptr_t net_engine_factory::create_engine(const net_engine_config_t &config
-                                                        , i_task_manager &task_manager
-                                                        , i_timer_manager &timer_manager)
+i_net_engine::u_ptr_t net_engine_factory::create_engine(const net_engine_config_t &config)
 {
     return net_engine_impl::create(config
-                                   , task_manager
-                                   , timer_manager);
+                                   , m_task_manager
+                                   , m_timer_manager);
 }
 
 }

@@ -6,7 +6,7 @@
 namespace mpl
 {
 
-template<typename Event, message_subclass_t Subclass = message_class_core>
+template<typename Event, module_id_t ModuleId = core_module_id>
 class message_event_impl : public i_message_event
 {
     Event   m_event;
@@ -26,7 +26,7 @@ public:
     // i_message interface
 public:
     message_category_t category() const override;
-    message_subclass_t subclass() const override;
+    module_id_t module_id() const override;
     i_message::u_ptr_t clone() const override;
 
     // i_message_event interface

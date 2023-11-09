@@ -12,7 +12,7 @@
 #include "utils/common_utils.h"
 #include "utils/enum_utils.h"
 
-#include "net/net_message_types.h"
+#include "net/net_module_types.h"
 #include "net/socket/socket_packet_impl.h"
 #include "net/net_utils.h"
 
@@ -328,7 +328,7 @@ public:
 
     bool on_message_packet(const i_message_packet& packet)
     {
-        if (packet.subclass() == message_class_net)
+        if (packet.module_id() == net_module_id)
         {
             auto& net_packet = static_cast<const i_net_packet&>(packet);
             switch(net_packet.transport_id())
@@ -568,7 +568,7 @@ public:
     {
         tls_keys_event_t tls_key_event(encrypted_key
                                        , decrypted_key);
-        m_router.send_message(message_event_impl<tls_keys_event_t, message_class_net>(std::move(tls_key_event)));
+        m_router.send_message(message_event_impl<tls_keys_event_t, net_module_id>(std::move(tls_key_event)));
     }
 
     void on_wait_timeout(uint64_t timeout) override

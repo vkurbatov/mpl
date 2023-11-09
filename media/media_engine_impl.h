@@ -18,13 +18,15 @@ struct media_engine_config_t;
 
 class media_engine_factory
 {
+    i_task_manager&                 m_task_manager;
+    net::i_transport_collection&    m_transports;
+
 public:
 
-    static media_engine_factory& get_instance();
+    media_engine_factory(i_task_manager& task_manager
+                         , net::i_transport_collection& transports);
 
-    i_media_engine::u_ptr_t create_engine(const media_engine_config_t& config
-                                          , i_task_manager& task_manager
-                                          , net::i_transport_collection& transports);
+    i_media_engine::u_ptr_t create_engine(const media_engine_config_t& config);
 };
 
 }

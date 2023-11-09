@@ -36,7 +36,7 @@ public:
     // i_message interface
 public:
     message_category_t category() const override;
-    message_subclass_t subclass() const override;
+    module_id_t module_id() const override;
     i_message::u_ptr_t clone() const override;
 
     // i_message_packet interface

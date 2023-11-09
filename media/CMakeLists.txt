@@ -74,7 +74,7 @@ set(PUBLIC_HEADERS
     media_types.h
     media_event_types.h
     media_command_types.h
-    media_message_types.h
+    media_module_types.h
     device_types.h
     audio_types.h
     audio_format_info.h
@@ -94,10 +94,13 @@ set(PUBLIC_HEADERS
     i_media_stream.h
     i_media_track.h
     i_media_format.h
+    i_media_format_factory.h
+    i_media_format_collection.h
     i_message_media_data.h
     i_media_frame.h
-    i_media_converter_factory.h
     i_media_converter.h
+    i_media_converter_factory.h
+    i_media_converter_collection.h
     i_layout.h
     i_layout_manager.h
     i_compose_stream.h
@@ -111,8 +114,8 @@ set(PUBLIC_HEADERS
     i_device_factory.h
     i_device_factory_collection.h
     i_frame_buffer.h
+    i_media_module.h
     i_media_engine.h
-    i_media_format_factory.h
     i_media_frame_builder.h
     )
 

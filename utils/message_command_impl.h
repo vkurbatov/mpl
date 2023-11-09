@@ -6,7 +6,7 @@
 namespace mpl
 {
 
-template<typename Command, message_subclass_t Subclass>
+template<typename Command, module_id_t ModuleId>
 class message_command_impl : public i_message_command
 {
     Command    m_command;
@@ -24,7 +24,7 @@ public:
     // i_message interface
 public:
     message_category_t category() const override;
-    message_subclass_t subclass() const override;
+    module_id_t module_id() const override;
     i_message::u_ptr_t clone() const override;
 
     // i_message_command interface

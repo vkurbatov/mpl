@@ -9,6 +9,7 @@ namespace mpl
 {
 
 struct core_engine_impl final : public i_core_engine
+        , i_core_module
 {
     core_engine_config_t        m_config;
 
@@ -58,6 +59,19 @@ struct core_engine_impl final : public i_core_engine
 
     // i_core_engine interface
 public:
+    i_core_module &core() override
+    {
+        return *this;
+    }
+    // i_module interface
+public:
+    module_id_t module_id() const override
+    {
+        return core_module_id;
+    }
+
+    // i_core_module interface
+public:
     i_task_manager &task_manager() override
     {
         return *m_task_manager;
@@ -72,6 +86,8 @@ public:
     {
         return m_buffer_factory;
     }
+
+
 };
 
 core_engine_factory &core_engine_factory::get_instance()

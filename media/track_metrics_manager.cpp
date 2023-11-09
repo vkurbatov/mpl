@@ -3,7 +3,7 @@
 #include "i_video_frame.h"
 #include "core/i_buffer_collection.h"
 #include "media_types.h"
-#include "media_message_types.h"
+#include "media_module_types.h"
 
 #include "utils/time_utils.h"
 
@@ -76,7 +76,7 @@ void track_metrics_manager::reset()
 void track_metrics_manager::push_message(const i_message &message)
 {
     if (message.category() == message_category_t::data
-            && message.subclass() == message_class_media)
+            && message.module_id() == media_module_id)
     {
         auto& media_frame = static_cast<const i_media_frame&>(message);
         if (auto track = query_track(media_frame))

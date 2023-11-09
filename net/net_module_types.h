@@ -1,12 +1,12 @@
 #ifndef MPL_NET_MESSAGE_TYPES_H
 #define MPL_NET_MESSAGE_TYPES_H
 
-#include "core/message_types.h"
+#include "core/module_types.h"
 
 namespace mpl::net
 {
 
-constexpr message_subclass_t message_class_net = message_class_core + 2;
+constexpr module_id_t net_module_id = core_module_id + 2;
 
 
 }

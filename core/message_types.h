@@ -1,8 +1,6 @@
 #ifndef MPL_MESSAGE_TYPES_H
 #define MPL_MESSAGE_TYPES_H
 
-#include <cstdint>
-
 namespace mpl
 {
 
@@ -15,10 +13,6 @@ enum class message_category_t
     packet,
     application
 };
-
-using message_subclass_t = std::uint32_t;
-
-constexpr message_subclass_t message_class_core = 0;
 
 }
 

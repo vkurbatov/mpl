@@ -3,7 +3,7 @@
 #include "stun_attributes.h"
 #include "stun_message.h"
 
-#include "net/net_message_types.h"
+#include "net/net_module_types.h"
 
 #include <cstring>
 
@@ -50,9 +50,9 @@ message_category_t stun_packet_impl::category() const
     return message_category_t::packet;
 }
 
-message_subclass_t stun_packet_impl::subclass() const
+module_id_t stun_packet_impl::module_id() const
 {
-    return message_class_net;
+    return net_module_id;
 }
 
 bool stun_packet_impl::is_valid() const

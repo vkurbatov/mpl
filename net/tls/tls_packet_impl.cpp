@@ -1,6 +1,6 @@
 #include "tls_packet_impl.h"
 
-#include "net/net_message_types.h"
+#include "net/net_module_types.h"
 
 #include "tools/ssl/mapped_dtls_header.h"
 
@@ -53,9 +53,9 @@ message_category_t tls_packet_impl::category() const
     return message_category_t::packet;
 }
 
-message_subclass_t tls_packet_impl::subclass() const
+module_id_t tls_packet_impl::module_id() const
 {
-    return message_class_net;
+    return net_module_id;
 }
 
 i_message::u_ptr_t tls_packet_impl::clone() const

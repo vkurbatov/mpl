@@ -1,5 +1,5 @@
 #include "socket_packet_impl.h"
-#include "net/net_message_types.h"
+#include "net/net_module_types.h"
 
 namespace mpl::net
 {
@@ -66,9 +66,9 @@ message_category_t socket_packet_impl<Transport>::category() const
 }
 
 template<transport_id_t Transport>
-message_subclass_t socket_packet_impl<Transport>::subclass() const
+module_id_t socket_packet_impl<Transport>::module_id() const
 {
-    return message_class_net;
+    return net_module_id;
 }
 
 template<transport_id_t Transport>

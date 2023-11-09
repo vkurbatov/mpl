@@ -16,13 +16,14 @@ struct net_engine_config_t;
 
 class net_engine_factory
 {
+    i_task_manager&     m_task_manager;
+    i_timer_manager&    m_timer_manager;
 public:
 
-    static net_engine_factory& get_instance();
+    net_engine_factory(i_task_manager& task_manager
+                       , i_timer_manager& timer_manager);
 
-    i_net_engine::u_ptr_t create_engine(const net_engine_config_t& config
-                                        , i_task_manager& task_manager
-                                        , i_timer_manager& timer_manager);
+    i_net_engine::u_ptr_t create_engine(const net_engine_config_t& config);
 };
 
 }

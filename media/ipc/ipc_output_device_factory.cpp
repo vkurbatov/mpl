@@ -12,7 +12,7 @@
 
 #include "utils/packetizer.h"
 
-#include "media/media_message_types.h"
+#include "media/media_module_types.h"
 #include "media/audio_frame_impl.h"
 #include "media/video_frame_impl.h"
 
@@ -75,7 +75,7 @@ public:
         {
             case message_category_t::data:
             {
-                if (static_cast<const i_message_data&>(message).subclass() == message_class_media
+                if (static_cast<const i_message_data&>(message).module_id() == media_module_id
                         && static_cast<const i_message_media_data&>(message).data_type() == media_data_type_t::frame)
                 {
                     return send_frame(static_cast<const i_media_frame&>(message));

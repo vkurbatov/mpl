@@ -4,7 +4,7 @@
 #include "utils/option_helper.h"
 #include "media_option_types.h"
 #include "utils/pointer_utils.h"
-#include "media_message_types.h"
+#include "media_module_types.h"
 
 namespace mpl::media
 {
@@ -161,7 +161,7 @@ void media_frame_selector::set_handler(const selection_handler_t &handler)
 
 bool media_frame_selector::send_message(const i_message &message)
 {
-    if (message.subclass() == message_class_media)
+    if (message.module_id() == media_module_id)
     {
         switch(message.category())
         {

@@ -12,7 +12,7 @@
 #include "utils/pointer_utils.h"
 
 #include "media/media_types.h"
-#include "media/media_message_types.h"
+#include "media/media_module_types.h"
 #include "media/command_camera_control.h"
 
 #include "utils/message_command_impl.h"
@@ -27,7 +27,7 @@
 #include "net/serial/i_serial_transport.h"
 #include "net/serial/serial_packet_impl.h"
 #include "net/serial/serial_transport_params.h"
-#include "net/net_message_types.h"
+#include "net/net_module_types.h"
 
 
 #include "tools/visca/i_visca_channel.h"
@@ -172,7 +172,7 @@ class visca_device_impl : public i_device
         bool on_message(const i_message& message)
         {
             if (message.category() == message_category_t::packet
-                    && message.subclass() == net::message_class_net)
+                    && message.module_id() == net::net_module_id)
             {
                 auto& net_packet = static_cast<const net::i_net_packet&>(message);
                 if (net_packet.transport_id() == net::transport_id_t::serial)
@@ -565,7 +565,7 @@ public:
                         {
                             camera_control.state = command_camera_control_t::state_t::failed;
                         }
-                        m_router.send_message(message_command_impl<command_camera_control_t, message_class_media>(camera_control));
+                        m_router.send_message(message_command_impl<command_camera_control_t, media_module_id>(camera_control));
                         continue;
                     }
                     m_command_signal.wait_for(signal_lock, std::chrono::seconds(1));

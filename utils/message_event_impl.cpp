@@ -4,6 +4,6 @@
 namespace mpl
 {
 
-template class message_event_impl<event_channel_state_t, message_class_core>;
+template class message_event_impl<event_channel_state_t, core_module_id>;
 
 }

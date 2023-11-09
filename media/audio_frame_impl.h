@@ -44,7 +44,7 @@ public:
 
     // i_message_data interface
 public:
-    message_subclass_t subclass() const override;
+    module_id_t module_id() const override;
     const i_option& options() const override;
 
     // i_media_frame interface

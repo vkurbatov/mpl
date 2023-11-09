@@ -15,7 +15,7 @@
 #include "utils/message_router_impl.h"
 #include "utils/message_sink_impl.h"
 
-#include "net/net_message_types.h"
+#include "net/net_module_types.h"
 #include "net/net_utils.h"
 #include "net/net_engine_impl.h"
 
@@ -94,7 +94,7 @@ public:
     {
         if (m_link.is_open())
         {
-            if (packet.subclass() == message_class_net)
+            if (packet.module_id() == net_module_id)
             {
                 auto& net_packet = static_cast<const i_net_packet&>(packet);
                 if (net_packet.transport_id() == transport_id_t::serial)

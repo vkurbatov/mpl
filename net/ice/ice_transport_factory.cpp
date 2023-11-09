@@ -17,7 +17,7 @@
 #include "net/stun/stun_packet_impl.h"
 #include "net/stun/stun_error_codes.h"
 
-#include "net/net_message_types.h"
+#include "net/net_module_types.h"
 #include "net/socket/socket_packet_impl.h"
 #include "net/net_utils.h"
 
@@ -411,7 +411,7 @@ class ice_transport_impl : public i_ice_transport
 
         inline bool on_socket_event(const i_message_event& event)
         {
-            if (event.subclass() == message_class_core
+            if (event.module_id() == core_module_id
                     && event.event().event_id == event_channel_state_t::id)
             {
                 return on_socket_state(static_cast<const event_channel_state_t&>(event.event()).state
@@ -423,7 +423,7 @@ class ice_transport_impl : public i_ice_transport
 
         inline bool on_socket_packet(const i_message_packet& packet)
         {
-            if (packet.subclass() == message_class_net)
+            if (packet.module_id() == net_module_id)
             {
                 auto& socket_packet = static_cast<const i_socket_packet&>(packet);
                 switch(utils::parse_protocol(packet.data()
@@ -1030,7 +1030,7 @@ public:
         {
             m_gathering_state = new_state;
             m_router.send_message(message_event_impl<ice_gathering_state_event_t
-                                  , message_class_net>(ice_gathering_state_event_t(new_state
+                                  , net_module_id>(ice_gathering_state_event_t(new_state
                                                                                  , reason))
                                   );
         }
@@ -1170,7 +1170,7 @@ public:
     bool on_send_command(const i_message_command& command)
     {
         bool result = false;
-        if (command.subclass() == message_class_net
+        if (command.module_id() == net_module_id
                 && command.command().command_id == ice_gathering_command_t::id)
         {
             for (auto& s : m_sockets)
