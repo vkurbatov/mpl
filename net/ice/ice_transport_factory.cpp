@@ -1117,9 +1117,10 @@ public:
                     return true;
                 }
 
-                change_channel_state(channel_state_t::failed);
                 m_open = false;
             }
+
+            change_channel_state(channel_state_t::failed);
         }
 
         return false;

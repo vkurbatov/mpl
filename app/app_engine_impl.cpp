@@ -2,6 +2,10 @@
 #include "app_config.h"
 #include "i_app_module.h"
 
+#include "net/net_module_types.h"
+#include "media/media_module_types.h"
+#include "app_module_types.h"
+
 #include "event_message_factory_impl.h"
 #include "command_message_factory_impl.h"
 
@@ -100,12 +104,32 @@ public:
 public:
     i_module *get_module(module_id_t module_id) override
     {
+        switch(module_id)
+        {
+            case core_module_id:
+                return &m_core_engine->core();
+            break;
+            case net::net_module_id:
+                return &m_net_engine->net();
+            break;
+            case media::media_module_id:
+                return &m_media_engine->media();
+            break;
+            case app_module_id:
+                return this;
+            break;
+            default:;
+        }
+
         return nullptr;
     }
 
     // i_module interface
 public:
-    module_id_t module_id() const override;
+    module_id_t module_id() const override
+    {
+        return app_module_id;
+    }
 
     // i_app_module interface
 public:
@@ -119,6 +143,12 @@ public:
         return m_commands;
     }
 };
+
+app_engine_factory &app_engine_factory::get_instance()
+{
+    static app_engine_factory single_factory;
+    return single_factory;
+}
 
 i_app_engine::u_ptr_t app_engine_factory::create_engine(const app_config_t &config)
 {

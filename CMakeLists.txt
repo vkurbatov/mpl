@@ -108,11 +108,17 @@ target_link_libraries(${PROJECT_NAME}
 
 set(TEST_SOURCES
     test/main.cpp
+    test/tests.cpp
+)
+
+set(TEST_HEADERS
+    test/tests.h
 )
 
 
 add_executable(${TEST_PROJECT_NAME}
     ${TEST_SOURCES}
+    ${TEST_HEADERS}
 )
 
 target_link_libraries(${TEST_PROJECT_NAME}

@@ -7,7 +7,6 @@ set(SOURCES
     event_message_factory_impl.cpp
     command_message_factory_impl.cpp
     app_engine_impl.cpp
-    test.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -21,7 +20,6 @@ set(PRIVATE_HEADERS
     event_message_factory_impl.h
     command_message_factory_impl.h
     app_engine_impl.h
-    test.h
 )
 
 
