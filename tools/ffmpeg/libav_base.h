@@ -254,7 +254,7 @@ struct device_info_t
                                                  , bool is_source);
     static list_t device_list(media_type_t media_type
                                , bool is_source
-                               , const std::string& device_class = {});
+                               , const std::string_view& device_class = {});
 
     media_type_t media_type;
     std::string name;

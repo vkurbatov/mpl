@@ -15,6 +15,8 @@
 #include "utils/message_sink_impl.h"
 #include "utils/property_writer.h"
 
+#include "media/device_info.h"
+
 #include "net/net_module_types.h"
 #include "net/socket/socket_endpoint.h"
 #include "net/i_net_module.h"
@@ -50,6 +52,18 @@ void ice_test()
     {
         if (app->start())
         {
+            std::cout << "device list:" << std::endl;
+            for (const auto& d : media::device_info_t::device_list())
+            {
+                std::cout << "type: " << utils::enum_to_string(d.media_type) << std::endl
+                          << "\tname: " << d.name << std::endl
+                          << "\tdesc: " << d.description << std::endl
+                          << "\tclass: " << d.device_class << std::endl
+                          << "\tdirection: " << utils::enum_to_string(d.direction) << std::endl
+                          << std::endl;
+            }
+
+
             if (net::i_net_module* net = static_cast<net::i_net_module*>(app->get_module(net::net_module_id)))
             {
                 if (auto ice_factory = net->transports().get_factory(net::transport_id_t::ice))

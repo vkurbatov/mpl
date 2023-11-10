@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.16)
 set(TARGET mplnet)
 
 set(SOURCES
-    test.cpp
     endpoint.cpp
     enum_convert_impl.cpp
     enum_serialize_impl.cpp
@@ -115,7 +114,6 @@ set(PUBLIC_HEADERS
     )
 
 set(PRIVATE_HEADERS
-    test.h
     net_utils.h
     net_engine_impl.h
 

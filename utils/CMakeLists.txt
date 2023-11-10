@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.16)
 set(TARGET mplutils)
 
 set(SOURCES
-    test.cpp
     ipc_manager_impl.cpp
     bitrate_calculator.cpp
     mapped_packet.cpp
@@ -107,7 +106,6 @@ set(PUBLIC_HEADERS
     )
 
 set(PRIVATE_HEADERS
-    test.h
     mapped_packet.h
 )
 

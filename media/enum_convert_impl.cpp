@@ -4,6 +4,7 @@
 #include "media_types.h"
 #include "audio_types.h"
 #include "video_types.h"
+#include "stream_types.h"
 
 #include "tools/wap/wap_base.h"
 
@@ -103,6 +104,12 @@ __declare_enum_converter_begin(video_format_id_t)
     __declare_enum_pair(video_format_id_t, mpeg4),
     __declare_enum_pair(video_format_id_t, cpia)
 __declare_enum_converter_end(video_format_id_t)
+
+__declare_enum_converter_begin(stream_direction_t)
+    __declare_enum_pair(stream_direction_t, undefined),
+    __declare_enum_pair(stream_direction_t, input),
+    __declare_enum_pair(stream_direction_t, output),
+__declare_enum_converter_end(stream_direction_t)
 
 __declare_enum_converter_begin(pt::wap::echo_cancellation_mode_t)
     __declare_enum_pair(pt::wap::echo_cancellation_mode_t, none),

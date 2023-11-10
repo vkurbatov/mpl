@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.16)
 set(TARGET mplcore)
 
 set(SOURCES
-    test.cpp
     type_info.cpp
     thread_info.cpp
     command.cpp
@@ -76,7 +75,6 @@ set(PUBLIC_HEADERS
     )
 
 set(PRIVATE_HEADERS
-    test.h
 )
 
 

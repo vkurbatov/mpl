@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -6,12 +6,6 @@ project(mpl)
 set(TEST_PROJECT_NAME
     "${PROJECT_NAME}_test"
     )
-
-set(IPC_SRV_PROJECT_NAME
-    "ipc_srv")
-
-set(IPC_CLI_PROJECT_NAME
-    "ipc_cli")
 
 find_package(PkgConfig REQUIRED)
 
@@ -27,7 +21,6 @@ pkg_search_module(OPENSSL REQUIRED openssl)
 pkg_search_module(SRTP REQUIRED libsrtp2)
 
 add_definitions (${WEBRTC_AUDIO_PROCESSING_CFLAGS})
-
 
 set(OpenCV_STATIC ON)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs freetype)
@@ -122,28 +115,6 @@ add_executable(${TEST_PROJECT_NAME}
 )
 
 target_link_libraries(${TEST_PROJECT_NAME}
-    ${PROJECT_NAME}
-    )
-
-set(IPC_SRV_SOURCES
-    ipc_srv/main.cpp)
-
-add_executable(${IPC_SRV_PROJECT_NAME}
-    ${IPC_SRV_SOURCES}
-)
-
-target_link_libraries(${IPC_SRV_PROJECT_NAME}
-    ${PROJECT_NAME}
-    )
-
-set(IPC_CLI_SOURCES
-    ipc_cli/main.cpp)
-
-add_executable(${IPC_CLI_PROJECT_NAME}
-    ${IPC_CLI_SOURCES}
-)
-
-target_link_libraries(${IPC_CLI_PROJECT_NAME}
     ${PROJECT_NAME}
     )
 

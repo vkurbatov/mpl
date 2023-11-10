@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.16)
 set(TARGET mplmedia)
 
 set(SOURCES
-    test.cpp
     enum_convert_impl.cpp
     enum_serialize_impl.cpp
     media_utils.cpp
     format_utils.cpp
+    device_info.cpp
     audio_frame_splitter.cpp
     audio_format_impl.cpp
     audio_format_info.cpp
@@ -76,6 +76,7 @@ set(PUBLIC_HEADERS
     media_command_types.h
     media_module_types.h
     device_types.h
+    device_info.h
     audio_types.h
     audio_format_info.h
     audio_info.h
@@ -120,7 +121,6 @@ set(PUBLIC_HEADERS
     )
 
 set(PRIVATE_HEADERS
-    test.h
     media_utils.h
     format_utils.h
     audio_frame_splitter.h

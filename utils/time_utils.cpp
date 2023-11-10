@@ -74,7 +74,14 @@ void sleep(timestamp_t wait_time, bool clock_align)
             wait_time -= dt;
         }
     }
-    std::this_thread::sleep_for(std::chrono::nanoseconds(wait_time));
+    if (wait_time > 0)
+    {
+        std::this_thread::sleep_for(std::chrono::nanoseconds(wait_time));
+    }
+    else
+    {
+        std::this_thread::yield();
+    }
 }
 
 timestamp_t get_ticks(timestamp_t duration)
@@ -93,7 +100,5 @@ timestamp_t from_abs_time_24(uint32_t abs_time)
 {
     return (static_cast<timestamp_t>(abs_time & 0x00ffffff) * durations::second) >> 18;
 }
-
-
 
 }

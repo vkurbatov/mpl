@@ -225,7 +225,7 @@ device_class_list_t device_info_t::device_class_list(media_type_t media_type
 
 device_info_t::list_t device_info_t::device_list(media_type_t media_type
                                               , bool is_source
-                                              , const std::string& device_class)
+                                              , const std::string_view& device_class)
 {
     list_t device_info_list;
 
