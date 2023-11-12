@@ -72,6 +72,7 @@ target_link_libraries(${PROJECT_NAME}
     mplmedia
     mplnet
     mplutils
+    mpllog
     mplcore
     ptvnc
     ptvsc
@@ -123,6 +124,7 @@ add_subdirectory(utils)
 add_subdirectory(media)
 add_subdirectory(net)
 add_subdirectory(app)
+add_subdirectory(log)
 add_subdirectory(tools)
 
 

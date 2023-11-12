@@ -51,7 +51,10 @@
 #include "net/ice/ice_gathering_command.h"
 #include "net/ice/i_ice_transport.h"
 
+#include "log/log_tools.h"
+
 #include <iostream>
+#include <sstream>
 
 namespace mpl::test
 {
@@ -714,11 +717,48 @@ void composer_test()
     return;
 }
 
+// Terminator
+void log_recursive(const char* file, int line, std::ostringstream& msg)
+{
+    std::cout << file << "(" << line << "): " << msg.str() << std::endl;
+}
+
+template<typename T, typename... Args>
+void log_recursive(const char* file, int line, std::ostringstream& msg,
+                   T value, const Args&... args)
+{
+    msg << value;
+    log_recursive(file, line, msg, args...);
+}
+
+#define LOG(...) log_wrapper(__FILE__, __LINE__, __VA_ARGS__)
+
+template<typename ...Args>
+void log_wrapper(const char* file, int line, Args&& ...args)
+{
+    std::ostringstream msg;
+    log_recursive(file, line, msg, args...);
+}
+
+
+void log_test()
+{
+    mpl::log::set_log_level(log::log_level_t::info);
+
+    mpl_log_trace("message ", 1, " trace");
+    mpl_log_debuf("message ", 2, " debug");
+    mpl_log_error("message ", 3, " error");
+    mpl_log_info("message ", 4, " info");
+    mpl_log_fatal("message ", 5, " fatal");
+    mpl_log_warning("message ", 6, " warning");
+}
+
 void tests()
 {
-    // ice_test();
+    ice_test();
     // visca_test();
-    composer_test();
+    // composer_test();
+    // log_test();
 }
 
 }

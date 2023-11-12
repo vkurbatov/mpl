@@ -10,6 +10,8 @@
 #include <future>
 #include <queue>
 
+#include "log/log_tools.h"
+
 #include <iostream>
 
 namespace mpl
@@ -246,6 +248,7 @@ class task_manager_impl final: public i_task_manager
                 else
                 {
                     m_manager.wait(wait_lock);
+                    mpl_log_trace("Wakeup #", m_worker_id, " worker_id");
                     // std::clog << "Wakeup #" << m_worker_id << " worker id" << std::endl;
                 }
             }

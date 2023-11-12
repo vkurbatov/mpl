@@ -1,5 +1,5 @@
 #include "thread_info.h"
-
+#include <atomic>
 
 namespace mpl
 {
@@ -9,8 +9,8 @@ namespace detail
 
 thread_info_t::thread_id_t generate_id()
 {
-    static thread_info_t::thread_id_t single_tread_id = 0;
-    return single_tread_id++;
+    static std::atomic<thread_info_t::thread_id_t> single_tread_id = 0;
+    return single_tread_id.fetch_add(1);
 }
 
 }
