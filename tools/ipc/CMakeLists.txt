@@ -6,7 +6,6 @@ set(SOURCES
     ipc_base.cpp
     ipc_manager.cpp
     ipc_segment.cpp
-    test.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -17,7 +16,6 @@ set(PRIVATE_HEADERS
     ipc_types.h
     ipc_manager.h
     ipc_segment.h
-    test.h
 )
 
 

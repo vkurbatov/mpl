@@ -26,7 +26,6 @@ set(SOURCES
     ssl_session_params.cpp
     ssl_certificate_impl.cpp
     ssl_session_manager.cpp
-    test.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -60,7 +59,6 @@ set(PUBLIC_HEADERS
     ssl_session_params.h
     ssl_certificate_impl.h
     ssl_session_manager.h
-    test.h
 )
 
 set(PRIVATE_HEADERS

@@ -13,13 +13,12 @@ set(PUBLIC_HEADERS
     h264/h264_types.h
     h264/h264_fragment.h
     h264/h264_utils.h
-    h264/h264_mapped_headers.h
     h264/sps_header.h
 )
 
 set(PRIVATE_HEADERS
+    h264/h264_mapped_headers.h
 )
-
 
 add_library(${TARGET}
     ${SOURCES}
