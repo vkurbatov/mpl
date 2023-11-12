@@ -6,7 +6,6 @@ set(SOURCES
     visca_proto.cpp
     visca_base.cpp
     visca_control.cpp
-    visca_test.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -17,7 +16,6 @@ set(PRIVATE_HEADERS
     visca_proto.h
     visca_base.h
     visca_control.h
-    visca_test.h
 )
 
 

@@ -6,7 +6,7 @@
 namespace mpl::media
 {
 
-constexpr module_id_t media_module_id = core_module_id + 1;
+static constexpr module_id_t media_module_id = core_module_id + 1;
 
 }
 

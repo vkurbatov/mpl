@@ -12,7 +12,6 @@
 #include "media/video_frame_impl.h"
 
 #include "tools/utils/sync_base.h"
-#include "tools/ffmpeg/libav_stream_grabber.h"
 #include "tools/ffmpeg/libav_input_format.h"
 #include "tools/ffmpeg/libav_utils.h"
 #include "tools/codec/h264/h264_utils.h"

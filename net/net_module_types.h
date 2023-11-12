@@ -6,7 +6,7 @@
 namespace mpl::net
 {
 
-constexpr module_id_t net_module_id = core_module_id + 2;
+static constexpr module_id_t net_module_id = core_module_id + 2;
 
 
 }

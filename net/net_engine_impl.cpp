@@ -16,6 +16,7 @@
 #include "socket/udp_transport_factory.h"
 #include "ice/ice_transport_factory.h"
 #include "tls/tls_transport_factory.h"
+#include "serial/serial_transport_factory.h"
 
 #include <list>
 #include <atomic>
@@ -32,17 +33,18 @@ struct net_engine_impl final : public i_net_engine
     using u_ptr_t = std::unique_ptr<net_engine_impl>;
     using promise_list_t = std::list<std::promise<void>>;
 
-    net_engine_config_t     m_config;
-    i_task_manager&         m_task_manager;
-    i_timer_manager&        m_timer_manager;
-    pt::io::io_core         m_io_core;
-    promise_list_t          m_promises;
+    net_engine_config_t         m_config;
+    i_task_manager&             m_task_manager;
+    i_timer_manager&            m_timer_manager;
+    pt::io::io_core             m_io_core;
+    promise_list_t              m_promises;
 
-    udp_transport_factory   m_udp_factory;
-    ice_transport_factory   m_ice_factory;
-    tls_transport_factory   m_tls_factory;
+    udp_transport_factory       m_udp_factory;
+    ice_transport_factory       m_ice_factory;
+    tls_transport_factory       m_tls_factory;
+    serial_transport_factory    m_serial_factory;
 
-    std::atomic_bool        m_start;
+    std::atomic_bool            m_start;
 
     static u_ptr_t create(const net_engine_config_t& config
                           , i_task_manager& task_manager
@@ -67,6 +69,7 @@ struct net_engine_impl final : public i_net_engine
                         , m_timer_manager)
         , m_tls_factory(m_config.tls_config
                         , m_timer_manager)
+        , m_serial_factory(m_io_core)
         , m_start(false)
     {
 
@@ -170,6 +173,9 @@ public:
             break;
             case transport_id_t::tls:
                 return &m_tls_factory;
+            break;
+            case transport_id_t::serial:
+                return &m_serial_factory;
             break;
             default:;
         }

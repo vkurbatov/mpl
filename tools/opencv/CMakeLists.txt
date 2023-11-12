@@ -9,7 +9,6 @@ set(SOURCES
     draw_format.cpp
     draw_processor.cpp
     image.cpp
-    test.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -20,7 +19,6 @@ set(PUBLIC_HEADERS
     draw_format.h
     draw_processor.h
     image.h
-    test.h
 )
 
 set(PRIVATE_HEADERS

@@ -8,11 +8,8 @@ set(SOURCES
     libav_resampler.cpp
     libav_input_format.cpp
     libav_output_format.cpp
-    libav_stream_grabber.cpp
-    libav_stream_publisher.cpp
     libav_transcoder.cpp
     libav_utils.cpp
-    test.cpp
 )
 
 set(PUBLIC_HEADERS
@@ -21,11 +18,8 @@ set(PUBLIC_HEADERS
     libav_resampler.h
     libav_input_format.h
     libav_output_format.h
-    libav_stream_grabber.h
-    libav_stream_publisher.h
     libav_transcoder.h
     libav_utils.h
-    test.h
 )
 
 set(PRIVATE_HEADERS
