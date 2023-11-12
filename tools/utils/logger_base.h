@@ -1,9 +1,7 @@
 #ifndef LOGGER_BASE_H
 #define LOGGER_BASE_H
 
-/*#include <string>*/
 #include <iostream>
-//#include <logger/logger_tools.h>
 
 #define LOG(a)	std::cout << "[" << #a << "] "
 #define LOG_END << std::endl;
