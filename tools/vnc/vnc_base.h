@@ -6,9 +6,9 @@
 #include <queue>
 #include <functional>
 
-#include "../base/frame_base.h"
+#include "tools/utils/frame_base.h"
 
-namespace vnc
+namespace pt::vnc
 {
 
 const std::string default_host = "localhost";
@@ -17,7 +17,7 @@ const std::string default_password = "";
 const std::uint32_t default_bpp = 32;
 const std::uint32_t default_fps = 25;
 
-using frame_size_t = base::frame_size_t;
+using frame_size_t = pt::utils::frame_size_t;
 
 typedef std::vector<std::uint8_t> frame_data_t;
 

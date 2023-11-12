@@ -6,7 +6,7 @@ namespace mpl
 
 enum class property_type_t
 {
-    undefined = -1,
+    undefined = 0,
     object,
     array,
     i8,
@@ -20,6 +20,19 @@ enum class property_type_t
     r32,
     r64,
     r96,
+    boolean,
+    string,
+    octet_string
+};
+
+enum class property_class_t
+{
+    undefined = 0,
+    object,
+    array,
+    s_numeric,
+    u_numeric,
+    real,
     boolean,
     string,
     octet_string

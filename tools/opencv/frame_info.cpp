@@ -1,7 +1,7 @@
 #include "frame_info.h"
 #include "ocv_utils.h"
 
-namespace ocv
+namespace pt::ocv
 {
 
 frame_info_t::frame_info_t(const frame_format_t &format

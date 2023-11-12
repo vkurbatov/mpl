@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET avpt)
+set(TARGET ptav)
 
 set(SOURCES
     libav_base.cpp

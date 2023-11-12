@@ -6,10 +6,12 @@ namespace mpl
 
 enum class message_category_t
 {
-    undefined = -1,
-    frame,
+    undefined = 0,
+    data,
     command,
-    event
+    event,
+    packet,
+    application
 };
 
 }

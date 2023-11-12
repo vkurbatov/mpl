@@ -3,7 +3,7 @@
 
 #include "tools/io/io_link_base.h"
 
-namespace io
+namespace pt::io
 {
 
 struct serial_link_config_t;

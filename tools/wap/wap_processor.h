@@ -4,7 +4,7 @@
 #include <memory>
 #include "wap_base.h"
 
-namespace wap
+namespace pt::wap
 {
 
 class wap_processor

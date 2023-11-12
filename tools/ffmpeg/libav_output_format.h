@@ -3,7 +3,7 @@
 
 #include "libav_base.h"
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 class libav_output_format

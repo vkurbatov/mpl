@@ -5,23 +5,24 @@ namespace mpl::media
 {
 
 audio_frame_splitter::audio_frame_splitter()
-    : m_duration(0)
+    : m_frame_size(0)
 {
 
 }
 
 audio_frame_splitter::audio_frame_splitter(const i_audio_format &format
-                                           , uint32_t duration)
+                                           , uint32_t frame_size)
     : m_format(format)
-    , m_duration(duration)
+    , m_frame_size(frame_size)
 {
     reset();
 }
 
-void audio_frame_splitter::setup(const i_audio_format &format, uint32_t duration)
+void audio_frame_splitter::setup(const i_audio_format &format
+                                 , uint32_t frame_size)
 {
     m_format.assign(format);
-    m_duration = duration;
+    m_frame_size = frame_size;
     reset();
 }
 
@@ -32,7 +33,7 @@ void audio_frame_splitter::reset()
     if (m_format.is_convertable())
     {
         audio_format_helper audio_info(m_format);
-        auto buffer_size = audio_info.sample_size() * m_duration;
+        auto buffer_size = audio_info.sample_size() * m_frame_size;
         if (audio_info.is_planar())
         {
             buffer_size /= m_format.channels();
@@ -53,9 +54,9 @@ const i_audio_format &audio_frame_splitter::format() const
     return m_format;
 }
 
-uint32_t audio_frame_splitter::duration() const
+uint32_t audio_frame_splitter::frame_size() const
 {
-    return m_duration;
+    return m_frame_size;
 }
 
 std::size_t audio_frame_splitter::buffered_samples() const
@@ -73,6 +74,7 @@ data_fragment_queue_t audio_frame_splitter::push_frame(const void *data
                                                        , std::size_t size)
 {
     data_fragment_queue_t result;
+
     if (!m_splitters.empty())
     {
         if (m_splitters.size() == 1)
@@ -112,9 +114,9 @@ data_fragment_queue_t audio_frame_splitter::push_frame(const void *data
             data_ptr += part_size;
         }
 
-        for (auto& f : fragments)
+        for (auto&& f : fragments)
         {
-            result.push(std::move(f));
+            result.emplace(std::move(f));
         }
     }
 

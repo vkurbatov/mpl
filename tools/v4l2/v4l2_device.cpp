@@ -9,16 +9,16 @@
 #include <future>
 #include <optional>
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 
 #define WBS_MODULE_NAME "v4l2:device"
-#include "tools/base/logger_base.h"
+#include "tools/utils/logger_base.h"
 
 
 namespace v4l2
 {
 
-using mutex_t = base::shared_spin_lock;
+using mutex_t = pt::utils::shared_spin_lock;
 using lock_t = std::lock_guard<mutex_t>;
 using shared_lock_t = std::shared_lock<mutex_t>;
 

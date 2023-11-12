@@ -172,7 +172,7 @@ int32_t xioctl(handle_t handle
                , void *arg
                , std::uint32_t try_timeout)
 {
-    std::int32_t  result;
+    std::int32_t result;
 
     auto tp = std::chrono::high_resolution_clock::now();
 
@@ -346,7 +346,8 @@ bool set_fps(handle_t handle
     stream_parm.parm.capture.timeperframe.numerator = 1000;
     stream_parm.parm.capture.timeperframe.denominator = fps * 1000;
 
-    return xioctl(handle, VIDIOC_S_PARM, &stream_parm) >= 0;
+    auto result = xioctl(handle, VIDIOC_S_PARM, &stream_parm);
+    return result >= 0;
 }
 
 mapped_buffer_t map(handle_t handle, std::size_t buffer_count)

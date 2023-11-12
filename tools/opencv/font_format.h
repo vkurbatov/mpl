@@ -3,7 +3,7 @@
 
 #include "ocv_types.h"
 
-namespace ocv
+namespace pt::ocv
 {
 
 constexpr std::int32_t default_font_height = 8;

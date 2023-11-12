@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace visca
+namespace pt::visca
 {
 
 class i_visca_channel

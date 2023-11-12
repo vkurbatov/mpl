@@ -6,10 +6,10 @@ extern "C"
 #include <libavformat/avformat.h>
 }
 
-#include "tools/base/url_base.h"
+#include "tools/utils/url_base.h"
 
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 
@@ -18,12 +18,12 @@ namespace utils
 
 libav_option_list_t parse_option_list(const std::string &options)
 {
-    return base::parse_option_list(options);
+    return pt::utils::parse_option_list(options);
 }
 
 libav_option_map_t parse_option_map(const std::string &options)
 {
-    return base::parse_option_map(options);
+    return pt::utils::parse_option_map(options);
 }
 
 bool is_global_header_format(const std::string &format_name)
@@ -180,7 +180,7 @@ std::string error_string(int32_t av_errno)
 url_format_t fetch_url_format(const std::string &url)
 {
     url_format_t format;
-    base::url_info_t url_info;
+    pt::utils::url_info_t url_info;
 
     format.url = url;
 
@@ -357,6 +357,7 @@ AVStream& operator << (AVStream& av_stream
                        , const stream_info_t& stream_info)
 {
     (*av_stream.codecpar) << stream_info.media_info;
+    av_stream.id = stream_info.program_id;
     av_stream.index = stream_info.stream_id;
     av_stream.codecpar->codec_id = static_cast<AVCodecID>(stream_info.codec_info.id);
 
@@ -372,12 +373,14 @@ stream_info_t& operator << (stream_info_t& stream_info
                             , const AVStream& av_stream)
 {
     stream_info.media_info << *av_stream.codecpar;
+    stream_info.program_id = av_stream.id;
     stream_info.stream_id = av_stream.index;
 
     switch(stream_info.media_info.media_type)
     {
         case media_type_t::video:
-            stream_info.media_info.video_info.fps = av_q2d(av_stream.time_base) + 0.5;
+            // stream_info.media_info.video_info.fps = av_q2d(av_stream.time_base) + 0.5;
+            stream_info.media_info.video_info.fps = av_q2d(av_stream.avg_frame_rate);
         break;
         default:;
     }

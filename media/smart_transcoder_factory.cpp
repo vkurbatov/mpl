@@ -1,20 +1,19 @@
 #include "smart_transcoder_factory.h"
 
-#include "core/property_writer.h"
-#include "core/option_helper.h"
-#include "message_frame_impl.h"
+#include "utils/property_writer.h"
+#include "utils/option_helper.h"
 
 #include "audio_frame_impl.h"
 #include "video_frame_impl.h"
 
-#include "core/task_manager_impl.h"
+#include "utils/task_manager_impl.h"
 
 #include "media_option_types.h"
 
 #include <queue>
 #include "shared_mutex"
 
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 
 #include <cstring>
 #include <iostream>
@@ -22,19 +21,13 @@
 namespace mpl::media
 {
 
-
-
 namespace detail
 {
-
+/*
 i_task_manager& get_single_task_manager()
 {
-    /*
-    static auto single_task_manager = task_manager_factory::get_instance().create_manager({});
-    return *single_task_manager;*/
-
-    return task_manager_factory::singe_manager();
-}
+    return task_manager_impl::get_instance();
+}*/
 
 template<media_type_t MediaType>
 struct format_types_t;
@@ -189,7 +182,7 @@ template<media_type_t MediaType>
 class frame_sink : public i_message_sink
 {
     using i_frame_t = typename format_types_t<MediaType>::i_frame_t;
-    using frame_handler_t = std::function<bool(const i_frame_t& frame, const i_option& options)>;
+    using frame_handler_t = std::function<bool(const i_frame_t& frame)>;
 
     frame_handler_t m_frame_handler;
 
@@ -204,14 +197,13 @@ public:
 public:
     bool send_message(const i_message &message) override
     {
-        if (message.category() == message_category_t::frame)
+        if (message.category() == message_category_t::data)
         {
-            const auto& message_frame = static_cast<const i_message_frame&>(message);
-            if (message_frame.frame().media_type() == MediaType)
+            const auto& media_frame = static_cast<const i_media_frame&>(message);
+            if (media_frame.media_type() == MediaType)
             {
 
-                return m_frame_handler(static_cast<const i_frame_t&>(message_frame.frame())
-                                       , message_frame.options());
+                return m_frame_handler(static_cast<const i_frame_t&>(media_frame));
             }
         }
 
@@ -225,12 +217,12 @@ template<media_type_t MediaType>
 class smart_transcoder : public i_media_converter
 {
 
-    using mutex_t = base::spin_lock;
+    using mutex_t = pt::utils::spin_lock;
     using i_format_t = typename detail::format_types_t<MediaType>::i_format_t;
     using i_frame_t = typename detail::format_types_t<MediaType>::i_frame_t;
     using format_impl_t = typename detail::format_types_t<MediaType>::format_impl_t;
     using frame_impl_t = typename detail::format_types_t<MediaType>::frame_impl_t;
-    using frame_queue_t = std::queue<i_media_frame::u_ptr_t>;
+    using frame_queue_t = std::queue<i_message::u_ptr_t>;
 
     enum class transcoder_state_t
     {
@@ -290,8 +282,9 @@ class smart_transcoder : public i_media_converter
 
 public:
 
-        async_frame_manager(smart_transcoder& owner)
-            : m_task_manager(detail::get_single_task_manager())
+        async_frame_manager(smart_transcoder& owner
+                            , i_task_manager& task_manager)
+            : m_task_manager(task_manager)
             , m_owner(owner)
             , m_task(nullptr)
             , m_task_handler([&] { on_task_execute(); })
@@ -312,14 +305,15 @@ public:
             {
                 std::lock_guard lock(m_safe_mutex);
 
+                /*
                 std::size_t refs = 0;
-                if (auto buffer = frame.buffers().get_buffer(0))
+                if (auto buffer = frame.data().get_buffer(0))
                 {
                     refs = buffer->refs();
                 }
 
-                // std::clog << "push frame #: " << frame.frame_id() << ", refs: " << refs << std::endl;
-
+                std::clog << "push frame #: " << frame.frame_id() << ", refs: " << refs << std::endl;
+                */
                 m_frame_queue.emplace(std::move(clone_frame));
 
                 while (m_frame_queue.size() > 10)
@@ -330,7 +324,8 @@ public:
                 bool flag = false;
                 if (m_processed.compare_exchange_strong(flag, true))
                 {
-                    m_task = m_task_manager.add_task(m_task_handler);
+                    auto task_handler = m_task_handler;
+                    m_task = m_task_manager.add_task(std::move(task_handler));
                 }
 
                 return true;
@@ -344,7 +339,7 @@ public:
             return m_processed.load(std::memory_order_acquire);
         }
 
-        i_media_frame::u_ptr_t fetch_frame()
+        i_message::u_ptr_t fetch_frame()
         {
             std::lock_guard lock(m_safe_mutex);
             if (is_processed()
@@ -363,7 +358,6 @@ public:
             std::lock_guard lock(m_exec_mutex);
             while (auto frame = fetch_frame())
             {
-
                 m_owner.on_transcode_frame(static_cast<const i_frame_t&>(*frame));
                 // std::clog << "transcode frame #: " << frame->frame_id() << ", sz: " << size << std::endl;
             }
@@ -399,6 +393,7 @@ public:
     using u_ptr_t = std::unique_ptr<smart_transcoder>;
 
     static u_ptr_t create(const i_property &params
+                          , i_task_manager& task_manager
                           , i_media_converter_factory &media_decoders
                           , i_media_converter_factory &media_encoders
                           , i_media_converter_factory &media_converters)
@@ -411,6 +406,7 @@ public:
 
             return std::make_unique<smart_transcoder>(std::move(media_format)
                                                       , std::move(internal_params)
+                                                      , task_manager
                                                       , media_decoders
                                                       , media_encoders
                                                       , media_converters);
@@ -422,6 +418,7 @@ public:
 
     smart_transcoder(format_impl_t&& output_format
                      , params_t&& params
+                     , i_task_manager& task_manager
                      , i_media_converter_factory &media_decoders
                      , i_media_converter_factory &media_encoders
                      , i_media_converter_factory &media_converters)
@@ -431,14 +428,15 @@ public:
         , m_params(std::move(params))
         , m_output_format(std::move(output_format))
         , m_real_output_format(m_output_format)
-        , m_decoder_sink([&](const auto& frame, const auto& options)
-                        { return on_decoder_frame(frame, options); } )
-        , m_encoder_sink([&](const auto& frame, const auto& options)
-                        { return on_encoder_frame(frame, options); } )
-        , m_converter_sink([&](const auto& frame, const auto& options)
-                        { return on_converter_frame(frame, options); } )
+        , m_decoder_sink([&](const auto& frame)
+                        { return on_decoder_frame(frame); } )
+        , m_encoder_sink([&](const auto& frame)
+                        { return on_encoder_frame(frame); } )
+        , m_converter_sink([&](const auto& frame)
+                        { return on_converter_frame(frame); } )
         , m_output_sink(nullptr)
-        , m_async_manager(*this)
+        , m_async_manager(*this
+                          , task_manager)
         , m_is_init(false)
         , m_is_transit(true)
     {
@@ -538,23 +536,23 @@ public:
             break;
             case transcoder_state_t::decode:
                 return m_decoder != nullptr
-                        ? m_decoder->send_message(message_frame_ref_impl(frame))
+                        ? m_decoder->send_message(frame)
                         : convert_and_write_frame<transcoder_state_t::convert>(frame);
             break;
             case transcoder_state_t::convert:
                 return m_converter != nullptr
-                        ? m_converter->send_message(message_frame_ref_impl(frame))
+                        ? m_converter->send_message(frame)
                         : convert_and_write_frame<transcoder_state_t::encode>(frame);
             break;
             case transcoder_state_t::encode:
                 return m_encoder != nullptr
-                        ? m_encoder->send_message(message_frame_ref_impl(frame))
+                        ? m_encoder->send_message(frame)
                         : convert_and_write_frame<transcoder_state_t::output>(frame);
             break;
             case transcoder_state_t::output:
                 if (m_output_sink)
                 {
-                    return m_output_sink->send_message(message_frame_ref_impl(frame));
+                    return m_output_sink->send_message(frame);
                 }
             break;
             default:;
@@ -610,20 +608,17 @@ public:
         return false;
     }
 
-    bool on_decoder_frame(const i_frame_t& frame
-                          , const i_option& options)
+    bool on_decoder_frame(const i_frame_t& frame)
     {
         return convert_and_write_frame<transcoder_state_t::convert>(frame);
     }
 
-    bool on_converter_frame(const i_frame_t& frame
-                           , const i_option& options)
+    bool on_converter_frame(const i_frame_t& frame)
     {
         return convert_and_write_frame<transcoder_state_t::encode>(frame);
     }
 
-    bool on_encoder_frame(const i_frame_t& frame
-                          , const i_option& options)
+    bool on_encoder_frame(const i_frame_t& frame)
     {
         return convert_and_write_frame<transcoder_state_t::output>(frame);
     }
@@ -655,9 +650,9 @@ public:
 public:
     bool send_message(const i_message &message) override
     {
-        if (message.category() == message_category_t::frame)
+        if (message.category() == message_category_t::data)
         {
-            return on_media_frame(static_cast<const i_message_frame&>(message).frame());
+            return on_media_frame(static_cast<const i_media_frame&>(message));
         }
 
         return false;
@@ -679,10 +674,12 @@ public:
     }
 };
 
-smart_transcoder_factory::smart_transcoder_factory(i_media_converter_factory &media_decoders
+smart_transcoder_factory::smart_transcoder_factory(i_task_manager& task_manager
+                                                   , i_media_converter_factory &media_decoders
                                                    , i_media_converter_factory &media_encoders
                                                    , i_media_converter_factory &media_converters)
-    : m_media_decoders(media_decoders)
+    : m_task_manager(task_manager)
+    , m_media_decoders(media_decoders)
     , m_media_encoders(media_encoders)
     , m_media_converters(media_converters)
 {
@@ -697,15 +694,17 @@ i_media_converter::u_ptr_t smart_transcoder_factory::create_converter(const i_pr
     {
         case media_type_t::audio:
             return smart_transcoder<media_type_t::audio>::create(params
-                                                                , m_media_decoders
-                                                                , m_media_encoders
-                                                                , m_media_converters);
+                                                                 , m_task_manager
+                                                                 , m_media_decoders
+                                                                 , m_media_encoders
+                                                                 , m_media_converters);
         break;
         case media_type_t::video:
             return smart_transcoder<media_type_t::video>::create(params
-                                                                , m_media_decoders
-                                                                , m_media_encoders
-                                                                , m_media_converters);
+                                                                 , m_task_manager
+                                                                 , m_media_decoders
+                                                                 , m_media_encoders
+                                                                 , m_media_converters);
         break;
         default:;
     }

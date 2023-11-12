@@ -2,7 +2,7 @@
 
 #include <opencv2/core.hpp>
 
-namespace ocv::utils
+namespace pt::ocv::utils
 {
 
 const format_info_t &get_format_info(const frame_format_t& format)
@@ -16,7 +16,7 @@ const format_info_t &get_format_info(const frame_format_t& format)
         { "RGBA",   32, CV_8UC4}
     };
 
-    return format_table[static_cast<std::int32_t>(format) + 1];
+    return format_table[static_cast<std::int32_t>(format)];
 }
 
 }

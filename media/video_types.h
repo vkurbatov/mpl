@@ -6,7 +6,7 @@ namespace mpl::media
 
 enum class video_format_id_t
 {
-    undefined = -1,
+    undefined = 0,
     yuv420p,
     yuv422p,
     yuv444p,

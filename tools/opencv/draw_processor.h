@@ -7,7 +7,7 @@
 #include <memory>
 
 
-namespace ocv
+namespace pt::ocv
 {
 
 

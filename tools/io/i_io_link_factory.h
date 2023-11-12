@@ -3,7 +3,7 @@
 
 #include "i_io_link.h"
 
-namespace io
+namespace pt::io
 {
 
 struct link_config_t;

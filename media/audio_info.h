@@ -1,24 +1,48 @@
-#ifndef MPL_AUDIO_INFO_H
-#define MPL_AUDIO_INFO_H
+#ifndef MPL_MEDIA_AUDIO_INFO_H
+#define MPL_MEDIA_AUDIO_INFO_H
 
+#include "core/time_types.h"
 #include "audio_types.h"
-#include <cstdint>
+#include <string>
 
 namespace mpl::media
 {
 
-struct audio_format_info_t
-{
-    static const audio_format_info_t& get_info(audio_format_id_t format_id);
+class i_audio_format;
 
-    std::int32_t    bps;
-    std::int32_t    frame_size; // in samples
-    bool            encoded;
-    bool            planar;
-    bool            convertable;
-    std::uint32_t   fourcc;
+struct audio_info_t
+{
+    audio_format_id_t   format_id;
+    std::uint32_t       sample_rate;
+    std::uint32_t       channels;
+
+    audio_info_t(audio_format_id_t format_id = audio_format_id_t::undefined
+                  , std::uint32_t sample_rate = 0
+                  , std::uint32_t channels = 0);
+
+    audio_info_t(const i_audio_format& audio_format);
+
+    bool operator == (const audio_info_t& other) const;
+    bool operator != (const audio_info_t& other) const;
+
+    std::size_t bps() const;
+    std::size_t sample_size() const;
+
+    std::size_t size_from_samples(std::size_t samples) const;
+    std::size_t size_from_duration(timestamp_t duration) const;
+
+    std::size_t samples_from_size(std::size_t size) const;
+    std::size_t samples_from_duration(timestamp_t duration) const;
+
+    timestamp_t duration_from_size(std::size_t size) const;
+    timestamp_t duration_from_samples(std::size_t samples) const;
+
+    bool is_valid() const;
+    bool is_compatible(const audio_info_t& other) const;
+
+    std::string to_string() const;
 };
 
 }
 
-#endif // MPL_AUDIO_INFO_H
+#endif // MPL_MEDIA_AUDIO_INFO_H

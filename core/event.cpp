@@ -1,32 +1,22 @@
 #include "event.h"
 
 #include <vector>
-#include "tools/base/sync_base.h"
+#include "tools/utils/sync_base.h"
 #include <mutex>
 
 
 namespace mpl
 {
 
-namespace detail
+bool event_t::operator ==(const event_t &other) const
 {
-    static base::spin_lock safe_mutex;
-    static std::vector<std::string> events;
-
-    inline event_t::event_id_t register_event(const std::string_view &event_name)
-    {
-        std::lock_guard lock(safe_mutex);
-
-        event_t::event_id_t event_id = events.size();
-        events.emplace_back(event_name);
-
-        return event_id;
-    }
+    return event_id == other.event_id
+            && name == other.name;
 }
 
-event_t::event_id_t event_t::register_event(const std::string_view &event_name)
+bool event_t::operator !=(const event_t &other) const
 {
-    return detail::register_event(event_name);
+    return ! operator == (other);
 }
 
 event_t::event_t(const event_id_t event_id
@@ -42,9 +32,5 @@ event_t &event_t::operator=(const event_t &other)
     return *this;
 }
 
-event_t &event_t::operator=(event_t &&other)
-{
-    return *this;
-}
 
 }

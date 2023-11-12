@@ -14,7 +14,7 @@ class audio_mixer
 {
     using sample_data_t = std::vector<std::uint8_t>;
 
-    sample_info_t           m_sample_info;
+    audio_info_t           m_sample_info;
     sample_data_t           m_audio_data;
     std::size_t             m_sample_size;
     std::size_t             m_write_cursor;
@@ -43,13 +43,13 @@ public:
                                        , mix_method_t method = mix_method_t::set
                                        , double volume = 1.0);
 
-    audio_mixer(const sample_info_t& sample_info
+    audio_mixer(const audio_info_t& sample_info
                      , std::size_t buffer_size);
 
-    void setup(const sample_info_t& sample_info
+    void setup(const audio_info_t& sample_info
                , std::size_t buffer_size);
 
-    const sample_info_t& sample_info() const;
+    const audio_info_t& sample_info() const;
     std::size_t pending() const;
     std::size_t capacity() const;
     std::size_t overrun() const;

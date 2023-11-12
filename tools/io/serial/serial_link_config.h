@@ -4,7 +4,7 @@
 #include "tools/io/io_base.h"
 #include "serial_types.h"
 
-namespace io
+namespace pt::io
 {
 
 struct serial_link_config_t : public link_config_t
@@ -20,6 +20,9 @@ struct serial_link_config_t : public link_config_t
                         , serial_stop_bits_t stop_bits = serial_stop_bits_t::one
                         , serial_parity_t parity = serial_parity_t::none
                         , serial_flow_control_t flow_control = serial_flow_control_t::none);
+
+    bool operator == (const serial_link_config_t& other) const;
+    bool operator != (const serial_link_config_t& other) const;
 
     bool is_valid() const final override;
 };

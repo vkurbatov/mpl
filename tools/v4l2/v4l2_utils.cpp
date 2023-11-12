@@ -1,5 +1,5 @@
 #include "v4l2_utils.h"
-#include "tools/base/string_base.h"
+#include "tools/utils/string_base.h"
 
 #include <linux/v4l2-controls.h>
 
@@ -130,14 +130,14 @@ std::string get_format_name(uint32_t format_id)
 {
     std::string fourcc_string(reinterpret_cast<const char*>(&format_id), 4);
 
-    return base::lower_string(fourcc_string);
+    return pt::utils::lower_string(fourcc_string);
 }
 
 uint32_t get_format_id(const std::string_view &format_name)
 {
     if (format_name.size() == sizeof(std::uint32_t))
     {
-        std::string fourcc_string = base::upper_string(format_name);
+        std::string fourcc_string = pt::utils::upper_string(format_name);
 
         return *reinterpret_cast<const std::uint32_t*>(fourcc_string.data());
     }

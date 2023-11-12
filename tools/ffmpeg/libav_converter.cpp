@@ -12,7 +12,7 @@ extern "C"
 
 #include <iostream>
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 namespace utils

@@ -3,69 +3,105 @@ cmake_minimum_required(VERSION 3.16)
 set(TARGET mplmedia)
 
 set(SOURCES
-    test.cpp
     enum_convert_impl.cpp
     enum_serialize_impl.cpp
     media_utils.cpp
     format_utils.cpp
-    libav_format_utils.cpp
+    device_info.cpp
     audio_frame_splitter.cpp
     audio_format_impl.cpp
-    audio_info.cpp
+    audio_format_info.cpp
     audio_frame_impl.cpp
     audio_format_helper.cpp
     audio_mixer.cpp
     audio_level.cpp
+    audio_info.cpp
     audio_sample.cpp
     video_format_impl.cpp
-    video_info.cpp
+    video_format_info.cpp
     video_frame_impl.cpp
-    message_frame_impl.cpp
+    video_info.cpp
+    media_info.cpp
+    media_frame_info.cpp
     media_packetizer_impl.cpp
     timestamp_calculator.cpp
-    libav_video_converter_factory.cpp
-    libav_audio_converter_factory.cpp
-    libav_transcoder_factory.cpp
-    libav_input_device_factory.cpp
-    libav_output_device_factory.cpp
-    vnc_device_factory.cpp
-    apm_device_factory.cpp
-    visca_device_factory.cpp
+    track_info.cpp
+    track_metrics.cpp
+    track_metrics_manager.cpp
+    track_params.cpp
+    ipc/ipc_input_device_factory.cpp
+    ipc/ipc_output_device_factory.cpp
+    ipc/ipc_input_device_params.cpp
+    ipc/ipc_output_device_params.cpp
+    libav/libav_video_converter_factory.cpp
+    libav/libav_audio_converter_factory.cpp
+    libav/libav_transcoder_factory.cpp
+    libav/libav_input_device_factory.cpp
+    libav/libav_output_device_factory.cpp
+    libav/libav_format_utils.cpp
+    vnc/vnc_device_factory.cpp
+    apm/apm_device_factory.cpp
+    apm/apm_device_params.cpp
+    visca/visca_device_factory.cpp
+    v4l2/v4l2_device_factory.cpp
+    v4l2/v4l2_utils.cpp
+    mcu/compose_audio_track_params.cpp
+    mcu/compose_video_track_params.cpp
+    mcu/compose_stream_params.cpp
+    mcu/audio_composer.cpp
+    mcu/video_composer.cpp
+    mcu/layout_manager_mosaic_impl.cpp
+    mcu/media_composer_factory_impl.cpp
+    frame_option_container.cpp
     media_converter_factory_impl.cpp
     media_serialize_impl.cpp
     smart_transcoder_factory.cpp
-    v4l2_device_factory.cpp
-    v4l2_utils.cpp
-    ipc_input_device_factory.cpp
-    ipc_output_device_factory.cpp
     draw_options.cpp
     image_frame.cpp
     image_builder.cpp
-    audio_composer.cpp
-    video_composer.cpp
-    layout_manager_mosaic_impl.cpp
-    media_composer_factory_impl.cpp
     command_camera_control.cpp
     media_command_message_impl.cpp
+    media_frame_buffer.cpp
+    media_frame_selector.cpp
+    media_sink_impl.cpp
+    media_engine_config.cpp
+    media_engine_impl.cpp
+    media_format_factory_impl.cpp
+    media_frame_builder_impl.cpp
 )
 
 set(PUBLIC_HEADERS
     media_types.h
+    media_event_types.h
+    media_command_types.h
+    media_module_types.h
     device_types.h
+    device_info.h
     audio_types.h
+    audio_format_info.h
     audio_info.h
     video_types.h
     video_frame_types.h
+    video_format_info.h
     video_info.h
+    media_info.h
     stream_types.h
     media_option_types.h
+    media_frame_info.h
     command_camera_control.h
-    i_message_frame.h
+    track_info.h
+    track_metrics.h
+    track_params.h
     i_media_stream.h
+    i_media_track.h
     i_media_format.h
+    i_media_format_factory.h
+    i_media_format_collection.h
+    i_message_media_data.h
     i_media_frame.h
-    i_media_converter_factory.h
     i_media_converter.h
+    i_media_converter_factory.h
+    i_media_converter_collection.h
     i_layout.h
     i_layout_manager.h
     i_compose_stream.h
@@ -77,13 +113,15 @@ set(PUBLIC_HEADERS
     i_video_frame.h
     i_device.h
     i_device_factory.h
+    i_device_factory_collection.h
     i_frame_buffer.h
+    i_media_module.h
+    i_media_engine.h
+    i_media_frame_builder.h
     )
 
 set(PRIVATE_HEADERS
-    test.h
     media_utils.h
-    libav_format_utils.h
     format_utils.h
     audio_frame_splitter.h
     audio_format_impl.h
@@ -94,30 +132,44 @@ set(PRIVATE_HEADERS
     audio_mixer.h
     audio_level.h
     audio_sample.h
-    message_frame_impl.h
     timestamp_calculator.h
-    libav_video_converter_factory.h
-    libav_audio_converter_factory.h
-    libav_transcoder_factory.h
-    libav_input_device_factory.h
-    libav_output_device_factory.h
-    vnc_device_factory.h
-    apm_device_factory.h
-    visca_device_factory.h
+    track_metrics_manager.h
+    ipc/ipc_input_device_factory.h
+    ipc/ipc_output_device_factory.h
+    ipc/ipc_input_device_params.h
+    ipc/ipc_output_device_params.h
+    libav/libav_format_utils.h
+    libav/libav_video_converter_factory.h
+    libav/libav_audio_converter_factory.h
+    libav/libav_transcoder_factory.h
+    libav/libav_input_device_factory.h
+    libav/libav_output_device_factory.h
+    vnc/vnc_device_factory.h
+    apm/apm_device_factory.h
+    apm/apm_device_params.h
+    visca/visca_device_factory.h
+    v4l2/v4l2_device_factory.h
+    v4l2/v4l2_utils.h
+    mcu/compose_audio_track_params.h
+    mcu/compose_video_track_params.h
+    mcu/compose_stream_params.h
+    mcu/audio_composer.h
+    mcu/video_composer.h
+    mcu/layout_manager_mosaic_impl.h
+    mcu/media_composer_factory_impl.h
+    frame_option_container.h
     media_converter_factory_impl.h
     smart_transcoder_factory.h
-    v4l2_device_factory.h
-    v4l2_utils.h
-    ipc_input_device_factory.h
-    ipc_output_device_factory.h
     draw_options.h
     image_frame.h
     image_builder.h
-    audio_composer.h
-    video_composer.h
-    layout_manager_mosaic_impl.h
-    media_composer_factory_impl.h
-    media_command_message_impl.h
+    media_frame_buffer.h
+    media_frame_selector.h
+    media_sink_impl.h
+    media_engine_config.h
+    media_engine_impl.h
+    media_format_factory_impl.h
+    media_frame_builder_impl.h
 )
 
 

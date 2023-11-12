@@ -3,7 +3,7 @@
 
 #include "ocv_types.h"
 
-namespace ocv::utils
+namespace pt::ocv::utils
 {
 
 const format_info_t& get_format_info(const frame_format_t& format);

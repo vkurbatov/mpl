@@ -12,15 +12,15 @@ extern "C"
 }
 
 #define WBS_MODULE_NAME "ff:transcoder"
-#include "tools/base/logger_base.h"
+#include "tools/utils/logger_base.h"
 
 #include <map>
 #include <limits>
 
 #include <iostream>
-#include "tools/base/string_base.h"
+#include "tools/utils/string_base.h"
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 namespace utils

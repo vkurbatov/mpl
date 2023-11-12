@@ -9,7 +9,7 @@
 #include <thread>
 #include <cstring>
 
-namespace ocv
+namespace pt::ocv
 {
 
 namespace

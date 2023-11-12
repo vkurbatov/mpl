@@ -6,14 +6,16 @@
 #include <vector>
 #include <string>
 
-namespace io
+namespace pt::io
 {
+
+struct endpoint_t;
 
 using raw_array_t = std::vector<std::uint8_t>;
 
 enum class link_type_t
 {
-    undefined = -1,
+    undefined = 0,
     serial,
     ip,
     udp,
@@ -25,7 +27,7 @@ enum class link_type_t
 
 enum class endpoint_type_t
 {
-    undefined = -1,
+    undefined = 0,
     serial,
     ip,
     udp,
@@ -36,7 +38,7 @@ enum class endpoint_type_t
 
 enum class link_state_t
 {
-    undefined = -1,
+    undefined = 0,
     ready,
     opening,
     open,
@@ -69,22 +71,6 @@ struct link_config_t
 protected:
     link_config_t(link_type_t type);
 };
-
-struct endpoint_t
-{
-    static const endpoint_t& undefined();
-    endpoint_type_t type;
-    endpoint_t();
-
-    virtual bool operator == (const endpoint_t& other) const;
-    virtual bool operator != (const endpoint_t& other) const;
-    virtual bool is_valid() const;
-    virtual std::string to_string() const;
-
-protected:
-    endpoint_t(endpoint_type_t type);
-};
-
 
 class message_t
 {

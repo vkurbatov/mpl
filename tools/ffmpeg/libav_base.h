@@ -1,9 +1,9 @@
 #ifndef FFMPEG_LIBAV_BASE_H
 #define FFMPEG_LIBAV_BASE_H
 
-#include "tools/base/frame_base.h"
-#include "tools/base/time_base.h"
-#include "tools/base/option_base.h"
+#include "tools/utils/frame_base.h"
+#include "tools/utils/time_base.h"
+#include "tools/utils/option_base.h"
 
 #include <string>
 #include <vector>
@@ -12,7 +12,7 @@
 #include <functional>
 #include <map>
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 using libav_option_t = std::pair<std::string, std::string>;
@@ -254,7 +254,7 @@ struct device_info_t
                                                  , bool is_source);
     static list_t device_list(media_type_t media_type
                                , bool is_source
-                               , const std::string& device_class = {});
+                               , const std::string_view& device_class = {});
 
     media_type_t media_type;
     std::string name;
@@ -281,13 +281,13 @@ enum class option_format_t
     unknown
 };
 
-using frame_point_t = base::frame_point_t;
-using frame_size_t = base::frame_size_t;
-using frame_rect_t = base::frame_rect_t;
-using adaptive_timer_t = base::adaptive_timer_t;
-using option_t = base::option_t;
-using option_list_t = base::option_list_t;
-const auto parse_option_list = base::parse_option_list;
+using frame_point_t = pt::utils::frame_point_t;
+using frame_size_t = pt::utils::frame_size_t;
+using frame_rect_t = pt::utils::frame_rect_t;
+using adaptive_timer_t = pt::utils::adaptive_timer_t;
+using option_t = pt::utils::option_t;
+using option_list_t = pt::utils::option_list_t;
+const auto parse_option_list = pt::utils::parse_option_list;
 
 struct audio_info_t
 {
@@ -551,6 +551,7 @@ struct stream_info_t
 {
     using list_t = std::vector<stream_info_t>;
 
+    stream_id_t                 program_id;
     stream_id_t                 stream_id;
     codec_info_t                codec_info;
     media_info_t                media_info;
@@ -560,7 +561,8 @@ struct stream_info_t
                                           , std::size_t extra_data_size
                                           , bool need_padding = false);
 
-    stream_info_t(stream_id_t stream_id = 0
+    stream_info_t(stream_id_t program_id = 0
+                  , stream_id_t stream_id = 0
                   , const codec_info_t& codec_info = codec_info_t()
                   , const media_info_t& media_info = media_info_t()
                   , const void* extra_data = nullptr

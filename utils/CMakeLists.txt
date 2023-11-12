@@ -1,0 +1,118 @@
+cmake_minimum_required(VERSION 3.16)
+
+set(TARGET mplutils)
+
+set(SOURCES
+    ipc_manager_impl.cpp
+    bitrate_calculator.cpp
+    mapped_packet.cpp
+    shared_buffer_header.cpp
+    shared_data_impl.cpp
+    smart_buffer.cpp
+    smart_buffer_container.cpp
+    smart_buffer_collection.cpp
+    packetizer.cpp
+    depacketizer.cpp
+    raw_packer.cpp
+    packetize_impl.cpp
+    adaptive_delay.cpp
+    data_splitter.cpp
+    task_manager_impl.cpp
+    timer_manager_impl.cpp
+    timer_queue.cpp
+    convert_value_impl.cpp
+    convert_property_impl.cpp
+    cyclic_data_reader.cpp
+    cyclic_data_writer.cpp
+    fifo_writer_impl.cpp
+    fifo_reader_impl.cpp
+    message_router_impl.cpp
+    message_event_impl.cpp
+    message_event_impl.tpp
+    message_command_impl.tpp
+    message_sink_impl.cpp
+    property_value_impl.cpp
+    property_tree_impl.cpp
+    property_helper.cpp
+    property_reader.cpp
+    property_writer.cpp
+    option_impl.cpp
+    option_helper.cpp
+    option_value_impl.cpp
+    option_container.cpp
+    common_utils.cpp
+    endian_utils.cpp
+    hash_utils.cpp
+    time_utils.cpp
+    property_utils.cpp
+    watch_timer.cpp
+    throttler.cpp
+    string_utils_impl.cpp
+    random_utils_impl.cpp
+    json_utils.cpp
+    enum_convert_impl.cpp
+    buffer_factory_impl.cpp
+    core_engine_impl.cpp
+)
+
+set(PUBLIC_HEADERS
+    ipc_manager_impl.h
+    packetizer.h
+    depacketizer.h
+    raw_packer.h
+    bitrate_calculator.h
+    shared_buffer_header.h
+    shared_data_impl.h
+    smart_buffer.h
+    smart_buffer_container.h
+    smart_buffer_collection.h
+    adaptive_delay.h
+    data_splitter.h
+    task_manager_impl.h
+    timer_manager_impl.h
+    timer_queue.h
+    cyclic_data_reader.h
+    cyclic_data_writer.h
+    fifo_writer_impl.h
+    fifo_reader_impl.h
+    message_router_impl.h
+    message_event_impl.h
+    message_command_impl.h
+    message_sink_impl.h
+    property_value_impl.h
+    property_tree_impl.h
+    property_helper.h
+    property_reader.h
+    property_writer.h
+    option_impl.h
+    option_value_impl.h
+    option_container.h
+    option_helper.h
+    common_utils.h
+    endian_utils.h
+    hash_utils.h
+    enum_utils.h
+    time_utils.h
+    property_utils.h
+    watch_timer.h
+    throttler.h
+    convert_utils.h
+    pointer_utils.h
+    json_utils.h
+    enum_converter_defs.h
+    enum_serialize_defs.h
+    buffer_factory_impl.h
+    core_engine_impl.h
+    )
+
+set(PRIVATE_HEADERS
+    mapped_packet.h
+)
+
+
+add_library(${TARGET}
+    ${SOURCES}
+    ${PRIVATE_HEADERS}
+    ${PUBLIC_HEADERS}
+)
+

@@ -12,7 +12,9 @@
 #include <vector>
 #include <array>
 
-namespace io
+#include <thread>
+
+namespace pt::io
 {
 
 constexpr static std::size_t recv_buffer_size = 1000;
@@ -23,7 +25,7 @@ using array_t = std::array<std::uint8_t, recv_buffer_size>;
 namespace detail
 {
 
-bool set_seral_params(serial_t& serial
+bool set_link_params(serial_t& serial
                       , const serial_link_config_t& config
                       , boost::system::error_code& ec)
 {
@@ -115,7 +117,7 @@ struct serial_link::pimpl_t
 
                 if (!ec.failed())
                 {
-                    if (detail::set_seral_params(m_serial
+                    if (detail::set_link_params(m_serial
                                                  , m_config
                                                  , ec))
                     {
@@ -127,7 +129,7 @@ struct serial_link::pimpl_t
 
             close();
 
-            if (!ec.failed())
+            if (ec.failed())
             {
                 change_state(link_state_t::failed
                              , ec.message());
@@ -172,7 +174,10 @@ struct serial_link::pimpl_t
             change_state(link_state_t::disconnecting);
             m_started = false;
             m_serial.cancel();
-            while(m_io_processed.load(std::memory_order_acquire));
+            while(m_io_processed.load(std::memory_order_relaxed))
+            {
+                std::this_thread::yield();
+            }
             change_state(link_state_t::disconnected);
             return true;
         }
@@ -195,7 +200,7 @@ struct serial_link::pimpl_t
     {
         if (!is_open())
         {
-            if (endpoint.type == endpoint_type_t::serial)
+            if (endpoint.type == endpoint_t::type_t::serial)
             {
                 m_endpoint = static_cast<const serial_endpoint_t&>(endpoint);
                 return true;
@@ -247,6 +252,7 @@ struct serial_link::pimpl_t
             auto buffer = boost::asio::buffer(m_recv_buffer);
             m_serial.async_read_some(buffer
                                      , [&](auto&&... args) { on_receive(args...); });
+            return;
 
         }
         m_io_processed.store(false
@@ -350,7 +356,7 @@ bool serial_link::send_to(const message_t &message
 
 bool serial_link::get_endpoint(endpoint_t &endpoint) const
 {
-    if (endpoint.type == endpoint_type_t::serial)
+    if (endpoint.type == endpoint_t::type_t::serial)
     {
         static_cast<serial_endpoint_t&>(endpoint) = m_pimpl->m_endpoint;
         return true;

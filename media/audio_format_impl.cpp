@@ -1,11 +1,12 @@
 #include "audio_format_impl.h"
-#include "audio_info.h"
+#include "audio_format_info.h"
 
 #include "media_utils.h"
 
-#include "core/property_writer.h"
-#include "core/option_helper.h"
+#include "utils/property_writer.h"
+#include "utils/option_helper.h"
 #include "core/option_types.h"
+#include "media/media_option_types.h"
 
 namespace mpl::media
 {
@@ -17,6 +18,11 @@ audio_format_impl::u_ptr_t audio_format_impl::create(const audio_format_id_t &fo
     return std::make_unique<audio_format_impl>(format_id
                                                , sample_rate
                                                , channels);
+}
+
+audio_format_impl::u_ptr_t audio_format_impl::create(const audio_info_t &info)
+{
+    return std::make_unique<audio_format_impl>(info);
 }
 
 audio_format_impl::u_ptr_t audio_format_impl::create(const i_audio_format &other)
@@ -32,17 +38,23 @@ audio_format_impl::u_ptr_t audio_format_impl::create(const i_property &params)
 audio_format_impl::audio_format_impl(const audio_format_id_t &format_id
                                      , int32_t sample_rate
                                      , int32_t channels)
-    : m_format_id(format_id)
-    , m_sample_rate(sample_rate)
-    , m_channels(channels)
+    : m_audio_info(format_id
+                   , sample_rate
+                   , channels)
+{
+
+}
+
+audio_format_impl::audio_format_impl(const audio_info_t &info)
+    : m_audio_info(info)
 {
 
 }
 
 audio_format_impl::audio_format_impl(const i_audio_format &other)
-    : m_format_id(other.format_id())
-    , m_sample_rate(other.sample_rate())
-    , m_channels(other.channels())
+    : audio_format_impl(other.format_id()
+                        , other.sample_rate()
+                        , other.channels())
 {
     m_options.merge(other.options());
 }
@@ -53,21 +65,45 @@ audio_format_impl::audio_format_impl(const i_property &params)
     set_params(params);
 }
 
+std::size_t audio_format_impl::frame_size() const
+{
+    return option_reader(m_options).get<std::int32_t>(opt_codec_frame_size, 0);
+}
+
+const audio_info_t &audio_format_impl::audio_info() const
+{
+    return m_audio_info;
+}
+
+audio_format_impl &audio_format_impl::set_frame_size(std::size_t frame_size)
+{
+    option_writer writer(m_options);
+    if (frame_size == 0)
+    {
+        writer.remove(opt_codec_frame_size);
+    }
+    else
+    {
+        writer.set<std::int32_t>(opt_codec_frame_size, frame_size);
+    }
+    return *this;
+}
+
 audio_format_impl &audio_format_impl::set_format_id(const audio_format_id_t &format_id)
 {
-    m_format_id = format_id;
+    m_audio_info.format_id = format_id;
     return *this;
 }
 
 audio_format_impl &audio_format_impl::set_sample_rate(int32_t sample_rate)
 {
-    m_sample_rate = sample_rate;
+    m_audio_info.sample_rate = sample_rate;
     return *this;
 }
 
 audio_format_impl &audio_format_impl::set_channels(int32_t channels)
 {
-    m_channels = channels;
+    m_audio_info.channels = channels;
     return *this;
 }
 
@@ -83,11 +119,17 @@ audio_format_impl &audio_format_impl::set_options(option_impl &&options)
     return *this;
 }
 
+audio_format_impl &audio_format_impl::set_audio_info(const audio_info_t &info)
+{
+    m_audio_info = info;
+    return *this;
+}
+
 audio_format_impl &audio_format_impl::assign(const i_audio_format &other)
 {
-    m_format_id = other.format_id();
-    m_sample_rate = other.sample_rate();
-    m_channels = other.channels();
+    m_audio_info.format_id = other.format_id();
+    m_audio_info.sample_rate = other.sample_rate();
+    m_audio_info.channels = other.channels();
     m_options.assign(other.options());
 
     return *this;
@@ -98,9 +140,7 @@ bool audio_format_impl::set_params(const i_property &params)
     property_reader reader(params);
     if (reader.get("media_type", media_type_t::audio) == media_type_t::audio)
     {
-        return reader.get("format", m_format_id)
-                | reader.get("sample_rate", m_sample_rate)
-                | reader.get("channels", m_channels)
+        return reader.get("", m_audio_info)
                 | utils::convert_format_options(params, m_options);
     }
     return false;
@@ -111,9 +151,7 @@ bool audio_format_impl::get_params(i_property &params) const
     property_writer writer(params);
 
     if (writer.set("media_type", media_type_t::audio)
-            && writer.set("format", m_format_id)
-            && writer.set("sample_rate", m_sample_rate)
-            && writer.set("channels", m_channels))
+            && writer.set({}, m_audio_info))
     {
         utils::convert_format_options(m_options, params);
         return true;
@@ -147,19 +185,19 @@ media_type_t audio_format_impl::media_type() const
 
 bool audio_format_impl::is_encoded() const
 {
-    return audio_format_info_t::get_info(m_format_id).encoded;
+    return audio_format_info_t::get_info(m_audio_info.format_id).encoded;
 }
 
 bool audio_format_impl::is_convertable() const
 {
-    return audio_format_info_t::get_info(m_format_id).convertable;
+    return audio_format_info_t::get_info(m_audio_info.format_id).convertable;
 }
 
 i_media_format::u_ptr_t audio_format_impl::clone() const
 {
-    if (auto clone_format = create(m_format_id
-                                   , m_sample_rate
-                                   , m_channels))
+    if (auto clone_format = create(m_audio_info.format_id
+                                   , m_audio_info.sample_rate
+                                   , m_audio_info.channels))
     {
         clone_format->m_options = m_options;
 
@@ -207,17 +245,17 @@ bool audio_format_impl::is_valid() const
 
 audio_format_id_t audio_format_impl::format_id() const
 {
-    return m_format_id;
+    return m_audio_info.format_id;
 }
 
 int32_t audio_format_impl::sample_rate() const
 {
-    return m_sample_rate;
+    return m_audio_info.sample_rate;
 }
 
 int32_t audio_format_impl::channels() const
 {
-    return m_channels;
+    return m_audio_info.channels;
 }
 
 }

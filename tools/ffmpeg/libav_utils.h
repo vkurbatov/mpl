@@ -9,7 +9,7 @@ struct AVCodecParameters;
 struct AVDictionary;
 struct AVStream;
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
 namespace utils

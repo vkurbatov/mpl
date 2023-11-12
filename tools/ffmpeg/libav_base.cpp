@@ -15,11 +15,12 @@ extern "C"
 #include <thread>
 #include <map>
 #include <set>
+#include <atomic>
 
-namespace ffmpeg
+namespace pt::ffmpeg
 {
 
-static bool libav_register_flag = false;
+static std::atomic_bool libav_register_flag = false;
 
 const std::int32_t padding_size = AV_INPUT_BUFFER_PADDING_SIZE;
 
@@ -224,7 +225,7 @@ device_class_list_t device_info_t::device_class_list(media_type_t media_type
 
 device_info_t::list_t device_info_t::device_list(media_type_t media_type
                                               , bool is_source
-                                              , const std::string& device_class)
+                                              , const std::string_view& device_class)
 {
     list_t device_info_list;
 
@@ -828,13 +829,15 @@ extra_data_t stream_info_t::create_extra_data(const void *extra_data
     return nullptr;
 }
 
-stream_info_t::stream_info_t(stream_id_t stream_id
+stream_info_t::stream_info_t(stream_id_t program_id
+                             , stream_id_t stream_id
                              , const codec_info_t &codec_info
                              , const media_info_t &media_info
                              , const void *extra_data
                              , std::size_t extra_data_size
                              , bool need_extra_padding)
-    : stream_id(stream_id)
+    : program_id(program_id)
+    , stream_id(stream_id)
     , codec_info(codec_info)
     , media_info(media_info)
     , extra_data(std::move(create_extra_data(extra_data
@@ -1247,9 +1250,9 @@ bool is_registered()
 
 bool libav_register()
 {
-    if (!libav_register_flag)
+    bool flag = false;
+    if (libav_register_flag.compare_exchange_strong(flag, true))
     {
-        libav_register_flag = true;
         avcodec_register_all();
         avdevice_register_all();
         avformat_network_init();

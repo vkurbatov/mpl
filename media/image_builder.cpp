@@ -10,29 +10,29 @@
 namespace mpl::media
 {
 
-constexpr ocv::color_t default_pen_color = 0x7fff0000;
+constexpr pt::ocv::color_t default_pen_color = 0x7fff0000;
 constexpr double default_font_size = 0.1;
 
 namespace detail
 {
 
-ocv::frame_info_t create_frame_info(const image_info_t& image_info)
+pt::ocv::frame_info_t create_frame_info(const video_info_t& image_info)
 {
-    ocv::frame_info_t frame_info;
+    pt::ocv::frame_info_t frame_info;
 
     switch(image_info.format_id)
     {
         case video_format_id_t::bgr24:
-            frame_info.format = ocv::frame_format_t::bgr;
+            frame_info.format = pt::ocv::frame_format_t::bgr;
         break;
         case video_format_id_t::rgb24:
-            frame_info.format = ocv::frame_format_t::rgb;
+            frame_info.format = pt::ocv::frame_format_t::rgb;
         break;
         case video_format_id_t::bgra32:
-            frame_info.format = ocv::frame_format_t::bgra;
+            frame_info.format = pt::ocv::frame_format_t::bgra;
         break;
         case video_format_id_t::rgba32:
-            frame_info.format = ocv::frame_format_t::rgba;
+            frame_info.format = pt::ocv::frame_format_t::rgba;
         break;
         default:;
     }
@@ -42,7 +42,7 @@ ocv::frame_info_t create_frame_info(const image_info_t& image_info)
     return frame_info;
 }
 
-ocv::frame_info_t create_frame_info(const image_frame_t* image_frame)
+pt::ocv::frame_info_t create_frame_info(const image_frame_t* image_frame)
 {
     if (image_frame)
     {
@@ -59,9 +59,9 @@ struct image_builder::context_t
     using config_t = image_builder::config_t;
     using u_ptr_t = image_builder::context_ptr_t;
 
-    image_builder::config_t   m_config;
-    image_frame_t*                  m_output_frame;
-    ocv::draw_processor             m_draw_processor;
+    image_builder::config_t             m_config;
+    image_frame_t*                      m_output_frame;
+    pt::ocv::draw_processor             m_draw_processor;
 
 
 
@@ -114,7 +114,7 @@ struct image_builder::context_t
         if (input_frame.is_valid())
         {
             m_draw_processor.draw_format().draw_opacity = draw_options.opacity;
-            auto dst_rect = base::frame_utils::rect_from_relative(draw_options.target_rect
+            auto dst_rect = pt::utils::frame_utils::rect_from_relative(draw_options.target_rect
                                                                  , m_output_frame->image_info.size
                                                                  , draw_options.margin);
 
@@ -126,9 +126,9 @@ struct image_builder::context_t
 
             if (!dst_rect.is_null())
             {
-                auto figure = draw_options.elliptic ? ocv::draw_figure_t::ellipse : ocv::draw_figure_t::rectangle;
+                auto figure = draw_options.elliptic ? pt::ocv::draw_figure_t::ellipse : pt::ocv::draw_figure_t::rectangle;
 
-                if (figure == ocv::draw_figure_t::ellipse)
+                if (figure == pt::ocv::draw_figure_t::ellipse)
                 {
                     auto diametr = std::min(dst_rect.size.width, dst_rect.size.height);
                     auto center = dst_rect.center();

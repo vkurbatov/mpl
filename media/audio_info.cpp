@@ -1,41 +1,116 @@
 #include "audio_info.h"
-
-#include "format_utils.h"
-
-#include <string>
-#include <unordered_map>
+#include "audio_format_info.h"
+#include "i_audio_format.h"
+#include "utils/common_utils.h"
+#include "utils/enum_utils.h"
 
 namespace mpl::media
 {
 
-namespace detail
+audio_info_t::audio_info_t(audio_format_id_t format_id
+                             , uint32_t sample_rate
+                             , uint32_t channels)
+    : format_id(format_id)
+    , sample_rate(sample_rate)
+    , channels(channels)
 {
-
-const audio_format_info_t audio_format_info_table[] =
-{
-    //bps   fs      enc     planar  conv
-    { -1,  -1,      false,  false,  false,  utils::to_fourcc({})  },    // undefined
-    { 8,    0,      false,  false,  true,   utils::to_fourcc({})  },    // pcm8
-    { 16,   0,      false,  false,  true,   utils::to_fourcc({})  },    // pcm16
-    { 32,   0,      false,  false,  true,   utils::to_fourcc({})  },    // pcm32
-    { 32,   0,      false,  false,  true,   utils::to_fourcc({})  },    // float32
-    { 64,   0,      false,  false,  true,   utils::to_fourcc({})  },    // float64
-    { 8,    0,      false,  true,   true,   utils::to_fourcc({})  },    // pcm8p
-    { 16,   0,      false,  true,   true,   utils::to_fourcc({})  },    // pcm16p
-    { 32,   0,      false,  true,   true,   utils::to_fourcc({})  },    // pcm32p
-    { 32,   0,      false,  true,   true,   utils::to_fourcc({})  },    // float32p
-    { 64,   0,      false,  true,   true,   utils::to_fourcc({})  },    // float64p
-    { 8,    20,     true,   false,  false,  utils::to_fourcc({})  },    // pcma
-    { 8,    20,     true,   false,  false,  utils::to_fourcc({})  },    // pcmu
-    { 16,   20,     true,   false,  false,  utils::to_fourcc({})  },    // opus
-    { 32,   1024,   true,   false,  false,  utils::to_fourcc({})  }     // aac
-};
 
 }
 
-const audio_format_info_t &audio_format_info_t::get_info(audio_format_id_t format_id)
+audio_info_t::audio_info_t(const i_audio_format &audio_format)
+    : audio_info_t(audio_format.format_id()
+                    , audio_format.sample_rate()
+                    , audio_format.channels())
 {
-    return detail::audio_format_info_table[static_cast<std::int32_t>(format_id) + 1];
+
+}
+
+bool audio_info_t::operator ==(const audio_info_t &other) const
+{
+    return format_id == other.format_id
+            && sample_rate == other.sample_rate
+            && channels == other.channels;
+}
+
+bool audio_info_t::operator !=(const audio_info_t &other) const
+{
+    return ! operator == (other);
+}
+
+std::size_t audio_info_t::bps() const
+{
+    return audio_format_info_t::get_info(format_id).bps;
+}
+
+std::size_t audio_info_t::sample_size() const
+{
+    return (bps() * channels) / 8;
+}
+
+std::size_t audio_info_t::size_from_samples(std::size_t samples) const
+{
+    return samples * sample_size();
+}
+
+std::size_t audio_info_t::size_from_duration(timestamp_t duration) const
+{
+    return (duration * sample_rate * bps() * channels)
+            / (8 * durations::seconds(1));
+}
+
+std::size_t audio_info_t::samples_from_size(std::size_t size) const
+{
+    if (auto ss = sample_size())
+    {
+        return size / ss;
+    }
+
+    return 0;
+}
+
+std::size_t audio_info_t::samples_from_duration(timestamp_t duration) const
+{
+    if (auto ss = sample_size())
+    {
+        return size_from_duration(duration) / ss;
+    }
+
+    return 0;
+}
+
+timestamp_t audio_info_t::duration_from_size(std::size_t size) const
+{
+    if (auto sd = size_from_duration(durations::seconds(1)))
+    {
+        return (size * durations::seconds(1))
+                / sd;
+    }
+
+    return 0;
+}
+
+timestamp_t audio_info_t::duration_from_samples(std::size_t samples) const
+{
+    return duration_from_size(size_from_samples(samples));
+}
+
+bool audio_info_t::is_valid() const
+{
+    return audio_format_info_t::get_info(format_id).convertable
+            && sample_rate > 0
+            && channels > 0;
+}
+
+bool audio_info_t::is_compatible(const audio_info_t &other) const
+{
+    return *this == other;
+}
+
+std::string audio_info_t::to_string() const
+{
+    return utils::to_upper(utils::enum_to_string(format_id))
+            .append("/").append(std::to_string(sample_rate))
+            .append("/").append(std::to_string(channels));
 }
 
 }

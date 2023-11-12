@@ -1,10 +1,11 @@
 #ifndef MPL_COMMAND_CAMERA_CONTROL_H
 #define MPL_COMMAND_CAMERA_CONTROL_H
 
+#include "media_command_types.h"
 #include "core/command.h"
 #include "core/i_property.h"
 
-namespace mpl
+namespace mpl::media
 {
 
 struct command_camera_control_t : public command_t
@@ -16,8 +17,8 @@ struct command_camera_control_t : public command_t
         failed
     };
 
-    constexpr static command_id_t       id = 0;
-    constexpr static std::string_view   command_name = "device_control";
+    constexpr static command_id_t       id = camera_control_command_id;
+    constexpr static std::string_view   command_name = "camera_control";
 
     i_property::s_ptr_t                 commands;
     std::uint32_t                       control_id;

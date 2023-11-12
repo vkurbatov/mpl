@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET vncpt)
+set(TARGET ptvnc)
 
 set(SOURCES
     vnc_base.cpp

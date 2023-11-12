@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET v4l2pt)
+set(TARGET ptv4l2)
 
 set(SOURCES
     v4l2_api.cpp

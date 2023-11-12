@@ -1,6 +1,7 @@
 #include "io_link_base.h"
+#include "endpoint.h"
 
-namespace io
+namespace pt::io
 {
 
 io_link::io_link(io_core &core)

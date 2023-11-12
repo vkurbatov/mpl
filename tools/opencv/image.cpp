@@ -5,7 +5,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-namespace ocv
+namespace pt::ocv
 {
 
 namespace detail

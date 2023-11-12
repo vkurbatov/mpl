@@ -1,7 +1,7 @@
 #ifndef VISCA_TEST_H
 #define VISCA_TEST_H
 
-namespace visca
+namespace pt::visca
 {
 
 void test1();

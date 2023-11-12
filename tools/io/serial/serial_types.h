@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace io
+namespace pt::io
 {
 
 using baud_rate_t = std::uint32_t;

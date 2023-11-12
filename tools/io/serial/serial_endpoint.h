@@ -1,10 +1,10 @@
 #ifndef IO_SERIAL_ENDPOINT_H
 #define IO_SERIAL_ENDPOINT_H
 
-#include "tools/io/io_base.h"
+#include "tools/io/endpoint.h"
 #include <string>
 
-namespace io
+namespace pt::io
 {
 
 struct serial_endpoint_t : public endpoint_t

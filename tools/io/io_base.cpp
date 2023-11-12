@@ -1,6 +1,6 @@
 #include "io_base.h"
 
-namespace io
+namespace pt::io
 {
 
 link_config_t::link_config_t()
@@ -15,44 +15,6 @@ bool link_config_t::is_valid() const
 }
 
 link_config_t::link_config_t(link_type_t type)
-    : type(type)
-{
-
-}
-
-const endpoint_t &endpoint_t::undefined()
-{
-    static const endpoint_t single_undefined_endpoint;
-    return single_undefined_endpoint;
-}
-
-endpoint_t::endpoint_t()
-    : endpoint_t(endpoint_type_t::undefined)
-{
-
-}
-
-bool endpoint_t::operator ==(const endpoint_t &other) const
-{
-    return type == other.type;
-}
-
-bool endpoint_t::operator !=(const endpoint_t &other) const
-{
-    return ! operator == (other);
-}
-
-bool endpoint_t::is_valid() const
-{
-    return true;
-}
-
-std::string endpoint_t::to_string() const
-{
-    return std::string("undefined");
-}
-
-endpoint_t::endpoint_t(endpoint_type_t type)
     : type(type)
 {
 

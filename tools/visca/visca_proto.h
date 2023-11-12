@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace visca
+namespace pt::visca
 {
 
 void set_pan_tilt(void* raw_data

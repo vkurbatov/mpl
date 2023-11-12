@@ -23,7 +23,7 @@ extern "C"
 #define RFB_PIXEL_FORMAT_15 4, 15, 16
 #define RFB_PIXEL_FORMAT_8 3, 8, 8
 
-namespace vnc
+namespace pt::vnc
 {
 
 std::uint32_t owner_tag = 0xadaf;

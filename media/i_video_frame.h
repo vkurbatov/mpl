@@ -12,19 +12,12 @@ class i_video_frame : public i_media_frame
 {
 public:
 
-    enum class frame_type_t
-    {
-        undefined = -1,
-        delta_frame,
-        key_frame
-    };
-
     using u_ptr_t = std::unique_ptr<i_video_frame>;
     using s_ptr_t = std::shared_ptr<i_video_frame>;
 
     virtual ~i_video_frame() = default;
     virtual const i_video_format& format() const = 0;
-    virtual frame_type_t frame_type() const = 0;
+    virtual video_frame_type_t frame_type() const = 0;
 };
 
 }

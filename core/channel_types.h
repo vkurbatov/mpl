@@ -6,7 +6,7 @@ namespace mpl
 
 enum class channel_state_t
 {
-    undefined = -1,
+    undefined = 0,
     ready,
     create,
     opening,
@@ -27,7 +27,7 @@ enum class channel_state_t
 
 enum class channel_control_id_t
 {
-    undefined = -1,
+    undefined = 0,
     open,
     close,
     connect,

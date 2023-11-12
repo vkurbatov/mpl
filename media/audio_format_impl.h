@@ -2,8 +2,9 @@
 #define MPL_AUDIO_FORMAT_IMPL_H
 
 #include "i_audio_format.h"
+#include "audio_info.h"
 #include "core/i_parametrizable.h"
-#include "core/option_impl.h"
+#include "utils/option_impl.h"
 #include <string>
 
 namespace mpl::media
@@ -12,9 +13,7 @@ namespace mpl::media
 class audio_format_impl : public i_audio_format
         , public i_parametrizable
 {
-    audio_format_id_t       m_format_id;
-    std::int32_t            m_sample_rate;
-    std::int32_t            m_channels;
+    audio_info_t            m_audio_info;
     option_impl             m_options;
 
 public:
@@ -25,6 +24,8 @@ public:
                           , std::int32_t sample_rate = 0
                           , std::int32_t channels = 0);
 
+    static u_ptr_t create(const audio_info_t& info);
+
     static u_ptr_t create(const i_audio_format& other);
     static u_ptr_t create(const i_property& params);
 
@@ -32,14 +33,21 @@ public:
                       , std::int32_t sample_rate = 0
                       , std::int32_t channels = 0);
 
+    audio_format_impl(const audio_info_t& info);
+
     audio_format_impl(const i_audio_format& other);
     audio_format_impl(const i_property& params);
 
+    std::size_t frame_size() const;
+    const audio_info_t& audio_info() const;
+
+    audio_format_impl& set_frame_size(std::size_t frame_size);
     audio_format_impl& set_format_id(const audio_format_id_t& format_id);
     audio_format_impl& set_sample_rate(std::int32_t sample_rate);
     audio_format_impl& set_channels(std::int32_t channels);
     audio_format_impl& set_options(const i_option& options);
     audio_format_impl& set_options(option_impl&& options);
+    audio_format_impl& set_audio_info(const audio_info_t& info);
 
     audio_format_impl& assign(const i_audio_format& other);
 

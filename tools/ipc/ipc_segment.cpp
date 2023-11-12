@@ -5,7 +5,7 @@
 #include <atomic>
 #include <iostream>
 
-namespace ipc
+namespace pt::ipc
 {
 
 struct ipc_segment::segment_ctx_t

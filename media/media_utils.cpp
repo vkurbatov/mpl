@@ -1,13 +1,16 @@
 #include "media_utils.h"
 #include "media_types.h"
 
-#include "core/property_writer.h"
-#include "core/option_helper.h"
+#include "utils/property_writer.h"
+#include "utils/option_helper.h"
 #include "media_option_types.h"
 
 #include "core/common_types.h"
 
-namespace mpl::media::utils
+
+using namespace mpl::media;
+
+namespace mpl::utils
 {
 
 namespace detail
@@ -86,11 +89,14 @@ bool convert_format_options(const i_option &options, i_property &property)
     {
         switch(id)
         {
-            case opt_fmt_stream_id:
-                result |= loader.load<std::int32_t>(id, "stream_id");
+            case opt_frm_track_id:
+                result |= loader.load<std::int32_t>(id, "track_id");
             break;
-            case opt_fmt_device_id:
+            case opt_frm_stream_id:
                 result |= loader.load<std::int32_t>(id, "device_id");
+            break;
+            case opt_frm_layer_id:
+                result |= loader.load<std::int32_t>(id, "layer_id");
             break;
             case opt_codec_extra_data:
             {
@@ -98,6 +104,11 @@ bool convert_format_options(const i_option &options, i_property &property)
                 {
                     result |= property_writer(property).set("extra_data", *e->get());
                 }
+            }
+            break;
+            case opt_codec_frame_size:
+            {
+                result |= loader.load<std::int32_t>(id, "frame_size");
             }
             break;
             case opt_codec_params:
@@ -116,8 +127,10 @@ bool convert_format_options(const i_property &property, i_option &options)
     detail::option_saver saver(options
                                , property);
 
-    result |= saver.save<std::int32_t>(opt_fmt_stream_id, "stream_id");
-    result |= saver.save<std::int32_t>(opt_fmt_device_id, "device_id");
+    result |= saver.save<std::int32_t>(opt_frm_track_id, "track_id");
+    result |= saver.save<std::int32_t>(opt_frm_stream_id, "device_id");
+    result |= saver.save<std::int32_t>(opt_frm_layer_id, "layer_id");
+    result |= saver.save<std::int32_t>(opt_codec_frame_size, "frame_size");
 
     if (auto e = property_reader(property).get<octet_string_t>("extra_data"))
     {

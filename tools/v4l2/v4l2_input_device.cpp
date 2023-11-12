@@ -44,6 +44,7 @@ struct v4l2_object_t
             }
             mapped_buffer = v4l2::map(handle
                                       , buffer_count);
+            return;
         }
     }
 
@@ -102,7 +103,6 @@ struct v4l2_object_t
 
     bool set_frame_info(const frame_info_t& frame_info)
     {
-
         if (handle >= 0)
         {
 
@@ -271,12 +271,8 @@ struct v4l2_input_device::context_t
 
     bool set_config(const config_t& config)
     {
-        if (is_opened())
-        {
-            m_config = config;
-            return true;
-        }
-        return false;
+        m_config = config;
+        return true;
     }
 
     const config_t& config() const

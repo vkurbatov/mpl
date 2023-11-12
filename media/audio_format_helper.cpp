@@ -1,5 +1,5 @@
 #include "audio_format_helper.h"
-#include "audio_info.h"
+#include "audio_format_info.h"
 #include "i_audio_format.h"
 
 namespace mpl::media

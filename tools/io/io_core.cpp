@@ -1,11 +1,14 @@
 #include "io_core.h"
 
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/executor_work_guard.hpp>
 
-#include <thread>
 #include <atomic>
+#include <iostream>
+#include <list>
+#include "io_worker_factory.h"
 
-namespace io
+namespace pt::io
 {
 
 struct io_core::pimpl_t
@@ -13,23 +16,37 @@ struct io_core::pimpl_t
     using u_ptr_t = io_core::pimpl_ptr_t;
     using config_t = io_core::config_t;
     using io_context_t = boost::asio::io_context;
+    using future_t = std::future<void>;
     using thread_array_t = std::vector<std::thread>;
+    using future_array_t = std::vector<future_t>;
+    using promise_array_t = std::list<std::promise<void>>;
 
     config_t                m_config;
     io_context_t            m_io_context;
+    i_io_worker_factory*    m_worker_factory;
 
-    thread_array_t          m_threads;
+
+    future_array_t          m_futures;
     std::atomic_bool        m_running;
 
 
-    static u_ptr_t create(const config_t& config)
+
+    static u_ptr_t create(const config_t& config
+                           , i_io_worker_factory* worker_factory)
     {
-        return std::make_unique<pimpl_t>(config);
+        if (worker_factory == nullptr)
+        {
+             worker_factory = &io_worker_factory::get_instance();
+        }
+        return std::make_unique<pimpl_t>(config
+                                         , worker_factory);
     }
 
-    pimpl_t(const config_t& config)
+    pimpl_t(const config_t& config
+            , i_io_worker_factory* worker_factory)
         : m_config(config)
         , m_io_context(m_config.total_workers())
+        , m_worker_factory(worker_factory)
         , m_running(false)
     {
 
@@ -47,7 +64,9 @@ struct io_core::pimpl_t
         {
             for (std::size_t i = 0; i < m_config.total_workers(); i++)
             {
-                m_threads.emplace_back([&, i] { worker_proc(i); });
+                // m_futures.emplace_back(execute_work([&, i]{ worker_proc(i); }));
+
+                m_futures.emplace_back(execute_work(i));
             }
             return true;
         }
@@ -57,8 +76,12 @@ struct io_core::pimpl_t
 
     void worker_proc(std::size_t worker_id)
     {
-        boost::asio::io_context::work work(m_io_context);
-        work.get_io_context().run();
+        boost::asio::executor_work_guard work(m_io_context.get_executor());
+        while(is_running())
+        {
+            m_io_context.run_one();
+            // std::cout << worker_id << ": after run" << std::endl;
+        }
     }
 
     bool stop()
@@ -67,14 +90,11 @@ struct io_core::pimpl_t
         if (m_running.compare_exchange_strong(flag, false))
         {
             m_io_context.stop();
-            for (auto& t : m_threads)
+            for (auto& f : m_futures)
             {
-                if (t.joinable())
-                {
-                    t.join();
-                }
+                f.wait();
             }
-            m_threads.clear();
+            m_futures.clear();
 
             return true;
         }
@@ -93,6 +113,23 @@ struct io_core::pimpl_t
         {
             m_io_context.post(executor);
         }
+    }
+
+    std::size_t workers() const
+    {
+        return m_futures.size();
+    }
+
+    future_t execute_work(std::size_t worker_id)
+    {
+        auto executor = [worker_id, this]
+        {
+            worker_proc(worker_id);
+        };
+
+        return m_worker_factory->execute_worker(std::move(executor));
+
+        //return std::async(std::launch::async, executor);
     }
 
 };
@@ -116,13 +153,17 @@ io_core &io_core::get_instance()
     return single_core;
 }
 
-io_core::u_ptr_t io_core::create(const config_t &config)
+io_core::u_ptr_t io_core::create(const config_t &config
+                                 , i_io_worker_factory* worker_factory)
 {
-    return std::make_unique<io_core>(config);
+    return std::make_unique<io_core>(config
+                                     , worker_factory);
 }
 
-io_core::io_core(const config_t &config)
-    : m_pimpl(pimpl_t::create(config))
+io_core::io_core(const config_t &config
+                 , i_io_worker_factory* worker_factory)
+    : m_pimpl(pimpl_t::create(config
+                              , worker_factory))
 {
 
 }
@@ -160,6 +201,11 @@ void io_core::post(const executor_handler_t &executor)
 bool io_core::is_valid() const
 {
     return m_pimpl != nullptr;
+}
+
+std::size_t io_core::workers() const
+{
+    return m_pimpl->workers();
 }
 
 template<>

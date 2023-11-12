@@ -3,60 +3,26 @@ cmake_minimum_required(VERSION 3.16)
 set(TARGET mplcore)
 
 set(SOURCES
-    test.cpp
-    enum_convert_impl.cpp
     type_info.cpp
-    data_splitter.cpp
-    smart_buffer.cpp
-    smart_buffer_collection.cpp
-    task_manager_impl.cpp
-    fifo_writer_impl.cpp
-    fifo_reader_impl.cpp
-    cyclic_data_reader.cpp
-    cyclic_data_writer.cpp
-    shared_buffer_header.cpp
-    shared_data_impl.cpp
-    utils.cpp
-    time_utils.cpp
+    thread_info.cpp
     command.cpp
-    adaptive_delay.cpp
-    property_helper.cpp
-    property_reader.cpp
-    property_writer.cpp
-    string_utils_impl.cpp
-    property_value_impl.cpp
-    property_tree_impl.cpp
-    option_impl.cpp
-    option_helper.cpp
-    option_value_impl.cpp
-    convert_value_impl.cpp
-    convert_property_impl.cpp
     channel_control.cpp
-    message_router_impl.cpp
     event.cpp
     event_channel_state.cpp
-    message_event_impl.cpp
-    message_sink_impl.cpp
-    mapped_packet.cpp
-    packetizer.cpp
-    depacketizer.cpp
-    packetize_impl.cpp
-    json_utils.cpp
-    ipc/ipc_manager_impl.cpp
-    sq/mapped_sq_header.cpp
-    sq/sq_packet_builder.cpp
-    sq/sq_packet.cpp
-    sq/sq_buffer.cpp
-    sq/sq_parser.cpp
-    sq/sq_stitcher.cpp
+    ntp_time.cpp
+    flow_stats.cpp
+    core_engine_config.cpp
 )
 
 set(PUBLIC_HEADERS
     common_types.h
+    module_types.h
     type_info.h
     property_types.h
     packet_types.h
     time_types.h
+    thread_info.h
+    ntp_time.h
     message_types.h
     channel_types.h
     event_types.h
@@ -66,10 +32,12 @@ set(PUBLIC_HEADERS
     event_channel_state.h
     command_types.h
     command.h
-    shared_buffer_header.h
-    json_utils.h
+    flow_stats.h
+    core_engine_config.h
     i_task.h
     i_task_manager.h
+    i_timer.h
+    i_timer_manager.h
     i_property.h
     i_property_value.h
     i_property_tree.h
@@ -80,6 +48,7 @@ set(PUBLIC_HEADERS
     i_buffer.h
     i_mapped_buffer.h
     i_dynamic_buffer.h
+    i_buffer_factory.h
     i_buffer_collection.h
     i_fifo_buffer.h
     i_fifo_buffer_reader.h
@@ -91,52 +60,21 @@ set(PUBLIC_HEADERS
     i_message.h
     i_message_sink.h
     i_message_source.h
+    i_message_transceiver.h
+    i_message_data.h
     i_message_event.h
     i_message_command.h
+    i_message_packet.h
     i_message_channel.h
+    i_module.h
+    i_engine.h
+    i_core_module.h
+    i_core_engine.h
+    i_event_factory.h
+    i_command_factory.h
     )
 
 set(PRIVATE_HEADERS
-    test.h
-    data_splitter.h
-    smart_buffer.h
-    smart_buffer_collection.h
-    task_manager_impl.h
-    fifo_writer_impl.h
-    fifo_reader_impl.h
-    cyclic_data_reader.h
-    cyclic_data_writer.h
-    shared_data_impl.h
-    utils.h
-    enum_utils.h
-    enum_converter_defs.h
-    enum_serialize_defs.h
-    time_utils.h
-    adaptive_delay.h
-    property_helper.h
-    property_reader.h
-    property_writer.h
-    convert_utils.h
-    pointer_utils.h
-    property_value_impl.h
-    property_tree_impl.h
-    option_impl.h
-    option_value_impl.h
-    option_helper.h
-    message_router_impl.h
-    message_event_impl.h
-    message_sink_impl.h
-    mapped_packet.h
-    packetizer.h
-    depacketizer.h
-    ipc/ipc_manager_impl.h
-    sq/mapped_sq_header.h
-    sq/sq_types.h
-    sq/sq_packet_builder.h
-    sq/sq_packet.h
-    sq/sq_buffer.h
-    sq/sq_parser.h
-    sq/sq_stitcher.h
 )
 
 

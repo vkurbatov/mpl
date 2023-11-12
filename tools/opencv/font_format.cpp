@@ -1,7 +1,7 @@
 #include "font_format.h"
 #include <opencv2/imgproc.hpp>
 
-namespace ocv
+namespace pt::ocv
 {
 
 font_format_t::font_format_t(const font_t &font

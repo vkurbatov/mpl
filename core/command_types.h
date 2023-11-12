@@ -1,15 +1,14 @@
 #ifndef MPL_COMMAND_TYPES_H
 #define MPL_COMMAND_TYPES_H
 
+#include <cstdint>
+
 namespace mpl
 {
 
-enum class command_id_t
-{
-    undefined = -1,
-    device_control,
-    custom
-};
+using command_id_t = std::uint32_t;
+
+constexpr static command_id_t core_base_command_id = 0;
 
 }
 

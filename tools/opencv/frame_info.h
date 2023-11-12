@@ -3,7 +3,7 @@
 
 #include "ocv_types.h"
 
-namespace ocv
+namespace pt::ocv
 {
 
 struct frame_info_t

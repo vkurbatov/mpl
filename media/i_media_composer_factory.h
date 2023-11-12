@@ -9,8 +9,8 @@ namespace mpl::media
 class i_media_composer_factory
 {
 public:
-    using u_ptr_t = std::unique_ptr<i_media_composer>;
-    using s_ptr_t = std::unique_ptr<i_media_composer>;
+    using u_ptr_t = std::unique_ptr<i_media_composer_factory>;
+    using s_ptr_t = std::unique_ptr<i_media_composer_factory>;
 
     virtual ~i_media_composer_factory() = default;
     virtual i_media_composer::u_ptr_t create_composer(const i_property& params) = 0;
