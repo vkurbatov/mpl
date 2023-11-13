@@ -653,43 +653,7 @@ void composer_test()
                 utils::time::sleep(durations::seconds(120));
 
 
-                /*
-                while(count-- > 0)
-                {
-                    for (auto& s : streams)
-                    {
-                        if (s->stream_id() % 2 == 0)
-                        {
-                            continue;
-                        }
 
-                        auto stream_property = property_helper::create_object();
-                        if (count % 10 == 0)
-                        {
-                            if (s->get_params(*stream_property))
-                            {
-                                property_writer writer(*stream_property);
-                                writer.set("audio_enabled", false);
-                                writer.set("video_enabled", false);
-
-                                s->set_params(*stream_property);
-                            }
-                        }
-                        else if (count % 5 == 0)
-                        {
-                            if (s->get_params(*stream_property))
-                            {
-                                property_writer writer(*stream_property);
-                                writer.set("audio_enabled", true);
-                                writer.set("video_enabled", true);
-
-                                s->set_params(*stream_property);
-                            }
-                        }
-                    }
-                    core::utils::sleep(durations::seconds(1));
-                }
-                */
 
                 media_composer->stop();
 
@@ -746,7 +710,7 @@ void log_test()
     mpl::log::set_log_level(log::log_level_t::info);
 
     mpl_log_trace("message ", 1, " trace");
-    mpl_log_debuf("message ", 2, " debug");
+    mpl_log_debug("message ", 2, " debug");
     mpl_log_error("message ", 3, " error");
     mpl_log_info("message ", 4, " info");
     mpl_log_fatal("message ", 5, " fatal");

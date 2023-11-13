@@ -4,6 +4,8 @@
 
 #include <string>
 
+#include "log/log_tools.h"
+
 namespace mpl
 {
 

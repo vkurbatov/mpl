@@ -12,6 +12,8 @@
 
 #include <iostream>
 
+#include "log/log_tools.h"
+
 namespace mpl
 {
 
@@ -61,13 +63,14 @@ class timer_manager_impl final : public i_timer_manager
             , m_target_time(timestamp_null)
             , m_queued(false)
         {
+            mpl_log_debug("timer manager impl #", &m_manager, ": timer: ", m_id, " init");
             m_manager.append_timer(this);
         }
 
         ~timer_impl()
         {
             m_manager.remove_timer(this);
-            // std::clog << "timer #" << m_id << ": before destuctor wait loop" << std::endl;
+            mpl_log_debug("timer manager impl #", &m_manager, ": timer: ", m_id, " destruction");
             while(m_queued.load(std::memory_order_relaxed))
             {
                 std::this_thread::yield();
@@ -77,12 +80,12 @@ class timer_manager_impl final : public i_timer_manager
         void execute()
         {
             m_target_time = timestamp_null;
-            // std::clog << "timer #" << m_id << ": before handler" << std::endl;
+            mpl_log_debug("timer manager impl #", &m_manager, ": timer: ", m_id, " execute");
             if (m_handler)
             {
                 m_handler();
             }
-            // std::clog << "timer #" << m_id << ": after handler" << std::endl;
+
             m_queued.store(false, std::memory_order_release);
         }
         // i_timer interface
@@ -91,6 +94,7 @@ class timer_manager_impl final : public i_timer_manager
         {
             if (m_target_time == timestamp_null)
             {
+                mpl_log_debug("timer manager impl #", &m_manager, ": timer: ", m_id, " set handler: ", &handler);
                 m_handler = handler;
                 return true;
             }
@@ -174,6 +178,8 @@ public:
         , m_timer_ids(0)
         , m_started(false)
     {
+        mpl_log_debug("timer manager impl #", this, ": init { ", m_config.auto_start, " }");
+
         if (m_config.auto_start)
         {
             internal_start();
@@ -182,6 +188,8 @@ public:
 
     ~timer_manager_impl()
     {
+        mpl_log_debug("timer manager impl #", this, ": destruction");
+
         internal_stop();
     }
 
@@ -190,6 +198,7 @@ public:
         bool flag = false;
         if (m_started.compare_exchange_strong(flag, true))
         {
+            mpl_log_info("timer manager impl #", this, ": starting");
             m_timer_thread = std::move(std::thread([&]{ timer_proc(); }));
             return true;
         }
@@ -202,6 +211,7 @@ public:
         bool flag = true;
         if (m_started.compare_exchange_strong(flag, false))
         {
+            mpl_log_info("timer manager impl #", this, ": stopping");
             m_signal.notify_all();
             if (m_timer_thread.joinable())
             {
@@ -221,6 +231,7 @@ public:
 
     inline void execute(timer_impl* timer)
     {
+        mpl_log_debug("timer manager impl #", this, ": execute timer: ", timer->id());
         timer->m_queued.store(true, std::memory_order_release);
         // std::clog << "timer #" << timer->id() << ": queued task" << std::endl;
         m_task_manager.add_task([timer] { timer->execute(); });
@@ -229,6 +240,7 @@ public:
     void timer_proc()
     {
         std::unique_lock lock(m_safe_mutex);
+        mpl_log_info("timer manager impl #", this, ": started");
         while(internal_is_started())
         {
             timestamp_t wait_timeout = timestamp_infinite;
@@ -261,6 +273,7 @@ public:
         }
 
         m_timeouts.clear();
+        mpl_log_info("timer manager impl #", this, ": stopped");
     }
 
     inline bool append_timer(timer_impl::r_ptr_t timer)
@@ -291,6 +304,9 @@ public:
                                                 , timer);
                 auto first = m_timeouts.begin() == it;
                 timer->m_target_time = target_time;
+
+                mpl_log_debug("timer manager impl #", this, ": timer: ", timer->id(), " started");
+
                 if (first)
                 {
                     m_signal.notify_all();
@@ -307,7 +323,13 @@ public:
     inline bool stop_timer(timer_impl::r_ptr_t timer)
     {
         std::lock_guard lock(m_safe_mutex);
-        return remove_timeout(timer);
+        if (remove_timeout(timer))
+        {
+            mpl_log_debug("timer manager impl #", this, ": timer: ", timer->id(), " stopped");
+            return true;
+        }
+
+        return false;
     }
 
     bool remove_timeout(timer_impl::r_ptr_t timer)
@@ -321,6 +343,7 @@ public:
             {
                 if (it->second == timer)
                 {
+                    mpl_log_debug("timer manager impl #", this, ": timer: ", timer->id(), " remove timeout");
                     m_timeouts.erase(it);
                     return true;
                 }

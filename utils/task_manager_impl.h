@@ -14,7 +14,6 @@ public:
     {
         bool            auto_start = false;
         std::uint32_t   max_workers = 0; // auto
-        std::uint32_t   max_queued_workers = 0; // infinite
     };
 
     static task_manager_factory& get_instance();

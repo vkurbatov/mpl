@@ -28,7 +28,6 @@ void do_log(log_level_t level
 {
     log_message_t message(level
                           , utils::time::now()
-                          , ""
                           , thread_info_t::current().name
                           , file
                           , line

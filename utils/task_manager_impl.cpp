@@ -6,7 +6,6 @@
 
 #include "tools/utils/sync_base.h"
 #include <list>
-// #include <map>
 #include <future>
 #include <queue>
 
@@ -67,11 +66,12 @@ class task_manager_impl final: public i_task_manager
                 , m_state(task_state_t::ready)
                 , m_completed(false)
             {
-
+                mpl_log_debug("task impl #", this, "{", m_task_id, "}: init");
             }
 
             ~task_impl()
             {
+                mpl_log_debug("task impl #", this, "{", m_task_id, "}: destruction");
                 while (m_state.load(std::memory_order_relaxed) == task_state_t::execute)
                 {
                     std::this_thread::yield();
@@ -84,6 +84,7 @@ class task_manager_impl final: public i_task_manager
                 if (m_state.compare_exchange_strong(need_state
                                                     , task_state_t::execute))
                 {
+                    mpl_log_debug("task impl #", this, "{", m_task_id, "}: execute");
                     m_handler();
                     complete(task_state_t::completed);
                 }
@@ -95,6 +96,7 @@ class task_manager_impl final: public i_task_manager
                 if (m_completed.compare_exchange_strong(flag
                                                         , true))
                 {
+                    mpl_log_debug("task impl #", this, "{", m_task_id, "}: completed");
                     m_promise.set_value();
                     return true;
                 }
@@ -125,8 +127,10 @@ class task_manager_impl final: public i_task_manager
 
             bool wait() override
             {
+                mpl_log_debug("task impl #", this, "{", m_task_id, "}: waining");
                 auto future = m_promise.get_future();
                 future.wait();
+                mpl_log_debug("task impl #", this, "{", m_task_id, "}: wait completed");
                 return true;
             }
 
@@ -136,6 +140,7 @@ class task_manager_impl final: public i_task_manager
                 if (m_state.compare_exchange_strong(need_state
                                                     , task_state_t::cancelled))
                 {
+                    mpl_log_debug("task impl #", this, "{", m_task_id, "}: cancelled");
                     complete(task_state_t::cancelled);
                 }
             }
@@ -223,11 +228,12 @@ class task_manager_impl final: public i_task_manager
             , m_worker_id(worker_id)
             , m_thread([&] { worker_proc(); })
         {
-
+            mpl_log_debug("task manager impl #", &m_manager, ": worker #", this, ": init { id: ", m_worker_id, " }");
         }
 
         ~worker_t()
         {
+            mpl_log_debug("task manager impl #", &m_manager, ": worker #", this, ": destruction { id: ", m_worker_id, " }");
             if (m_thread.joinable())
             {
                 m_thread.join();
@@ -239,19 +245,23 @@ class task_manager_impl final: public i_task_manager
             std::mutex                      wait_mutex;
             std::unique_lock<std::mutex>    wait_lock(wait_mutex);
 
+            mpl_log_info("task manager impl #", &m_manager, ": worker #", this, ": start");
+
             while(m_manager.is_running())
             {
                 if (auto task = m_manager.m_task_queue.fetch_task())
                 {
+                    mpl_log_trace("task manager impl #", &m_manager, ": worker #", this, ": task: ", task.get(), " execute");
                     task->execute();
                 }
                 else
                 {
+                    mpl_log_trace("task manager impl #", &m_manager, ": worker #", this, ": idle wakeup");
                     m_manager.wait(wait_lock);
-                    mpl_log_trace("Wakeup #", m_worker_id, " worker_id");
-                    // std::clog << "Wakeup #" << m_worker_id << " worker id" << std::endl;
                 }
             }
+
+            mpl_log_info("task manager impl #", &m_manager, ": worker #", this, ": completed");
         }
     };
 
@@ -276,6 +286,8 @@ public:
         : m_config(config)
         , m_running(false)
     {
+        mpl_log_debug("task manager impl #", this, ": init { ", m_config.auto_start
+                      , ", ", m_config.max_workers, " }");
         if (m_config.auto_start)
         {
             task_manager_impl::start();
@@ -284,6 +296,7 @@ public:
 
     ~task_manager_impl()
     {
+        mpl_log_debug("task manager impl #", this, ": destruction");
         task_manager_impl::stop();
 
     }
@@ -294,11 +307,14 @@ public:
         {
             return m_task_queue.pending() > 0 || !is_running();
         };
+
+        mpl_log_trace("task manager impl #", this, ": wait");
         m_signal.wait(lock, predicate);
     }
 
     inline void notify(bool all = false)
     {
+        mpl_log_trace("task manager impl #", this, ": notify(", all, ")");
         all ? m_signal.notify_all() : m_signal.notify_one();
     }
 
@@ -319,6 +335,8 @@ public:
                 return task;
             }
         }
+
+        mpl_log_error("task manager impl #", this, ": can't create task");
 
         return nullptr;
     }
@@ -344,6 +362,8 @@ public:
         bool flag = false;
         if (m_running.compare_exchange_strong(flag, true))
         {
+            mpl_log_info("task manager impl #", this, ": starting");
+
             auto worker_count = m_config.max_workers;
             if (worker_count == 0)
             {
@@ -356,6 +376,8 @@ public:
                                        , id);
             }
 
+            mpl_log_info("task manager impl #", this, ": started");
+
             return true;
         }
 
@@ -367,9 +389,11 @@ public:
         bool flag = true;
         if (m_running.compare_exchange_strong(flag, false))
         {
+            mpl_log_info("task manager impl #", this, ": stopping");
             m_running.store(false, std::memory_order_release);
             notify(true);
             m_workers.clear();
+            mpl_log_info("task manager impl #", this, ": stopped");
         }
 
         return false;

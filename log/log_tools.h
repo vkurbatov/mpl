@@ -49,12 +49,10 @@ void log_wrapper(log_level_t level
 
 #define mpl_log(level, ...) \
 if (mpl::log::has_log_level(level)) \
-{\
-    mpl::log::log_wrapper(level, __FILE__, __LINE__, __VA_ARGS__);\
-}
+    mpl::log::log_wrapper(level, __FILE__, __LINE__, __VA_ARGS__)
 
 #define mpl_log_trace(...) mpl_log(mpl::log::log_level_t::trace, __VA_ARGS__)
-#define mpl_log_debuf(...) mpl_log(mpl::log::log_level_t::debug, __VA_ARGS__)
+#define mpl_log_debug(...) mpl_log(mpl::log::log_level_t::debug, __VA_ARGS__)
 #define mpl_log_info(...) mpl_log(mpl::log::log_level_t::info, __VA_ARGS__)
 #define mpl_log_warning(...) mpl_log(mpl::log::log_level_t::warning, __VA_ARGS__)
 #define mpl_log_error(...) mpl_log(mpl::log::log_level_t::error, __VA_ARGS__)

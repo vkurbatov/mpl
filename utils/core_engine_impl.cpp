@@ -5,6 +5,8 @@
 #include "timer_manager_impl.h"
 #include "buffer_factory_impl.h"
 
+#include "log/log_tools.h"
+
 namespace mpl
 {
 
@@ -31,24 +33,45 @@ struct core_engine_impl final : public i_core_engine
         , m_timer_manager(timer_manager_factory::get_instance().create_timer_manager({}
                                                                                      , *m_task_manager))
     {
-
+        mpl_log_trace("Core engine #", this, ": init { worker_count: ", m_config.worker_count, "}");
     }
 
     ~core_engine_impl()
     {
+        mpl_log_trace("Core engine #", this, ": destruction");
         core_engine_impl::stop();
     }
 
     bool start() override
     {
-        return m_task_manager->start()
-                && m_timer_manager->start();
+        if (m_task_manager->start())
+        {
+            if (m_timer_manager->start())
+            {
+                mpl_log_info("Core engine #", this, ": start success");
+                return true;
+            }
+            mpl_log_error("Core engine #", this, ": start error: cant't start timer manager");
+            m_task_manager->stop();
+        }
+        else
+        {
+            mpl_log_error("Core engine #", this, ": start error: cant't start task manager");
+        }
+
+        return false;
     }
 
     bool stop() override
     {
-        return m_task_manager->stop()
-                & m_timer_manager->stop();
+        if (m_task_manager->stop()
+                & m_timer_manager->stop())
+        {
+            mpl_log_info("Core engine #", this, ": stop success");
+            return true;
+        }
+
+        return false;
     }
 
     bool is_started() const override
@@ -86,8 +109,6 @@ public:
     {
         return m_buffer_factory;
     }
-
-
 };
 
 core_engine_factory &core_engine_factory::get_instance()

@@ -2,6 +2,8 @@
 #include "tools/ipc/ipc_manager.h"
 #include "tools/ipc/ipc_segment.h"
 
+#include "log/log_tools.h"
+
 namespace mpl
 {
 
@@ -26,7 +28,19 @@ class ipc_shared_data_manager : public i_shared_data_manager
                     {
                         return ptr;
                     }
+                    else
+                    {
+                        mpl_log_error("ipc manager #",  &ipc_manager, ": ipc shared data #", ptr.get(), ": not valid segment");
+                    }
                 }
+                else
+                {
+                    mpl_log_error("ipc manager #",  &ipc_manager, ": shared data can't create");
+                }
+            }
+            else
+            {
+                mpl_log_error("ipc manager #", &ipc_manager, ": is not valid");
             }
 
             return nullptr;
@@ -38,12 +52,12 @@ class ipc_shared_data_manager : public i_shared_data_manager
             : m_ipc_segment(ipc_manager.create_segment(std::string(name)
                                                        , size))
         {
-
+            mpl_log_debug("ipc shared data #", this, ": init success {", name, ", ", size, "}");
         }
 
         ~ipc_shared_data()
         {
-
+            mpl_log_debug("ipc shared data #", this, ": destroy");
         }
 
         bool is_valid() const
@@ -89,8 +103,10 @@ class ipc_shared_data_manager : public i_shared_data_manager
 
         bool wait(timestamp_t timeout) override
         {
+            mpl_log_trace("ipc shared data #", this, ": waiting(", timeout, ")");
             if (timeout == timestamp_infinite)
             {
+
                 m_ipc_segment.wait();
                 return true;
             }
@@ -110,7 +126,12 @@ public:
         pt::ipc::ipc_manager ipc_manager({name, total_size });
         if (ipc_manager.is_valid())
         {
+            mpl_log_debug("ipc manager #", &ipc_manager, "{ ", name, ",", total_size, " }: creating ipc shared data manager");
             return std::make_unique<ipc_shared_data_manager>(std::move(ipc_manager));
+        }
+        else
+        {
+            mpl_log_error("ipc manager #", &ipc_manager, "{ ", name, ",", total_size, " }: is not valid");
         }
 
         return nullptr;
@@ -119,7 +140,12 @@ public:
     ipc_shared_data_manager(pt::ipc::ipc_manager&& ipc_manager)
         : m_ipc_manager(std::move(ipc_manager))
     {
+        mpl_log_debug("ipc shared data manager #", this, ": init success");
+    }
 
+    ~ipc_shared_data_manager()
+    {
+        mpl_log_debug("ipc shared data manager #", this, ": destroy");
     }
 
     i_sync_shared_data::s_ptr_t query_data(const std::string_view &name
