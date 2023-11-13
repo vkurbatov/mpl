@@ -6,6 +6,7 @@
 #include "utils/time_utils.h"
 #include "utils/adaptive_delay.h"
 #include "utils/endian_utils.h"
+#include "utils/enum_utils.h"
 #include "core/event_channel_state.h"
 
 #include "media/audio_frame_impl.h"
@@ -22,6 +23,7 @@
 #include <map>
 #include <iostream>
 
+#include "log/log_tools.h"
 
 namespace mpl::media
 {
@@ -168,7 +170,7 @@ struct stream_t
     }
 };
 
-class libav_input_device : public i_device
+class libav_input_device final : public i_device
 {
     using mutex_t = pt::utils::shared_spin_lock;
     using lock_t = std::lock_guard<mutex_t>;
@@ -260,11 +262,12 @@ public:
         , m_state(channel_state_t::ready)
         , m_open(false)
     {
-
+        mpl_log_info("libav input device #", this, ": init {", m_device_params.url, "}");
     }
 
     ~libav_input_device()
     {
+        mpl_log_info("libav input device #", this, ": destruction");
         close();
     }
 
@@ -273,6 +276,7 @@ public:
     {
         if (m_state != new_state)
         {
+            mpl_log_info("libav input device #", this, ": state: ", utils::enum_to_string(m_state), "->", utils::enum_to_string(new_state));
             m_state = new_state;
             m_router.send_message(message_event_impl<event_channel_state_t>({new_state, reason}));
         }
@@ -285,6 +289,7 @@ public:
                                            , true
                                            , std::memory_order_acquire))
         {
+            mpl_log_info("libav input device #", this, ": opening");
             change_state(channel_state_t::opening);
             m_thread = std::thread([&]{ grabbing_thread(); });
             return true;
@@ -298,6 +303,7 @@ public:
         if (m_open.load(std::memory_order_acquire))
         {
 
+            mpl_log_info("libav input device #", this, ": closing");
             change_state(channel_state_t::closing);
 
             m_open.store(false
@@ -317,6 +323,8 @@ public:
 
     void grabbing_thread()
     {
+        mpl_log_info("libav input device #", this, ": grabbing start");
+
         change_state(channel_state_t::open);
 
         std::size_t error_counter = 0;
@@ -339,6 +347,8 @@ public:
                     pt::ffmpeg::frame_ref_t libav_frame;
                     if (native_input_device.read(libav_frame))
                     {
+                        mpl_log_debug("libav input device #", this, ": read frame(", libav_frame.info.stream_id, ", ", libav_frame.size, ")");
+
                         auto& stream = streams[libav_frame.info.stream_id];
                         error_counter = 0;
                         on_native_frame(stream
@@ -352,6 +362,7 @@ public:
                     }
                     else
                     {
+                        mpl_log_debug("libav input device #", this, ": can't read frame");
                         error_counter++;
                         if (is_open())
                         {
@@ -365,6 +376,8 @@ public:
                 change_state(channel_state_t::disconnected);
             }
         }
+
+        mpl_log_info("libav input device #", this, ": grabbing completed");
     }
 
     void reset()
@@ -405,6 +418,8 @@ public:
                                                          , smart_buffer(libav_frame.data
                                                                         , libav_frame.size));
 
+                        mpl_log_debug("libav input device #", this, ": route audio frame(", stream.stream_info.program_id, ", ", stream.stream_info.stream_id, ")");
+
                         return m_router.send_message(frame);
                     }
                 }
@@ -437,6 +452,7 @@ public:
                                                          , detail::create_buffer(libav_frame
                                                                                  , stream.stream_info));
 
+                        mpl_log_debug("libav input device #", this, ": route video frame(", stream.stream_info.program_id, ", ", stream.stream_info.stream_id, ")");
 
                         return m_router.send_message(frame);
                     }
@@ -463,6 +479,8 @@ public:
             break;
             default:;
         }
+
+        mpl_log_warning("libav input device #", this, ": unsupported control: ", utils::enum_to_string(control.control_id));
 
         return false;
     }
@@ -507,6 +525,8 @@ public:
             if (device_params.load(params)
                     && device_params.is_valid())
             {
+                mpl_log_info("libav input device #", this, ": update params");
+
                 m_device_params = device_params;
                 return true;
             }

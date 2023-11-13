@@ -7,6 +7,7 @@
 #include "core/event_channel_state.h"
 #include "utils/time_utils.h"
 #include "utils/common_utils.h"
+#include "utils/enum_utils.h"
 
 #include "utils/option_helper.h"
 
@@ -18,6 +19,8 @@
 #include "tools/utils/sync_base.h"
 //#include "tools/ffmpeg/libav_stream_publisher.h"
 #include "tools/ffmpeg/libav_output_format.h"
+
+#include "log/log_tools.h"
 
 #include <shared_mutex>
 #include <thread>
@@ -345,30 +348,6 @@ class libav_output_device : public i_device
             }
 
             return track_id_undefined;
-            /*
-            auto found_track_id = option_reader(format.options()).get(opt_fmt_track_id
-                                                                      , track_id_undefined);
-            if (found_track_id == track_id_undefined)
-            {
-                track_id_t track_id = 0;
-                for (const auto& s : streams)
-                {
-                    if (s->is_compatible(format))
-                    {
-                        return track_id;
-                    }
-                    track_id++;
-                }
-            }
-            else if (auto f = get_format(found_track_id))
-            {
-                if (f->is_compatible(format))
-                {
-                    return found_track_id;
-                }
-            }
-
-            return track_id_undefined;*/
         }
 
         pt::ffmpeg::libav_output_format::config_t native_config() const
@@ -478,11 +457,12 @@ public:
         , m_open(false)
 
     {
-
+        mpl_log_info("libav output device #", this, ": init {", m_device_params.url, "}");
     }
 
     ~libav_output_device()
     {
+        mpl_log_info("libav output device #", this, ": destruction");
         close();
     }
 
@@ -491,6 +471,7 @@ public:
     {
         if (m_state != new_state)
         {
+            mpl_log_info("libav output device #", this, ": state: ", utils::enum_to_string(m_state), "->", utils::enum_to_string(new_state));
             m_state = new_state;
             m_router.send_message(message_event_impl<event_channel_state_t>({new_state, reason}));
         }
@@ -503,6 +484,7 @@ public:
                                            , true
                                            , std::memory_order_acquire))
         {
+            mpl_log_info("libav output device #", this, ": opening");
             change_state(channel_state_t::opening);
 
             m_thread = std::thread([&]{ main_proc(); });
@@ -517,6 +499,7 @@ public:
     {
         if (m_open.load(std::memory_order_acquire))
         {
+            mpl_log_info("libav output device #", this, ": closing");
             change_state(channel_state_t::closing);
 
             m_open.store(false
@@ -555,10 +538,23 @@ public:
                           << ", sz: " << buffer->size()
                           << std::endl;
 
+                mpl_log_debug("libav output device #", this
+                                , ": audio frame #", frame.frame_id()
+                                , ", time: ", frame.timestamp()
+                                , ", size: ", buffer->size());
+
                 m_frame_manager.push_frame(std::move(libav_frame));
 
                 return true;
             }
+            else
+            {
+                mpl_log_warning("libav output device #", this, ": audio frame buffer missing");
+            }
+        }
+        else
+        {
+            mpl_log_warning("libav output device #", this, ": audio frame unsupported");
         }
 
         return false;
@@ -580,12 +576,23 @@ public:
                 libav_frame.info.dts = libav_frame.info.pts;
                 libav_frame.info.key_frame = frame.frame_type() == video_frame_type_t::key_frame;
 
-                std::clog << "video #" << frame.frame_id() << ", ts: " << frame.timestamp() << std::endl;
+                mpl_log_debug("libav output device #", this
+                                , ": video frame #", frame.frame_id()
+                                , ", time: ", frame.timestamp()
+                                , ", size: ", buffer->size());
 
                 m_frame_manager.push_frame(std::move(libav_frame));
 
                 return true;
             }
+            else
+            {
+                mpl_log_warning("libav output device #", this, ": video frame buffer missing");
+            }
+        }
+        else
+        {
+            mpl_log_warning("libav output device #", this, ": video frame unsupported");
         }
 
         return false;
@@ -629,6 +636,7 @@ public:
 
     void main_proc()
     {
+        mpl_log_info("libav output device #", this, ": publishing start");
         change_state(channel_state_t::open);
 
         while(libav_output_device::is_open())
@@ -665,6 +673,7 @@ public:
                     }
                     if (err_count > default_max_repeat_errors)
                     {
+                        mpl_log_info("libav output device #", this, ": publishing start");
                         break;
                     }
 
@@ -678,6 +687,8 @@ public:
         }
 
         change_state(channel_state_t::closed);
+
+        mpl_log_info("libav output device #", this, ": publishing completed");
     }
 
     // i_channel interface

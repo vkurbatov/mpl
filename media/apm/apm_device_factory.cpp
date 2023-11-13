@@ -6,12 +6,15 @@
 #include "utils/property_writer.h"
 #include "utils/message_event_impl.h"
 #include "utils/time_utils.h"
+#include "utils/enum_utils.h"
 
 #include "core/event_channel_state.h"
 
 #include "media/audio_frame_impl.h"
 
 #include "tools/wap/wap_processor.h"
+
+#include "log/log_tools.h"
 
 namespace mpl::media
 {
@@ -57,12 +60,13 @@ public:
         , m_frame_timestamp(0)
         , m_state(channel_state_t::ready)
     {
-
+        mpl_log_info("apm_device #", this, " init {", m_device_params.wap_config.format.sample_rate
+                     , ", ", m_device_params.wap_config.format.channels, "}");
     }
 
     ~apm_device() override
     {
-
+        mpl_log_info("apm_device #", this, " destruction");
     }
 
     inline void change_state(channel_state_t new_state
@@ -70,6 +74,7 @@ public:
     {
         if (m_state != new_state)
         {
+            mpl_log_info("apm_device #", this, ": state: ", utils::enum_to_string(m_state), "->", utils::enum_to_string(new_state));
             m_state = new_state;
             m_router.send_message(message_event_impl<event_channel_state_t>({new_state, reason}));
         }
@@ -79,14 +84,16 @@ public:
     inline bool is_compatible_format(const i_audio_format& audio_format) const
     {
         return audio_format.format_id() == audio_format_id_t::pcm16
-                && audio_format.channels() == m_device_params.wap_config.format.channels
-                && audio_format.sample_rate() == m_device_params.wap_config.format.sample_rate;
+                && audio_format.channels() == static_cast<std::int32_t>(m_device_params.wap_config.format.channels)
+                && audio_format.sample_rate() == static_cast<std::int32_t>(m_device_params.wap_config.format.sample_rate);
     }
 
     inline bool on_sink_message(const i_message& message, bool capture)
     {
         if (m_native_device.is_open())
         {
+            mpl_log_debug("apm_device #", this, ": on_message(", utils::enum_to_string(message.category()), ", ", capture, ")");
+
             if (message.category() == message_category_t::data)
             {
                 auto& media_frame = static_cast<const i_media_frame&>(message);
@@ -102,6 +109,7 @@ public:
 
     bool on_sink_frame(const i_audio_frame& audio_frame, bool capture)
     {
+
         if (is_compatible_format(audio_frame.format()))
         {
             if (auto buffer = audio_frame.data().get_buffer(media_buffer_index))
@@ -118,18 +126,24 @@ public:
                 }
             }
         }
+        else
+        {
+            mpl_log_debug("apm_device #", this, ": on_frame: incompatible format");
+        }
 
         return false;
     }
 
     bool on_playback_sample(pt::wap::sample_t&& sample)
     {
+        mpl_log_debug("apm_device #", this, ": on_playback_sample(", sample.samples(), ")");
         return m_native_device.push_playback(sample.sample_data.data()
                                              , sample.samples());
     }
 
     bool on_capture_sample(pt::wap::sample_t&& sample)
     {
+        mpl_log_debug("apm_device #", this, ": on_capture_sample(", sample.samples(), ")");
         if (m_native_device.push_capture(sample.sample_data.data()
                                           , sample.samples()))
         {
@@ -154,14 +168,22 @@ public:
                         m_frame_counter++;
                         m_frame_timestamp += samples;
 
+                         mpl_log_debug("apm_device #", this, ": send result sample(", samples, ")");
+
                         return m_router.send_message(audio_frame);
                     }
-
                 }
-
+            }
+            else
+            {
+                mpl_log_debug("apm_device #", this, ": can't pop result sample");
             }
 
             return true;
+        }
+        else
+        {
+            mpl_log_debug("apm_device #", this, ": can't push capture sample");
         }
 
         return false;

@@ -10,6 +10,8 @@
 
 #include "tools/ffmpeg/libav_converter.h"
 
+#include "log/log_tools.h"
+
 namespace mpl::media
 {
 
@@ -38,13 +40,13 @@ namespace detail
 class libav_video_converter : public i_media_converter
 {
     pt::ffmpeg::libav_converter     m_native_converter;
-    video_format_impl           m_input_format;
-    video_format_impl           m_output_format;
-    i_message_sink*             m_output_sink;
+    video_format_impl               m_input_format;
+    video_format_impl               m_output_format;
+    i_message_sink*                 m_output_sink;
 
     pt::ffmpeg::fragment_info_t     m_input_fragment_info;
     pt::ffmpeg::fragment_info_t     m_output_fragment_info;
-    raw_array_t                 m_output_buffer;
+    raw_array_t                     m_output_buffer;
 
 public:
     using u_ptr_t = std::unique_ptr<libav_video_converter>;
@@ -68,11 +70,18 @@ public:
     libav_video_converter(video_format_impl &&video_format)
         : m_output_format(std::move(video_format))
     {
+        mpl_log_info("libav video converter #", this, ": init {", m_output_format.video_info().to_string(), "}");
+
         detail::fragment_info_from_format(m_output_format
                                           , m_output_fragment_info);
 
         m_output_buffer.resize(m_output_fragment_info.get_frame_size());
 
+    }
+
+    ~libav_video_converter()
+    {
+        mpl_log_info("libav video converter #", this, ": destruction");
     }
 
     bool check_or_update_format(const i_video_format& video_format)
@@ -83,6 +92,9 @@ public:
             if (!video_format.is_compatible(m_input_format))
             {
                 m_input_format.assign(video_format);
+
+                mpl_log_info("libav video converter #", this, ": update input format: ", m_input_format.video_info().to_string());
+
                 if (detail::fragment_info_from_format(m_input_format
                                                       , m_input_fragment_info))
                 {
@@ -128,8 +140,14 @@ public:
                                                                      , smart_buffer(m_output_buffer.data()
                                                                      , m_output_buffer.size()));
 
+                    mpl_log_debug("libav video converter #", this, ": send conversion frame #", converted_video_frame.frame_id());
+
                     return m_output_sink->send_message(converted_video_frame);
                 }
+            }
+            else
+            {
+                mpl_log_warning("libav video converter #", this, ": nothing frame data buffer");
             }
         }
 
@@ -148,6 +166,7 @@ public:
                 const auto& video_frame = static_cast<const i_video_frame&>(media_frame);
                 if (video_frame.format().is_compatible(m_output_format))
                 {
+                    mpl_log_debug("libav video converter #", this, ": transit frame #", video_frame.frame_id());
                     return m_output_sink->send_message(message);
                 }
                 return on_video_frame(video_frame);

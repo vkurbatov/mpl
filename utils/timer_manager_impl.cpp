@@ -233,7 +233,6 @@ public:
     {
         mpl_log_debug("timer manager impl #", this, ": execute timer: ", timer->id());
         timer->m_queued.store(true, std::memory_order_release);
-        // std::clog << "timer #" << timer->id() << ": queued task" << std::endl;
         m_task_manager.add_task([timer] { timer->execute(); });
     }
 

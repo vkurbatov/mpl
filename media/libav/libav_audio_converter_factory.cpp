@@ -12,6 +12,8 @@
 
 #include "tools/ffmpeg/libav_resampler.h"
 
+#include "log/log_tools.h"
+
 namespace mpl::media
 {
 
@@ -96,9 +98,15 @@ public:
                            , m_output_format.frame_size())
         , m_frame_id(0)
     {
+        mpl_log_info("libav audio converter #", this, ": init {", m_output_format.audio_info().to_string(), "}");
         detail::audio_info_from_format(m_output_format
                                        , m_output_audio_info);
 
+    }
+
+    ~libav_audio_converter()
+    {
+        mpl_log_info("libav audio converter #", this, ": destruction");
     }
 
     bool check_or_update_format(const i_audio_format& audio_format)
@@ -109,6 +117,9 @@ public:
             if (!audio_format.is_compatible(m_input_format))
             {
                 m_input_format.assign(audio_format);
+
+                mpl_log_info("libav audio converter #", this, ": update input format: ", m_input_format.audio_info().to_string());
+
                 return detail::audio_info_from_format(m_input_format
                                                       , m_input_audio_info);
             }
@@ -141,43 +152,12 @@ public:
                                                       , output_samples.size());
 
             }
+
+            mpl_log_debug("libav audio converter #", this, ": resample frames: ", frames.size());
         }
 
         return frames;
 
-        /*
-        if (m_audio_splitter.frame_size() == 0)
-        {
-            auto output_samples = m_native_resampler.resample(m_input_audio_info
-                                                              , data
-                                                              , size
-                                                              , m_output_audio_info);
-            if (!output_samples.empty())
-            {
-                frames.emplace(std::move(output_samples));
-            }
-        }
-        else
-        {
-            auto queue = m_audio_splitter.push_frame(data
-                                                     , size);
-            while(!queue.empty())
-            {
-                auto output_samples = m_native_resampler.resample(m_input_audio_info
-                                                                  , queue.front().data()
-                                                                  , queue.front().size()
-                                                                  , m_output_audio_info);
-                if (!output_samples.empty())
-                {
-                    frames.emplace(std::move(output_samples));
-                }
-
-                queue.pop();
-            }
-        }
-
-        return frames;
-        */
     }
 
     bool on_audio_frame(const i_audio_frame& audio_frame)
@@ -216,6 +196,8 @@ public:
                     converted_audio_frame.smart_buffers().set_buffer(media_buffer_index
                                                                     , smart_buffer(std::move(frames.front())));
 
+                    mpl_log_debug("libav audio converter #", this, ": send conversion frame #", m_frame_id);
+
                     result |= m_output_sink->send_message(converted_audio_frame);
 
                     m_frame_id ++;
@@ -225,6 +207,10 @@ public:
                 }
 
                 return result;
+            }
+            else
+            {
+                mpl_log_warning("libav audio converter #", this, ": nothing frame data buffer");
             }
         }
 
@@ -243,10 +229,11 @@ public:
                 const auto& audio_frame = static_cast<const i_audio_frame&>(media_frame);
                 if (detail::is_compatible(audio_frame
                                           , m_output_format))
-                //if (audio_frame.format().is_compatible(m_output_format))
                 {
+                    mpl_log_debug("libav audio converter #", this, ": transit frame #", audio_frame.frame_id());
                     return m_output_sink->send_message(message);
                 }
+
                 return on_audio_frame(audio_frame);
             }
         }
