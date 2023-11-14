@@ -622,7 +622,7 @@ class ice_transport_impl : public i_ice_transport
             , m_recheck(false)
             , m_state(ice_state_t::frozen)
         {
-            mpl_log_debug("ice pair #", this, " init, owner: ", &m_owner, "socket: ", &m_socket);
+            mpl_log_debug("ice pair #", this, " init, owner: ", &m_owner, ", socket: ", &m_socket);
             m_socket.add_pair(this);
         }
 
