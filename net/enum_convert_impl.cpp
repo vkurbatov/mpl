@@ -70,6 +70,15 @@ __declare_enum_converter_begin(ice_mode_t)
     __declare_enum_pair(ice_mode_t, lite)
 __declare_enum_converter_end(ice_mode_t)
 
+__declare_enum_converter_begin(ice_state_t)
+    __declare_enum_pair(ice_state_t, frozen),
+    __declare_enum_pair(ice_state_t, waiting),
+    __declare_enum_pair(ice_state_t, in_progress),
+    __declare_enum_pair(ice_state_t, succeeded),
+    __declare_enum_pair(ice_state_t, failed),
+    __declare_enum_pair(ice_state_t, shutdown)
+__declare_enum_converter_end(ice_state_t)
+
 __declare_enum_converter_begin(tls_hash_method_t)
     __declare_enum_pair(tls_hash_method_t, undefined),
     __declare_enum_pair(tls_hash_method_t, md4),

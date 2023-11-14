@@ -588,6 +588,7 @@ smart_buffer stun_message_t::build_packet(const std::string& password) const
     reinterpret_cast<stun_mapped_header_t*>(buffer.data())->set_class(message_class);
     reinterpret_cast<stun_mapped_header_t*>(buffer.data())->set_method(method);
     reinterpret_cast<stun_mapped_header_t*>(buffer.data())->cookie = stun_message_cookie;
+
     std::memcpy(reinterpret_cast<stun_mapped_header_t*>(buffer.data())->transaction_id
                 , transaction_id.data()
                 , transaction_id.size());

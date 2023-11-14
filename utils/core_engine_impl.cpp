@@ -33,12 +33,12 @@ struct core_engine_impl final : public i_core_engine
         , m_timer_manager(timer_manager_factory::get_instance().create_timer_manager({}
                                                                                      , *m_task_manager))
     {
-        mpl_log_trace("Core engine #", this, ": init { worker_count: ", m_config.worker_count, "}");
+        mpl_log_info("Core engine #", this, ": init { worker_count: ", m_config.worker_count, "} ");
     }
 
     ~core_engine_impl()
     {
-        mpl_log_trace("Core engine #", this, ": destruction");
+        mpl_log_info("Core engine #", this, ": destruction");
         core_engine_impl::stop();
     }
 

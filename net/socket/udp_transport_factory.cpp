@@ -13,13 +13,17 @@
 #include "utils/smart_buffer.h"
 #include "utils/message_router_impl.h"
 #include "utils/message_sink_impl.h"
+#include "utils/enum_utils.h"
 
 #include "net/net_module_types.h"
 #include "net/net_utils.h"
 #include "net/net_engine_impl.h"
 
+#include "log/log_tools.h"
+
 #include "tools/io/net/udp_link.h"
 #include "tools/io/net/udp_link_config.h"
+
 
 namespace mpl::net
 {
@@ -60,12 +64,17 @@ public:
                  , m_udp_params.options)
         , m_state(channel_state_t::ready)
     {
+        mpl_log_debug("udp transport impl #", this, ": init { ", m_udp_params.local_endpoint.socket_address.to_string()
+                     , ", ", m_udp_params.options.reuse_address, "} ");
+
         m_link.set_message_handler([&](auto&& ...args) { on_link_message(args...); });
         m_link.set_state_handler([&](auto&& ...args) { on_link_state(args...); });
     }
 
     ~udp_transport_impl()
     {
+        mpl_log_debug("udp transport impl #", this, ": destruction");
+
         m_link.control(pt::io::link_control_id_t::close);
         m_link.set_message_handler(nullptr);
         m_link.set_state_handler(nullptr);
@@ -79,9 +88,13 @@ public:
         if (m_state != new_state)
         {
             m_state = new_state;
+
+            mpl_log_info("udp transport impl #", this, ": state: ", utils::enum_to_string(m_state), "->", utils::enum_to_string(new_state));
+
             if (new_state == channel_state_t::open)
             {
                 m_udp_params.local_endpoint.socket_address = m_link.local_endpoint();
+                mpl_log_info("udp transport impl #", this, ": open socket: ", m_link.local_endpoint().to_string());
             }
             m_router.send_message(message_event_impl(event_channel_state_t(new_state
                                                                             , reason))
@@ -114,11 +127,13 @@ public:
 
             if (socket_packet.address().is_valid())
             {
+                mpl_log_trace("udp transport impl #", this, ": send packet(", socket_packet.size(), ") to ", socket_packet.address().to_string());
                 return m_link.send_to(message
                                       , socket_packet.address());
             }
             else
             {
+                mpl_log_trace("udp transport impl #", this, ": send packet(", socket_packet.size(), ")");
                 return m_link.send(message);
             }
         }
@@ -137,6 +152,8 @@ public:
 
             udp_packet_impl socket_packet(std::move(packet_buffer)
                                           , socket_endpoint.socket_address);
+
+            mpl_log_trace("udp transport impl #", this, ": on packet(", socket_packet.size(), ") from ", socket_endpoint.socket_address.to_string());
 
             m_router.send_message(socket_packet);
         }
@@ -191,8 +208,18 @@ public:
 public:
     bool set_params(const i_property &params) override
     {
-        return utils::property::deserialize(m_udp_params
-                                            , params);
+        if (utils::property::deserialize(m_udp_params
+                                         , params))
+        {
+            mpl_log_info("udp transport impl #", this, ": update params");
+            return true;
+        }
+        else
+        {
+            mpl_log_warning("udp transport impl #", this, ": can't deserialize params");
+        }
+
+        return false;
     }
 
     bool get_params(i_property &params) const override
@@ -236,6 +263,7 @@ public:
     {
         if (!is_open())
         {
+            mpl_log_warning("udp transport impl #", this, ": set local endpoint: ", endpoint.socket_address.to_string());
             m_udp_params.local_endpoint = endpoint;
             return true;
         }
@@ -245,6 +273,7 @@ public:
 
     bool set_remote_endpoint(const udp_endpoint_t &endpoint) override
     {
+        mpl_log_warning("udp transport impl #", this, ": set remote endpoint: ", endpoint.socket_address.to_string());
         m_udp_params.remote_endpoint = endpoint;
         return true;
     }

@@ -30,6 +30,9 @@
 
 #include "net/i_transport_collection.h"
 
+#include "log/log_tools.h"
+
+
 #include <atomic>
 
 namespace mpl::media
@@ -131,11 +134,12 @@ struct media_engine_impl final : public i_media_engine
                                      , m_media_converter_factory)
         , m_start(false)
     {
-
+        mpl_log_info("Media engine #", this, ": init");
     }
 
     ~media_engine_impl()
     {
+        mpl_log_info("Media engine #", this, ": destruction");
         media_engine_impl::stop();
     }
 
@@ -143,11 +147,14 @@ struct media_engine_impl final : public i_media_engine
     {
         bool flag  = false;
         if (m_start.compare_exchange_strong(flag, true))
-        {
+        {            
             if (m_task_manager.is_started())
             {
+                mpl_log_info("Media engine #", this, ": start success");
                 return true;
             }
+
+            mpl_log_error("Media engine #", this, ": start error: task manager not started");
 
             m_start.store(false, std::memory_order_release);
         }
@@ -158,7 +165,13 @@ struct media_engine_impl final : public i_media_engine
     bool stop() override
     {
         bool flag = true;
-        return m_start.compare_exchange_strong(flag, false);
+        if (m_start.compare_exchange_strong(flag, false))
+        {
+            mpl_log_info("Media engine #", this, ": stop success");
+            return true;
+        }
+
+        return false;
     }
 
     bool is_started() const override
@@ -246,6 +259,7 @@ struct media_engine_impl final : public i_media_engine
             break;
             default:;
         }
+
 
         return nullptr;
     }

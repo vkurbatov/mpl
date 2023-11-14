@@ -26,6 +26,8 @@
 #include "ice_transport_params.h"
 #include "ice_controller.h"
 
+#include "log/log_tools.h"
+
 #include "tools/utils/sync_base.h"
 #include "tools/io/net/net_utils.h"
 
@@ -101,7 +103,7 @@ class ice_transport_impl : public i_ice_transport
     static constexpr std::uint64_t ice_gathering_id = 0;
     static constexpr std::uint64_t ice_binding_id = 1;
 
-    struct candidate_pair_t;
+    struct ice_pair_t;
 
     struct ice_socket_t : public ice_controller::i_listener
     {
@@ -116,7 +118,7 @@ class ice_transport_impl : public i_ice_transport
             }
         };
 
-        using pair_map_t = std::unordered_map<socket_address_t, candidate_pair_t*>;
+        using pair_map_t = std::unordered_map<socket_address_t, ice_pair_t*>;
 
         ice_transport_impl&             m_owner;
         i_socket_transport::u_ptr_t     m_socket;
@@ -147,29 +149,33 @@ class ice_transport_impl : public i_ice_transport
             , m_need_gathering(false)
             , m_established(false)
         {
+            mpl_log_debug("ice socket #", this, ": init, owner: ", &m_owner, ", socket: ", m_socket.get());
             m_socket->source(0)->add_sink(&m_socket_sink);
         }
 
         ~ice_socket_t()
         {
+            mpl_log_debug("ice socket #", this, ": destruction");
             control(channel_control_t::close());
             change_gathering_state(ice_gathering_state_t::closed);
             m_socket->source(0)->remove_sink(&m_socket_sink);
         }
 
-        inline bool add_pair(candidate_pair_t* pair)
+        inline bool add_pair(ice_pair_t* pair)
         {
+            mpl_log_debug("ice socket #", this, ": add_pair: ", pair->m_remote_candidate.to_string());
             return m_pairs.emplace(pair->m_remote_candidate.connection_address
                                    , pair).second;
         }
 
-        inline bool remove_pair(candidate_pair_t* pair)
+        inline bool remove_pair(ice_pair_t* pair)
         {
             if (auto it = m_pairs.find(pair->m_remote_candidate.connection_address)
                     ; it != m_pairs.end())
             {
                 if (it->second == pair)
                 {
+                    mpl_log_debug("ice socket #", this, ": remove_pair: ", pair->m_remote_candidate.to_string());
                     m_pairs.erase(it);
                     return true;
                 }
@@ -198,6 +204,7 @@ class ice_transport_impl : public i_ice_transport
         {
             if (m_established != established)
             {
+                mpl_log_debug("ice socket #", this, ": established: ", established);
                 m_established = established;
                 m_owner.on_socket_established(*this
                                               , established);
@@ -208,7 +215,12 @@ class ice_transport_impl : public i_ice_transport
         {
             if (m_gathering_state != new_state)
             {
+                mpl_log_info("ice socket #", this
+                             , ": gathering state: ", utils::enum_to_string(m_gathering_state)
+                             , "->", utils::enum_to_string(new_state));
+
                 m_gathering_state = new_state;
+
                 m_owner.on_socket_gathering_state(*this
                                                   , new_state);
             }
@@ -230,11 +242,19 @@ class ice_transport_impl : public i_ice_transport
                     if (m_owner.on_socket_candidate(*this
                                                     , candidate))
                     {
+                        mpl_log_info("ice socket #", this
+                                     , ": add new candidate: ", candidate.to_string());
+
                         m_local_candidates.emplace_back(candidate);
                     };
                 }
 
                 return true;
+            }
+            else
+            {
+                mpl_log_debug("ice socket #", this
+                             , ": can't add new candidate: ", address.to_string());
             }
 
             return false;
@@ -245,6 +265,10 @@ class ice_transport_impl : public i_ice_transport
             if (m_mapped_address != mapped_address)
             {
                 m_mapped_address = mapped_address;
+
+                mpl_log_info("ice socket #", this
+                             , ": new mapped address: ", mapped_address.to_string());
+
                 add_candidate(mapped_address
                               , ice_candidate_type_t::srflx);
 
@@ -318,6 +342,7 @@ class ice_transport_impl : public i_ice_transport
 
         inline void stop_gathering(bool completed = true)
         {
+
             m_need_gathering = false;
             m_gathering_timer->stop();
             on_gathering_completed(completed);
@@ -338,6 +363,10 @@ class ice_transport_impl : public i_ice_transport
                     udp_packet_impl socket_packet(smart_buffer(&packet)
                                                   , address);
 
+                    mpl_log_trace("ice socket #", this
+                                 , ": send packet: address: ", address.to_string()
+                                 , ", size: ", packet.size());
+
                     return sink->send_message(socket_packet);
                 }
             }
@@ -345,7 +374,7 @@ class ice_transport_impl : public i_ice_transport
             return false;
         }
 
-        inline candidate_pair_t* get_pair(const socket_address_t& address)
+        inline ice_pair_t* get_pair(const socket_address_t& address)
         {
             if (auto it = m_pairs.find(address)
                     ; it != m_pairs.end())
@@ -356,7 +385,7 @@ class ice_transport_impl : public i_ice_transport
             return nullptr;
         }
 
-        inline candidate_pair_t* get_or_append_pair(const socket_address_t& address
+        inline ice_pair_t* get_or_append_pair(const socket_address_t& address
                                                     , std::uint32_t priority = 0)
         {
             if (auto pair = get_pair(address))
@@ -373,8 +402,12 @@ class ice_transport_impl : public i_ice_transport
 
             if (m_owner.internal_add_remote_candidate(new_candidate))
             {
+                mpl_log_info("ice socket #", this
+                             , ": append new candidate: ", new_candidate.to_string());
                 return get_pair(address);
             }
+
+
 
             return nullptr;
         }
@@ -382,6 +415,8 @@ class ice_transport_impl : public i_ice_transport
         inline bool on_socket_state(channel_state_t new_state
                                     , const std::string_view& reason)
         {
+            mpl_log_info("ice socket #", this
+                         , ": socket state: ", utils::enum_to_string(new_state));
             switch(new_state)
             {
                 case channel_state_t::open:
@@ -434,11 +469,22 @@ class ice_transport_impl : public i_ice_transport
                         stun_packet_impl stun_packet(smart_buffer(&packet)
                                                      , socket_packet.address());
 
-                        return m_ice_controller.push_packet(stun_packet);
+                        if (stun_packet.is_valid())
+                        {
+                            mpl_log_trace("ice socket #", this
+                                         , ": on stun packet: address: ", socket_packet.address().to_string()
+                                         , ", size: ", packet.size());
+
+                            return m_ice_controller.push_packet(stun_packet);
+                        }
                     }
                     break;
                     default:
                     {
+                        mpl_log_trace("ice socket #", this
+                                     , ": on socket packet: address: ", socket_packet.address().to_string()
+                                     , ", size: ", packet.size());
+
                         if (m_owner.m_ice_params.mode == ice_mode_t::undefined)
                         {
                             if (auto pair = get_or_append_pair(socket_packet.address()))
@@ -511,6 +557,10 @@ class ice_transport_impl : public i_ice_transport
                                                        , transaction
                                                        , true);
             }
+            else
+            {
+                mpl_log_debug("ice socket #", this, " request: pair not found");
+            }
 
             return false;
         }
@@ -541,6 +591,10 @@ class ice_transport_impl : public i_ice_transport
                                                                , transaction
                                                                , false);
                     }
+                    else
+                    {
+                        mpl_log_debug("ice socket #", this, " response: pair not found");
+                    }
                 }
             }
 
@@ -548,9 +602,9 @@ class ice_transport_impl : public i_ice_transport
         }
     };
 
-    struct candidate_pair_t
+    struct ice_pair_t
     {
-        using list_t = std::list<candidate_pair_t>;
+        using list_t = std::list<ice_pair_t>;
         using iter_t = list_t::iterator;
 
         ice_transport_impl&         m_owner;
@@ -560,7 +614,7 @@ class ice_transport_impl : public i_ice_transport
 
         ice_state_t                 m_state;
 
-        candidate_pair_t(ice_socket_t& socket
+        ice_pair_t(ice_socket_t& socket
                          , const ice_candidate_t& candidate)
             : m_owner(socket.m_owner)
             , m_socket(socket)
@@ -568,11 +622,14 @@ class ice_transport_impl : public i_ice_transport
             , m_recheck(false)
             , m_state(ice_state_t::frozen)
         {
+            mpl_log_debug("ice pair #", this, " init, owner: ", &m_owner, "socket: ", &m_socket);
             m_socket.add_pair(this);
         }
 
-        ~candidate_pair_t()
+        ~ice_pair_t()
         {
+            mpl_log_debug("ice pair #", this, " destruction");
+
             m_socket.remove_pair(this);
             if (is_active())
             {
@@ -591,6 +648,9 @@ class ice_transport_impl : public i_ice_transport
         {
             if (m_state != new_state)
             {
+                mpl_log_info("ice pair #", this, " state: ", utils::enum_to_string(m_state)
+                              , "->", utils::enum_to_string(new_state));
+
                 m_state = new_state;
                 m_owner.on_pair_state(*this
                                       , new_state);
@@ -599,12 +659,14 @@ class ice_transport_impl : public i_ice_transport
 
         inline bool send_packet(const i_message_packet& packet)
         {
+            mpl_log_trace("ice pair #", this, " send packet: size", packet.size());
             return m_socket.send_packet(packet
                                         , m_remote_candidate.connection_address);
         }
 
         inline bool send_check()
         {
+            mpl_log_trace("ice pair #", this, " send check");
             return m_socket.send_transaction(m_owner.create_ice_request(*this));
         }
 
@@ -650,17 +712,17 @@ class ice_transport_impl : public i_ice_transport
             return false;
         }
 
-        inline bool operator == (const candidate_pair_t& other) const
+        inline bool operator == (const ice_pair_t& other) const
         {
             return this == &other;
         }
 
-        inline bool operator < (const candidate_pair_t& other) const
+        inline bool operator < (const ice_pair_t& other) const
         {
             return priority() < other.priority();
         }
 
-        inline bool operator > (const candidate_pair_t& other) const
+        inline bool operator > (const ice_pair_t& other) const
         {
             return priority() > other.priority();
         }
@@ -695,6 +757,8 @@ class ice_transport_impl : public i_ice_transport
 
         bool on_socket_packet(const i_net_packet& packet)
         {
+            mpl_log_trace("ice pair #", this, " send packet: transport: ", utils::enum_to_string(packet.transport_id())
+                          , ", size: ", packet.size());
             return m_owner.on_pair_packet(*this
                                           , packet);
         }
@@ -716,9 +780,9 @@ class ice_transport_impl : public i_ice_transport
     i_timer::u_ptr_t                    m_checking_timer;
 
 
-    candidate_pair_t::list_t            m_pairs;
-    candidate_pair_t*                   m_active_pair;
-    candidate_pair_t*                   m_checking_pair;
+    ice_pair_t::list_t            m_pairs;
+    ice_pair_t*                   m_active_pair;
+    ice_pair_t*                   m_checking_pair;
 
     std::uint64_t                       m_tie_breaker;
     bool                                m_controlling;
@@ -769,11 +833,13 @@ public:
         , m_state(channel_state_t::ready)
         , m_gathering_state(ice_gathering_state_t::ready)
     {
+        mpl_log_debug("ice transport impl: #", this, " init");
         // initialize();
     }
 
     ~ice_transport_impl()
     {
+        mpl_log_debug("ice transport impl: #", this, " destruction");
         close();
     }
 
@@ -800,13 +866,17 @@ public:
             it = m_ice_params.sockets.erase(it);
         }
 
+        mpl_log_info("ice transport impl: #", this, " initialize ", m_sockets.size(), " sockets");
+
         return !m_sockets.empty();
     }
 
 
     void update_pairs(const ice_candidate_t::array_t& remote_candidates)
     {
+        mpl_log_info("ice transport impl: #", this, " update pairs");
         // 1. remove undefined pairs
+
 
         for (auto it = m_pairs.begin()
              ; it != m_pairs.end()
@@ -856,7 +926,7 @@ public:
             }
         }
 
-        m_pairs.sort(std::greater<candidate_pair_t>());
+        m_pairs.sort(std::greater<ice_pair_t>());
 
     }
 
@@ -865,7 +935,7 @@ public:
         update_pairs(m_ice_params.remote_endpoint.candidates);
     }
 
-    candidate_pair_t* next_pair(candidate_pair_t* pair)
+    ice_pair_t* next_pair(ice_pair_t* pair)
     {
         if (m_active_pair != nullptr)
         {
@@ -878,7 +948,7 @@ public:
                 return &m_pairs.front();
             }
 
-            candidate_pair_t::iter_t it = std::find_if(m_pairs.begin()
+            ice_pair_t::iter_t it = std::find_if(m_pairs.begin()
                                                        , m_pairs.end()
                                                        , [pair] (const auto& p) { return pair == &p; } );
             if (it != m_pairs.end())
@@ -898,7 +968,7 @@ public:
         return nullptr;
     }
 
-    inline void set_checking_pair(candidate_pair_t* checking_pair)
+    inline void set_checking_pair(ice_pair_t* checking_pair)
     {
         if (m_checking_pair != checking_pair)
         {
@@ -910,11 +980,14 @@ public:
                 }
             }
 
+            mpl_log_debug("ice transport impl: #", this, " change checking pair: ", m_checking_pair
+                          , "->", checking_pair);
+
             m_checking_pair = checking_pair;
         }
     }
 
-    void set_active_pair(candidate_pair_t* active_pair)
+    void set_active_pair(ice_pair_t* active_pair)
     {
         if (m_active_pair != active_pair)
         {
@@ -925,6 +998,9 @@ public:
                                      , m_active_pair->m_remote_candidate.to_string());
             }
 
+
+            mpl_log_info("ice transport impl: #", this, " change active pair: ", m_active_pair
+                          , "->", active_pair);
 
             m_active_pair = active_pair;
 
@@ -949,9 +1025,12 @@ public:
             {
                 if (socket->transport_id() == socket_endpoint.transport_id)
                 {
+                    mpl_log_info("ice transport impl: #", this, " create socket: ", socket.get());
                     return socket;
                 }
             }
+
+            mpl_log_warning("ice transport impl: #", this, " can't create socket: ", socket_endpoint.socket_address.to_string());
         }
 
         return nullptr;
@@ -1004,6 +1083,7 @@ public:
         {
             m_ice_params.local_endpoint.candidates.push_back(new_candidate);
         }
+
         return new_candidate;
     }
 
@@ -1028,6 +1108,10 @@ public:
     {
         if (m_gathering_state != new_state)
         {
+            mpl_log_info("ice transport impl #", this
+                         , ": gathering state: ", utils::enum_to_string(m_gathering_state)
+                         , "->", utils::enum_to_string(new_state));
+
             m_gathering_state = new_state;
             m_router.send_message(message_event_impl<ice_gathering_state_event_t
                                   , net_module_id>(ice_gathering_state_event_t(new_state
@@ -1041,6 +1125,10 @@ public:
     {
         if (m_state != new_state)
         {
+            mpl_log_info("ice transport impl #", this
+                         , ": state: ", utils::enum_to_string(m_state)
+                         , "->", utils::enum_to_string(new_state));
+
             m_state = new_state;
             m_router.send_message(message_event_impl(event_channel_state_t(new_state
                                                                            , reason))
@@ -1056,6 +1144,9 @@ public:
                 && m_ice_params.is_full())
         {
             bool result = false;
+
+            mpl_log_debug("ice transport impl #", this
+                         , " do checking");
 
             set_checking_pair(next_pair(m_checking_pair));
 
@@ -1078,6 +1169,9 @@ public:
 
     inline bool stop_checking()
     {
+        mpl_log_debug("ice transport impl #", this
+                     , " stop checking");
+
         m_checking_timer->stop();
         set_active_pair(nullptr);
         return true;
@@ -1086,6 +1180,9 @@ public:
     std::size_t control_sockets(const channel_control_t& control)
     {
         std::size_t result = 0;
+
+        mpl_log_info("ice transport impl #", this
+                     , " control sockets: ", utils::enum_to_string(control.control_id));
 
         for (auto& s : m_sockets)
         {
@@ -1102,6 +1199,9 @@ public:
     {
         if (!m_open)
         {
+            mpl_log_info("ice transport impl #", this
+                         , " opening");
+
             m_ice_params.local_endpoint.candidates.clear();
             change_channel_state(channel_state_t::opening);
 
@@ -1116,8 +1216,18 @@ public:
                     change_channel_state(channel_state_t::open);
                     return true;
                 }
+                else
+                {
+                    mpl_log_error("ice transport impl #", this
+                                 , ": can't open sockets");
+                }
 
                 m_open = false;
+            }
+            else
+            {
+                mpl_log_error("ice transport impl #", this
+                             , ": can't initialize sockets");
             }
 
             change_channel_state(channel_state_t::failed);
@@ -1130,6 +1240,9 @@ public:
     {
         if (m_open)
         {
+            mpl_log_info("ice transport impl #", this
+                         , " closing");
+
             change_channel_state(channel_state_t::closing);
             shutdown();
             m_open = false;
@@ -1146,6 +1259,9 @@ public:
         if (m_open
                 && !m_connect)
         {
+            mpl_log_info("ice transport impl #", this
+                         , " connecting");
+
             change_channel_state(channel_state_t::connecting);
             m_connect = true;
             start_checking();
@@ -1160,6 +1276,9 @@ public:
         if (m_open
                 && m_connect)
         {
+            mpl_log_info("ice transport impl #", this
+                         , " shutdown");
+
             change_channel_state(channel_state_t::disconnecting);
             stop_checking();
             m_connect = false;
@@ -1174,6 +1293,9 @@ public:
         if (command.module_id() == net_module_id
                 && command.command().command_id == ice_gathering_command_t::id)
         {
+            mpl_log_info("ice transport impl #", this
+                         , " on command: ice gathering");
+
             for (auto& s : m_sockets)
             {
                 if (s.is_established())
@@ -1192,6 +1314,11 @@ public:
         if (auto active_pair = m_active_pair)
         {
             return active_pair->send_packet(packet);
+        }
+        else
+        {
+            mpl_log_debug("ice transport impl #", this
+                         , " on packet: out of active pair");
         }
 
         return false;
@@ -1227,6 +1354,7 @@ public:
 
     ice_transaction_t create_stun_request(const ice_server_params_t& stun_server)
     {
+
         ice_transaction_t request;
 
         request.tag = ice_gathering_id;
@@ -1240,7 +1368,7 @@ public:
         return request;
     }
 
-    ice_transaction_t create_ice_request(candidate_pair_t& pair)
+    ice_transaction_t create_ice_request(ice_pair_t& pair)
     {
         ice_transaction_t request;
 
@@ -1272,7 +1400,9 @@ public:
                                        , candidate.connection_address
                                        , candidate.transport) == nullptr)
             {
+
                 m_ice_params.remote_endpoint.candidates.emplace_back(candidate);
+                mpl_log_info("ice transport impl: #", this, " add remote candidate: ", candidate.to_string());
                 update_pairs(m_ice_params.remote_endpoint.candidates);
                 return true;
             }
@@ -1361,12 +1491,14 @@ public:
         }
     }
 
-    void on_pair_ice_request(candidate_pair_t& pair
+    void on_pair_ice_request(ice_pair_t& pair
                              , ice_transaction_t& transaction)
     {
         bool change_role = false;
         if (has_role_conflict(transaction.request.controlling))
         {
+            mpl_log_info("ice transport impl: #", this, " request: ice role confict");
+
             bool need_switch_role = !m_ice_params.is_full()
                     || m_controlling == (m_tie_breaker >= transaction.request.tie_breaker);
             if (need_switch_role)
@@ -1377,18 +1509,21 @@ public:
 
             change_role = true;
             m_controlling ^= true;
+            mpl_log_info("ice transport impl: #", this, " request: ice change role: ", m_controlling);
         }
 
         transaction.response.result = ice_transaction_t::ice_result_t::success;
 
         if (transaction.request.use_candidate)
         {
+            mpl_log_debug("ice transport impl: #", this, " request: ice pair #", &pair, " use candidate");
             set_active_pair(&pair);
         }
         else
         {
             if (change_role)
             {
+                mpl_log_info("ice transport impl: #", this, " request: ice pair #", &pair, " set recheck");
                 pair.m_recheck = true;
                 set_checking_pair(&pair);
                 start_checking();
@@ -1396,7 +1531,7 @@ public:
         }
     }
 
-    void on_pair_ice_response(candidate_pair_t& pair
+    void on_pair_ice_response(ice_pair_t& pair
                              , ice_transaction_t& transaction)
     {
         bool is_active = pair.is_active();
@@ -1411,12 +1546,14 @@ public:
 
                 if (transaction.request.use_candidate)
                 {
+                    mpl_log_debug("ice transport impl: #", this, " response: ice pair #", &pair, " use candidate");
                     set_active_pair(&pair);
                 }
                 else
                 {
                     if (transaction.request.controlling)
                     {
+                        mpl_log_info("ice transport impl: #", this, " response: ice pair #", &pair, " set recheck");
                         pair.m_recheck = true;
                     }
                 }
@@ -1440,6 +1577,9 @@ public:
                         case error_role_conflict:
                         {
                             m_controlling ^= true;
+
+                            mpl_log_info("ice transport impl: #", this, " response: ice change role: ", m_controlling);
+
                             pair.m_recheck = is_checking;
                         }
                         break;
@@ -1457,7 +1597,7 @@ public:
         }
     }
 
-    inline bool on_pair_ice_transaction(candidate_pair_t& pair
+    inline bool on_pair_ice_transaction(ice_pair_t& pair
                                  , ice_transaction_t& transaction
                                  , bool request)
     {
@@ -1491,6 +1631,9 @@ public:
 
     inline void start_checking(timestamp_t timeout = 0)
     {
+        mpl_log_debug("ice transport impl #", this
+                     , " start checking");
+
         switch(m_ice_params.mode)
         {
             case ice_mode_t::aggressive:
@@ -1509,13 +1652,13 @@ public:
         }
     }
 
-    inline void on_pair_state(candidate_pair_t& pair
+    inline void on_pair_state(ice_pair_t& pair
                               , ice_state_t state)
     {
 
     }
 
-    inline bool on_pair_packet(candidate_pair_t& pair
+    inline bool on_pair_packet(ice_pair_t& pair
                                 , const i_net_packet& packet)
     {
         if (m_active_pair == &pair)
@@ -1569,6 +1712,8 @@ public:
         if (utils::property::deserialize(ice_params
                                           , params))
         {
+            mpl_log_info("ice transport impl: #", this, " update params");
+
             ice_params.sockets = m_ice_params.sockets;
             ice_params.local_endpoint.candidates = m_ice_params.local_endpoint.candidates;
 
@@ -1658,6 +1803,8 @@ public:
     bool set_local_endpoint(const ice_endpoint_t &local_endpoint) override
     {
         lock_t lock(m_safe_mutex);
+        mpl_log_info("ice transport impl: #", this, " set local endpoint");
+
         m_ice_params.local_endpoint.auth = local_endpoint.auth;
         return true;
     }
@@ -1665,6 +1812,9 @@ public:
     bool set_remote_endpoint(const ice_endpoint_t &remote_endpoint) override
     {
         lock_t lock(m_safe_mutex);
+
+        mpl_log_info("ice transport impl: #", this, " set remote endpoint");
+
         m_ice_params.remote_endpoint = remote_endpoint;
         update_pairs();
         return true;

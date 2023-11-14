@@ -41,6 +41,8 @@ class ice_controller
         bool start();
         bool cancel();
 
+        std::string to_string() const;
+
     };
 public:
     class i_listener

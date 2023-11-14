@@ -18,6 +18,8 @@
 #include "tls/tls_transport_factory.h"
 #include "serial/serial_transport_factory.h"
 
+#include "log/log_tools.h"
+
 #include <list>
 #include <atomic>
 #include <thread>
@@ -72,7 +74,13 @@ struct net_engine_impl final : public i_net_engine
         , m_serial_factory(m_io_core)
         , m_start(false)
     {
+        mpl_log_info("Net engine #", this, ": init { worker_count: ", m_config.listen_workers, " }");
+    }
 
+    ~net_engine_impl() override
+    {
+        mpl_log_info("Net engine #", this, ": destruction");
+        net_engine_impl::stop();
     }
 
     void execute(worker_proc_t&& worker_proc
@@ -86,11 +94,6 @@ struct net_engine_impl final : public i_net_engine
         m_task_manager.add_task(executor);
     }
 
-    ~net_engine_impl() override
-    {
-        net_engine_impl::stop();
-    }
-
     bool start() override
     {
         bool flag  = false;
@@ -98,11 +101,20 @@ struct net_engine_impl final : public i_net_engine
         {
             if (m_task_manager.is_started()
                     && m_timer_manager.is_started())
-            {
+            {               
                 if (m_io_core.run())
                 {
+                    mpl_log_info("Net engine #", this, ": start success");
                     return true;
                 }
+                else
+                {
+                    mpl_log_error("Net engine #", this, ": start error: can't run io_core");
+                }
+            }
+            else
+            {
+                mpl_log_error("Net engine #", this, ": start error: can't start task or timer manager");
             }
 
             m_start.store(false, std::memory_order_release);
@@ -118,8 +130,13 @@ struct net_engine_impl final : public i_net_engine
         {
             if (m_io_core.stop())
             {
+                mpl_log_info("Net engine #", this, ": stop success");
                 m_promises.clear();
                 return true;
+            }
+            else
+            {
+                mpl_log_error("Net engine #", this, ": stop error: can't stop io core");
             }
         }
 

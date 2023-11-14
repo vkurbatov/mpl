@@ -7,6 +7,8 @@
 #include "utils/common_utils.h"
 #include "utils/hash_utils.h"
 
+#include "log/log_tools.h"
+
 #include <shared_mutex>
 
 namespace mpl::net
@@ -29,17 +31,19 @@ ice_controller::transaction_t::transaction_t(ice_controller &owner
     , id(id)
     , timeout_timer(owner.create_timer(*this))
 {
-
+    mpl_log_trace("ice transaction #", to_string(), ": owner: ", &owner);
 }
 
 ice_controller::transaction_t::~transaction_t()
 {
+    mpl_log_trace("ice transaction #", to_string(), ": destruction");
     cancel();
     owner.release_timer(std::move(timeout_timer));
 }
 
 bool ice_controller::transaction_t::start()
 {
+    mpl_log_debug("ice transaction #", to_string(), ": start(", timeout, ")");
     if (timeout != timestamp_infinite)
     {
         timeout_timer->start(timeout);
@@ -52,10 +56,16 @@ bool ice_controller::transaction_t::cancel()
 {
     if (timeout_timer->processed())
     {
+        mpl_log_debug("ice transaction#", to_string(), ": cancel");
         return timeout_timer->stop();
     }
 
     return false;
+}
+
+std::string ice_controller::transaction_t::to_string() const
+{
+    return utils::hex_to_string(id.data(), id.size());
 }
 
 
@@ -130,11 +140,12 @@ ice_controller::ice_controller(i_listener &listener
     : m_listener(listener)
     , m_timer_manager(timer_manager)
 {
-
+    mpl_log_info("ice controller #", this, ": init");
 }
 
 ice_controller::~ice_controller()
 {
+    mpl_log_info("ice controller #", this, ": desttuction");
     reset();
 }
 
@@ -145,6 +156,7 @@ bool ice_controller::send_request(const ice_transaction_t &transaction)
 
 bool ice_controller::send_request(ice_transaction_t &&transaction)
 {
+
     auto id = stun_message_t::generate_transaction_id();
     {
         lock_t lock(m_safe_mutex);
@@ -371,6 +383,7 @@ bool ice_controller::pop_transaction(const i_stun_packet &response_packet
 
 bool ice_controller::send_transaction(transaction_t &transaction)
 {
+
     stun_message_t message(stun_message_class_t::request
                                  , stun_method_t::binding);
 
@@ -406,6 +419,8 @@ bool ice_controller::send_transaction(transaction_t &transaction)
 
     if (m_listener.on_send_packet(stun_packet))
     {
+        mpl_log_debug("ice controller #", this, ": send transaction #", transaction.to_string()
+                      , ", timeout: ", transaction.timeout, ", retries: ", transaction.retries);
         transaction.start();
         return true;
     }
@@ -417,12 +432,16 @@ void ice_controller::on_timeout(ice_transaction_id_t id)
 {
     ice_transaction_t ice_transaction;
 
+
     lock_t lock(m_safe_mutex);
     if (auto it = m_transactions.find(id)
             ; it != m_transactions.end())
     {
         auto result = ice_transaction_t::ice_result_t::timeout;
         transaction_t& transaction = it->second;
+
+        mpl_log_debug("ice controller #", this, ": timeout transaction #", transaction.to_string());
+
         if (transaction.retries > 0)
         {
             transaction.retries--;
@@ -433,6 +452,8 @@ void ice_controller::on_timeout(ice_transaction_id_t id)
 
             result = ice_transaction_t::ice_result_t::failed;
         }
+
+        mpl_log_debug("ice controller #", this, ": timeout transaction #", transaction.to_string(), " failed");
 
         transaction.response.result = result;
         ice_transaction = transaction;
@@ -444,24 +465,6 @@ void ice_controller::on_timeout(ice_transaction_id_t id)
     }
 
     m_listener.on_response(ice_transaction);
-    /*
-    auto result = ice_transaction_t::ice_result_t::timeout;
-    {
-        if (transaction.retries > 0)
-        {
-            lock_t lock(m_safe_mutex);
-            transaction.retries--;
-            if (send_transaction(transaction))
-            {
-                return;
-            }
-
-            result = ice_transaction_t::ice_result_t::failed;
-        }
-    }
-
-    complete_transaction(transaction.id
-                         , result);*/
 
 }
 

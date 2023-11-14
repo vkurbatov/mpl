@@ -20,6 +20,8 @@
 #include "tls_packet_impl.h"
 #include "tls_keys_event.h"
 
+#include "log/log_tools.h"
+
 #include "tools/ssl/ssl_session_manager.h"
 #include "tools/ssl/ssl_manager_config.h"
 #include "tools/ssl/ssl_connection_config.h"
@@ -27,7 +29,6 @@
 #include "tools/ssl/const_ssl_message.h"
 #include "tools/ssl/i_ssl_certificate.h"
 #include "tools/ssl/i_ssl_message_sink.h"
-
 
 #include <shared_mutex>
 #include <iostream>
@@ -118,12 +119,12 @@ public:
         , m_connect(false)
         , m_state(channel_state_t::ready)
     {
-
+        mpl_log_debug("tls transport impl #", this, ": init { ", utils::enum_to_string(m_tls_config.method), " }");
     }
 
     ~tls_transport_impl()
     {
-
+        mpl_log_debug("tls transport impl #", this, ": destruction");
     }
 
     inline void change_channel_state(channel_state_t new_state
@@ -131,6 +132,7 @@ public:
     {
         if (m_state != new_state)
         {
+            mpl_log_info("tls transport impl #", this, ": state: ", utils::enum_to_string(m_state), "->", utils::enum_to_string(new_state));
             m_state = new_state;
             m_router.send_message(message_event_impl(event_channel_state_t(new_state
                                                                            , reason))
@@ -163,6 +165,7 @@ public:
         {
             if (m_ssl_session != nullptr)
             {
+                mpl_log_info("tls transport impl #", this, ": remove session: ", m_ssl_session.get());
                 m_ssl_session->set_listener(nullptr);
             }
 
@@ -170,6 +173,7 @@ public:
 
             if (m_ssl_session != nullptr)
             {
+                mpl_log_info("tls transport impl #", this, ": add session: ", m_ssl_session.get());
                 m_ssl_session->set_listener(this);
             }
 
@@ -222,7 +226,6 @@ public:
             break;
             case role_t::actpass:
             {
-
                 m_tls_params.role = role_t::active;
                 return update_local_params();
             }
@@ -235,7 +238,9 @@ public:
     bool open()
     {
         if (!m_open)
-        {
+        {            
+            mpl_log_info("tls transport impl #", this, " opening");
+
             m_reconnections = 0;
             change_channel_state(channel_state_t::opening);
             m_open = true;
@@ -244,8 +249,11 @@ public:
             {
                 set_ssl_session(std::move(ssl_connection));
                 change_channel_state(channel_state_t::open);
+
                 return true;
             }
+
+            mpl_log_info("tls transport impl #", this, " can't open");
 
             m_open = false;
             change_channel_state(channel_state_t::failed);
@@ -258,6 +266,8 @@ public:
     {
         if (m_open)
         {
+            mpl_log_info("tls transport impl #", this, " closing");
+
             m_open = false;
             timer_stop();
 
@@ -289,6 +299,11 @@ public:
                 }
                 m_connect = false;
             }
+            else
+            {
+                mpl_log_warning("tls transport impl #", this, " can't connect, role confict");
+            }
+
             change_channel_state(channel_state_t::failed);
         }
 
@@ -300,6 +315,7 @@ public:
         if (m_open
                 && m_connect)
         {
+
             timer_stop();
             m_ssl_session->control(pt::ssl::ssl_session_control_id_t::shutdown);
             m_ssl_session->control(pt::ssl::ssl_session_control_id_t::reset);
@@ -315,6 +331,9 @@ public:
         pt::ssl::const_ssl_message ssl_message(packet_data.data()
                                            , packet_data.size()
                                            , type);
+
+        mpl_log_trace("tls transport impl #", this, " push packet to session");
+
         switch (m_ssl_session->sink()->send_message(ssl_message))
         {
             case pt::ssl::ssl_io_result_t::ok:
@@ -363,16 +382,20 @@ public:
 
     void timer_start(timestamp_t timeout = timestamp_null)
     {
+        mpl_log_debug("tls transport impl #", this, " start timer(", timeout, ")");
         m_timer->start(timeout);
     }
 
     void timer_stop()
     {
+        mpl_log_debug("tls transport impl #", this, " stop timer");
         m_timer->stop();
     }
 
     void on_timer()
     {
+        mpl_log_debug("tls transport impl #", this, " on timeout");
+
         if (m_ssl_session != nullptr)
         {
             if (m_ssl_session->state() == pt::ssl::ssl_handshake_state_t::handshaking)
@@ -427,6 +450,7 @@ public:
     bool set_params(const i_property &params) override
     {
         //lock_t lock(m_safe_mutex);
+        mpl_log_info("tls transport impl #", this, ": update params");
         return utils::property::deserialize(m_tls_params
                                             , params);
     }
