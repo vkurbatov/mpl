@@ -706,6 +706,8 @@ public:
             default:;
         }
 
+        mpl_log_warning("libav output device #", this, ": unsupported control: ", utils::enum_to_string(control.control_id));
+
         return false;
     }
 
@@ -757,6 +759,8 @@ public:
             if (device_params.load(params)
                     && device_params.is_valid())
             {
+                mpl_log_info("libav output device #", this, ": update params");
+
                 m_device_params = std::move(device_params);
                 return true;
             }

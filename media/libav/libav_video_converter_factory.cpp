@@ -70,7 +70,7 @@ public:
     libav_video_converter(video_format_impl &&video_format)
         : m_output_format(std::move(video_format))
     {
-        mpl_log_info("libav video converter #", this, ": init {", m_output_format.video_info().to_string(), "}");
+        mpl_log_info("libav video converter #", this, ": init {", m_output_format.info().to_string(), "}");
 
         detail::fragment_info_from_format(m_output_format
                                           , m_output_fragment_info);
@@ -93,7 +93,7 @@ public:
             {
                 m_input_format.assign(video_format);
 
-                mpl_log_info("libav video converter #", this, ": update input format: ", m_input_format.video_info().to_string());
+                mpl_log_info("libav video converter #", this, ": update input format: ", m_input_format.info().to_string());
 
                 if (detail::fragment_info_from_format(m_input_format
                                                       , m_input_fragment_info))

@@ -74,7 +74,7 @@ video_format_impl::video_format_impl(const i_property &params)
     set_params(params);
 }
 
-const video_info_t &video_format_impl::video_info() const
+const video_info_t &video_format_impl::info() const
 {
     return m_video_info;
 }

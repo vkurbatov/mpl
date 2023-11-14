@@ -70,7 +70,7 @@ std::size_t audio_format_impl::frame_size() const
     return option_reader(m_options).get<std::int32_t>(opt_codec_frame_size, 0);
 }
 
-const audio_info_t &audio_format_impl::audio_info() const
+const audio_info_t &audio_format_impl::info() const
 {
     return m_audio_info;
 }

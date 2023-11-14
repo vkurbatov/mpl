@@ -36,6 +36,8 @@
 
 #include "tools/utils/sync_base.h"
 
+#include "log/log_tools.h"
+
 #include <future>
 #include <shared_mutex>
 #include <thread>
@@ -236,6 +238,10 @@ class media_composer : public i_media_composer
                                 , 0)
                 , m_timestamp_calculator(audio_format.sample_rate())
             {
+                mpl_log_debug("audio track #", this
+                              , ": init, stream: ", &m_compose_stream
+                              , ": format: ", m_audio_frame.audio_format().info().to_string());
+
                 m_audio_frame.set_stream_id(owner.m_stream_id);
                 m_audio_frame.set_track_id(default_audio_track_id);
 
@@ -243,6 +249,11 @@ class media_composer : public i_media_composer
                 {
                     m_media_converter->set_sink(&m_message_sink);
                 }
+            }
+
+            ~audio_track()
+            {
+                mpl_log_debug("audio track #", this, " destruction");
             }
 
             inline double level() const
@@ -260,6 +271,10 @@ class media_composer : public i_media_composer
                         m_frame_queue.pop();
                         return std::static_pointer_cast<i_media_frame>(frame);
                     }
+                    else
+                    {
+                        mpl_log_debug("audio track #", this, " can't pop frame");
+                    }
                 }
 
                 return nullptr;
@@ -272,6 +287,7 @@ class media_composer : public i_media_composer
 
             inline void update_params()
             {
+                mpl_log_debug("audio track #", this, " update params");
                 m_compose_stream->options().volume = track_params().volume;
                 m_compose_stream->options().enabled = track_params().enabled;
             }
@@ -280,6 +296,7 @@ class media_composer : public i_media_composer
             {
                 while(auto frame = pop_frame())
                 {
+                    mpl_log_trace("audio track #", this, " prepare frame");
                     if (frame->media_type() == media_type_t::audio)
                     {
                         auto sample = detail::create_sample(static_cast<const i_audio_frame&>(*frame));
@@ -301,6 +318,10 @@ class media_composer : public i_media_composer
                     m_frame_id++;
 
                     return &m_audio_frame;
+                }
+                else
+                {
+                    mpl_log_warning("audio track #", this, " can't get compose sample");
                 }
 
                 return nullptr;
@@ -329,6 +350,8 @@ class media_composer : public i_media_composer
 
             bool set_enabled(bool enabled) override
             {
+                mpl_log_info("audio track #", this, " set enabled: ", enabled);
+
                 m_owner.m_params.audio_track.enabled = enabled;
                 m_compose_stream->options().enabled = m_owner.m_params.audio_track.enabled;
                 return true;
@@ -344,6 +367,10 @@ class media_composer : public i_media_composer
                 {
                     update_params();
                     return true;
+                }
+                else
+                {
+                    mpl_log_warning("audio track #", this, " can't deserialize params");
                 }
 
                 return false;
@@ -395,6 +422,11 @@ class media_composer : public i_media_composer
                                 , 0)
                 , m_timestamp_calculator(video_sample_rate)
             {
+
+                mpl_log_debug("video track #", this
+                              , ": init, stream: ", &m_compose_stream
+                              , ": format: ", m_video_frame.video_format().info().to_string());
+
                 m_video_frame.set_stream_id(m_owner.m_stream_id);
                 m_video_frame.set_track_id(default_video_track_id);
 
@@ -402,6 +434,11 @@ class media_composer : public i_media_composer
                 {
                     m_media_converter->set_sink(&m_message_sink);
                 }
+            }
+
+            ~video_track()
+            {
+                mpl_log_debug("video track #", this, " destruction");
             }
 
             i_media_frame::s_ptr_t pop_frame()
@@ -414,6 +451,10 @@ class media_composer : public i_media_composer
                         m_last_frame_time = utils::time::get_ticks();
                         m_frame_queue.pop();
                     }
+                    else
+                    {
+                        mpl_log_debug("video track #", this, " can't pop frame");
+                    }
                 }
 
                 return m_last_frame;
@@ -424,8 +465,9 @@ class media_composer : public i_media_composer
                 return stream_params().video_track;
             }
 
-            void update_params()
+            inline void update_params()
             {
+                mpl_log_debug("video track #", this, " update params");
                 m_compose_stream->options().draw_options.target_rect = track_params().draw_options.target_rect;
                 m_compose_stream->options().order = stream_params().order;
                 m_compose_stream->options().animation = track_params().animation;
@@ -435,6 +477,7 @@ class media_composer : public i_media_composer
             inline void clear()
             {
                 lock_t lock(m_safe_mutex);
+                mpl_log_debug("video track #", this, " clear");
                 m_frame_queue = {};
                 m_last_frame.reset();
             }
@@ -461,6 +504,10 @@ class media_composer : public i_media_composer
                         if (image.is_valid())
                         {
                             return m_compose_stream->push_stream_image(std::move(image));
+                        }
+                        else
+                        {
+                            mpl_log_debug("video track #", this, " image not valid");
                         }
                     }
                 }
@@ -501,6 +548,10 @@ class media_composer : public i_media_composer
 
                     return &m_video_frame;
                 }
+                else
+                {
+                    mpl_log_warning("video track #", this, " can't get compose image");
+                }
 
                 return nullptr;
             }
@@ -526,6 +577,8 @@ class media_composer : public i_media_composer
 
             bool set_enabled(bool enabled) override
             {
+                mpl_log_info("video track #", this, " set enabled: ", enabled);
+
                 m_owner.m_params.video_track.enabled = enabled;
                 m_compose_stream->options().enabled = m_owner.m_params.video_track.enabled;
                 return true;
@@ -541,6 +594,10 @@ class media_composer : public i_media_composer
                 {
                     update_params();
                     return true;
+                }
+                else
+                {
+                    mpl_log_warning("video track #", this, " can't deserialize params");
                 }
 
                 return false;
@@ -624,11 +681,12 @@ class media_composer : public i_media_composer
                             , load_image(m_params.video_track.user_image_path
                             , manager.composer_params().video_params.format.format_id()))
         {
-
+            mpl_log_info("comose stream #", this, " init { ", m_params.order, ", ", m_params.name, " }");
         }
 
         ~composer_stream()
         {
+            mpl_log_info("comose stream #", this, " destruction");
             m_manager.on_remove_stream(this);
         }
 
@@ -661,9 +719,11 @@ class media_composer : public i_media_composer
             switch(media_frame.media_type())
             {
                 case media_type_t::audio:
+                    mpl_log_trace("comose stream #", this, " push audio frame: id: ", media_frame.frame_id(), ", ts: ", media_frame.timestamp());
                     return m_audio_track.push_frame(media_frame);
                 break;
                 case media_type_t::video:
+                    mpl_log_trace("comose stream #", this, " push video frame: id: ", media_frame.frame_id(), ", ts: ", media_frame.timestamp());
                     return m_video_track.push_frame(media_frame);
                 break;
                 default:;
@@ -719,6 +779,7 @@ class media_composer : public i_media_composer
         {
             if (auto frame = m_audio_track.compose_frame())
             {
+                mpl_log_trace("comose stream #", this, " send feedback audio frame");
                 return m_router.send_message(*frame);
             }
 
@@ -729,6 +790,7 @@ class media_composer : public i_media_composer
         {
             if (auto frame = m_video_track.compose_frame())
             {
+                mpl_log_trace("comose stream #", this, " send feedback video frame");
                 return m_router.send_message(*frame);
             }
 
@@ -746,6 +808,10 @@ class media_composer : public i_media_composer
                 m_audio_track.update_params();
                 m_video_track.update_params();
                 return true;
+            }
+            else
+            {
+                mpl_log_warning("comose stream #", this, " can't deserialize params");
             }
 
             return false;
@@ -856,7 +922,14 @@ class media_composer : public i_media_composer
             , m_video_composer(video_info_t(m_owner.m_composer_params.video_params.format))
             , m_stream_ids(0)
         {
+            mpl_log_debug("stream_manager #", this
+                          , ": init, owner: ", &m_owner);
 
+        }
+
+        ~stream_manager()
+        {
+            mpl_log_debug("stream_manager #", this, " destruction");
         }
 
         inline const composer_params_t& composer_params() const
@@ -936,6 +1009,10 @@ class media_composer : public i_media_composer
                 m_streams[stream->stream_id()] = stream.get();
                 return stream;
             }
+            else
+            {
+                mpl_log_error("stream_manager #", this, " can't create stream");
+            }
 
             return nullptr;
         }
@@ -974,6 +1051,7 @@ class media_composer : public i_media_composer
         {
             shared_lock_t lock(m_safe_mutex);
             auto streams = active_streams();
+
             if (auto layouts = get_layout(streams))
             {
                 auto idx = 0;
@@ -990,8 +1068,13 @@ class media_composer : public i_media_composer
                     }
                 }
             }
+            else
+            {
+                mpl_log_warning("stream_manager #", this, " can't get layout");
+            }
 
             m_video_composer.compose();
+
             for (const auto& s : streams)
             {
                 s->feedback_video();
@@ -1002,6 +1085,7 @@ class media_composer : public i_media_composer
         void compose_audio()
         {
             shared_lock_t lock(m_safe_mutex);
+
             auto streams = active_streams();
             for (const auto& s : streams)
             {
@@ -1185,16 +1269,19 @@ public:
                            , layout_manager)
         , m_started(false)
     {
-
+        mpl_log_info("media composer #", this, ": init");
     }
 
     ~media_composer()
     {
+        mpl_log_info("media composer #", this, ": destruction");
         media_composer::stop();
     }
 
     void video_compose_proc()
     {
+        mpl_log_info("media composer #", this, ": video compose worker start");
+
         m_video_compose_delay.reset();
         std::size_t frames = 0;
         auto tp = utils::time::get_ticks();
@@ -1206,26 +1293,24 @@ public:
             m_video_compose_delay.wait(video_delay);
 
             frames++;
-
-            auto dt = utils::time::get_ticks() - tp;
-
-            auto fps = durations::seconds(frames) / dt;
-
-
-            std::clog << "fps: " << fps << std::endl;
         }
+
+        mpl_log_info("media composer #", this, ": video compose worker completed");
     }
 
     void audio_compose_proc()
     {
+        mpl_log_info("media composer #", this, ": audio compose worker start");
+
         m_audio_compose_delay.reset();
         while(m_started)
         {
             m_stream_manager.compose_audio();
-            // m_audio_composer.compose_streams(streams);
 
             m_audio_compose_delay.wait(m_composer_params.audio_params.duration);
         }
+
+        mpl_log_info("media composer #", this, ": audio compose worker completed");
     }
 
 
@@ -1233,6 +1318,7 @@ public:
 public:
     bool set_params(const i_property &params) override
     {
+        mpl_log_warning("media composer #", this, ": can't set params: not impl");
         return false;
     }
 
@@ -1259,7 +1345,9 @@ public:
         {
             if (m_composer_params.is_valid())
             {
+                mpl_log_warning("media composer #", this, ": starting");
                 m_started = true;
+
                 m_audio_thread = std::thread([&]{ audio_compose_proc(); });
                 m_video_thread = std::thread([&]{ video_compose_proc(); });
 
@@ -1274,6 +1362,7 @@ public:
     {
         if (m_started)
         {
+            mpl_log_warning("media composer #", this, ": stopping");
             m_started = false;
             if (m_audio_thread.joinable())
             {

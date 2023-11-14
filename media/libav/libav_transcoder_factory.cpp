@@ -22,6 +22,8 @@
 
 #include "tools/ffmpeg/libav_transcoder.h"
 
+#include "log/log_tools.h"
+
 namespace mpl::media
 {
 
@@ -180,17 +182,17 @@ class libav_transcoder : public i_media_converter
     using frame_impl_t = typename detail::format_types_t<MediaType>::frame_impl_t;
 
     pt::ffmpeg::libav_transcoder    m_native_transcoder;
-    i_message_sink*             m_output_sink;
+    i_message_sink*                 m_output_sink;
 
-    format_impl_t               m_input_format;
-    format_impl_t               m_output_format;
+    format_impl_t                   m_input_format;
+    format_impl_t                   m_output_format;
 
-    audio_frame_splitter        m_frame_splitter;
+    audio_frame_splitter            m_frame_splitter;
 
-    frame_id_t                  m_frame_id;
-    bool                        m_wait_first_frame;
+    frame_id_t                      m_frame_id;
+    bool                            m_wait_first_frame;
 
-    bool                        m_is_init;
+    bool                            m_is_init;
 
 public:
     using u_ptr_t = std::unique_ptr<libav_transcoder>;
@@ -210,7 +212,15 @@ public:
                 {
                     return transcoder;
                 }
+                else
+                {
+                    mpl_log_error("libav transcoder #", transcoder.get(), ": can't init transcoder");
+                }
             }
+        }
+        else
+        {
+            mpl_log_error("libav transcoder: can't create: params failed");
         }
 
         return nullptr;
@@ -224,12 +234,16 @@ public:
         , m_wait_first_frame(false)
 
     {
+        mpl_log_debug("libav transcoder #", this, ": init: { ", encoder, ", ", m_output_format.info().to_string(), "}");
+
         m_is_init = initialize(m_output_format
                                , encoder);
     }
 
     ~libav_transcoder()
     {
+        mpl_log_debug("libav transcoder #", this, ": destruction");
+
         m_native_transcoder.close();
     }
 
@@ -270,8 +284,6 @@ public:
         {
             m_frame_splitter.setup(format
                                    , tune_stream_info.codec_info.codec_params.frame_size);
-            /*m_frame_splitter.reset(tune_stream_info.codec_info.codec_params.frame_size
-                                   * audio_format_helper(format).sample_size());*/
         }
     }
 
@@ -321,13 +333,30 @@ public:
 
                                 return true;
                             }
+                            else
+                            {
+                                mpl_log_error("libav transcoder #", this, ": can't tune format");
+                            }
                         }
+                        else
+                        {
+                            mpl_log_error("libav transcoder #", this, ": can't open native transcoder");
+                        }
+                    }
+                    else
+                    {
+                         mpl_log_error("libav transcoder #", this, ": can't convert to native format");
                     }
                 }
                 break;
-                default:;
+                default:
+                    mpl_log_error("libav transcoder #", this, ": can't init: media type not supported");
+                ;
             }
-
+        }
+        else
+        {
+            mpl_log_error("libav transcoder #", this, ": can't init: format not encoded");
         }
 
         return false;
@@ -358,9 +387,13 @@ public:
             frame.smart_buffers().set_buffer(media_buffer_index
                                              , smart_buffer(std::move(libav_frame.media_data)));
 
-            // frame.set_options(input_frame.options());
+            mpl_log_debug("libav transcoder #", this, ": send output frame");
 
             return m_output_sink->send_message(frame);
+        }
+        else
+        {
+            mpl_log_warning("libav transcoder #", this, ": sink not set");
         }
 
         return false;
@@ -388,6 +421,7 @@ public:
                     if (!key_frame)
                     {
                         // need key frame for decoder
+                        mpl_log_debug("libav transcoder #", this, ": drop frame: ready ");
                         return false;
                     }
 
@@ -403,6 +437,8 @@ public:
                     auto queue = m_frame_splitter.push_frame(buffer->data()
                                                               , buffer->size());
 
+                    mpl_log_debug("libav transcoder #", this, ": split frame to ", queue.size(), " part");
+
                     frame_time -= samples;
 
                     while(!queue.empty()
@@ -415,6 +451,10 @@ public:
                                                           , flag))
                         {
                             result++;
+                        }
+                        else
+                        {
+                            mpl_log_warning("libav transcoder #", this, ": can't transcode part frame (", queue.front().size(), ")");
                         }
 
                         queue.pop();
@@ -434,7 +474,6 @@ public:
                     while(!frame_queue.empty())
                     {
 
-                        // auto samples = frame_queue.front().media_data.size();
                         push_frame(std::move(frame_queue.front())
                                              , media_frame
                                              , frame_time);
@@ -447,8 +486,19 @@ public:
 
                     return true;
                 }
-
+                else
+                {
+                    mpl_log_warning("libav transcoder #", this, ": can't transcode frame");
+                }
             }
+            else
+            {
+                mpl_log_error("libav transcoder #", this, ": input frame data buffer missing");
+            }
+        }
+        else
+        {
+            mpl_log_error("libav transcoder #", this, ": input frame not supported");
         }
         return false;
     }

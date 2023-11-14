@@ -17,13 +17,13 @@
 #include "tools/ffmpeg/libav_utils.h"
 #include "tools/codec/h264/h264_utils.h"
 
+#include "log/log_tools.h"
+
 #include <thread>
 #include <shared_mutex>
 #include <atomic>
 #include <map>
 #include <iostream>
-
-#include "log/log_tools.h"
 
 namespace mpl::media
 {
@@ -302,7 +302,6 @@ public:
     {
         if (m_open.load(std::memory_order_acquire))
         {
-
             mpl_log_info("libav input device #", this, ": closing");
             change_state(channel_state_t::closing);
 

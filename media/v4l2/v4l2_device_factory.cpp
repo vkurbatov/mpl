@@ -23,6 +23,8 @@
 #include "tools/utils/sync_base.h"
 #include "tools/v4l2/v4l2_input_device.h"
 
+#include "log/log_tools.h"
+
 #include <shared_mutex>
 #include <condition_variable>
 #include <atomic>
@@ -208,19 +210,31 @@ class v4l2_device : public i_device
         v4l2_wrapper(const device_params_t& params)
             : m_native_device(params.native_config())
         {
+            mpl_log_info("v4l2 wrapper #", this, ": init {", m_native_device.config().url, "}");
+        }
 
+        ~v4l2_wrapper()
+        {
+            mpl_log_info("v4l2 wrapper #", this, " destruction");
         }
 
         inline bool open()
         {
             if (m_native_device.open())
             {
+                mpl_log_info("v4l2 wrapper #", this, " opened");
+
                 m_cached_formats = m_native_device.get_supported_formats();
                 get_supported_controls();
                 //m_cached_controls = m_native_device.get_supported_controls();
 
                 return true;
             }
+            else
+            {
+                mpl_log_warning("v4l2 wrapper #", this, " can't open native device");
+            }
+
             return false;
         }
 
@@ -233,6 +247,8 @@ class v4l2_device : public i_device
         {
             if (m_native_device.close())
             {
+                mpl_log_info("v4l2 wrapper #", this, " closed");
+
                 m_cached_controls.clear();
                 m_cached_formats.clear();
                 return true;
@@ -248,6 +264,7 @@ class v4l2_device : public i_device
 
         inline bool set_config(const device_params_t& config)
         {
+            mpl_log_info("v4l2 wrapper #", this, " set config");
             return m_native_device.set_config(config.native_config());
         }
 
@@ -629,11 +646,13 @@ public:
         , m_running(false)
         , m_open(false)
     {
-
+        mpl_log_info("v4l2 input device #", this, " init, wrapper device: ", &m_wrapped_device);
     }
 
     ~v4l2_device() override
     {
+        mpl_log_info("v4l2 input device #", this, " destruction");
+
         close();
     }
 
@@ -642,6 +661,8 @@ public:
     {
         if (m_state != new_state)
         {
+            mpl_log_info("v4l2 input device #", this, ": state: ", utils::enum_to_string(m_state), "->", utils::enum_to_string(new_state));
+
             m_state = new_state;
             m_router.send_message(message_event_impl<event_channel_state_t>({new_state, reason}));
         }
@@ -651,6 +672,8 @@ public:
     {
         if (!m_open)
         {
+            mpl_log_info("v4l2 input device #", this, ": opening");
+
             m_open = true;
             m_running.store(true, std::memory_order_release);
 
@@ -667,6 +690,8 @@ public:
     {
         if (m_open)
         {
+            mpl_log_info("v4l2 input device #", this, ": closing");
+
             change_state(channel_state_t::closing);
             m_running.store(false, std::memory_order_release);
             m_open = false;
@@ -686,6 +711,8 @@ public:
 
     void reset()
     {
+        mpl_log_info("v4l2 input device #", this, ": reset");
+
         m_frame_counter = 0;
         m_frame_timestamp = 0;
         m_real_timestamp = 0;
@@ -710,6 +737,8 @@ public:
 
     bool on_native_frame(v4l2::frame_t& frame)
     {
+        mpl_log_trace("v4l2 input device #", this, ": on frame: size: ", frame.frame_data.size());
+
         video_format_impl video_format(utils::format_form_v4l2(frame.frame_info.pixel_format)
                                        , frame.frame_info.size.width
                                        , frame.frame_info.size.height
@@ -728,8 +757,15 @@ public:
             m_frame_counter++;
             process_timesatamp(frame.frame_info.fps);
 
+            mpl_log_trace("v4l2 input device #", this, ": route frame: format: ", video_format.info().to_string()
+                          , ", timestamp: ", video_frame.timestamp());
+
             m_router.send_message(video_frame);
 
+        }
+        else
+        {
+            mpl_log_warning("v4l2 input device #", this, ": frame not supported, format: ", video_format.info().to_string());
         }
 
         return true;
@@ -746,6 +782,7 @@ public:
                 {
                     case command_camera_control_t::id:
                     {
+                        mpl_log_info("v4l2 input device #", this, ": on camera control command");
                         return on_camera_control(static_cast<const command_camera_control_t&>(command_message.command()));
                     }
                     break;
@@ -787,6 +824,8 @@ public:
 
     void grabbing_thread()
     {
+        mpl_log_info("v4l2 input device #", this, ": grabbing start");
+
         std::mutex signal_mutex;
         std::unique_lock signal_lock(signal_mutex);
         change_state(channel_state_t::open);
@@ -837,6 +876,7 @@ public:
                     }
                     else
                     {
+                        mpl_log_warning("v4l2 input device #", this, ": can't read frame, err count: ", error_counter);
                         error_counter++;
                     }
 
@@ -851,6 +891,8 @@ public:
                 change_state(channel_state_t::disconnected);
             }
         }
+
+        mpl_log_info("v4l2 input device #", this, ": grabbing completed");
     }
 
 
@@ -873,6 +915,8 @@ public:
             break;
             default:;
         }
+
+        mpl_log_warning("v4l2 input device #", this, ": unsupported control: ", utils::enum_to_string(control.control_id));
 
         return false;
     }
@@ -923,8 +967,15 @@ public:
         {
             if (!m_wrapped_device.is_open())
             {
+
+                mpl_log_info("v4l2 input device #", this, ": update params");
+
                 m_device_params = device_params;
                 result = true;
+            }
+            else
+            {
+                mpl_log_error("v4l2 input device #", this, ": can't update params: device is open");
             }
         }
 

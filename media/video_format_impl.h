@@ -43,7 +43,7 @@ public:
     video_format_impl(const i_video_format& other);
     video_format_impl(const i_property& params);
 
-    const video_info_t& video_info() const;
+    const video_info_t& info() const;
 
     video_format_impl& set_format_id(const video_format_id_t& format_id);
     video_format_impl& set_width(std::int32_t width);

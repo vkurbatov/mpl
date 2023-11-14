@@ -43,7 +43,7 @@ inline bool is_compatible(const i_audio_frame& frame
         {
             if (auto buffer = frame.data().get_buffer(media_buffer_index))
             {
-                return frame_size == format.audio_info().samples_from_size(buffer->size());
+                return frame_size == format.info().samples_from_size(buffer->size());
             }
         }
         else
@@ -98,7 +98,7 @@ public:
                            , m_output_format.frame_size())
         , m_frame_id(0)
     {
-        mpl_log_info("libav audio converter #", this, ": init {", m_output_format.audio_info().to_string(), "}");
+        mpl_log_info("libav audio converter #", this, ": init {", m_output_format.info().to_string(), "}");
         detail::audio_info_from_format(m_output_format
                                        , m_output_audio_info);
 
@@ -118,7 +118,7 @@ public:
             {
                 m_input_format.assign(audio_format);
 
-                mpl_log_info("libav audio converter #", this, ": update input format: ", m_input_format.audio_info().to_string());
+                mpl_log_info("libav audio converter #", this, ": update input format: ", m_input_format.info().to_string());
 
                 return detail::audio_info_from_format(m_input_format
                                                       , m_input_audio_info);

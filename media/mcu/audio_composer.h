@@ -12,7 +12,7 @@ public:
 
     struct config_t
     {
-        audio_info_t   sample_info;
+        audio_info_t    sample_info;
         std::size_t     samples;
         config_t(const audio_info_t& sample_info = {}
                  , std::size_t samples = 0);

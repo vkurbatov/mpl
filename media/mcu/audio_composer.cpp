@@ -2,7 +2,10 @@
 #include "media/audio_mixer.h"
 #include "media/audio_level.h"
 
+#include "log/log_tools.h"
+
 #include <set>
+
 
 namespace mpl::media
 {
@@ -65,11 +68,12 @@ struct audio_composer::pimpl_t
             , m_frame_count(0)
 
         {
-
+            mpl_log_debug("audio compose stream #", this, ": init, owner: ", &m_owner);
         }
 
         ~compose_stream_impl()
         {
+            mpl_log_debug("audio compose stream #", this, ": destruction");
             m_owner.on_remove_stream(this);
         }
 
@@ -89,6 +93,8 @@ struct audio_composer::pimpl_t
             {
                 m_audio_mixer.reset();
                 m_audio_level.reset();
+
+                mpl_log_info("audio compose stream #", this, ": mixer overrun");
 
                 return false;
             }
@@ -113,6 +119,10 @@ struct audio_composer::pimpl_t
                 m_frame_count++;
 
                 return true;
+            }
+            else
+            {
+                mpl_log_warning("audio compose stream #", this, ": can't compose: sample not valid");
             }
 
             return false;
@@ -139,6 +149,10 @@ struct audio_composer::pimpl_t
                 return m_audio_mixer.push_data(data
                                               , samples
                                               , m_compose_options.volume);
+            }
+            else
+            {
+                mpl_log_trace("audio compose stream #", this, " drop sample");
             }
             return false;
         }
@@ -178,8 +192,13 @@ struct audio_composer::pimpl_t
         : m_config(config)
         , m_compose_sample(m_config.sample_info)
     {
+        mpl_log_info("audio composer #", this, " init { ", m_config.sample_info.to_string(), ", ", m_config.samples, " }");
         m_compose_sample.resize(config.samples);
-        // m_compose_sample.tune();
+    }
+
+    ~pimpl_t()
+    {
+        mpl_log_info("audio composer #", this, " destruction");
     }
 
     const audio_sample_t* compose()
@@ -188,18 +207,27 @@ struct audio_composer::pimpl_t
         {
             m_compose_sample.clear();
 
+            mpl_log_trace("audio composer #", this, " mix ", m_streams.size(), " streams");
+
             for (const auto& s : m_streams)
             {
                 s->mix(m_compose_sample.data()
                        , m_compose_sample.samples());
             }
 
+            mpl_log_trace("audio composer #", this, " compose ", m_streams.size(), " streams");
+
             for (const auto& s : m_streams)
             {
                 s->compose();
             }
 
+
             return &m_compose_sample;
+        }
+        else
+        {
+            mpl_log_warning("audio composer #", this, " can't compose: sample not valid");
         }
 
         return nullptr;
@@ -212,6 +240,10 @@ struct audio_composer::pimpl_t
         {
             m_streams.insert(stream.get());
             return stream;
+        }
+        else
+        {
+            mpl_log_error("audio composer #", this, " can't create stream");
         }
 
         return nullptr;

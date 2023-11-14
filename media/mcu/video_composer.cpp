@@ -1,6 +1,8 @@
 #include "video_composer.h"
 #include "media/image_builder.h"
 
+#include "log/log_tools.h"
+
 #include <algorithm>
 #include <set>
 
@@ -119,11 +121,12 @@ struct video_composer::pimpl_t
             , m_frame_count(0)
             , m_id(id)
         {
-
+            mpl_log_debug("video compose stream #", this, ": init, owner: ", &m_owner);
         }
 
         ~compose_stream_impl()
         {
+            mpl_log_debug("video compose stream #", this, ": destruction");
             m_owner.on_remove_stream(this);
         }
 
@@ -157,6 +160,10 @@ struct video_composer::pimpl_t
                                                         , is_animation
                                                             ? animation_options
                                                             : m_compose_options.draw_options);
+            }
+            else
+            {
+                mpl_log_warning("video compose stream #", this, ": can't compose: image not valid");
             }
 
             return false;
@@ -215,7 +222,13 @@ struct video_composer::pimpl_t
         , m_compose_image(m_config.frame_info)
         , m_ids(0)
     {
+        mpl_log_info("video composer #", this, " init { ", m_config.frame_info.to_string(), " }");
         m_compose_image.tune();
+    }
+
+    ~pimpl_t()
+    {
+        mpl_log_info("video composer #", this, " destruction");
     }
 
     const image_frame_t* compose()
@@ -224,12 +237,18 @@ struct video_composer::pimpl_t
         {
             m_compose_image.blackout();
 
+            mpl_log_trace("video composer #", this, " compose video");
+
             for (const auto& s : active_streams())
             {
                 s->compose();
             }
 
             return &m_compose_image;
+        }
+        else
+        {
+            mpl_log_warning("video composer #", this, " can't compose: image not valid");
         }
 
         return nullptr;
@@ -260,6 +279,10 @@ struct video_composer::pimpl_t
         {
             m_streams.insert(stream.get());
             return stream;
+        }
+        else
+        {
+            mpl_log_error("video composer #", this, " can't create stream");
         }
 
         return nullptr;
