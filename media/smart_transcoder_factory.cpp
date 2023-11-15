@@ -15,6 +15,8 @@
 
 #include "tools/utils/sync_base.h"
 
+#include "log/log_tools.h"
+
 #include <cstring>
 #include <iostream>
 
@@ -235,12 +237,14 @@ class smart_transcoder : public i_media_converter
 
     struct params_t
     {
-        bool    transcode_always;
-        bool    transcode_async;
+        bool            transcode_always;
+        bool            transcode_async;
+        std::size_t     max_overrun;
         params_t(bool transcode_always = false
                 , bool transcode_async = false)
             : transcode_always(transcode_always)
             , transcode_async(transcode_async)
+            , max_overrun(10)
         {
 
         }
@@ -255,14 +259,16 @@ class smart_transcoder : public i_media_converter
         {
             property_reader reader(params);
             return reader.get("transcode_always", transcode_always)
-                    | reader.get("transcode_async", transcode_async);
+                    | reader.get("transcode_async", transcode_async)
+                    | reader.get("max_overrun", max_overrun);
         }
 
         bool store(i_property& params) const
         {
             property_writer writer(params);
             return writer.set("transcode_always", transcode_always, false)
-                    && writer.set("transcode_async", transcode_async, false);
+                    && writer.set("transcode_async", transcode_async, false)
+                    && writer.set("max_overrun", max_overrun);
         }
     };
 
@@ -290,13 +296,20 @@ public:
             , m_task_handler([&] { on_task_execute(); })
             , m_processed(false)
         {
-
+            mpl_log_debug("async_frame_manager #", this, ": init: owner: ", &m_owner);
         }
 
         ~async_frame_manager()
         {
+            mpl_log_debug("async_frame_manager #", this, ": destruction, processed: ", is_processed());
+
             m_processed.store(false, std::memory_order_release);
             std::lock_guard lock(m_exec_mutex);
+        }
+
+        inline std::size_t max_overrun() const
+        {
+            return m_owner.m_params.max_overrun;
         }
 
         bool push_frame(const i_frame_t& frame)
@@ -305,19 +318,12 @@ public:
             {
                 std::lock_guard lock(m_safe_mutex);
 
-                /*
-                std::size_t refs = 0;
-                if (auto buffer = frame.data().get_buffer(0))
-                {
-                    refs = buffer->refs();
-                }
-
-                std::clog << "push frame #: " << frame.frame_id() << ", refs: " << refs << std::endl;
-                */
                 m_frame_queue.emplace(std::move(clone_frame));
 
-                while (m_frame_queue.size() > 10)
+                while (max_overrun() > 0
+                       && m_frame_queue.size() > max_overrun())
                 {
+                    mpl_log_debug("async_frame_manager #", this, ": drop frame, overrun");
                     m_frame_queue.pop();
                 }
 
@@ -325,6 +331,7 @@ public:
                 if (m_processed.compare_exchange_strong(flag, true))
                 {
                     auto task_handler = m_task_handler;
+                    mpl_log_trace("async_frame_manager #", this, ": add async transcoder task");
                     m_task = m_task_manager.add_task(std::move(task_handler));
                 }
 
@@ -358,10 +365,11 @@ public:
             std::lock_guard lock(m_exec_mutex);
             while (auto frame = fetch_frame())
             {
+                mpl_log_trace("async_frame_manager #", this, ": async transcoder frame");
                 m_owner.on_transcode_frame(static_cast<const i_frame_t&>(*frame));
-                // std::clog << "transcode frame #: " << frame->frame_id() << ", sz: " << size << std::endl;
             }
 
+            mpl_log_trace("async_frame_manager #", this, ": async task completed");
             m_processed.store(false, std::memory_order_release);
         }
     };
@@ -440,7 +448,12 @@ public:
         , m_is_init(false)
         , m_is_transit(true)
     {
+        mpl_log_info("smart transcoder #", this, ": init: ", m_output_format.info().to_string());
+    }
 
+    ~smart_transcoder()
+    {
+        mpl_log_info("smart transcoder #", this, ": destruction");
     }
 
     bool check_and_init_converters(const i_format_t& input_format
@@ -450,8 +463,12 @@ public:
                                           , output_format)
                 || m_params.transcode_always)
         {
+
             format_impl_t input_convert_format(input_format);
             format_impl_t output_convert_format(output_format);
+
+            mpl_log_info("smart transcoder #", this, ": init converters: ", input_convert_format.info().to_string()
+                         , "->", output_convert_format.info().to_string());
 
             // encoder
             if (output_format.is_encoded())
@@ -465,14 +482,17 @@ public:
 
                     if (!m_encoder)
                     {
+                        mpl_log_error("smart transcoder #", this, ": init converters: create encoder for ", input_convert_format.info().to_string() ," failed");
                         return false;
                     }
 
                     output_convert_format.assign(static_cast<const i_format_t&>(m_encoder->input_format()));
+                    mpl_log_info("smart transcoder #", this, ": init converters: create encoder #", m_encoder.get(), "for ", output_convert_format.info().to_string() ," success");
                 }
             }
             else
             {
+                mpl_log_debug("smart transcoder #", this, ": init converters: no encoder required");
                 m_encoder.reset();
             }
 
@@ -488,20 +508,24 @@ public:
 
                     if (!m_decoder)
                     {
+                        mpl_log_error("smart transcoder #", this, ": create decoder for ", output_convert_format.info().to_string(), " failed");
                         return false;
                     }
 
                     input_convert_format.assign(static_cast<const i_format_t&>(m_decoder->output_format()));
+                    mpl_log_info("smart transcoder #", this, ": init converters: create encoder #", m_encoder.get(), "for ", input_convert_format.info().to_string() ," success");
                 }
             }
             else
             {
+                mpl_log_debug("smart transcoder #", this, ": init converters: no decoder required");
                 m_decoder.reset();
             }
 
             // converter
             if (input_convert_format.is_compatible(output_convert_format))
             {
+                mpl_log_debug("smart transcoder #", this, ": init converters: no converter required");
                 m_converter.reset();
             }
             else
@@ -512,8 +536,11 @@ public:
 
                 if (!m_converter)
                 {
+                    mpl_log_error("smart transcoder #", this, ": create converter for ", output_convert_format.info().to_string(), " failed");
                     return false;
                 }
+
+                mpl_log_info("smart transcoder #", this, ": init converters: create converter #", m_converter.get(), "for ", output_convert_format.info().to_string() ," success");
             }
         }
         else
@@ -530,21 +557,25 @@ public:
         switch(State)
         {
             case transcoder_state_t::input:
+                mpl_log_trace("smart transcoder #", this, ": input");
                 return m_is_transit
                         ? convert_and_write_frame<transcoder_state_t::output>(frame)
                         : convert_and_write_frame<transcoder_state_t::decode>(frame);
             break;
             case transcoder_state_t::decode:
+                mpl_log_trace("smart transcoder #", this, ": decode");
                 return m_decoder != nullptr
                         ? m_decoder->send_message(frame)
                         : convert_and_write_frame<transcoder_state_t::convert>(frame);
             break;
             case transcoder_state_t::convert:
+                mpl_log_trace("smart transcoder #", this, ": convert");
                 return m_converter != nullptr
                         ? m_converter->send_message(frame)
                         : convert_and_write_frame<transcoder_state_t::encode>(frame);
             break;
             case transcoder_state_t::encode:
+                mpl_log_trace("smart transcoder #", this, ": encode");
                 return m_encoder != nullptr
                         ? m_encoder->send_message(frame)
                         : convert_and_write_frame<transcoder_state_t::output>(frame);
@@ -552,6 +583,7 @@ public:
             case transcoder_state_t::output:
                 if (m_output_sink)
                 {
+                    mpl_log_trace("smart transcoder #", this, ": output");
                     return m_output_sink->send_message(frame);
                 }
             break;
@@ -605,6 +637,8 @@ public:
             return convert_and_write_frame(media_frame);
         }
 
+        mpl_log_warning("smart transcoder #", this, ": frame transcode error");
+
         return false;
     }
 
@@ -626,6 +660,8 @@ public:
 
     void reset_converters()
     {
+        mpl_log_debug("smart transcoder #", this, ": reset converters");
+
         m_decoder.reset();
         m_encoder.reset();
         m_converter.reset();
@@ -633,6 +669,8 @@ public:
 
     void reset()
     {
+        mpl_log_debug("smart transcoder #", this, ": reset");
+
         reset_converters();
         m_is_init = false;
         m_is_transit = true;

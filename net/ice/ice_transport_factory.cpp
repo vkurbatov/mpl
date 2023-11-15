@@ -834,7 +834,6 @@ public:
         , m_gathering_state(ice_gathering_state_t::ready)
     {
         mpl_log_debug("ice transport impl: #", this, " init");
-        // initialize();
     }
 
     ~ice_transport_impl()
