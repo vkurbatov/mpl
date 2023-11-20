@@ -25,11 +25,6 @@ namespace mpl::media
 
 namespace detail
 {
-/*
-i_task_manager& get_single_task_manager()
-{
-    return task_manager_impl::get_instance();
-}*/
 
 template<media_type_t MediaType>
 struct format_types_t;
