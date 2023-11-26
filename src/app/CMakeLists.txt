@@ -29,3 +29,5 @@ add_library(${TARGET}
     ${PUBLIC_HEADERS}
 )
 
+install(
+        FILES ${PUBLIC_HEADERS} DESTINATION /home/user/test/app)
