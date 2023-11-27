@@ -20,6 +20,9 @@ set(PRIVATE_HEADERS
     h264/h264_mapped_headers.h
 )
 
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/codec)
+
 add_library(${TARGET}
     ${SOURCES}
     ${PRIVATE_HEADERS}

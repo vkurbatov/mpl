@@ -68,6 +68,8 @@ set(PRIVATE_HEADERS
     ssl_native.h
 )
 
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/ssl)
 
 add_library(${TARGET}
     ${SOURCES}

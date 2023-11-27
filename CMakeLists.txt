@@ -4,9 +4,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 project(mpl)
 
-set(TEST_PROJECT_NAME
-    "${PROJECT_NAME}_test"
-    )
 
 find_package(PkgConfig REQUIRED)
 
@@ -37,6 +34,8 @@ add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
 
 set(BOOST_NO_RTTI yes)
 
+set(INSTALL_INCLUDE_DIR "include/${PROJECT_NAME}")
+
 include_directories(
     ${PROJECT_SOURCE_DIR}
     ${Boost_INCLUDE_DIRS}
@@ -51,26 +50,14 @@ link_directories(
     ${WEBRTC_AUDIO_PROCESSING_LIBRARY_DIRS}
     )
 
-set(TEST_SOURCES
-    test/main.cpp
-    test/tests.cpp
-)
+configure_file(pc/mpl.pc.in mpl.pc @ONLY)
 
-set(TEST_HEADERS
-    test/tests.h
-)
-
-
-add_executable(${TEST_PROJECT_NAME}
-    ${TEST_SOURCES}
-    ${TEST_HEADERS}
-)
-
-target_link_libraries(${TEST_PROJECT_NAME}
-    ${PROJECT_NAME}
-    )
+install(FILES ${CMAKE_BINARY_DIR}/mpl.pc DESTINATION lib/pkgconfig)
 
 add_subdirectory(src)
+add_subdirectory(test)
+
+
 
 
     

@@ -25,7 +25,9 @@ set(PUBLIC_HEADERS
 set(PRIVATE_HEADERS
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../base_utils)
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/ffmpeg)
+
 
 add_library(${TARGET}
     ${SOURCES}

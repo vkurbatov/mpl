@@ -1,0 +1,13 @@
+Package: mpl-dev-dbgsym
+Package-Type: ddeb
+Source: mpl
+Version: 0.1-1
+Auto-Built-Package: debug-symbols
+Architecture: amd64
+Maintainer: Kurbatov Vasiliy <v.kurbatov@ntc-hitech.ru>
+Installed-Size: 23
+Depends: mpl-dev (= 0.1-1)
+Section: debug
+Priority: optional
+Description: debug symbols for mpl-dev
+Build-Ids: c91a7c69fe6f59806a9fa29b07bd7469ff538fad

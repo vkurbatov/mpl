@@ -15,6 +15,8 @@ set(PRIVATE_HEADERS
     vnc_device.h
 )
 
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/vnc)
 
 add_library(${TARGET}
     ${SOURCES}

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(TARGET mplcore)
 
-set(SOURCES
+set(CORE_SOURCES
     type_info.cpp
     thread_info.cpp
     command.cpp
@@ -14,7 +14,7 @@ set(SOURCES
     core_engine_config.cpp
 )
 
-set(PUBLIC_HEADERS
+set(CORE_PUBLIC_HEADERS
     common_types.h
     module_types.h
     type_info.h
@@ -74,9 +74,23 @@ set(PUBLIC_HEADERS
     i_command_factory.h
     )
 
-set(PRIVATE_HEADERS
+set(CORE_PRIVATE_HEADERS
 )
 
+install(FILES ${CORE_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/core)
+
+set(SOURCES
+    ${CORE_SOURCES}
+    )
+
+set(PUBLIC_HEADERS
+    ${CORE_PUBLIC_HEADERS}
+    )
+
+set(PRIVATE_HEADERS
+    ${CORE_PRIVATE_HEADERS}
+)
 
 add_library(${TARGET}
     ${SOURCES}

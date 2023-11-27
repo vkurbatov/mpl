@@ -18,6 +18,8 @@ set(PRIVATE_HEADERS
     visca_control.h
 )
 
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/visca)
 
 add_library(${TARGET}
     ${SOURCES}

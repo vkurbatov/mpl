@@ -19,6 +19,8 @@ set(PRIVATE_HEADERS
     v4l2_input_device.h
 )
 
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/c4l2)
 
 add_library(${TARGET}
     ${SOURCES}

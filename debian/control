@@ -1,0 +1,23 @@
+Source: mpl
+Section: libs
+Priority: optional
+Maintainer: Kurbatov Vasiliy <v.kurbatov@ntc-hitech.ru>
+Build-Depends: debhelper, g++, gcc, cmake, libavformat-dev, libavcodec-dev, libavdevice-dev, libswresample-dev,
+ libavutil-dev, libswscale-dev, libssl-dev, libnss3-dev, libsrtp2-dev, build-essential, libboost-dev,
+ libboost-system-dev, libboost-filesystem-dev, libopencv-dev, libfreetype-dev, libharfbuzz-dev, libx11-dev,
+ libwebrtc-audio-processing-dev, libvncserver-dev, pkg-config, devscripts
+Homepage: https://git.ntc.local/largocodec/mpl.git
+
+Package: mpl-dev
+Section: devel
+Architecture: any
+Depends: mpl1
+Description: Media Process Library developer files
+    Media Process Library
+    
+Package: mpl1
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Media Process Library 
+    Media Process Library

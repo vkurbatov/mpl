@@ -24,6 +24,9 @@ set(PUBLIC_HEADERS
 set(PRIVATE_HEADERS
 )
 
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/opencv)
+
 
 add_library(${TARGET}
     ${SOURCES}

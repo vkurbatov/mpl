@@ -15,6 +15,8 @@ set(PUBLIC_HEADERS
 set(PRIVATE_HEADERS
 )
 
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/wap)
 
 add_library(${TARGET}
     ${SOURCES}

@@ -1,0 +1,15 @@
+Name: @PROJECT_NAME@
+Description: @CMAKE_PROJECT_DESCRIPTION@
+Version: @PROJECT_VERSION@
+
+prefix="@CMAKE_INSTALL_PREFIX@"
+exec_prefix="${prefix}"
+libdir="${prefix}/lib"
+includedir="${prefix}/include/@PROJECT_NAME@"
+datarootdir=${prefix}/share
+suffix=
+objdir=obj/linux_x86_64$(suffix)
+
+Cflags: -I"${includedir}"
+Libs.private: -rdynamic -L${libdir} -lmpl${suffix}
+Libs: -rdynamic -L${libdir} -lmpl${suffix}

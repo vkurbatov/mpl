@@ -1,0 +1,9 @@
+debian/tmp/usr/lib/pkgconfig
+debian/tmp/usr/lib/x86_64-linux-gnu
+debian/tmp/usr/include/mpl/app
+debian/tmp/usr/include/mpl/core
+debian/tmp/usr/include/mpl/log
+debian/tmp/usr/include/mpl/media
+debian/tmp/usr/include/mpl/net
+debian/tmp/usr/include/mpl/tools
+debian/tmp/usr/include/mpl/utils

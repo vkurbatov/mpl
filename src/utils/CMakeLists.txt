@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(TARGET mplutils)
 
-set(SOURCES
+set(UTILS_SOURCES
     ipc_manager_impl.cpp
     bitrate_calculator.cpp
     mapped_packet.cpp
@@ -55,7 +55,7 @@ set(SOURCES
     core_engine_impl.cpp
 )
 
-set(PUBLIC_HEADERS
+set(UTILS_PUBLIC_HEADERS
     ipc_manager_impl.h
     packetizer.h
     depacketizer.h
@@ -105,10 +105,24 @@ set(PUBLIC_HEADERS
     core_engine_impl.h
     )
 
-set(PRIVATE_HEADERS
+set(UTILS_PRIVATE_HEADERS
     mapped_packet.h
 )
 
+install(FILES ${UTILS_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/utils)
+
+set(SOURCES
+    ${UTILS_SOURCES}
+    )
+
+set(PUBLIC_HEADERS
+    ${UTILS_PUBLIC_HEADERS}
+    )
+
+set(PRIVATE_HEADERS
+    ${UTILS_PRIVATE_HEADERS}
+)
 
 add_library(${TARGET}
     ${SOURCES}

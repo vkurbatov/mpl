@@ -29,6 +29,9 @@ set(SOCKET_PRIVATE_HEADERS
     socket/socket_packet_builder_impl.h
     )
 
+install(FILES ${SOCKET_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/net/socket)
+
 # stun sources
 set(STUN_SOURCES
     stun/stun_mapped_headers.cpp
@@ -51,6 +54,9 @@ set(STUN_PRIVATE_HEADERS
     stun/stun_error_codes.h
     stun/stun_utils.h
     )
+
+install(FILES ${STUN_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/net/stun)
 
 # ice sources
 set(ICE_SOURCES
@@ -88,6 +94,9 @@ set(ICE_PRIVATE_HEADERS
     ice/ice_transport_factory.h
     )
 
+install(FILES ${ICE_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/net/ice)
+
 # tls sources
 set(TLS_SOURCES
     tls/tls_config.cpp
@@ -115,6 +124,9 @@ set(TLS_PRIVATE_HEADERS
     tls/tls_packet_impl.h
     )
 
+install(FILES ${TLS_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/net/tls)
+
 # serial sources
 set(SERIAL_SOURCES
     serial/serial_endpoint.cpp
@@ -138,6 +150,9 @@ set(SERIAL_PRIVATE_HEADERS
     serial/serial_transport_factory.h
     serial/serial_transport_params.h
     )
+
+install(FILES ${SERIAL_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/net/serial)
 
 # sq sources
 set(SQ_SOURCES
@@ -196,6 +211,9 @@ set(NET_PRIVATE_HEADERS
     net_engine_impl.h
 )
 
+install(FILES ${NET_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/net)
+
 set(SOURCES
     ${NET_SOURCES}
     ${SOCKET_SOURCES}
@@ -233,7 +251,6 @@ add_library(${TARGET}
     ${PUBLIC_HEADERS}
 )
 
-install(FILES ${NET_PUBLIC_HEADERS}
-        DESTINATION /home/user/test/net)
+
 
 

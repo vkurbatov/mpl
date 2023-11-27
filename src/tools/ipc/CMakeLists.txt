@@ -9,15 +9,17 @@ set(SOURCES
 )
 
 set(PUBLIC_HEADERS
-)
-
-set(PRIVATE_HEADERS
     ipc_base.h
     ipc_types.h
     ipc_manager.h
     ipc_segment.h
 )
 
+set(PRIVATE_HEADERS
+)
+
+install(FILES ${PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/tools/ipc)
 
 add_library(${TARGET}
     ${SOURCES}
